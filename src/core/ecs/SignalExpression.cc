@@ -500,19 +500,19 @@ namespace ecs {
     Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
         : lock(lock), expr(expr), input(input) {}
 
-    const SignalNodePtr &Node::UpdateDependencies(const SignalNodePtr &node) {
+    const SignalNodePtr &Node::AddReferences(const SignalNodePtr &node) {
         if (!node) return node;
         for (const auto &child : node->childNodes) {
             if (child->uncacheable) node->uncacheable = true;
-            sp::erase_if(child->dependencies, [](auto &weakPtr) {
+            sp::erase_if(child->references, [](auto &weakPtr) {
                 return weakPtr.expired();
             });
-            if (!sp::contains(child->dependencies, node)) child->dependencies.emplace_back(node);
+            if (!sp::contains(child->references, node)) child->references.emplace_back(node);
         }
         return node;
     }
 
-    void Node::PropagateUncacheable(bool newUncacheable) {
+    bool Node::PropagateUncacheable(bool newUncacheable) {
         bool oldUncacheable = uncacheable;
         uncacheable = newUncacheable;
         for (const auto &child : childNodes) {
@@ -522,11 +522,13 @@ namespace ecs {
             }
         }
         if (uncacheable != oldUncacheable) {
-            for (const auto &dep : dependencies) {
-                auto dependency = dep.lock();
-                if (dependency) dependency->PropagateUncacheable(uncacheable);
+            for (const auto &ref : references) {
+                auto reference = ref.lock();
+                if (reference) reference->PropagateUncacheable(uncacheable);
             }
+            return true;
         }
+        return false;
     }
 
     CompiledFunc Node::Compile() {

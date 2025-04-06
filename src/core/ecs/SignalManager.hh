@@ -42,6 +42,7 @@ namespace ecs {
 
         void Tick(chrono_clock::duration maxTickInterval);
         size_t DropAllUnusedNodes();
+        size_t DropAllUnusedRefs();
         size_t GetNodeCount();
 
     private:

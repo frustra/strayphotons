@@ -508,4 +508,78 @@ namespace sp {
             }
         }
     }
+
+    void EditorContext::ShowSignalControls(const ecs::Lock<ecs::ReadAll> &lock) {
+        ImGui::Text("Signal References:");
+        ImGui::InputTextWithHint("##signal_search", "Signal Search", &signalSearch);
+        if (ImGui::BeginListBox("##SignalRefs", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
+            auto refList = ecs::GetSignalManager().GetSignals(signalSearch);
+            for (auto &entry : refList) {
+                std::string text = entry.String();
+                // + " (" + std::string(magic_enum::enum_name(entry.data->type)) + ")";
+                if (ImGui::Selectable(text.c_str(), entry == this->selectedSignal)) {
+                    this->selectedSignal = entry;
+                }
+            }
+            ImGui::EndListBox();
+        }
+        if (ImGui::Button("Drop Unused")) {
+            ecs::GetSignalManager().DropAllUnusedRefs();
+        }
+        ImGui::Separator();
+        if (this->selectedSignal) {
+            ImGui::AlignTextToFramePadding();
+            auto &ref = this->selectedSignal;
+            std::string text = ref.String();
+            ImGui::Text("Signal: %s", text.c_str());
+            if (ref.HasValue(lock)) {
+                ImGui::Text("Value = %.4f", ref.GetValue(lock));
+            } else if (!ref.HasBinding(lock)) {
+                ImGui::Text("Value = 0.0 (unset)");
+            }
+            if (ref.HasBinding(lock)) {
+                auto &binding = ref.GetBinding(lock);
+                ImGui::Text("Binding%s: %s", ref.HasValue(lock) ? " (overriden by value)" : "", binding.expr.c_str());
+                if (binding.rootNode->text != binding.expr) {
+                    ImGui::Text("Binding node: %s", binding.rootNode->text.c_str());
+                }
+                ImGui::Text("Binding eval = %.4f", binding.Evaluate(lock));
+            }
+            auto &signals = lock.Get<ecs::Signals>().signals;
+            auto &index = ref.GetIndex();
+            if (index < signals.size()) {
+                auto &signal = signals[index];
+                if (ref.IsCacheable(lock)) {
+                    ImGui::Text("Cached value: %.4f %s", signal.lastValue, signal.lastValueDirty ? " (dirty)" : "");
+                } else {
+                    ImGui::Text("Signal uncacheable");
+                }
+                auto node = ecs::GetSignalManager().FindSignalNode(ref);
+                if (node) {
+                    ImGui::Text("Node cacheable: %s", node->uncacheable ? "false" : "true");
+                    ImGui::Text("Node references: %lu", node->references.size());
+                }
+                ImGui::Text("Subscribers: %lu", signal.subscribers.size());
+                for (auto &sub : signal.subscribers) {
+                    auto subscriber = ecs::SignalRef(sub.lock());
+                    if (subscriber) {
+                        text = subscriber.String();
+                        if (ImGui::Button(text.c_str())) {
+                            this->selectedSignal = subscriber;
+                        }
+                    }
+                }
+                ImGui::Text("Dependencies: %lu", signal.dependencies.size());
+                for (auto &dep : signal.dependencies) {
+                    auto dependency = ecs::SignalRef(dep.lock());
+                    if (dependency) {
+                        text = dependency.String();
+                        if (ImGui::Button(text.c_str())) {
+                            this->selectedSignal = dependency;
+                        }
+                    }
+                }
+            }
+        }
+    }
 } // namespace sp

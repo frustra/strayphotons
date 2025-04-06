@@ -60,12 +60,12 @@ namespace sp {
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
 
-                if (!std::holds_alternative<ecs::Entity>(event.data)) {
-                    Errorf("Invalid editor event: %s", event.ToString());
-                } else {
+                if (std::holds_alternative<ecs::Entity>(event.data)) {
                     auto newTarget = std::get<ecs::Entity>(event.data);
                     targetEntity = newTarget;
                     if (newTarget && ecs::IsStaging(newTarget)) selectEntityView = true;
+                } else {
+                    Errorf("Invalid editor event: %s", event.ToString());
                 }
             }
 
@@ -121,6 +121,11 @@ namespace sp {
             if (ImGui::BeginTabItem("Scene View")) {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
                 context->ShowSceneControls(stagingLock);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Signal Debugger")) {
+                auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
+                context->ShowSignalControls(liveLock);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

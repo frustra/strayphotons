@@ -79,7 +79,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetNode(const Node &node) {
-        return Node::UpdateDependencies(signalNodes.LoadOrInsert(node));
+        return Node::AddReferences(signalNodes.LoadOrInsert(node));
     }
 
     SignalNodePtr SignalManager::GetConstantNode(double value) {
@@ -125,6 +125,25 @@ namespace ecs {
 
     size_t SignalManager::DropAllUnusedNodes() {
         return signalNodes.DropAll();
+    }
+
+    size_t SignalManager::DropAllUnusedRefs() {
+        std::vector<std::shared_ptr<SignalRef::Ref>> refsToFree;
+        signalRefs.DropAll([&](std::shared_ptr<SignalRef::Ref> &refPtr) {
+            refsToFree.emplace_back(refPtr);
+        });
+        if (!refsToFree.empty()) {
+            ZoneScopedN("FreeSignals");
+            ecs::QueueTransaction<ecs::Write<ecs::Signals>>(
+                [refsToFree](const ecs::Lock<ecs::Write<ecs::Signals>> &lock) {
+                    auto &signals = lock.Get<Signals>();
+                    for (auto &refPtr : refsToFree) {
+                        signals.FreeSignal(lock, refPtr->index);
+                        refPtr->index = std::numeric_limits<size_t>::max();
+                    }
+                });
+        }
+        return refsToFree.size();
     }
 
     size_t SignalManager::GetNodeCount() {

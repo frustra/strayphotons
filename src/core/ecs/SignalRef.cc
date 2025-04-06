@@ -84,8 +84,7 @@ namespace ecs {
             signals.MarkStorageDirty(lock, subIndex);
             subscriber.MarkDirty(lock);
         }
-        SignalNodePtr subscriberNode = GetSignalManager().FindSignalNode(subscriber);
-        if (subscriberNode) subscriberNode->PropagateUncacheable(!IsCacheable(lock));
+        RefreshUncacheable(lock);
     }
 
     void SignalRef::UnsubscribeDependencies(const Lock<Write<Signals>> &lock) const {
@@ -99,9 +98,9 @@ namespace ecs {
 
         auto &signal = signals.signals[index];
         for (const auto &dep : signal.dependencies) {
-            auto dependency = dep.lock();
+            auto dependency = SignalRef(dep.lock());
             if (!dependency) continue;
-            const size_t &depIndex = dependency->index;
+            const size_t &depIndex = dependency.GetIndex();
             if (depIndex >= signals.signals.size()) continue;
             auto &depSignal = signals.signals[depIndex];
             sp::erase(depSignal.subscribers, ptr);
@@ -109,8 +108,7 @@ namespace ecs {
         }
         if (!signal.dependencies.empty()) signals.MarkStorageDirty(lock, index);
         signal.dependencies.clear();
-        SignalNodePtr signalNode = GetSignalManager().FindSignalNode(*this);
-        if (signalNode) signalNode->PropagateUncacheable(!IsCacheable(lock));
+        RefreshUncacheable(lock);
     }
 
     void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, size_t depth) const {
@@ -146,6 +144,31 @@ namespace ecs {
         if (index >= signals.signals.size()) return true;
         auto &signal = signals.signals[index];
         return !std::isinf(signal.value) || signal.expr.IsCacheable();
+    }
+
+    void SignalRef::RefreshUncacheable(const Lock<Write<Signals>> &lock) const {
+        Assertf(IsLive(lock), "SiganlRef::RefreshUncacheable() called with staging lock");
+        if (!ptr) return;
+        auto &signals = lock.Get<Signals>();
+        size_t &index = GetIndex();
+        if (index >= signals.signals.size()) return;
+        auto &signal = signals.signals[index];
+
+        SignalNodePtr signalNode = GetSignalManager().FindSignalNode(*this);
+        if (signalNode) {
+            bool isCacheable = !std::isinf(signal.value) || signal.expr.IsCacheable();
+            for (auto &dep : signal.dependencies) {
+                auto dependency = SignalRef(dep.lock());
+                if (!dependency) continue;
+                isCacheable &= dependency.IsCacheable(lock);
+            }
+            bool changed = signalNode->PropagateUncacheable(!isCacheable);
+            if (changed) {
+                for (const auto &sub : signal.subscribers) {
+                    SignalRef(sub.lock()).RefreshUncacheable(lock);
+                }
+            }
+        }
     }
 
     void SignalRef::UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock,

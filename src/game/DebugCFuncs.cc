@@ -232,7 +232,7 @@ namespace sp {
         funcs.Register<std::string>("printsignals",
             "Print out the values and bindings of signals (optionally filtered by argument)",
             [](std::string filterStr) {
-                auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
+                auto lock = ecs::StartTransaction<ecs::ReadAll>();
                 if (filterStr.empty()) {
                     Logf("Signals:");
                 } else {
@@ -257,7 +257,7 @@ namespace sp {
         funcs.Register<std::string>("printsignal",
             "Print out the value and bindings of a specific signal",
             [](std::string signalStr) {
-                auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
+                auto lock = ecs::StartTransaction<ecs::ReadAll>();
 
                 ecs::SignalRef signal(signalStr);
                 if (!signal) {

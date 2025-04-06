@@ -118,7 +118,7 @@ namespace ecs {
             std::string text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
-            std::vector<WeakNodePtr> dependencies;
+            std::vector<WeakNodePtr> references;
             bool uncacheable = false;
 
             template<typename T>
@@ -131,8 +131,9 @@ namespace ecs {
                 }
             }
 
-            static const SignalNodePtr &UpdateDependencies(const SignalNodePtr &node);
-            void PropagateUncacheable(bool newUncacheable);
+            static const SignalNodePtr &AddReferences(const SignalNodePtr &node);
+            // Returns true if uncacheable changed
+            bool PropagateUncacheable(bool newUncacheable);
 
             CompiledFunc Compile();
             void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;

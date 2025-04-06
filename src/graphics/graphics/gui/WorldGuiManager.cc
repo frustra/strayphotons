@@ -90,13 +90,18 @@ namespace sp {
                         } else {
                             pointingStack.emplace_back(PointingState{event.source, mousePos});
                         }
-                    } else if (existingState != pointingStack.end()) {
-                        if (existingState->mouseDown) {
-                            // Keep state if mouse was dragged off screen
-                            existingState->mousePos = {-FLT_MAX, -FLT_MAX};
-                        } else {
-                            pointingStack.erase(existingState);
+                    } else if (std::holds_alternative<bool>(event.data)) {
+                        if (existingState != pointingStack.end()) {
+                            if (existingState->mouseDown) {
+                                // Keep state if mouse was dragged off screen
+                                existingState->mousePos = {-FLT_MAX, -FLT_MAX};
+                            } else {
+                                pointingStack.erase(existingState);
+                            }
                         }
+                    } else {
+                        Warnf("World GUI received unexpected event data: %s, expected Transform, vec2, or bool",
+                            event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
                     if (std::holds_alternative<bool>(event.data)) {
@@ -117,6 +122,9 @@ namespace sp {
                                 std::to_string(event.source),
                                 guiEntity.Name().String());
                         }
+                    } else {
+                        Warnf("World GUI received unexpected event data: %s, expected bool", event.ToString());
+                        continue;
                     }
                 }
             }
