@@ -37,6 +37,10 @@ namespace sp::vulkan {
     class Model;
     struct VertexLayout;
 
+    namespace render_graph {
+        class Resources;
+    }
+
     struct ImageBarrierInfo {
         uint32 baseMipLevel = 0;
         uint32 mipLevelCount = 0; // default: use all levels
@@ -133,15 +137,15 @@ namespace sp::vulkan {
         // Sets the shaders to a standard compute pipeline.
         void SetComputeShader(string_view name);
 
-        void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
+        void SetShaderConstant(ShaderStage stage, string_view name, uint32 data);
 
         template<typename T, std::enable_if_t<sizeof(T) == sizeof(uint32), int> = 0>
-        void SetShaderConstant(ShaderStage stage, uint32 index, T data) {
-            SetShaderConstant(stage, index, std::bit_cast<uint32>(data));
+        void SetShaderConstant(ShaderStage stage, string_view name, T data) {
+            SetShaderConstant(stage, name, std::bit_cast<uint32>(data));
         }
 
-        void SetShaderConstant(ShaderStage stage, uint32 index, bool data) {
-            SetShaderConstant(stage, index, (uint32)data);
+        void SetShaderConstant(ShaderStage stage, string_view name, bool data) {
+            SetShaderConstant(stage, name, (uint32)data);
         }
 
         void SetDefaultOpaqueState();
@@ -427,7 +431,7 @@ namespace sp::vulkan {
 
     protected:
         friend class DeviceContext;
-        void Begin();
+        void Begin(render_graph::Resources *resources = nullptr);
         void End();
 
         vk::UniqueCommandBuffer &RawRef() {
@@ -437,6 +441,7 @@ namespace sp::vulkan {
     private:
         void SetSingleShader(ShaderStage stage, ShaderHandle handle);
         void SetSingleShader(ShaderStage stage, string_view name);
+        void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
 
         bool TestDirty(DirtyFlags flags) {
             return static_cast<bool>(dirty & flags);
@@ -470,6 +475,7 @@ namespace sp::vulkan {
         vk::UniqueCommandBuffer cmd;
         CommandContextType type;
         CommandContextScope scope;
+        render_graph::Resources *resources;
 
         vk::UniqueFence fence;
 

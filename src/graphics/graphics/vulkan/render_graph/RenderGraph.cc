@@ -168,7 +168,7 @@ namespace sp::vulkan::render_graph {
 #endif
 
             if (pass.isRenderPass) {
-                if (!cmd) cmd = device.GetFrameCommandContext();
+                if (!cmd) cmd = device.GetFrameCommandContext(resources);
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                 RenderPhase phase(pass.name);
                 phase.StartTimer(*cmd);
@@ -180,7 +180,7 @@ namespace sp::vulkan::render_graph {
                 if (timer) phase.StartTimer(*timer);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                if (!cmd) cmd = device.GetFrameCommandContext();
+                if (!cmd) cmd = device.GetFrameCommandContext(resources);
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                 RenderPhase phase(pass.name);
                 phase.StartTimer(*cmd);
@@ -226,7 +226,7 @@ namespace sp::vulkan::render_graph {
                 if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
                 if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
 
-                if (!cmd) cmd = device.GetFrameCommandContext();
+                if (!cmd) cmd = device.GetFrameCommandContext(resources);
 
                 cmd->ImageBarrier(image,
                     last.imageLayout,
@@ -245,7 +245,7 @@ namespace sp::vulkan::render_graph {
                 if (nextAccess == Access::HostWrite) continue;
                 if (lastAccess == Access::None) continue;
 
-                if (!cmd) cmd = device.GetFrameCommandContext();
+                if (!cmd) cmd = device.GetFrameCommandContext(resources);
 
                 auto last = GetAccessInfo(lastAccess);
                 vk::MemoryBarrier barrier;

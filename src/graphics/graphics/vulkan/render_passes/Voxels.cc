@@ -386,10 +386,10 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, fragmentListCount);
-                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarLightAttenuation.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarShadowMapSampleWidth.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 3, CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "FRAGMENT_LIST_COUNT", fragmentListCount);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "LIGHT_ATTENUATION", CVarLightAttenuation.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -411,7 +411,7 @@ namespace sp::vulkan::renderer {
                 })
                 .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_merge.comp");
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
+                    cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_INDEX", i);
 
                     cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
                     cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
@@ -445,7 +445,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([this, i = fragmentListCount - 1](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("voxel_merge_serial.comp");
-                cmd.SetShaderConstant(ShaderStage::Compute, 0, fragmentListCount);
+                cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_COUNT", fragmentListCount);
 
                 cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
                 cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
@@ -483,7 +483,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetSampler(0, 2, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
                     cmd.SetImageView(0, 3, resources.GetImageMipView("Normals", i));
 
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
+                    cmd.SetShaderConstant(ShaderStage::Compute, "MIP_LEVEL", i);
 
                     auto divisor = 8 << i;
                     auto dispatchCount = (voxelGridSize + divisor - 1) / divisor;
@@ -664,9 +664,9 @@ namespace sp::vulkan::renderer {
                 })
                 .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_merge_layer.comp");
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, i);
+                    cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_INDEX", i);
 
-                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                    // cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
                     auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
                     cmd.SetStorageBuffer(0,
@@ -704,7 +704,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([this, i = fragmentListCount - 1](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("voxel_merge_layer_serial.comp");
-                cmd.SetShaderConstant(ShaderStage::Compute, 0, fragmentListCount);
+                cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_COUNT", fragmentListCount);
 
                 cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
@@ -742,8 +742,10 @@ namespace sp::vulkan::renderer {
                 })
                 .Execute([this, layer](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_mipmap_layer.comp");
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, layer == 1 ? CVarLightLowPass.Get() : 0.0f);
-                    cmd.SetShaderConstant(ShaderStage::Compute, 1, (uint32_t)layer);
+                    cmd.SetShaderConstant(ShaderStage::Compute,
+                        "PREVIOUS_FRAME_BLEND",
+                        layer == 1 ? CVarLightLowPass.Get() : 0.0f);
+                    cmd.SetShaderConstant(ShaderStage::Compute, "LAYER_INDEX", (uint32_t)layer);
 
                     cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
@@ -791,7 +793,7 @@ namespace sp::vulkan::renderer {
                 .Execute([this, layer](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_mipmap_layer_blur.comp");
 
-                    cmd.SetShaderConstant(ShaderStage::Compute, 0, (uint32_t)layer);
+                    cmd.SetShaderConstant(ShaderStage::Compute, "LAYER_INDEX", (uint32_t)layer);
 
                     for (size_t i = 0; i < directions.size(); i++) {
                         cmd.SetImageView(0, i, resources.GetImageView(VoxelLayers[layer][i].name));
@@ -855,9 +857,9 @@ namespace sp::vulkan::renderer {
                     cmd.SetImageView(1, voxelLayer.dirIndex, layerView);
                 }
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarVoxelDebug.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarVoxelDebugBlend.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 2, debugMipLayer);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "DEBUG_MODE", CVarVoxelDebug.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "BLEND_WEIGHT", CVarVoxelDebugBlend.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "VOXEL_MIP", debugMipLayer);
 
                 cmd.Draw(3);
             });

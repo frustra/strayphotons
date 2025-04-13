@@ -18,13 +18,13 @@ layout(binding = 0, rgba16f) writeonly uniform image3D voxelLayerOut[6];
 layout(binding = 6) uniform sampler3D voxelLayerIn[6];
 layout(binding = 12) uniform sampler3D prevFrameVoxelLayer[6];
 
-layout(constant_id = 0) const uint layerIndex = 0;
+layout(constant_id = 0) const uint LAYER_INDEX = 0;
 
 void main() {
     ivec3 voxelPos = ivec3(gl_GlobalInvocationID);
     if (any(greaterThanEqual(voxelPos, imageSize(voxelLayerOut[0])))) return;
 
-    int stride = 1; // << max(0, int(layerIndex) - 2); // max(1, int(layerIndex) - 1);
+    int stride = 1; // << max(0, int(LAYER_INDEX) - 2); // max(1, int(LAYER_INDEX) - 1);
 
     for (int axis = 0; axis < 6; axis++) {
         ivec3 tangentAxisA = ivec3(AxisDirections[TangentAxisA[axis]]) * stride;
@@ -61,7 +61,7 @@ void main() {
 
                 vec4 frontSample = alphaSamples[i + 1][j + 1] * vec4(vec3(0.707), 1);
                 vec4 backSample = texelFetch(voxelLayerIn[axis], samplePos, 0);
-                if (layerIndex == 1) {
+                if (LAYER_INDEX == 1) {
                     backSample /= max(1, backSample.a);
                 }
 

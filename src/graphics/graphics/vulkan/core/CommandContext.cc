@@ -8,6 +8,7 @@
 #include "CommandContext.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 
 namespace sp::vulkan {
     CommandContext::CommandContext(DeviceContext &device,
@@ -90,12 +91,13 @@ namespace sp::vulkan {
         Reset();
     }
 
-    void CommandContext::Begin() {
+    void CommandContext::Begin(render_graph::Resources *resources) {
         Assert(!recording, "command buffer already recording");
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
         cmd->begin(beginInfo);
         recording = true;
+        this->resources = resources;
     }
 
     void CommandContext::End() {
@@ -272,6 +274,34 @@ namespace sp::vulkan {
         std::fill(spec.values.begin(), spec.values.end(), 0);
         spec.set.reset();
         SetDirty(DirtyFlags::Pipeline);
+
+        auto shader = device.GetShader(slot);
+        if (shader) {
+            for (auto &set : shader->descriptorSets) {
+                for (auto &binding : set.bindings) {
+                    if (!binding.accessed) continue;
+                    // if (binding.type != vk::DescriptorType::eUniformBuffer) continue;
+
+                    if (starts_with(binding.name, "G_")) {
+                        Assertf(resources, "Render Graph resources not set on CommandContext");
+                        auto id = resources->GetID(binding.name.substr(2), false);
+                        if (binding.type == vk::DescriptorType::eUniformBuffer) {
+                            if (id == render_graph::InvalidResource) {
+                                Warnf("Shader(%s): tried to autobind missing resource: %s",
+                                    shader->name,
+                                    binding.name.substr(2));
+                            }
+                            SetUniformBuffer(set.setId, binding.bindingId, resources->GetBuffer(id));
+                        } else {
+                            Warnf("Shader(%s): autobinding type on %s is unimplemented: %s",
+                                shader->name,
+                                binding.name,
+                                binding.type);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void CommandContext::SetSingleShader(ShaderStage stage, string_view name) {
@@ -281,6 +311,27 @@ namespace sp::vulkan {
     void CommandContext::SetShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
         Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
         auto &spec = pipelineInput.state.specializations[stage];
+        spec.values[index] = data;
+        spec.set.set(index, true);
+        SetDirty(DirtyFlags::Pipeline);
+    }
+
+    void CommandContext::SetShaderConstant(ShaderStage stage, string_view name, uint32 data) {
+        Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
+        auto shader = device.GetShader(pipelineInput.state.shaders[stage]);
+        Assertf(shader, "bound shader is null when setting constant");
+        uint32_t index = ~0u;
+        for (auto &specConstant : shader->specConstants) {
+            if (name == specConstant.name) {
+                index = specConstant.constantId;
+                break;
+            }
+        }
+        auto &spec = pipelineInput.state.specializations[stage];
+        if (index >= spec.values.size()) {
+            Errorf("Shader constant %s not found on shader %s", name, shader->name);
+            return;
+        }
         spec.values[index] = data;
         spec.set.set(index, true);
         SetDirty(DirtyFlags::Pipeline);
@@ -335,15 +386,22 @@ namespace sp::vulkan {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
-        bindingDesc.uniqueID = buffer->GetUniqueID();
+        bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
         auto &bufferBinding = bindingDesc.buffer;
-        bufferBinding.buffer = **buffer;
-        bufferBinding.offset = offset;
-        bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
-        bindingDesc.arrayStride = buffer->ArrayStride();
+        if (buffer) {
+            bufferBinding.buffer = **buffer;
+            bufferBinding.offset = offset;
+            bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
+            bindingDesc.arrayStride = buffer->ArrayStride();
 
-        checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
+            checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
+        } else {
+            bufferBinding.buffer = nullptr;
+            bufferBinding.offset = 0;
+            bufferBinding.range = 0;
+            bindingDesc.arrayStride = 0;
+        }
         SetDescriptorDirty(set);
     }
 
@@ -355,15 +413,22 @@ namespace sp::vulkan {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
-        bindingDesc.uniqueID = buffer->GetUniqueID();
+        bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
         auto &bufferBinding = bindingDesc.buffer;
-        bufferBinding.buffer = **buffer;
-        bufferBinding.offset = offset;
-        bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
-        bindingDesc.arrayStride = buffer->ArrayStride();
+        if (buffer) {
+            bufferBinding.buffer = **buffer;
+            bufferBinding.offset = offset;
+            bufferBinding.range = range == 0 ? buffer->ByteSize() - offset : range;
+            bindingDesc.arrayStride = buffer->ArrayStride();
 
-        checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
+            checkBufferOffsets(buffer, bufferBinding.offset, bufferBinding.range);
+        } else {
+            bufferBinding.buffer = nullptr;
+            bufferBinding.offset = 0;
+            bufferBinding.range = 0;
+            bindingDesc.arrayStride = 0;
+        }
         SetDescriptorDirty(set);
     }
 

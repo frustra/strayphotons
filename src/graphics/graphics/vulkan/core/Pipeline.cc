@@ -12,11 +12,12 @@
 
 #include <SPIRV-Reflect/common/output_stream.h>
 
-void StreamWriteDescriptorBinding(std::ostream &os,
-    const SpvReflectDescriptorBinding &obj,
-    bool write_set,
-    bool flatten_cbuffers,
-    const char *indent);
+// void StreamWriteDescriptorBinding(std::ostream &os,
+//     const SpvReflectDescriptorBinding &obj,
+//     bool write_set,
+//     bool flatten_cbuffers,
+//     const char *indent);
+void WriteReflection(const spv_reflect::ShaderModule &obj, bool flatten_cbuffers, std::ostream &os);
 
 namespace sp::vulkan {
 
@@ -299,8 +300,7 @@ namespace sp::vulkan {
                 if (!reflect) {
                     message << "trying to write a descriptor value that's not accessed by any shader";
                 } else {
-                    auto desc = reflect->GetDescriptorBinding(binding, set);
-                    StreamWriteDescriptorBinding(message, *desc, true, false, "  ");
+                    WriteReflection(*reflect, false, message);
                 }
 
                 Errorf("%s", message.str());

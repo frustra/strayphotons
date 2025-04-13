@@ -33,6 +33,8 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+void WriteReflection(const spv_reflect::ShaderModule &obj, bool flatten_cbuffers, std::ostream &os);
+
 namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
@@ -776,7 +778,8 @@ namespace sp::vulkan {
         if (perfTimer) perfTimer->EndFrame();
     }
 
-    CommandContextPtr DeviceContext::GetFrameCommandContext(CommandContextType type) {
+    CommandContextPtr DeviceContext::GetFrameCommandContext(render_graph::Resources &resources,
+        CommandContextType type) {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -803,7 +806,7 @@ namespace sp::vulkan {
             pool.list.push_back(cmd);
             pool.nextIndex++;
         }
-        cmd->Begin();
+        cmd->Begin(&resources);
         return cmd;
     }
 

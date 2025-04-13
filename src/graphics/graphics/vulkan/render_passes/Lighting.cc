@@ -374,8 +374,8 @@ namespace sp::vulkan::renderer {
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "shadow_map_mask.frag");
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarShadowMapSampleWidth.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
                 auto lastFrameID = resources.GetID("ShadowMap.Linear", false, 1);
                 if (lastFrameID != InvalidResource) {
@@ -587,10 +587,10 @@ namespace sp::vulkan::renderer {
                 } else {
                     cmd.SetShaders("screen_cover.vert", "lighting.frag");
                 }
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarLightingMode.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 1, voxelLayerCount);
-                cmd.SetShaderConstant(ShaderStage::Fragment, 2, CVarShadowMapSampleWidth.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 3, CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "MODE", CVarLightingMode.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "VOXEL_LAYERS", voxelLayerCount);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);

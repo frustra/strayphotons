@@ -39,8 +39,8 @@ namespace sp::vulkan::renderer {
             .Execute([this, drawIDs](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "lighting_transparent.frag");
 
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, CVarShadowMapSampleWidth.Get());
-                cmd.SetShaderConstant(ShaderStage::Fragment, 1, CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);

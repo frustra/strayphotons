@@ -44,7 +44,7 @@ namespace sp::vulkan::renderer {
                 if (comp > 1) {
                     swizzle = 0b11100100; // rgba
                 }
-                cmd.SetShaderConstant(ShaderStage::Fragment, 0, swizzle);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "SWIZZLE", swizzle);
 
                 cmd.SetImageView(0, 0, source);
                 cmd.Draw(3);

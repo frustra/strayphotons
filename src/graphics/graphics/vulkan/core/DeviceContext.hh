@@ -48,6 +48,10 @@ namespace sp::vulkan {
     class Shader;
     class Renderer;
 
+    namespace render_graph {
+        class Resources;
+    }
+
     class DeviceContext final : public sp::GraphicsContext {
     public:
         DeviceContext(GraphicsManager &graphics, bool enableValidationLayers = false);
@@ -90,7 +94,8 @@ namespace sp::vulkan {
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
-        CommandContextPtr GetFrameCommandContext(CommandContextType type = CommandContextType::General);
+        CommandContextPtr GetFrameCommandContext(render_graph::Resources &resources,
+            CommandContextType type = CommandContextType::General);
 
         // Returns a CommandContext that can be recorded on any thread, and isn't reset until its fence is signalled.
         CommandContextPtr GetFencedCommandContext(CommandContextType type = CommandContextType::General);

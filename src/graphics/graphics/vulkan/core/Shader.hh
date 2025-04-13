@@ -14,6 +14,7 @@
 
 namespace sp::vulkan {
     const uint32 MAX_PUSH_CONSTANT_SIZE = 128;
+    const uint32 MAX_PUSH_CONSTANT_BLOCKS = 1;
     const uint32 MAX_SPEC_CONSTANTS = 16;
     const uint32 MAX_BOUND_DESCRIPTOR_SETS = 4;
     const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
@@ -38,8 +39,10 @@ namespace sp::vulkan {
 
     class Shader : public NonCopyable {
     public:
-        Shader(const string &name, vk::UniqueShaderModule &&module, spv_reflect::ShaderModule &&reflection, Hash64 hash)
-            : name(name), hash(hash), reflection(std::move(reflection)), shaderModule(std::move(module)) {}
+        Shader(const string &name,
+            vk::UniqueShaderModule &&module,
+            spv_reflect::ShaderModule &&reflection,
+            Hash64 hash);
 
         const string name;
         const Hash64 hash; // SPIR-V buffer hash
@@ -48,10 +51,37 @@ namespace sp::vulkan {
             return *shaderModule;
         }
 
-        spv_reflect::ShaderModule reflection;
+        struct DescriptorSetBinding {
+            std::string name;
+            vk::DescriptorType type;
+            uint32 bindingId;
+            bool accessed;
+        };
+
+        struct DescriptorSet {
+            uint32 setId;
+            InlineVector<DescriptorSetBinding, MAX_BINDINGS_PER_DESCRIPTOR_SET> bindings;
+        };
+
+        struct SpecConstant {
+            std::string name;
+            uint32 constantId;
+        };
+
+        struct PushConstant {
+            uint32 offset;
+            uint32 size;
+        };
+
+        const InlineVector<DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> descriptorSets;
+        const InlineVector<SpecConstant, MAX_SPEC_CONSTANTS> specConstants;
+        const InlineVector<PushConstant, MAX_PUSH_CONSTANT_BLOCKS> pushConstants;
 
     private:
         vk::UniqueShaderModule shaderModule;
+        spv_reflect::ShaderModule reflection;
+
+        friend class PipelineLayout;
     };
 
     // Sets that represent all of the shaders bound to one pipeline, indexed by stage

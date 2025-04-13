@@ -15,6 +15,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     PerfTimer.cc
     Pipeline.cc
     RenderPass.cc
+    Shader.cc
     UniqueID.cc
     Util.cc
     VkCommon.cc
