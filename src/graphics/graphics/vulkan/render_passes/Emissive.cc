@@ -57,8 +57,10 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Emissive")
             .Build([&](PassBuilder &builder) {
-                builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
-                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                builder.Read("GBaseColor", Access::FragmentShaderSampleImage);
+                builder.Read("GNormalEmissive", Access::FragmentShaderSampleImage);
+                builder.Read("GRoughnessMetalic", Access::FragmentShaderSampleImage);
+                builder.Read("GDecals", Access::FragmentShaderSampleImage);
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.ReadUniform("ViewState");
 
@@ -143,10 +145,10 @@ namespace sp::vulkan::renderer {
                     RenderPhase phase("LaserContactPoints");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_contact.vert", "laser_contact.frag");
-                    cmd.SetImageView("gBuffer0", "GBuffer0");
-                    cmd.SetImageView("gBuffer1", "GBuffer1");
-                    cmd.SetUniformBuffer("ViewStates", "ViewState");
-                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
+                    cmd.SetImageView("gBaseColor", "GBaseColor");
+                    cmd.SetImageView("gNormalEmissive", "GNormalEmissive");
+                    cmd.SetImageView("gRoughnessMetalic", "GRoughnessMetalic");
+                    cmd.SetImageView("gDecals", "GDecals");
 
                     struct {
                         glm::vec3 radiance;

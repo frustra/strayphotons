@@ -21,9 +21,9 @@ layout(constant_id = 3) const int SHADOW_MAP_SAMPLE_COUNT = 3;
 #include "../lib/util.glsl"
 #include "../lib/voxel_shared.glsl"
 
-layout(binding = 0) uniform sampler2DArray gBuffer0;
-layout(binding = 1) uniform sampler2DArray gBuffer1;
-layout(binding = 2) uniform sampler2DArray gBuffer2;
+layout(binding = 0) uniform sampler2DArray gBaseColor;
+layout(binding = 1) uniform sampler2DArray gNormalEmissive;
+layout(binding = 2) uniform sampler2DArray gRoughnessMetalic;
 layout(binding = 3) uniform sampler2DArray gBufferDepth;
 layout(binding = 4) uniform sampler2D shadowMap;
 layout(binding = 5) uniform sampler3D voxelRadiance;
@@ -55,17 +55,16 @@ layout(location = 0) out vec4 outFragColor;
 void main() {
     ViewState view = views[gl_ViewID_OVR];
 
-    vec4 gb0 = texture(gBuffer0, vec3(inTexCoord, gl_ViewID_OVR));
-    vec4 gb1 = texture(gBuffer1, vec3(inTexCoord, gl_ViewID_OVR));
-    vec4 gb2 = texture(gBuffer2, vec3(inTexCoord, gl_ViewID_OVR));
+    vec3 baseColor = texture(gBaseColor, vec3(inTexCoord, gl_ViewID_OVR)).rgb;
+    vec3 normalEmissive = texture(gNormalEmissive, vec3(inTexCoord, gl_ViewID_OVR)).rgb;
+    vec2 roughnessMetalic = texture(gRoughnessMetalic, vec3(inTexCoord, gl_ViewID_OVR)).rg;
     float depth = texture(gBufferDepth, vec3(inTexCoord, gl_ViewID_OVR)).r;
 
-    vec3 baseColor = gb0.rgb;
-    float roughness = gb2.r;
-    float metalness = gb0.a;
-    float emissiveScale = gb1.b;
-    vec3 viewNormal = DecodeNormal(gb1.rg);
-    vec3 flatViewNormal = viewNormal; // DecodeNormal(gb1.ba);
+    float roughness = roughnessMetalic.r;
+    float metalness = roughnessMetalic.g;
+    float emissiveScale = normalEmissive.b;
+    vec3 viewNormal = DecodeNormal(normalEmissive.rg);
+    vec3 flatViewNormal = viewNormal; // DecodeNormal(normalEmissive.ba);
 
     vec3 emissive = emissiveScale * baseColor;
 

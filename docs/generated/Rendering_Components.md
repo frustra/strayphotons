@@ -17,6 +17,27 @@ It is usually preferred to load the model using the [gltf Prefab Script](Prefab_
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |
 | **metallic_roughness_override** | vec2 | [-1, -1] | Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used. |
+| **decals** | vector&lt;[EntityRef](#EntityRef-type)&gt; | [] | A list of decal entities that should apply to this renderable. |
+
+<div class="type_definition">
+
+### `EntityRef` Type
+
+An `EntityRef` is a stable reference to an entity via a string name. 
+
+Referenced entities do not need to exist at the point an `EntityRef` is defined.
+The reference will be automatically tracked and updated once the referenced entity is created.
+
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
+
+References can also be defined relative to their entity scope, the same as a `name` component.
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
+
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
+
+</div>
 
 <div class="type_definition">
 

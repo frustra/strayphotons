@@ -68,6 +68,7 @@ namespace sp::vulkan {
         float emissiveScale = 0;
         int32_t baseColorOverrideID = -1;
         int32_t metallicRoughnessOverrideID = -1;
+        glm::uvec4 decalIDs = glm::uvec4(~0u);
     };
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
@@ -76,6 +77,7 @@ namespace sp::vulkan {
         uint16_t metallicRoughnessTexID;
         uint16_t opticID = 0;
         float16_t emissiveScale = 0.0f;
+        glm::u8vec4 decalIDs = glm::u8vec4(0xFF);
     };
     static_assert(sizeof(GPUDrawParams) % sizeof(uint16_t) == 0, "std430 alignment");
 

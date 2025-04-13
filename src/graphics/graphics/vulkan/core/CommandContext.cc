@@ -69,8 +69,8 @@ namespace sp::vulkan {
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
-            clearValues[info.state.colorAttachmentCount].depthStencil = info.clearDepthStencil;
-            clearValueCount = info.state.colorAttachmentCount + 1;
+            clearValues[clearValueCount].depthStencil = info.clearDepthStencil;
+            clearValueCount++;
         }
 
         vk::RenderPassBeginInfo renderPassBeginInfo;

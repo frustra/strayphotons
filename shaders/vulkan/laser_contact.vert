@@ -23,8 +23,10 @@ INCLUDE_LAYOUT(binding = 0)
 INCLUDE_LAYOUT(binding = 1)
 #include "lib/exposure_state.glsl"
 
-layout(binding = 2) uniform sampler2DArray gBuffer0;
-layout(binding = 3) uniform sampler2DArray gBuffer1;
+layout(binding = 2) uniform sampler2DArray gBaseColor;
+layout(binding = 3) uniform sampler2DArray gNormalEmissive;
+layout(binding = 4) uniform sampler2DArray gRoughnessMetalic;
+layout(binding = 5) uniform usampler2DArray gDecals;
 
 layout(push_constant) uniform PushConstants {
     vec3 radiance;
@@ -53,8 +55,7 @@ void main() {
     pointScreenUV.y = 1 - pointScreenUV.y;
 
     // look up normal to define plane for generated quad
-    vec4 gb1 = texture(gBuffer1, vec3(pointScreenUV, gl_ViewID_OVR));
-    vec3 viewNormal = DecodeNormal(gb1.rg);
+    vec3 viewNormal = DecodeNormal(texture(gNormalEmissive, vec3(pointScreenUV, gl_ViewID_OVR)).rg);
     vec3 worldNormal = mat3(view.invViewMat) * viewNormal;
 
     vec3 offset1 = OrthogonalVec3(worldNormal) * radius;
@@ -81,6 +82,9 @@ void main() {
     outTexCoord = uvs[gl_VertexIndex];
 
     // contact radiance is determined by the material at the contact point
-    vec4 gb0 = texture(gBuffer0, vec3(pointScreenUV, gl_ViewID_OVR));
-    outRadiance = exposure * radiance * 100 * (gb0.rgb + 0.05) * gb0.a;
+    vec3 baseColor = texture(gBaseColor, vec3(pointScreenUV, gl_ViewID_OVR)).rgb;
+    uvec4 decalIDs = texture(gDecals, vec3(pointScreenUV, gl_ViewID_OVR));
+	// TODO: Apply decals to base color
+    float metallic = texture(gRoughnessMetalic, vec3(pointScreenUV, gl_ViewID_OVR)).g;
+    outRadiance = exposure * radiance * 100 * (baseColor + 0.05) * metallic;
 }

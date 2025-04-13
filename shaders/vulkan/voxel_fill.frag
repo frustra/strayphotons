@@ -29,6 +29,7 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) flat in int baseColorTexID;
 layout(location = 5) flat in int metallicRoughnessTexID;
 layout(location = 6) flat in float emissiveScale;
+layout(location = 7) flat in uvec4 decalIDs;
 
 layout(binding = 1) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -74,6 +75,7 @@ void main() {
     vec4 metallicRoughnessSample = texture(textures[metallicRoughnessTexID], inTexCoord);
     float roughness = metallicRoughnessSample.g;
     float metalness = metallicRoughnessSample.b;
+	// TODO: Apply decalIDs
 
     vec3 pixelRadiance = DirectShading(inWorldPos, baseColor.rgb, inNormal, inNormal, roughness, metalness);
     pixelRadiance += emissiveScale * baseColor.rgb;

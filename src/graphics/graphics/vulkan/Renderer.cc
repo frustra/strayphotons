@@ -153,7 +153,7 @@ namespace sp::vulkan {
             {
                 auto scope = graph.Scope("XRView");
                 auto view = AddXRView(lock);
-                if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
+                if (graph.HasResource("GBaseColor") && view) AddDeferredPasses(lock, view, elapsedTime);
             }
             AddXRSubmit(lock);
         }
@@ -161,7 +161,7 @@ namespace sp::vulkan {
         {
             auto scope = graph.Scope("FlatView");
             auto view = AddFlatView(lock);
-            if (graph.HasResource("GBuffer0") && view) {
+            if (graph.HasResource("GBaseColor") && view) {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph);
             } else {
@@ -270,17 +270,23 @@ namespace sp::vulkan {
                 desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
 
+                // sRGB is not supported on Nvidia, just sRGBA
                 desc.format = vk::Format::eR8G8B8A8Srgb;
-                builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(0, "GBaseColor", desc, {LoadOp::Clear, StoreOp::Store});
 
+                // RGB float16 texture not support, only RGBA
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(1, "GNormalEmissive", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR8Unorm;
-                builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+                desc.format = vk::Format::eR8G8Unorm;
+                builder.OutputColorAttachment(2, "GRoughnessMetalic", desc, {LoadOp::Clear, StoreOp::Store});
 
                 desc.format = depthStencilFormat;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
+
+                desc.format = vk::Format::eR8G8B8A8Uint;
+                desc.sampler = SamplerType::NearestClampEdge;
+                builder.OutputColorAttachment(3, "GDecals", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
                 builder.Read("ViewState", Access::VertexShaderReadUniform);
@@ -402,14 +408,20 @@ namespace sp::vulkan {
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
 
+                // sRGB is not supported on Nvidia, just sRGBA
                 desc.format = vk::Format::eR8G8B8A8Srgb;
-                builder.OutputColorAttachment(0, "GBuffer0", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(0, "GBaseColor", desc, {LoadOp::Clear, StoreOp::Store});
 
+                // RGB float16 texture not support, only RGBA
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
-                builder.OutputColorAttachment(1, "GBuffer1", desc, {LoadOp::Clear, StoreOp::Store});
+                builder.OutputColorAttachment(1, "GNormalEmissive", desc, {LoadOp::Clear, StoreOp::Store});
 
-                desc.format = vk::Format::eR8Unorm;
-                builder.OutputColorAttachment(2, "GBuffer2", desc, {LoadOp::Clear, StoreOp::Store});
+                desc.format = vk::Format::eR8G8Unorm;
+                builder.OutputColorAttachment(2, "GRoughnessMetalic", desc, {LoadOp::Clear, StoreOp::Store});
+
+                desc.format = vk::Format::eR8G8B8A8Uint;
+                desc.sampler = SamplerType::NearestClampEdge;
+                builder.OutputColorAttachment(3, "GDecals", desc, {LoadOp::Clear, StoreOp::Store});
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 

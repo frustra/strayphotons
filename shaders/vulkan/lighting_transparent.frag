@@ -50,6 +50,7 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
 layout(location = 5) flat in float emissiveScale;
+layout(location = 6) flat in uvec4 decalIDs;
 layout(location = 0, index = 0) out vec4 outFragColor;
 layout(location = 0, index = 1) out vec4 outTransparencyMask;
 

@@ -24,6 +24,7 @@ layout(location = 3) out vec2 outTexCoord;
 layout(location = 4) flat out int baseColorTexID;
 layout(location = 5) flat out int metallicRoughnessTexID;
 layout(location = 6) flat out float emissiveScale;
+layout(location = 7) flat out uvec4 decalIDs;
 
 #include "lib/draw_params.glsl"
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
@@ -51,6 +52,11 @@ void main() {
     baseColorTexID = int(drawParams[gl_BaseInstance].baseColorTexID);
     metallicRoughnessTexID = int(drawParams[gl_BaseInstance].metallicRoughnessTexID);
     emissiveScale = float(drawParams[gl_BaseInstance].emissiveScale);
+	uint encodedIDs = drawParams[gl_BaseInstance].decalIDs;
+	decalIDs.x = encodedIDs & 255u;
+	decalIDs.y = (encodedIDs >> 8) & 255u;
+	decalIDs.z = (encodedIDs >> 16) & 255u;
+	decalIDs.w = (encodedIDs >> 24) & 255u;
 
     gl_ViewportIndex = int(gl_InstanceIndex - gl_BaseInstance);
 }

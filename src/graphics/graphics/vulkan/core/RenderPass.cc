@@ -18,7 +18,7 @@ namespace sp::vulkan {
         vk::AttachmentReference depthAttachmentRef;
 
         auto &state = info.state;
-        Assert(state.colorAttachmentCount < MAX_COLOR_ATTACHMENTS, "too many attachments");
+        Assert(state.colorAttachmentCount <= MAX_COLOR_ATTACHMENTS, "too many attachments");
 
         for (uint32 i = 0; i < state.colorAttachmentCount; i++) {
             vk::AttachmentDescription &colorAttachment = attachments[i];
@@ -54,7 +54,7 @@ namespace sp::vulkan {
         }
 
         if (state.HasDepthStencil()) {
-            vk::AttachmentDescription &depthStencilAttachment = attachments[attachmentCount];
+            vk::AttachmentDescription &depthStencilAttachment = attachments[info.state.colorAttachmentCount];
             depthStencilAttachment.samples = vk::SampleCountFlagBits::e1;
             depthStencilAttachment.format = state.depthStencilFormat;
 
@@ -165,11 +165,11 @@ namespace sp::vulkan {
         }
 
         if (info.HasDepthStencil()) {
-            attachmentCount++;
             auto &image = *info.depthStencilAttachment;
-            attachments[info.state.colorAttachmentCount] = image;
+            attachments[attachmentCount] = image;
             extent.width = std::min(extent.width, image.Extent().width);
             extent.height = std::min(extent.height, image.Extent().height);
+            attachmentCount++;
         }
 
         if (extent.width == UINT32_MAX) extent.width = 1;
@@ -214,7 +214,7 @@ namespace sp::vulkan {
         if (info.HasDepthStencil()) {
             auto image = info.depthStencilAttachment;
             Assert(!!image, "render pass is missing depth image");
-            key.input.imageViewIDs[MAX_COLOR_ATTACHMENTS] = image->GetUniqueID();
+            key.input.imageViewIDs[info.state.colorAttachmentCount] = image->GetUniqueID();
         }
 
         auto &fb = framebuffers[key];

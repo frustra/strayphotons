@@ -559,9 +559,9 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Lighting")
             .Build([&](rg::PassBuilder &builder) {
-                auto gBuffer0 = builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
-                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
-                builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
+                auto gBaseColor = builder.Read("GBaseColor", Access::FragmentShaderSampleImage);
+                builder.Read("GNormalEmissive", Access::FragmentShaderSampleImage);
+                builder.Read("GRoughnessMetalic", Access::FragmentShaderSampleImage);
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
@@ -570,7 +570,8 @@ namespace sp::vulkan::renderer {
                     builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
                 }
 
-                auto desc = builder.DeriveImage(gBuffer0);
+                auto desc = builder.DeriveImage(gBaseColor);
+                // RGB float16 texture not support, only RGBA
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
                 builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
 
@@ -598,9 +599,9 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetImageView("gBuffer0", "GBuffer0");
-                cmd.SetImageView("gBuffer1", "GBuffer1");
-                cmd.SetImageView("gBuffer2", "GBuffer2");
+                cmd.SetImageView("gBaseColor", "GBaseColor");
+                cmd.SetImageView("gNormalEmissive", "GNormalEmissive");
+                cmd.SetImageView("gRoughnessMetalic", "GRoughnessMetalic");
                 cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
                 cmd.SetImageView("shadowMap", shadowDepth);
                 cmd.SetImageView("voxelRadiance", "Voxels.Radiance");

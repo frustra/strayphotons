@@ -23,10 +23,12 @@ layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) flat in int baseColorTexID;
 layout(location = 4) flat in int metallicRoughnessTexID;
 layout(location = 5) flat in float emissiveScale;
+layout(location = 6) flat in uvec4 decalIDs;
 
-layout(location = 0) out vec4 gBuffer0; // rgba8srgb
-layout(location = 1) out vec4 gBuffer1; // rgba16f
-layout(location = 2) out vec4 gBuffer2; // r8unorm
+layout(location = 0) out vec4 gBaseColor; // rgba8srgb
+layout(location = 1) out vec4 gNormalEmissive; // rgba16f
+layout(location = 2) out vec2 gRoughnessMetalic; // rg8unorm
+layout(location = 3) out uvec4 gDecals; // rgba8uint
 
 void main() {
     vec4 baseColor = texture(textures[baseColorTexID], inTexCoord);
@@ -35,9 +37,10 @@ void main() {
     float roughness = metallicRoughnessSample.g;
     float metallic = metallicRoughnessSample.b;
 
-    gBuffer0.rgb = baseColor.rgb;
-    gBuffer0.a = metallic;
-    gBuffer1.rg = EncodeNormal(inNormal);
-    gBuffer1.b = emissiveScale;
-    gBuffer2.r = roughness;
+    gBaseColor.rgba = baseColor.rgba;
+    gNormalEmissive.rg = EncodeNormal(inNormal);
+    gNormalEmissive.b = emissiveScale;
+    gRoughnessMetalic.r = roughness;
+	gRoughnessMetalic.g = metallic;
+	gDecals.rgba = decalIDs;
 }

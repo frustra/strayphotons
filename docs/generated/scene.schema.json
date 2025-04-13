@@ -747,6 +747,23 @@
 								"minItems": 4,
 								"type": "array"
 							},
+							"decals": {
+								"anyOf": [
+									{
+										"description": "An entity name in the form `<scene_name>:<entity_name>`",
+										"type": "string"
+									},
+									{
+										"items": {
+											"description": "An entity name in the form `<scene_name>:<entity_name>`",
+											"type": "string"
+										},
+										"type": "array"
+									}
+								],
+								"default": [],
+								"description": "A list of decal entities that should apply to this renderable."
+							},
 							"emissive": {
 								"default": 0,
 								"description": "Emissive multiplier to turn this model into a light source",

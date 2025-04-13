@@ -54,13 +54,15 @@ namespace ecs {
             EntityRef entity;
             glm::mat4 inverseBindPose;
         };
-        vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
+        std::vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
         sp::color_alpha_t colorOverride = glm::vec4(-1);
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
+
+        std::vector<EntityRef> decals;
 
         bool IsVisible(VisibilityMask viewMask) const {
             return (visibility & viewMask) == viewMask;
@@ -94,7 +96,10 @@ It is usually preferred to load the model using the [gltf Prefab Script](Prefab_
         StructField::New("metallic_roughness_override",
             "Override the mesh's metallic and roughness material properties. "
             "Values are in the range 0.0 to 1.0. -1 means the original material is used.",
-            &Renderable::metallicRoughnessOverride)});
+            &Renderable::metallicRoughnessOverride),
+        StructField::New("decals",
+            "A list of decal entities that should apply to this renderable.",
+            &Renderable::decals)});
 
     template<>
     bool StructMetadata::Load<Renderable>(Renderable &dst, const picojson::value &src);

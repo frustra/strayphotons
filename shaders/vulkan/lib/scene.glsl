@@ -29,6 +29,7 @@ struct RenderableEntity {
     float emissiveScale;
     int baseColorOverrideID;
     int metallicRoughnessOverrideID;
+	uvec4 decalIDs;
 };
 
 struct SceneVertex {
