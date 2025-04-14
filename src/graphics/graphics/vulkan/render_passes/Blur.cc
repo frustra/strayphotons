@@ -46,7 +46,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaders("screen_cover.vert", "gaussian_blur.frag");
                 }
 
-                cmd.SetImageView(0, 0, source);
+                cmd.SetImageView("sourceTex", source);
                 cmd.PushConstants(constants);
                 cmd.Draw(3);
             });

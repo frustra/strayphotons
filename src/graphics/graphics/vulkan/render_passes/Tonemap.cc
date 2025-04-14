@@ -22,7 +22,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "tonemap.frag");
-                cmd.SetImageView(0, 0, resources.GetImageView(resources.LastOutputID()));
+                cmd.SetImageView("luminanceTex", resources.LastOutputID());
                 cmd.Draw(3);
             });
     }

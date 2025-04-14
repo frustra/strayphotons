@@ -56,14 +56,14 @@ namespace sp::vulkan::renderer {
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
 
-                cmd.SetImageView(0, 0, resources.GetImageView("ShadowMap.Linear"));
-                cmd.SetImageView(0, 1, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 2, resources.GetImageView("Voxels.Normals"));
+                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels.Normals");
 
-                cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
-                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
+                cmd.SetStorageBuffer("ExposureState", "ExposureState");
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
+                cmd.SetUniformBuffer("LightData", "LightState");
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

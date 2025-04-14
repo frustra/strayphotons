@@ -35,9 +35,9 @@ namespace sp::vulkan::renderer {
             })
             .Execute([sourceID, blur1, blur2](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "bloom_combine.frag");
-                cmd.SetImageView(0, 0, resources.GetImageView(sourceID));
-                cmd.SetImageView(0, 1, resources.GetImageView(blur1));
-                cmd.SetImageView(0, 2, resources.GetImageView(blur2));
+                cmd.SetImageView("luminanceTex", sourceID);
+                cmd.SetImageView("blurTex1", blur1);
+                cmd.SetImageView("blurTex2", blur2);
                 cmd.Draw(3);
             });
     }

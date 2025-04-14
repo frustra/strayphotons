@@ -34,7 +34,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "gamma_correct.frag");
-                cmd.SetImageView(0, 0, res.GetImageView("LinearLuminance"));
+                cmd.SetImageView("tex", "LinearLuminance");
                 cmd.Draw(3);
             });
 
@@ -53,7 +53,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/edge_detection.frag");
-                cmd.SetImageView(0, 0, res.GetImageView("luminance"));
+                cmd.SetImageView("gammaCorrLumaTex", "luminance");
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eAlways);
@@ -62,7 +62,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilFailOp(vk::StencilOp::eKeep);
                 cmd.SetStencilDepthFailOp(vk::StencilOp::eKeep);
                 cmd.SetStencilPassOp(vk::StencilOp::eReplace);
-                cmd.SetUniformBuffer(0, 10, res.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.Draw(3);
             });
 
@@ -78,9 +78,9 @@ namespace sp::vulkan::renderer {
             })
             .Execute([this](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending_weights.frag");
-                cmd.SetImageView(0, 0, res.GetImageView("edges"));
-                cmd.SetImageView(0, 1, areaTex->Get());
-                cmd.SetImageView(0, 2, searchTex->Get());
+                cmd.SetImageView("edgesTex", "edges");
+                cmd.SetImageView("areaTex", areaTex->Get());
+                cmd.SetImageView("searchTex", searchTex->Get());
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
@@ -90,7 +90,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilDepthFailOp(vk::StencilOp::eKeep);
                 cmd.SetStencilPassOp(vk::StencilOp::eReplace);
                 cmd.SetStencilWriteMask(vk::StencilFaceFlagBits::eFront, 0);
-                cmd.SetUniformBuffer(0, 10, res.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.Draw(3);
             });
 
@@ -105,9 +105,9 @@ namespace sp::vulkan::renderer {
             })
             .Execute([sourceID](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending.frag");
-                cmd.SetImageView(0, 0, res.GetImageView(sourceID));
-                cmd.SetImageView(0, 1, res.GetImageView("weights"));
-                cmd.SetUniformBuffer(0, 10, res.GetBuffer("ViewState"));
+                cmd.SetImageView("colorTex", sourceID);
+                cmd.SetImageView("weightTex", "weights");
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.Draw(3);
             });
     }

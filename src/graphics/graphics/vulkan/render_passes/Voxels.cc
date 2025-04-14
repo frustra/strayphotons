@@ -351,7 +351,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaders("voxel_fill.vert", "voxel_fill.frag");
 
                 GPUViewState lightViews[] = {{orthoAxes[0]}, {orthoAxes[1]}, {orthoAxes[2]}};
-                cmd.UploadUniformData(0, 0, lightViews, 3);
+                cmd.UploadUniformData("ViewStates", lightViews, 3);
 
                 std::array<vk::Rect2D, 3> viewports, scissors;
                 for (size_t i = 0; i < viewports.size(); i++) {
@@ -362,20 +362,20 @@ namespace sp::vulkan::renderer {
                 cmd.SetScissorArray(scissors);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
 
-                cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
-                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
-                cmd.SetImageView(0, 3, resources.GetImageView("ShadowMap.Linear"));
-                cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
-                cmd.SetImageView(0, 5, resources.GetImageMipView("Radiance", 0));
-                cmd.SetImageView(0, 6, resources.GetImageMipView("Normals", 0));
-                cmd.SetStorageBuffer(0, 7, resources.GetBuffer("FragmentListMetadata"));
-                cmd.SetStorageBuffer(0, 8, resources.GetBuffer("FragmentLists"));
+                cmd.SetUniformBuffer("VoxelStateUniform", resources.GetBuffer("VoxelState"));
+                cmd.SetUniformBuffer("LightData", "LightState");
+                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
+                cmd.SetImageView("radianceOut", resources.GetImageMipView("Radiance", 0));
+                cmd.SetImageView("normalsOut", resources.GetImageMipView("Normals", 0));
+                cmd.SetStorageBuffer("VoxelFragmentListMetadata", "FragmentListMetadata");
+                cmd.SetStorageBuffer("VoxelFragmentList", "FragmentLists");
 
                 auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
                 if (lastVoxelStateID != InvalidResource) {
-                    cmd.SetUniformBuffer(0, 9, resources.GetBuffer(lastVoxelStateID));
+                    cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                 } else {
-                    cmd.SetUniformBuffer(0, 9, resources.GetBuffer("VoxelState"));
+                    cmd.SetUniformBuffer("PreviousVoxelStateUniform", "VoxelState");
                 }
                 for (auto &voxelLayer : VoxelLayers[voxelFillIndex]) {
                     auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, false, 1);
@@ -413,19 +413,17 @@ namespace sp::vulkan::renderer {
                     cmd.SetComputeShader("voxel_merge.comp");
                     cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_INDEX", i);
 
-                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
-                    cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
+                    cmd.SetImageView("voxelRadiance", resources.GetImageMipView("Radiance", 0));
+                    cmd.SetImageView("voxelNormals", resources.GetImageMipView("Normals", 0));
 
                     auto metadata = resources.GetBuffer("FragmentListMetadata");
-                    cmd.SetStorageBuffer(0,
-                        2,
+                    cmd.SetStorageBuffer("VoxelFragmentListMetadata",
                         metadata,
                         i * sizeof(GPUVoxelFragmentList),
                         sizeof(GPUVoxelFragmentList));
 
-                    cmd.SetStorageBuffer(0,
-                        3,
-                        resources.GetBuffer("FragmentLists"),
+                    cmd.SetStorageBuffer("VoxelFragmentList",
+                        "FragmentLists",
                         fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -447,19 +445,21 @@ namespace sp::vulkan::renderer {
                 cmd.SetComputeShader("voxel_merge_serial.comp");
                 cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_COUNT", fragmentListCount);
 
-                cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", 0));
-                cmd.SetImageView(0, 1, resources.GetImageMipView("Normals", 0));
+                cmd.SetImageView("voxelRadiance", resources.GetImageMipView("Radiance", 0));
+                cmd.SetImageView("voxelNormals", resources.GetImageMipView("Normals", 0));
 
                 auto metadata = resources.GetBuffer("FragmentListMetadata");
-                cmd.SetStorageBuffer(0, 2, metadata, i * sizeof(GPUVoxelFragmentList), sizeof(GPUVoxelFragmentList));
+                cmd.SetStorageBuffer("VoxelFragmentListMetadata",
+                    metadata,
+                    i * sizeof(GPUVoxelFragmentList),
+                    sizeof(GPUVoxelFragmentList));
 
-                cmd.SetStorageBuffer(0,
-                    3,
-                    resources.GetBuffer("FragmentLists"),
+                cmd.SetStorageBuffer("VoxelFragmentList",
+                    "FragmentLists",
                     fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                     fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
-                cmd.SetImageView(0, 4, resources.GetImageMipView("FillCounters", 0));
+                cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
 
                 cmd.Dispatch(1, 1, 1);
             });
@@ -475,13 +475,13 @@ namespace sp::vulkan::renderer {
                 .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_mipmap.comp");
 
-                    cmd.SetImageView(0, 0, resources.GetImageMipView("Radiance", i - 1));
-                    cmd.SetSampler(0, 0, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
-                    cmd.SetImageView(0, 1, resources.GetImageMipView("Radiance", i));
+                    cmd.SetImageView("voxelRadianceIn", resources.GetImageMipView("Radiance", i - 1));
+                    cmd.SetSampler("voxelRadianceIn", cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
+                    cmd.SetImageView("voxelRadianceOut", resources.GetImageMipView("Radiance", i));
 
-                    cmd.SetImageView(0, 2, resources.GetImageMipView("Normals", i - 1));
-                    cmd.SetSampler(0, 2, cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
-                    cmd.SetImageView(0, 3, resources.GetImageMipView("Normals", i));
+                    cmd.SetImageView("voxelNormalsIn", resources.GetImageMipView("Normals", i - 1));
+                    cmd.SetSampler("voxelNormalsIn", cmd.Device().GetSampler(SamplerType::TrilinearClampEdge));
+                    cmd.SetImageView("voxelNormalsOut", resources.GetImageMipView("Normals", i));
 
                     cmd.SetShaderConstant(ShaderStage::Compute, "MIP_LEVEL", i);
 
@@ -630,14 +630,13 @@ namespace sp::vulkan::renderer {
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("voxel_fill_layer.comp");
 
-                cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
                 auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
-                cmd.SetStorageBuffer(0, 1, metadata, 0, sizeof(GPUVoxelFragmentList));
+                cmd.SetStorageBuffer("VoxelFragmentListMetadata", metadata, 0, sizeof(GPUVoxelFragmentList));
 
-                cmd.SetStorageBuffer(0,
-                    2,
-                    resources.GetBuffer("Voxels.FragmentLists"),
+                cmd.SetStorageBuffer("VoxelFragmentList",
+                    "Voxels.FragmentLists",
                     fragmentListSizes[0].offset * sizeof(GPUVoxelFragment),
                     fragmentListSizes[0].capacity * sizeof(GPUVoxelFragment));
 
@@ -666,18 +665,16 @@ namespace sp::vulkan::renderer {
                     cmd.SetComputeShader("voxel_merge_layer.comp");
                     cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_INDEX", i);
 
-                    // cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                    cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
                     auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
-                    cmd.SetStorageBuffer(0,
-                        1,
+                    cmd.SetStorageBuffer("VoxelFragmentListMetadata",
                         metadata,
                         i * sizeof(GPUVoxelFragmentList),
                         sizeof(GPUVoxelFragmentList));
 
-                    cmd.SetStorageBuffer(0,
-                        2,
-                        resources.GetBuffer("Voxels.FragmentLists"),
+                    cmd.SetStorageBuffer("VoxelFragmentList",
+                        "Voxels.FragmentLists",
                         fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -706,14 +703,16 @@ namespace sp::vulkan::renderer {
                 cmd.SetComputeShader("voxel_merge_layer_serial.comp");
                 cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_COUNT", fragmentListCount);
 
-                cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
                 auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
-                cmd.SetStorageBuffer(0, 1, metadata, i * sizeof(GPUVoxelFragmentList), sizeof(GPUVoxelFragmentList));
+                cmd.SetStorageBuffer("VoxelFragmentListMetadata",
+                    metadata,
+                    i * sizeof(GPUVoxelFragmentList),
+                    sizeof(GPUVoxelFragmentList));
 
-                cmd.SetStorageBuffer(0,
-                    2,
-                    resources.GetBuffer("Voxels.FragmentLists"),
+                cmd.SetStorageBuffer("VoxelFragmentList",
+                    "Voxels.FragmentLists",
                     fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                     fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -747,13 +746,13 @@ namespace sp::vulkan::renderer {
                         layer == 1 ? CVarLightLowPass.Get() : 0.0f);
                     cmd.SetShaderConstant(ShaderStage::Compute, "LAYER_INDEX", (uint32_t)layer);
 
-                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                    cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
                     auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
                     if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
-                        cmd.SetUniformBuffer(0, 1, resources.GetBuffer(lastVoxelStateID));
+                        cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                     } else {
-                        cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
+                        cmd.SetUniformBuffer("PreviousVoxelStateUniform", "VoxelState");
                     }
 
                     for (size_t i = 0; i < directions.size(); i++) {
@@ -843,13 +842,13 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 1, resources.GetBuffer("VoxelState"));
-                cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
-                cmd.SetImageView(0, 3, resources.GetImageView(resources.LastOutputID()));
-                cmd.SetImageView(0, 4, resources.GetImageView("Voxels.FillCounters"));
-                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
+                cmd.SetStorageBuffer("ExposureState", "ExposureState");
+                cmd.SetImageView("overlayTex", resources.LastOutputID());
+                cmd.SetImageView("fillCounters", "Voxels.FillCounters");
+                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels.Normals");
 
                 for (auto &voxelLayer : VoxelLayers[debugMipLayer]) {
                     auto layerView = resources.GetImageView(voxelLayer.fullName);

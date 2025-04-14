@@ -379,19 +379,19 @@ namespace sp::vulkan::renderer {
 
                 auto lastFrameID = resources.GetID("ShadowMap.Linear", false, 1);
                 if (lastFrameID != InvalidResource) {
-                    cmd.SetImageView(0, 0, resources.GetImageView(lastFrameID));
+                    cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
-                    cmd.SetImageView(0, 0, scene.textures.GetSinglePixel(glm::vec4(1)));
+                    cmd.SetImageView("shadowMap", scene.textures.GetSinglePixel(glm::vec4(1)));
                 }
 
                 auto lastStateID = resources.GetID("LightState", false, 1);
                 if (lastStateID != InvalidResource) {
-                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer(lastStateID));
+                    cmd.SetUniformBuffer("PreviousLightData", lastStateID);
                 } else {
-                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer("LightState"));
+                    cmd.SetUniformBuffer("PreviousLightData", "LightState");
                 }
 
-                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
+                cmd.SetUniformBuffer("LightData", "LightState");
                 cmd.SetYDirection(YDirection::Down);
 
                 struct {
@@ -426,7 +426,7 @@ namespace sp::vulkan::renderer {
 
                 for (uint32_t i = 0; i < lights.size(); i++) {
                     GPUViewState lightViews[] = {{views[i]}, {}};
-                    cmd.UploadUniformData(0, 0, lightViews, 2);
+                    cmd.UploadUniformData("ViewStates", lightViews, 2);
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
@@ -462,8 +462,8 @@ namespace sp::vulkan::renderer {
 
                 for (uint32_t i = 0; i < lights.size(); i++) {
                     GPUViewState lightViews[] = {{views[i]}, {}};
-                    cmd.UploadUniformData(0, 0, lightViews, 2);
-                    cmd.SetStorageBuffer(0, 1, visBuffer);
+                    cmd.UploadUniformData("ViewStates", lightViews, 2);
+                    cmd.SetStorageBuffer("OpticVisibility", visBuffer);
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
@@ -598,18 +598,18 @@ namespace sp::vulkan::renderer {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                cmd.SetImageView(0, 0, resources.GetImageView("GBuffer0"));
-                cmd.SetImageView(0, 1, resources.GetImageView("GBuffer1"));
-                cmd.SetImageView(0, 2, resources.GetImageView("GBuffer2"));
-                cmd.SetImageView(0, 3, resources.GetImageDepthView("GBufferDepthStencil"));
-                cmd.SetImageView(0, 4, resources.GetImageView(shadowDepth));
-                cmd.SetImageView(0, 5, resources.GetImageView("Voxels.Radiance"));
-                cmd.SetImageView(0, 6, resources.GetImageView("Voxels.Normals"));
+                cmd.SetImageView("gBuffer0", "GBuffer0");
+                cmd.SetImageView("gBuffer1", "GBuffer1");
+                cmd.SetImageView("gBuffer2", "GBuffer2");
+                cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
+                cmd.SetImageView("shadowMap", shadowDepth);
+                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels.Normals");
 
-                cmd.SetUniformBuffer(0, 8, resources.GetBuffer("VoxelState"));
-                cmd.SetStorageBuffer(0, 9, resources.GetBuffer("ExposureState"));
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
-                cmd.SetUniformBuffer(0, 11, resources.GetBuffer("LightState"));
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
+                cmd.SetStorageBuffer("ExposureState", "ExposureState");
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
+                cmd.SetUniformBuffer("LightData", "LightState");
 
                 cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
 

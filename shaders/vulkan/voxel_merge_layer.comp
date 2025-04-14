@@ -12,7 +12,7 @@ layout(local_size_x = 16, local_size_y = 16) in;
 #include "../lib/types_common.glsl"
 #include "../lib/voxel_shared.glsl"
 
-layout(binding = 0) uniform G_VoxelState {
+layout(binding = 0) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 

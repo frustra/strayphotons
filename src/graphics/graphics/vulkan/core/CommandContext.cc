@@ -174,10 +174,10 @@ namespace sp::vulkan {
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
         SetShaders("screen_cover.vert", "screen_cover.frag");
         if (view) {
-            SetImageView(0, 0, view);
             if (view->ViewType() == vk::ImageViewType::e2DArray) {
                 SetSingleShader(ShaderStage::Fragment, "screen_cover_array.frag");
             }
+            SetImageView("tex", view);
         }
         Draw(3); // vertices are defined as constants in the vertex shader
     }
@@ -275,33 +275,34 @@ namespace sp::vulkan {
         spec.set.reset();
         SetDirty(DirtyFlags::Pipeline);
 
-        auto shader = device.GetShader(slot);
-        if (shader) {
-            for (auto &set : shader->descriptorSets) {
-                for (auto &binding : set.bindings) {
-                    if (!binding.accessed) continue;
-                    // if (binding.type != vk::DescriptorType::eUniformBuffer) continue;
+        // TODO: Move autobinding to FlushDescriptorSets
+        // auto shader = device.GetShader(slot);
+        // if (shader) {
+        //     for (auto &set : shader->descriptorSets) {
+        //         for (auto &binding : set.bindings) {
+        //             if (!binding.accessed) continue;
+        //             // if (binding.type != vk::DescriptorType::eUniformBuffer) continue;
 
-                    if (starts_with(binding.name, "G_")) {
-                        Assertf(resources, "Render Graph resources not set on CommandContext");
-                        auto id = resources->GetID(binding.name.substr(2), false);
-                        if (binding.type == vk::DescriptorType::eUniformBuffer) {
-                            if (id == render_graph::InvalidResource) {
-                                Warnf("Shader(%s): tried to autobind missing resource: %s",
-                                    shader->name,
-                                    binding.name.substr(2));
-                            }
-                            SetUniformBuffer(set.setId, binding.bindingId, resources->GetBuffer(id));
-                        } else {
-                            Warnf("Shader(%s): autobinding type on %s is unimplemented: %s",
-                                shader->name,
-                                binding.name,
-                                binding.type);
-                        }
-                    }
-                }
-            }
-        }
+        //             if (starts_with(binding.name, "G_")) {
+        //                 Assert(resources, "Render Graph resources not set on CommandContext");
+        //                 auto id = resources->GetID(binding.name.substr(2), false);
+        //                 if (binding.type == vk::DescriptorType::eUniformBuffer) {
+        //                     if (id == render_graph::InvalidResource) {
+        //                         Warnf("Shader(%s): tried to autobind missing resource: %s",
+        //                             shader->name,
+        //                             binding.name.substr(2));
+        //                     }
+        //                     SetUniformBuffer(set.setId, binding.bindingId, resources->GetBuffer(id));
+        //                 } else {
+        //                     Warnf("Shader(%s): autobinding type on %s is unimplemented: %s",
+        //                         shader->name,
+        //                         binding.name,
+        //                         binding.type);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 
     void CommandContext::SetSingleShader(ShaderStage stage, string_view name) {
@@ -351,6 +352,27 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    void CommandContext::SetSampler(string_view bindingName, const vk::Sampler &sampler) {
+        std::shared_ptr<Shader> lastShader;
+        for (auto stage : magic_enum::enum_values<ShaderStage>()) {
+            auto &slot = pipelineInput.state.shaders[stage];
+            auto shader = device.GetShader(slot);
+            if (!shader) continue;
+            lastShader = shader;
+            for (auto &set : shader->descriptorSets) {
+                for (auto &binding : set.bindings) {
+                    if (binding.type != vk::DescriptorType::eCombinedImageSampler) continue;
+                    if (binding.name == bindingName) {
+                        SetSampler(set.setId, binding.bindingId, sampler);
+                        return;
+                    }
+                }
+            }
+        }
+        Assert(lastShader, "SetSampler called with no shader bound");
+        Errorf("SetSampler binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
+    }
+
     void CommandContext::SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view) {
         SetImageView(set, binding, view.get());
     }
@@ -368,6 +390,43 @@ namespace sp::vulkan {
 
         auto defaultSampler = view->DefaultSampler();
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
+    }
+
+    void CommandContext::SetImageView(string_view bindingName, const ImageViewPtr &view) {
+        SetImageView(bindingName, view.get());
+    }
+
+    void CommandContext::SetImageView(string_view bindingName, const ImageView *view) {
+        std::shared_ptr<Shader> lastShader;
+        for (auto stage : magic_enum::enum_values<ShaderStage>()) {
+            auto &slot = pipelineInput.state.shaders[stage];
+            auto shader = device.GetShader(slot);
+            if (!shader) continue;
+            lastShader = shader;
+            for (auto &set : shader->descriptorSets) {
+                for (auto &binding : set.bindings) {
+                    if (binding.type != vk::DescriptorType::eStorageImage &&
+                        binding.type != vk::DescriptorType::eCombinedImageSampler)
+                        continue;
+                    if (binding.name == bindingName) {
+                        SetImageView(set.setId, binding.bindingId, view);
+                        return;
+                    }
+                }
+            }
+        }
+        Assert(lastShader, "SetImageView called with no shader bound");
+        Errorf("SetImageView binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
+    }
+
+    void CommandContext::SetImageView(string_view bindingName, render_graph::ResourceID resourceID) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetImageView(bindingName, resources->GetImageView(resourceID));
+    }
+
+    void CommandContext::SetImageView(string_view bindingName, string_view resourceName) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetImageView(bindingName, resources->GetImageView(resourceName));
     }
 
     static void checkBufferOffsets(const BufferPtr &buffer, vk::DeviceSize offset, vk::DeviceSize range) {
@@ -405,6 +464,46 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    void CommandContext::SetUniformBuffer(string_view bindingName,
+        const BufferPtr &buffer,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        std::shared_ptr<Shader> lastShader;
+        for (auto stage : magic_enum::enum_values<ShaderStage>()) {
+            auto &slot = pipelineInput.state.shaders[stage];
+            auto shader = device.GetShader(slot);
+            if (!shader) continue;
+            lastShader = shader;
+            for (auto &set : shader->descriptorSets) {
+                for (auto &binding : set.bindings) {
+                    if (binding.type != vk::DescriptorType::eUniformBuffer) continue;
+                    if (binding.name == bindingName) {
+                        SetUniformBuffer(set.setId, binding.bindingId, buffer, offset, range);
+                        return;
+                    }
+                }
+            }
+        }
+        Assert(lastShader, "SetUniformBuffer called with no shader bound");
+        Errorf("SetUniformBuffer binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
+    }
+
+    void CommandContext::SetUniformBuffer(string_view bindingName,
+        string_view resourceName,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetUniformBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
+    }
+
+    void CommandContext::SetUniformBuffer(string_view bindingName,
+        render_graph::ResourceID resourceID,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetUniformBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
+    }
+
     void CommandContext::SetStorageBuffer(uint32 set,
         uint32 binding,
         const BufferPtr &buffer,
@@ -432,6 +531,46 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
+    void CommandContext::SetStorageBuffer(string_view bindingName,
+        const BufferPtr &buffer,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        std::shared_ptr<Shader> lastShader;
+        for (auto stage : magic_enum::enum_values<ShaderStage>()) {
+            auto &slot = pipelineInput.state.shaders[stage];
+            auto shader = device.GetShader(slot);
+            if (!shader) continue;
+            lastShader = shader;
+            for (auto &set : shader->descriptorSets) {
+                for (auto &binding : set.bindings) {
+                    if (binding.type != vk::DescriptorType::eStorageBuffer) continue;
+                    if (binding.name == bindingName) {
+                        SetStorageBuffer(set.setId, binding.bindingId, buffer, offset, range);
+                        return;
+                    }
+                }
+            }
+        }
+        Assert(lastShader, "SetStorageBuffer called with no shader bound");
+        Errorf("SetStorageBuffer binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
+    }
+
+    void CommandContext::SetStorageBuffer(string_view bindingName,
+        string_view resourceName,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetStorageBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
+    }
+
+    void CommandContext::SetStorageBuffer(string_view bindingName,
+        render_graph::ResourceID resourceID,
+        vk::DeviceSize offset,
+        vk::DeviceSize range) {
+        Assert(resources, "Render Graph resources not set on CommandContext");
+        SetStorageBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
+    }
+
     BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
         BufferDesc desc;
         desc.layout = size;
@@ -439,6 +578,16 @@ namespace sp::vulkan {
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
         SetUniformBuffer(set, binding, buffer);
+        return buffer;
+    }
+
+    BufferPtr CommandContext::AllocUniformBuffer(string_view bindingName, vk::DeviceSize size) {
+        BufferDesc desc;
+        desc.layout = size;
+        desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+        desc.residency = Residency::CPU_TO_GPU;
+        auto buffer = device.GetBuffer(desc);
+        SetUniformBuffer(bindingName, buffer);
         return buffer;
     }
 

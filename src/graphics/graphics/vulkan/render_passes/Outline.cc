@@ -27,7 +27,7 @@ namespace sp::vulkan::renderer {
             .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "solid_color.frag");
                 cmd.PushConstants(glm::vec4(1, 1, 0.5, 0.2));
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.SetDepthTest(false, false);
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
 
@@ -58,7 +58,7 @@ namespace sp::vulkan::renderer {
             .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "solid_color.frag");
                 cmd.PushConstants(glm::vec4(glm::vec3(4, 10, 0.5), 1));
-                cmd.SetUniformBuffer(0, 10, resources.GetBuffer("ViewState"));
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.SetDepthTest(false, false);
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
 

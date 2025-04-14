@@ -39,7 +39,8 @@ namespace sp::vulkan {
 
     namespace render_graph {
         class Resources;
-    }
+        typedef uint32 ResourceID;
+    } // namespace render_graph
 
     struct ImageBarrierInfo {
         uint32 baseMipLevel = 0;
@@ -372,12 +373,29 @@ namespace sp::vulkan {
 
         void SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view);
         void SetImageView(uint32 set, uint32 binding, const ImageView *view);
+        void SetImageView(string_view bindingName, const ImageViewPtr &view);
+        void SetImageView(string_view bindingName, const ImageView *view);
+        void SetImageView(string_view bindingName, render_graph::ResourceID resourceID);
+        void SetImageView(string_view bindingName, string_view resourceName);
         void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
+        void SetSampler(string_view bindingName, const vk::Sampler &sampler);
 
         // Binds a buffer as to a uniform descriptor. Defaults to the whole buffer.
         void SetUniformBuffer(uint32 set,
             uint32 binding,
             const BufferPtr &buffer,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+        void SetUniformBuffer(string_view bindingName,
+            const BufferPtr &buffer,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+        void SetUniformBuffer(string_view bindingName,
+            render_graph::ResourceID resourceID,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+        void SetUniformBuffer(string_view bindingName,
+            string_view resourceName,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
 
@@ -387,9 +405,22 @@ namespace sp::vulkan {
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
+        void SetStorageBuffer(string_view bindingName,
+            const BufferPtr &buffer,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+        void SetStorageBuffer(string_view bindingName,
+            render_graph::ResourceID resourceID,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
+        void SetStorageBuffer(string_view bindingName,
+            string_view resourceName,
+            vk::DeviceSize offset = 0,
+            vk::DeviceSize range = 0);
 
         // Buffer is stored in a pool for this frame, and reused in later frames.
         BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);
+        BufferPtr AllocUniformBuffer(string_view bindingName, vk::DeviceSize size);
 
         // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
         template<typename T>
@@ -401,6 +432,12 @@ namespace sp::vulkan {
         template<typename T>
         void UploadUniformData(uint32 set, uint32 binding, const T *data, uint32 count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
+            buffer->CopyFrom(data, count);
+        }
+
+        template<typename T>
+        void UploadUniformData(string_view bindingName, const T *data, uint32 count = 1) {
+            auto buffer = AllocUniformBuffer(bindingName, sizeof(T) * count);
             buffer->CopyFrom(data, count);
         }
 
