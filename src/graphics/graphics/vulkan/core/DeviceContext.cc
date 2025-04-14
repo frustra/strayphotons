@@ -1140,7 +1140,7 @@ namespace sp::vulkan {
 
                     image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
                     factorCmd->SetComputeShader("texture_factor.comp");
-                    factorCmd->SetImageView(0, 0, factorView);
+                    factorCmd->SetImageView("texture", factorView);
 
                     struct {
                         glm::vec4 factor;

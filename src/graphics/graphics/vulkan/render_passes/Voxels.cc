@@ -666,7 +666,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetComputeShader("voxel_merge_layer.comp");
                     cmd.SetShaderConstant(ShaderStage::Compute, "FRAGMENT_LIST_INDEX", i);
 
-                    // cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
+                    cmd.SetUniformBuffer(0, 0, resources.GetBuffer("VoxelState"));
 
                     auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
                     cmd.SetStorageBuffer(0,
