@@ -143,8 +143,8 @@ namespace sp::vulkan::renderer {
                     RenderPhase phase("LaserContactPoints");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_contact.vert", "laser_contact.frag");
-                    cmd.SetImageView(0, 2, resources.GetImageView("GBuffer0"));
-                    cmd.SetImageView(0, 3, resources.GetImageView("GBuffer1"));
+                    cmd.SetImageView("gBuffer0", "GBuffer0");
+                    cmd.SetImageView("gBuffer1", "GBuffer1");
 
                     struct {
                         glm::vec3 radiance;
@@ -165,10 +165,10 @@ namespace sp::vulkan::renderer {
                     RenderPhase phase("Screens");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("textured_quad.vert", "single_texture.frag");
-                    cmd.SetUniformBuffer(0, 1, resources.GetBuffer("ViewState"));
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
 
                     for (auto &screen : screens) {
-                        cmd.SetImageView(0, 0, resources.GetImageView(screen.id));
+                        cmd.SetImageView("tex", screen.id);
                         cmd.PushConstants(screen.gpuData);
                         cmd.Draw(4);
                     }

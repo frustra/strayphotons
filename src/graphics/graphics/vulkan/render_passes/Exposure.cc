@@ -106,9 +106,9 @@ namespace sp::vulkan::renderer {
                 auto luminance = resources.GetImageLayerView(source, 0);
 
                 cmd.SetComputeShader("lumi_histogram.comp");
-                cmd.SetImageView(0, 0, luminance);
-                cmd.SetImageView(0, 1, resources.GetImageView("LuminanceHistogram"));
-                cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
+                cmd.SetImageView("lumiTex", luminance);
+                cmd.SetImageView("finalHistogram", "LuminanceHistogram");
+                cmd.SetStorageBuffer("ExposureState", "ExposureState");
 
                 auto width = luminance->Extent().width / downsample;
                 auto height = luminance->Extent().height / downsample;
@@ -139,9 +139,9 @@ namespace sp::vulkan::renderer {
                 constants.eyeAdaptationKeyComp = CVarEyeAdaptationKeyComp.Get();
 
                 cmd.SetComputeShader("exposure_update.comp");
-                cmd.SetImageView(0, 0, resources.GetImageView("LuminanceHistogram"));
-                cmd.SetStorageBuffer(0, 1, resources.GetBuffer("ExposureState"));
-                cmd.SetStorageBuffer(0, 2, resources.GetBuffer("NextExposureState"));
+                cmd.SetImageView("histogram", "LuminanceHistogram");
+                cmd.SetStorageBuffer("lastExposureState", "ExposureState");
+                cmd.SetStorageBuffer("nextExposureState", "NextExposureState");
                 cmd.PushConstants(constants);
                 cmd.Dispatch(1, 1, 1);
             });
@@ -158,9 +158,9 @@ namespace sp::vulkan::renderer {
                 })
                 .Execute([source](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetShaders("screen_cover.vert", "render_histogram.frag");
-                    cmd.SetImageView(0, 0, resources.GetImageView(source));
-                    cmd.SetImageView(0, 1, resources.GetImageView("LuminanceHistogram"));
-                    cmd.SetStorageBuffer(0, 2, resources.GetBuffer("ExposureState"));
+                    cmd.SetImageView("luminanceTex", source);
+                    cmd.SetImageView("histogram", "LuminanceHistogram");
+                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
                     cmd.Draw(3);
                 });
     }

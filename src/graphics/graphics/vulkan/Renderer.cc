@@ -232,7 +232,6 @@ namespace sp::vulkan {
             .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
                 if (sourceID != rg::InvalidResource) {
                     auto source = resources.GetImageView(sourceID);
-                    cmd.SetImageView(0, 0, source);
                     cmd.DrawScreenCover(source);
                 }
 
@@ -296,7 +295,7 @@ namespace sp::vulkan {
                 GPUViewState viewState[] = {{view}, {}};
                 auto viewStateBuf = resources.GetBuffer("ViewState");
                 viewStateBuf->CopyFrom(viewState, 2);
-                cmd.SetUniformBuffer(0, 10, viewStateBuf);
+                cmd.SetUniformBuffer("ViewStates", viewStateBuf);
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -429,7 +428,7 @@ namespace sp::vulkan {
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
                 auto viewStateBuf = resources.GetBuffer("ViewState");
-                cmd.SetUniformBuffer(0, 10, viewStateBuf);
+                cmd.SetUniformBuffer("ViewStates", viewStateBuf);
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

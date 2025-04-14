@@ -71,10 +71,10 @@ namespace sp::vulkan::renderer {
             .Execute([data, textureSet = &scene.textures](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("light_sensor.comp");
 
-                cmd.SetImageView(0, 0, resources.GetImageView("ShadowMap.Linear"));
-                cmd.SetStorageBuffer(0, 1, resources.GetBuffer("LightSensorValues"));
-                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("LightState"));
-                cmd.UploadUniformData(0, 3, &data->gpu);
+                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetStorageBuffer("LightSensorResults", "LightSensorValues");
+                cmd.SetUniformBuffer("LightData", "LightState");
+                cmd.UploadUniformData("LightSensorData", &data->gpu);
                 cmd.SetBindlessDescriptors(1, textureSet->GetDescriptorSet());
 
                 cmd.Dispatch(1, 1, 1);

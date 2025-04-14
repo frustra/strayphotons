@@ -46,7 +46,7 @@ namespace sp::vulkan::renderer {
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SWIZZLE", swizzle);
 
-                cmd.SetImageView(0, 0, source);
+                cmd.SetImageView("tex", source);
                 cmd.Draw(3);
             });
         return outputID;

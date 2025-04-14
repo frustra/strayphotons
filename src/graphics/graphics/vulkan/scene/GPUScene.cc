@@ -197,11 +197,11 @@ namespace sp::vulkan {
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("generate_draws_for_view.comp");
-                cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
-                cmd.SetStorageBuffer(0, 1, models);
-                cmd.SetStorageBuffer(0, 2, primitiveLists);
-                cmd.SetStorageBuffer(0, 3, resources.GetBuffer(bufferIDs.drawCommandsBuffer));
-                cmd.SetStorageBuffer(0, 4, resources.GetBuffer(bufferIDs.drawParamsBuffer));
+                cmd.SetStorageBuffer("Renderables", "RenderableEntities");
+                cmd.SetStorageBuffer("MeshModels", models);
+                cmd.SetStorageBuffer("MeshPrimitives", primitiveLists);
+                cmd.SetStorageBuffer("DrawCommands", bufferIDs.drawCommandsBuffer);
+                cmd.SetStorageBuffer("DrawParamsList", bufferIDs.drawParamsBuffer);
 
                 struct {
                     uint32 renderableCount;
@@ -357,11 +357,11 @@ namespace sp::vulkan {
                 if (vertexCount == 0) return;
 
                 cmd.SetComputeShader("generate_warp_geometry_draws.comp");
-                cmd.SetStorageBuffer(0, 0, resources.GetBuffer("RenderableEntities"));
-                cmd.SetStorageBuffer(0, 1, models);
-                cmd.SetStorageBuffer(0, 2, primitiveLists);
-                cmd.SetStorageBuffer(0, 3, resources.GetBuffer("WarpedVertexDrawCmds"));
-                cmd.SetStorageBuffer(0, 4, resources.GetBuffer("WarpedVertexDrawParams"));
+                cmd.SetStorageBuffer("Renderables", "RenderableEntities");
+                cmd.SetStorageBuffer("MeshModels", models);
+                cmd.SetStorageBuffer("MeshPrimitives", primitiveLists);
+                cmd.SetStorageBuffer("DrawCommands", "WarpedVertexDrawCmds");
+                cmd.SetStorageBuffer("DrawParamsList", "WarpedVertexDrawParams");
 
                 struct {
                     uint32 renderableCount;
@@ -391,10 +391,10 @@ namespace sp::vulkan {
 
                 cmd.BeginRenderPass({});
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
-                cmd.SetStorageBuffer(0, 0, paramBuffer);
-                cmd.SetStorageBuffer(0, 1, warpedVertexBuffer);
-                cmd.SetUniformBuffer(0, 2, resources.GetBuffer("JointPoses"));
-                cmd.SetStorageBuffer(0, 3, jointsBuffer);
+                cmd.SetStorageBuffer("DrawParamsList", paramBuffer);
+                cmd.SetStorageBuffer("VertexBufferOutput", warpedVertexBuffer);
+                cmd.SetUniformBuffer("JointPoses", "JointPoses");
+                cmd.SetStorageBuffer("JointVertexData", jointsBuffer);
 
                 cmd.SetVertexLayout(SceneVertex::Layout());
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
