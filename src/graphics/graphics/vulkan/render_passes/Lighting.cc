@@ -602,7 +602,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView("gBuffer1", "GBuffer1");
                 cmd.SetImageView("gBuffer2", "GBuffer2");
                 cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
-                cmd.SetImageView("shadowMap", resources.GetImageView(shadowDepth));
+                cmd.SetImageView("shadowMap", shadowDepth);
                 cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
                 cmd.SetImageView("voxelNormals", "Voxels.Normals");
 
