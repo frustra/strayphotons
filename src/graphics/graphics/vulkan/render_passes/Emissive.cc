@@ -108,13 +108,13 @@ namespace sp::vulkan::renderer {
                 cmd.SetBlending(true);
                 cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
-                cmd.SetUniformBuffer(0, 0, resources.GetBuffer("ViewState"));
-                cmd.SetStorageBuffer(0, 1, resources.GetBuffer("ExposureState"));
 
                 {
                     RenderPhase phase("LaserLines");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_billboard.vert", "laser_billboard.frag");
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
 
                     struct {
                         glm::vec3 radiance;
@@ -145,6 +145,8 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaders("laser_contact.vert", "laser_contact.frag");
                     cmd.SetImageView("gBuffer0", "GBuffer0");
                     cmd.SetImageView("gBuffer1", "GBuffer1");
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
 
                     struct {
                         glm::vec3 radiance;

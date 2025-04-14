@@ -493,7 +493,7 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
-        SetUniformBuffer(bindingName, resources->GetBuffer(resourceName));
+        SetUniformBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
     }
 
     void CommandContext::SetUniformBuffer(string_view bindingName,
@@ -501,7 +501,7 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
-        SetUniformBuffer(bindingName, resources->GetBuffer(resourceID));
+        SetUniformBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
     }
 
     void CommandContext::SetStorageBuffer(uint32 set,
@@ -560,7 +560,7 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
-        SetStorageBuffer(bindingName, resources->GetBuffer(resourceName));
+        SetStorageBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
     }
 
     void CommandContext::SetStorageBuffer(string_view bindingName,
@@ -568,7 +568,7 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
-        SetStorageBuffer(bindingName, resources->GetBuffer(resourceID));
+        SetStorageBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
     }
 
     BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
