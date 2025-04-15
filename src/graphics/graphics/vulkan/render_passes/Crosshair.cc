@@ -7,6 +7,7 @@
 
 #include "Crosshair.hh"
 
+#include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 
 namespace sp::vulkan::renderer {
@@ -49,6 +50,7 @@ namespace sp::vulkan::renderer {
                 auto extent = cmd.GetFramebufferExtent();
                 auto center = vk::Offset2D{(int)extent.width / 2, (int)extent.height / 2};
                 auto spread = extent.width / 100;
+                auto size = 2 * CVarWindowScale.Get().x;
 
                 cmd.PushConstants(glm::vec4(1, 1, 0.95, 0.3));
                 cmd.SetBlendFuncSeparate(vk::BlendFactor::eSrcAlpha,
@@ -56,7 +58,7 @@ namespace sp::vulkan::renderer {
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
                 cmd.SetBlending(true, vk::BlendOp::eAdd);
-                drawDots(cmd, center, spread, 2);
+                drawDots(cmd, center, spread, size);
 
                 cmd.PushConstants(glm::vec4(0.6, 0.6, 0.5, 1));
                 cmd.SetBlendFuncSeparate(vk::BlendFactor::eSrcAlpha,
@@ -64,7 +66,7 @@ namespace sp::vulkan::renderer {
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
                 cmd.SetBlending(true, vk::BlendOp::eMin);
-                drawDots(cmd, center, spread, 2);
+                drawDots(cmd, center, spread, size);
             });
     }
 } // namespace sp::vulkan::renderer
