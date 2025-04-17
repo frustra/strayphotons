@@ -8,11 +8,16 @@
 #include "Outline.hh"
 
 #include "Readback.hh"
+#include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 
 namespace sp::vulkan::renderer {
+    CVar<bool> CVarDisableOutlineStencil("r.DisableOutlineStencil", false, "Disable the outline stencil render pass");
+
     void AddOutlines(RenderGraph &graph, GPUScene &scene) {
+        if (CVarDisableOutlineStencil.Get()) return;
+
         auto drawIDs = scene.GenerateDrawsForView(graph, ecs::VisibilityMask::OutlineSelection);
 
         graph.AddPass("OutlinesStencil")

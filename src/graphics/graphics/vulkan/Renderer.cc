@@ -26,6 +26,7 @@
 #include "graphics/vulkan/render_passes/LightSensors.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Outline.hh"
+#include "graphics/vulkan/render_passes/Radiance.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -598,6 +599,7 @@ namespace sp::vulkan {
         transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
+        renderer::AddFlatlandRC(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);
