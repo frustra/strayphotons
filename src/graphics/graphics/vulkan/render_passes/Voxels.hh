@@ -38,6 +38,10 @@ namespace sp::vulkan::renderer {
             return voxelLayerCount;
         }
 
+        glm::uvec3 GetGridSize() const {
+            return voxelGridSize;
+        }
+
     private:
         GPUScene &scene;
 

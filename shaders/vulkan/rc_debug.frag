@@ -30,85 +30,63 @@ layout(binding = 3) uniform sampler2DArray overlayTex;
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
 
+layout(set = 1, binding = 0) uniform sampler2DArray radianceProbes[2];
+
 layout(constant_id = 0) const int DEBUG_MODE = 0;
 layout(constant_id = 1) const float BLEND_WEIGHT = 0;
-layout(constant_id = 2) const int VOXEL_LAYER = 0;
+layout(constant_id = 2) const float ZOOM = 1;
+layout(constant_id = 3) const int BASE_SAMPLES = 4;
+layout(constant_id = 4) const int NEXT_SAMPLES = 4;
+layout(constant_id = 5) const float SAMPLE_LENGTH = 8;
 
-#include "../lib/voxel_shared.glsl"
+#include "lib/rc_shared.glsl"
 
-float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
-    vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
-    radiance = radianceData.rgb;
-    return radianceData.a;
-}
-
-vec4 TraceGridLine(vec2 startPos, vec2 endPos, float height, int level) {
-	vec2 delta = endPos - startPos;
-	vec2 absDelta = abs(delta);
-	ivec2 pos = ivec2(floor(startPos));
-	vec2 dt = vec2(1.0) / absDelta;
-	float t = 0;
-
-	int n = 1;
-	ivec2 inc = ivec2(sign(delta));
-	vec2 tNext;
-
-	if (delta.x == 0) {
-		tNext.x = dt.x; // infinity
-	} else if (delta.x > 0) {
-		n += int(floor(endPos.x)) - pos.x;
-		tNext.x = (floor(startPos.x) + 1 - startPos.x) * dt.x;
-	} else {
-		n += pos.x - int(floor(endPos.x));
-		tNext.x = (startPos.x - floor(startPos.x)) * dt.x;
-	}
-
-	if (delta.y == 0) {
-		tNext.y = dt.y; // infinity
-	} else if (delta.y > 0) {
-		n += int(floor(endPos.y)) - pos.y;
-		tNext.y = (floor(startPos.y) + 1 - startPos.y) * dt.y;
-	} else {
-		n += pos.y - int(floor(endPos.y));
-		tNext.y = (startPos.y - floor(startPos.y)) * dt.y;
-	}
-
-	for (; n > 0; n--) {
-        vec3 radiance;
-        float alpha = GetVoxelNearest(vec3(pos.x, height, pos.y), level, radiance);
-		if (alpha > 0) {
-            return vec4(radiance, alpha);
-        }
-
-		if (tNext.y < tNext.x) {
-			pos.y += inc.y;
-			t = tNext.y;
-			tNext.y += dt.y;
-		} else {
-			pos.x += inc.x;
-			t = tNext.x;
-			tNext.x += dt.x;
-		}
-	}
-	return vec4(0);
-}
-
-vec4 TraceIntervalCircle(vec3 samplePos, vec2 range, int samples, int level) {
-	vec4 sum = vec4(0);
+vec4 TraceCircle(vec3 samplePos) {
     float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
 
-	float diffuseScale = 1.0 / samples;
-	for (float r = 0.0; r < samples; r++) {
-		float theta = r * 2 * M_PI * diffuseScale + rOffset;
-        vec2 sampleDir = vec2(sin(theta), cos(theta));
-		vec4 sampleColor = TraceGridLine(samplePos.xz + sampleDir * range.x, samplePos.xz + sampleDir * range.y, samplePos.y, level);
-		sum += sampleColor * diffuseScale;
+	float voxelScale = float(textureSize(radianceProbes[0], 0).x) / voxelInfo.gridSize.x;
+
+	int c0 = BASE_SAMPLES;
+	float c0_len = SAMPLE_LENGTH;
+	int c1 = c0 * NEXT_SAMPLES;
+	float c1_len = SAMPLE_LENGTH;
+	float invC0 = 1.0 / c0;
+	float invC1 = 1.0 / c1;
+
+	vec4 samples[BASE_SAMPLES];
+	for (int r0 = 0; r0 < c0; r0++) {
+		float theta0 = r0 * 2 * M_PI * invC0;
+        vec2 sampleDir0 = vec2(sin(theta0 + rOffset), cos(theta0 + rOffset));
+		// samples[r0] = TraceGridLine(samplePos.xz, samplePos.xz + sampleDir0 * c0_len, samplePos.y, 0);
+		samples[r0] = texelFetch(radianceProbes[0], ivec3(samplePos.xz * voxelScale, r0), 0);
+		if (samples[r0].a > 0) continue;
+
+		for (int n1 = -NEXT_SAMPLES / 2; n1 < int(ceil(NEXT_SAMPLES / 2.0)); n1++) {
+			int r1 = r0 * NEXT_SAMPLES + n1;
+			if (r1 < 0) r1 += c1;
+			float theta1 = (r1 + fract((NEXT_SAMPLES - 1.0) / 2.0)) * 2 * M_PI * invC1;
+		    vec2 sampleDir1 = vec2(sin(theta1 + rOffset), cos(theta1 + rOffset));
+			vec2 startPos = samplePos.xz + sampleDir0 * c0_len;
+			vec2 endPos = samplePos.xz + sampleDir1 * (c0_len + c1_len);
+			vec2 sampleDir = normalize(endPos - startPos);
+			float theta = atan(sampleDir.x, sampleDir.y);
+			if (theta < 0) theta += 2.0 * M_PI;
+			int r = int(ceil(theta / 2.0 / M_PI * c1)) % c1;
+			// float theta2 = r * 2 * M_PI * invC1;
+        	// vec2 sampleDir2 = vec2(sin(theta2 + rOffset), cos(theta2 + rOffset));
+			vec4 sampleC1 = TraceGridLine(startPos, startPos + sampleDir * c1_len, samplePos.y, 0);
+			ivec3 samplePos2 = XYRtoUVW(ivec3(startPos * voxelScale, r), c1 / textureSize(radianceProbes[1], 0).z, 1);
+			// vec4 sampleC1 = texelFetch(radianceProbes[1], samplePos2, 0);
+			samples[r0] += sampleC1 * invC1;
+		}
 	}
 
+	vec4 sum = vec4(0);
+	for (int r = 0; r < c0; r++) {
+		sum += samples[r] * invC0;
+	}
     return sum;
 }
-
-float zoom = 2;
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
@@ -120,22 +98,26 @@ void main() {
 	float visibleGridSize = max(voxelInfo.gridSize.x, voxelInfo.gridSize.z);
     vec2 scaledCoord = (inTexCoord - 0.5) * 0.5;
 	scaledCoord.x *= (screenSize.x / screenSize.y);
-	scaledCoord *= visibleGridSize / zoom;
+	scaledCoord *= visibleGridSize / ZOOM;
     vec3 rayPos = viewVoxelPos;
 	rayPos.xz += scaledCoord.xy;
 
     vec3 sampleRadiance;
     if (DEBUG_MODE == 1) {
-        float alpha = GetVoxelNearest(rayPos, VOXEL_LAYER, sampleRadiance);
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
 		sampleRadiance = max(sampleRadiance, vec3(alpha * 0.001));
     } else if (DEBUG_MODE == 2) {
-        float alpha = GetVoxelNearest(rayPos, VOXEL_LAYER, sampleRadiance);
-		vec4 sampleValue = TraceIntervalCircle(rayPos, vec2(0, 4), 8, VOXEL_LAYER);
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+		vec4 sampleValue = TraceIntervalCircle(rayPos, vec2(0, 4), 8, 0);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	} else if (DEBUG_MODE == 3) {
-        float alpha = GetVoxelNearest(rayPos, VOXEL_LAYER, sampleRadiance);
-		vec4 sampleValue = TraceIntervalCircle(rayPos, vec2(0, 4), 8, VOXEL_LAYER);
-		sampleValue += TraceIntervalCircle(rayPos, vec2(4, 8), 16, VOXEL_LAYER);
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+		vec4 sampleValue = TraceIntervalCircle(rayPos, vec2(0, 4), 8, 0);
+		sampleValue += TraceIntervalCircle(rayPos, vec2(4, 8), 16, 0);
+		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
+	} else if (DEBUG_MODE == 4) {
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+		vec4 sampleValue = TraceCircle(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	}
 

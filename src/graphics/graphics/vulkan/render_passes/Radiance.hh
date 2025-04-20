@@ -10,5 +10,15 @@
 #include "Common.hh"
 
 namespace sp::vulkan::renderer {
-    void AddFlatlandRC(RenderGraph &graph);
+    class Voxels;
+
+    class Radiance {
+    public:
+        Radiance(Voxels &voxels) : voxels(voxels) {}
+
+        void AddFlatlandRC(RenderGraph &graph);
+
+    private:
+        Voxels &voxels;
+    };
 } // namespace sp::vulkan::renderer

@@ -54,7 +54,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device)
         : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
-          transparency(scene), guiRenderer(new GuiRenderer(device)) {
+          radiance(voxels), transparency(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -599,7 +599,7 @@ namespace sp::vulkan {
         transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
-        renderer::AddFlatlandRC(graph);
+        radiance.AddFlatlandRC(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);

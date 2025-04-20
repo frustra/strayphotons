@@ -1,0 +1,58 @@
+{
+	"properties": {
+		"gravity": [0, 0, 0]
+	},
+	"entities": [
+		{
+			"name": "global:player_gravity_none",
+			"scene_connection": { "overrides/player_gravity_none": "1" },
+			"transform": {}
+		},
+		{
+			"transform": {
+				"scale": [2, 2, 2]
+			},
+			"script": {
+				"prefab": "gltf",
+				"parameters": {
+					"model": "cornell-box-1",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {
+				"translate": [-0.875, 0, 1]
+			},
+			"trigger_area": "Box",
+			"event_bindings": {
+				"/trigger/player/enter": {
+					"outputs": "console:input/action/run_command",
+					"set_value": "r.LightAttenuation 0; r.BloomScale 0; r.Exposure 5; r.RCDebug 4; r.RCDebugZoom 1; setsignal player:player/move_noclip 1; respawn"
+				}
+			}
+		},
+		{
+			"transform": {
+				"translate": [-2.3, -0.3, -2.3],
+				"scale": 0.036
+			},
+			"voxel_area": {
+				"extents": [128, 128, 128]
+			}
+		},
+		{
+			"name": "lightbox",
+			"transform": {
+				"parent": "player:player",
+				"translate": [0, 0, 0],
+				"scale": [0.02, 1, 0.02]
+			},
+			"renderable": {
+				"model": "box",
+				"emissive": 1
+			}
+		}
+	]
+}

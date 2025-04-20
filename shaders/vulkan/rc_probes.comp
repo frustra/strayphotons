@@ -1,0 +1,55 @@
+/*
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0) uniform sampler3D voxelRadiance;
+layout(binding = 1) uniform sampler3D voxelNormals;
+
+layout(binding = 2, rgba16f) uniform image2DArray radianceOut;
+
+INCLUDE_LAYOUT(binding = 3)
+#include "lib/view_states_uniform.glsl"
+
+layout(binding = 4) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(constant_id = 0) const int CASCADE_NUM = 0;
+layout(constant_id = 1) const int NUM_SAMPLES = 4;
+layout(constant_id = 2) const float SAMPLE_LENGTH = 4;
+
+#include "../lib/voxel_shared.glsl"
+#include "lib/rc_shared.glsl"
+
+void main() {
+    if (any(greaterThanEqual(gl_GlobalInvocationID, imageSize(radianceOut)))) return;
+    ivec3 uvw = ivec3(gl_GlobalInvocationID);
+	ivec3 xyr = UVWtoXYR(uvw, NUM_SAMPLES / imageSize(radianceOut).z, CASCADE_NUM);
+
+	float voxelScale = float(voxelInfo.gridSize.x) / imageSize(radianceOut).x;
+	vec2 voxelPos = vec2(xyr.xy) * voxelScale;
+
+    ViewState view = views[0];
+    vec3 viewPos = view.invViewMat[3].xyz;
+	viewPos.y -= 1.3;
+    vec3 viewVoxelPos = (voxelInfo.worldToVoxel * vec4(viewPos, 1.0)).xyz;
+
+    float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
+
+	float invSamples = 1.0 / NUM_SAMPLES;
+	float theta = xyr.z * 2 * M_PI * invSamples;
+	vec2 sampleDir = vec2(sin(theta + rOffset), cos(theta + rOffset));
+	vec4 sampleValue = TraceGridLine(voxelPos.xy, voxelPos.xy + sampleDir * SAMPLE_LENGTH, viewVoxelPos.y, 0);
+
+    imageStore(radianceOut, uvw, sampleValue);
+}

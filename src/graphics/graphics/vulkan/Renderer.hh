@@ -15,6 +15,7 @@
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
+#include "graphics/vulkan/render_passes/Radiance.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
 #include "graphics/vulkan/render_passes/Transparency.hh"
@@ -78,6 +79,7 @@ namespace sp::vulkan {
 
         renderer::Voxels voxels;
         renderer::Lighting lighting;
+        renderer::Radiance radiance;
         renderer::Transparency transparency;
         renderer::Emissive emissive;
         renderer::SMAA smaa;
