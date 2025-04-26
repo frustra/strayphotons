@@ -29,7 +29,7 @@
 			"event_bindings": {
 				"/trigger/player/enter": {
 					"outputs": "console:input/action/run_command",
-					"set_value": "r.LightAttenuation 0; r.BloomScale 0; r.Exposure 5; r.RCDebug 4; r.RCDebugZoom 1; setsignal player:player/move_noclip 1; respawn"
+					"set_value": "r.LightAttenuation 0; r.BloomScale 0; r.Exposure 5; r.RCDebug 5; r.RCNumCascades 4; r.RCDebugZoom 1; setsignal player:player/move_noclip 1; respawn"
 				}
 			}
 		},

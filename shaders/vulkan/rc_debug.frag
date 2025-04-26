@@ -30,7 +30,8 @@ layout(binding = 3) uniform sampler2DArray overlayTex;
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
 
-layout(set = 1, binding = 0) uniform sampler2DArray radianceProbes[2];
+layout(set = 1, binding = 0) uniform sampler2DArray radianceProbes[];
+layout(set = 2, binding = 0) uniform sampler2DArray radianceCascade[];
 
 layout(constant_id = 0) const int DEBUG_MODE = 0;
 layout(constant_id = 1) const float BLEND_WEIGHT = 0;
@@ -49,7 +50,7 @@ vec4 TraceCircle(vec3 samplePos) {
 	int c0 = BASE_SAMPLES;
 	float c0_len = SAMPLE_LENGTH;
 	int c1 = c0 * NEXT_SAMPLES;
-	float c1_len = SAMPLE_LENGTH;
+	float c1_len = SAMPLE_LENGTH * NEXT_SAMPLES;
 	float invC0 = 1.0 / c0;
 	float invC1 = 1.0 / c1;
 
@@ -88,6 +89,21 @@ vec4 TraceCircle(vec3 samplePos) {
     return sum;
 }
 
+vec4 TraceCircle2(vec3 samplePos) {
+    float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
+
+	float voxelScale = float(textureSize(radianceCascade[0], 0).x) / voxelInfo.gridSize.x;
+
+	int c0 = BASE_SAMPLES;
+	float invC0 = 1.0 / c0;
+
+	vec4 sum = vec4(0);
+	for (int r0 = 0; r0 < c0; r0++) {
+		sum += texelFetch(radianceCascade[0], ivec3(samplePos.xz * voxelScale, r0), 0) * invC0;
+	}
+    return sum;
+}
+
 void main() {
     ViewState view = views[gl_ViewID_OVR];
     vec3 viewPos = view.invViewMat[3].xyz;
@@ -118,6 +134,10 @@ void main() {
 	} else if (DEBUG_MODE == 4) {
         float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
 		vec4 sampleValue = TraceCircle(rayPos);
+		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
+	} else if (DEBUG_MODE == 5) {
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+		vec4 sampleValue = TraceCircle2(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	}
 

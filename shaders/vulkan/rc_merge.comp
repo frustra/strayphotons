@@ -1,0 +1,68 @@
+/*
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0, rgba16f) uniform image2DArray radianceIn0;
+layout(binding = 1, rgba16f) uniform image2DArray radianceIn1;
+layout(binding = 2, rgba16f) uniform image2DArray radianceOut;
+
+layout(constant_id = 0) const int CASCADE_NUM = 0;
+layout(constant_id = 1) const int BASE_SAMPLES = 4;
+layout(constant_id = 2) const int NEXT_SAMPLES = 4;
+layout(constant_id = 3) const float SAMPLE_LENGTH = 4;
+
+#include "../lib/voxel_shared.glsl"
+#include "lib/rc_util.glsl"
+
+float lookup[] = {
+	4,
+	2,
+	1,
+};
+
+void main() {
+    if (any(greaterThanEqual(gl_GlobalInvocationID, imageSize(radianceOut)))) return;
+    ivec3 uvw = ivec3(gl_GlobalInvocationID);
+	ivec3 xyr0 = UVWtoXYR(uvw, BASE_SAMPLES / imageSize(radianceOut).z, 0);
+
+	vec2 voxelPos = vec2(xyr0.xy);
+
+	int c0 = BASE_SAMPLES;
+	int c1 = c0 * NEXT_SAMPLES;
+	float invC0 = 1.0 / c0;
+	float invC1 = 1.0 / c1;
+
+	int r0 = xyr0.z;
+	float theta0 = r0 * 2 * M_PI * invC0;
+	vec2 sampleDir0 = vec2(sin(theta0), cos(theta0));
+	vec4 sample0 = imageLoad(radianceIn0, uvw);
+	if (sample0.a <= 0) {
+		for (int n1 = -NEXT_SAMPLES / 2; n1 < int(ceil(NEXT_SAMPLES / 2.0)); n1++) {
+			int r1 = r0 * NEXT_SAMPLES + n1;
+			if (r1 < 0) r1 += c1;
+			float theta1 = (r1 + fract((NEXT_SAMPLES - 1.0) / 2.0)) * 2 * M_PI * invC1;
+			vec2 sampleDir1 = vec2(sin(theta1), cos(theta1));
+			vec2 startPos = voxelPos + sampleDir1 * SAMPLE_LENGTH * lookup[CASCADE_NUM];
+			// vec2 endPos = voxelPos + sampleDir1 * (SAMPLE_LENGTH * (1 + NEXT_SAMPLES)) * lookup[CASCADE_NUM];
+			vec2 sampleDir = sampleDir1;//normalize(endPos - startPos);
+			float theta = atan(sampleDir.x, sampleDir.y);
+			if (theta < 0) theta += 2.0 * M_PI;
+			int r = int(round(theta / 2.0 / M_PI * c1)) % c1;
+			ivec3 samplePos2 = XYRtoUVW(ivec3(startPos / 2, r), c1 / imageSize(radianceIn1).z, 0);
+			vec4 sampleC1 = imageLoad(radianceIn1, samplePos2);
+			sample0 += sampleC1 / NEXT_SAMPLES;
+		}
+	}
+
+    imageStore(radianceOut, uvw, sample0);
+}

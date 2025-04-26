@@ -34,7 +34,7 @@ layout(constant_id = 2) const float SAMPLE_LENGTH = 4;
 void main() {
     if (any(greaterThanEqual(gl_GlobalInvocationID, imageSize(radianceOut)))) return;
     ivec3 uvw = ivec3(gl_GlobalInvocationID);
-	ivec3 xyr = UVWtoXYR(uvw, NUM_SAMPLES / imageSize(radianceOut).z, CASCADE_NUM);
+	ivec3 xyr = UVWtoXYR(uvw, NUM_SAMPLES / imageSize(radianceOut).z, 0);
 
 	float voxelScale = float(voxelInfo.gridSize.x) / imageSize(radianceOut).x;
 	vec2 voxelPos = vec2(xyr.xy) * voxelScale;
@@ -44,11 +44,9 @@ void main() {
 	viewPos.y -= 1.3;
     vec3 viewVoxelPos = (voxelInfo.worldToVoxel * vec4(viewPos, 1.0)).xyz;
 
-    float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
-
 	float invSamples = 1.0 / NUM_SAMPLES;
 	float theta = xyr.z * 2 * M_PI * invSamples;
-	vec2 sampleDir = vec2(sin(theta + rOffset), cos(theta + rOffset));
+	vec2 sampleDir = vec2(sin(theta), cos(theta));
 	vec4 sampleValue = TraceGridLine(voxelPos.xy, voxelPos.xy + sampleDir * SAMPLE_LENGTH, viewVoxelPos.y, 0);
 
     imageStore(radianceOut, uvw, sampleValue);

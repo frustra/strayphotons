@@ -31,10 +31,9 @@ namespace sp::vulkan::renderer {
         if (glm::any(glm::lessThanEqual(voxels.GetGridSize(), glm::uvec3(0)))) return;
 
         if (CVarEnableFlatlandRC.Get()) {
-            for (int cascadeNum = 0; cascadeNum < CVarRCNumCascades.Get(); cascadeNum++) {
-                std::string cascadeName = "RC-" + std::to_string(cascadeNum);
-                int numSamples = CVarRCBaseSamples.Get() +
-                                 CVarRCBaseSamples.Get() * cascadeNum * CVarRCNextSamples.Get();
+            for (int cascadeNum = CVarRCNumCascades.Get() - 1; cascadeNum >= 0; cascadeNum--) {
+                std::string cascadeName = "RC" + std::to_string(cascadeNum);
+                int numSamples = CVarRCBaseSamples.Get() * std::pow(CVarRCNextSamples.Get(), cascadeNum);
                 ImageDesc desc;
                 graph.AddPass(cascadeName)
                     .Build([&](rg::PassBuilder &builder) {
@@ -44,17 +43,19 @@ namespace sp::vulkan::renderer {
                         builder.ReadUniform("VoxelState");
 
                         auto gridSize = voxels.GetGridSize();
-                        desc.extent = vk::Extent3D(gridSize.x * CVarRCVoxelScale.Get(),
-                            gridSize.z * CVarRCVoxelScale.Get(),
+                        desc.extent = vk::Extent3D(gridSize.x * CVarRCVoxelScale.Get() / (1 << cascadeNum),
+                            gridSize.z * CVarRCVoxelScale.Get() / (1 << cascadeNum),
                             1);
-                        desc.arrayLayers = numSamples / std::pow(4, cascadeNum);
+                        desc.arrayLayers = numSamples; // / std::pow(2, cascadeNum + 1);
                         desc.primaryViewType = vk::ImageViewType::e2DArray;
                         desc.imageType = vk::ImageType::e2D;
                         desc.format = vk::Format::eR16G16B16A16Sfloat;
                         builder.CreateImage(cascadeName, desc, Access::ComputeShaderWrite);
                     })
-                    .Execute([cascadeNum, cascadeName, gridSize = desc.extent, numSamples](rg::Resources &resources,
-                                 CommandContext &cmd) {
+                    .Execute([cascadeNum,
+                                 cascadeName,
+                                 gridSize = glm::ivec3(desc.extent.width, desc.extent.height, desc.arrayLayers),
+                                 numSamples](rg::Resources &resources, CommandContext &cmd) {
                         cmd.SetComputeShader("rc_probes.comp");
 
                         cmd.SetUniformBuffer("ViewStates", "ViewState");
@@ -65,9 +66,45 @@ namespace sp::vulkan::renderer {
 
                         cmd.SetShaderConstant(ShaderStage::Compute, "CASCADE_NUM", cascadeNum);
                         cmd.SetShaderConstant(ShaderStage::Compute, "NUM_SAMPLES", numSamples);
-                        cmd.SetShaderConstant(ShaderStage::Compute, "SAMPLE_LENGTH", CVarRCTraceLength.Get());
+                        cmd.SetShaderConstant(ShaderStage::Compute,
+                            "SAMPLE_LENGTH",
+                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum));
 
-                        cmd.Dispatch(gridSize.width >> cascadeNum, gridSize.height >> cascadeNum, numSamples);
+                        cmd.Dispatch(gridSize.x, gridSize.y, gridSize.z);
+                    });
+
+                if (cascadeNum + 1 >= CVarRCNumCascades.Get()) continue;
+
+                std::string cascadeIn1Name = "RCMerged" + std::to_string(cascadeNum + 1);
+                if (cascadeNum + 2 >= CVarRCNumCascades.Get()) cascadeIn1Name = "RC" + std::to_string(cascadeNum + 1);
+                std::string cascadeOutName = "RCMerged" + std::to_string(cascadeNum);
+                graph.AddPass(cascadeOutName)
+                    .Build([&](rg::PassBuilder &builder) {
+                        builder.Read(cascadeName, Access::ComputeShaderReadStorage);
+                        builder.Read(cascadeIn1Name, Access::ComputeShaderReadStorage);
+
+                        builder.CreateImage(cascadeOutName, desc, Access::ComputeShaderWrite);
+                    })
+                    .Execute([cascadeNum,
+                                 cascadeName,
+                                 cascadeIn1Name,
+                                 cascadeOutName,
+                                 gridSize = glm::ivec3(desc.extent.width, desc.extent.height, desc.arrayLayers),
+                                 numSamples](rg::Resources &resources, CommandContext &cmd) {
+                        cmd.SetComputeShader("rc_merge.comp");
+
+                        cmd.SetImageView("radianceIn0", cascadeName);
+                        cmd.SetImageView("radianceIn1", cascadeIn1Name);
+                        cmd.SetImageView("radianceOut", cascadeOutName);
+
+                        cmd.SetShaderConstant(ShaderStage::Compute, "CASCADE_NUM", cascadeNum);
+                        cmd.SetShaderConstant(ShaderStage::Compute, "BASE_SAMPLES", numSamples);
+                        cmd.SetShaderConstant(ShaderStage::Compute, "NEXT_SAMPLES", CVarRCNextSamples.Get());
+                        cmd.SetShaderConstant(ShaderStage::Compute,
+                            "SAMPLE_LENGTH",
+                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum));
+
+                        cmd.Dispatch(gridSize.x, gridSize.y, gridSize.z);
                     });
             }
         }
@@ -82,8 +119,12 @@ namespace sp::vulkan::renderer {
                     builder.Read("ExposureState", Access::FragmentShaderReadStorage);
 
                     for (int cascadeNum = 0; cascadeNum < CVarRCNumCascades.Get(); cascadeNum++) {
-                        std::string cascadeName = "RC-" + std::to_string(cascadeNum);
+                        std::string cascadeName = "RC" + std::to_string(cascadeNum);
                         builder.Read(cascadeName, Access::FragmentShaderSampleImage);
+                        if (cascadeNum + 1 < CVarRCNumCascades.Get()) {
+                            cascadeName = "RCMerged" + std::to_string(cascadeNum);
+                            builder.Read(cascadeName, Access::FragmentShaderSampleImage);
+                        }
                     }
 
                     builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
@@ -107,9 +148,16 @@ namespace sp::vulkan::renderer {
                     cmd.SetImageView("voxelNormals", "Voxels.Normals");
 
                     for (int cascadeNum = 0; cascadeNum < CVarRCNumCascades.Get(); cascadeNum++) {
-                        std::string cascadeName = "RC-" + std::to_string(cascadeNum);
-                        auto imagePtr = resources.GetImageView(cascadeName);
-                        cmd.SetImageView(1, cascadeNum, imagePtr);
+                        std::string cascadeName = "RC" + std::to_string(cascadeNum);
+                        ResourceID cascadeId = resources.GetID(cascadeName, false);
+                        if (cascadeId == InvalidResource) continue;
+                        cmd.SetImageView(1, cascadeNum, resources.GetImageView(cascadeId));
+                        if (cascadeNum + 1 < CVarRCNumCascades.Get()) {
+                            cascadeName = "RCMerged" + std::to_string(cascadeNum);
+                            cascadeId = resources.GetID(cascadeName, false);
+                            if (cascadeId == InvalidResource) continue;
+                            cmd.SetImageView(2, cascadeNum, resources.GetImageView(cascadeId));
+                        }
                     }
 
                     cmd.SetShaderConstant(ShaderStage::Fragment, "DEBUG_MODE", CVarRCDebug.Get());
