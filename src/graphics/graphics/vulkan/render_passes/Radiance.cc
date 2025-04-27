@@ -19,8 +19,8 @@ namespace sp::vulkan::renderer {
         0.0f,
         "The blend weight used to overlay radiance cascade debug");
     static CVar<int> CVarRCVoxelScale("r.RCVoxelScale", 4, "Number of probes along the length of a voxel");
-    static CVar<int> CVarRCBaseSamples("r.RCBaseSamples", 8, "Number of samples per probe in cascade 0");
-    static CVar<int> CVarRCNextSamples("r.RCNextSamples", 3, "Multiplier for number of probes per layer");
+    static CVar<int> CVarRCBaseSamples("r.RCBaseSamples", 4, "Number of samples per probe in cascade 0");
+    static CVar<int> CVarRCNextSamples("r.RCNextSamples", 4, "Multiplier for number of probes per layer");
     static CVar<int> CVarRCNumCascades("r.RCNumCascades", 2, "Number of radiance cascades");
     static CVar<float> CVarRCTraceLength("r.RCTraceLength", 8, "Cascade trace length");
 
@@ -68,7 +68,11 @@ namespace sp::vulkan::renderer {
                         cmd.SetShaderConstant(ShaderStage::Compute, "NUM_SAMPLES", numSamples);
                         cmd.SetShaderConstant(ShaderStage::Compute,
                             "SAMPLE_LENGTH",
-                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum));
+                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum) /
+                                (float)(1 << cascadeNum));
+                        cmd.SetShaderConstant(ShaderStage::Compute,
+                            "VOXEL_SCALE",
+                            CVarRCVoxelScale.Get() / (float)(1 << cascadeNum));
 
                         cmd.Dispatch(gridSize.x, gridSize.y, gridSize.z);
                     });
@@ -102,7 +106,8 @@ namespace sp::vulkan::renderer {
                         cmd.SetShaderConstant(ShaderStage::Compute, "NEXT_SAMPLES", CVarRCNextSamples.Get());
                         cmd.SetShaderConstant(ShaderStage::Compute,
                             "SAMPLE_LENGTH",
-                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum));
+                            CVarRCTraceLength.Get() * (float)std::pow(CVarRCNextSamples.Get(), cascadeNum) /
+                                (float)(1 << cascadeNum));
 
                         cmd.Dispatch(gridSize.x, gridSize.y, gridSize.z);
                     });

@@ -64,6 +64,63 @@ vec4 TraceGridLine(vec2 startPos, vec2 endPos, float height, int level) {
 	return vec4(0);
 }
 
+vec4 TraceGridLineScaled(vec2 startPosIn, vec2 endPosIn, float height, float scale) {
+	vec2 startPos = startPosIn / scale;
+	vec2 endPos = endPosIn / scale;
+	vec2 delta = endPos - startPos;
+	vec2 absDelta = abs(delta);
+	ivec2 pos = ivec2(floor(startPos));
+	vec2 dt = vec2(1.0) / absDelta;
+	float t = 0;
+
+	int n = 1;
+	ivec2 inc = ivec2(sign(delta));
+	vec2 tNext;
+
+	if (delta.x == 0) {
+		tNext.x = dt.x; // infinity
+	} else if (delta.x > 0) {
+		n += int(floor(endPos.x)) - pos.x;
+		tNext.x = (floor(startPos.x) + 1 - startPos.x) * dt.x;
+	} else {
+		n += pos.x - int(floor(endPos.x));
+		tNext.x = (startPos.x - floor(startPos.x)) * dt.x;
+	}
+
+	if (delta.y == 0) {
+		tNext.y = dt.y; // infinity
+	} else if (delta.y > 0) {
+		n += int(floor(endPos.y)) - pos.y;
+		tNext.y = (floor(startPos.y) + 1 - startPos.y) * dt.y;
+	} else {
+		n += pos.y - int(floor(endPos.y));
+		tNext.y = (startPos.y - floor(startPos.y)) * dt.y;
+	}
+
+	for (; n > 0; n--) {
+        // vec4 sampleValue = texture(voxelRadiance, vec3(pos.x + 0.5, height + 0.5, pos.y + 0.5) / (textureSize(voxelRadiance, 0)));
+		// if (sampleValue.a > 0) {
+        //     return sampleValue;
+        // }
+        vec3 radiance;
+        float alpha = GetVoxelNearest(vec3(pos.x, height, pos.y), 0, radiance);
+		if (alpha > 0) {
+            return vec4(radiance, alpha);
+        }
+
+		if (tNext.y < tNext.x) {
+			pos.y += inc.y;
+			t = tNext.y;
+			tNext.y += dt.y;
+		} else {
+			pos.x += inc.x;
+			t = tNext.x;
+			tNext.x += dt.x;
+		}
+	}
+	return vec4(0);
+}
+
 vec4 TraceIntervalCircle(vec3 samplePos, vec2 range, int samples, int level) {
 	vec4 sum = vec4(0);
     float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
