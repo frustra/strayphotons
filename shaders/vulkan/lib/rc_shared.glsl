@@ -135,3 +135,72 @@ vec4 TraceIntervalCircle(vec3 samplePos, vec2 range, int samples, int level) {
 
     return sum;
 }
+
+float LineCircleIntersection(vec2 lineStart, vec2 lineEnd, vec2 circleCenter, float circleRadius) {
+	float dist = length(lineEnd - lineStart);
+	vec2 dir = normalize(lineEnd - lineStart);
+    vec2 tangent = vec2(dir.y, -dir.x);
+    float distanceToLine = dot(tangent, lineStart - circleCenter);
+	float distanceAlongLine = dot(dir, circleCenter - lineStart);
+
+	if (abs(distanceToLine) <= circleRadius && distanceAlongLine >= 0 && distanceAlongLine < dist) {
+		return distanceAlongLine;
+	} else {
+		return 1.0/0.0;
+	}
+}
+
+float LinePlaneIntersection(vec2 lineStart, vec2 lineEnd, vec2 planeOrigin, vec2 planeNormal) {
+	vec2 normal = normalize(planeNormal);
+	float distStart = dot(normal, lineStart - planeOrigin);
+	float distEnd = dot(normal, lineEnd - planeOrigin);
+	if (distStart < 0) {
+		return distStart;
+	} else if (distEnd < 0) {
+		return length(lineEnd - lineStart) * (distStart / (distStart - distEnd));
+	} else {
+		return 1.0/0.0;
+	}
+}
+
+float LineBoxIntersection(vec2 lineStart, vec2 lineEnd, vec2 boxOrigin, vec2 boxNormal) {
+	vec2 tanget = vec2(boxNormal.y, -boxNormal.x);
+	mat2 transform = inverse(mat2(boxNormal, tanget));
+	vec2 rayStart = transform * (lineStart - boxOrigin);
+	vec2 rayEnd = transform * (lineEnd - boxOrigin);
+	vec2 rayDir = normalize(rayEnd - rayStart);
+    vec2 tMin = (vec2(-1) - rayStart) / rayDir;
+    vec2 tMax = (vec2(1) - rayStart) / rayDir;
+    vec2 t1 = min(tMin, tMax);
+    vec2 t2 = max(tMin, tMax);
+    float tNear = max(t1.x, t1.y);
+    float tFar = min(t2.x, t2.y);
+	if (tFar > 0 && tNear < 0) {
+		return tNear;
+	} else if (tFar > 0 && tNear < tFar && tNear < length(rayEnd - rayStart)) {
+		return length(mat2(boxNormal, tanget) * (rayDir * tNear));
+	} else {
+		return 1.0/0.0;
+	}
+}
+
+#define DEPTH_ADD(name, color, expr)                        \
+float name = (expr);                                        \
+if (!isinf(name) && (isinf(result.a) || result.a > name)) { \
+	result = vec4(color, name);                             \
+}															\
+if (result.a <= 0) return vec4(clamp(result.rgb, 0, 1), 1);
+
+vec4 TraceSceneLine(vec2 startPos, vec2 endPos, vec2 circleCenter, float sceneScale) {
+	vec4 result = vec4(vec3(0), 1.0/0.0);
+	DEPTH_ADD(tallBox, vec3(0), LineBoxIntersection(startPos, endPos, vec2(0.35, 0.37), vec2(0.04, 0.13)))
+	DEPTH_ADD(shortBox, vec3(0), LineBoxIntersection(startPos, endPos, vec2(0.65, 0.66), vec2(0.13, 0.04)))
+	DEPTH_ADD(topWall, vec3(0.1), LinePlaneIntersection(startPos, endPos, vec2(0.051), vec2(0, 1)))
+	DEPTH_ADD(rightWall, vec3(0, 0, 0.1), LinePlaneIntersection(startPos, endPos, vec2(0.933), vec2(-1, 0)))
+	DEPTH_ADD(bottomWall, vec3(0, 0, 0), LinePlaneIntersection(startPos, endPos, vec2(0.921), vec2(0, -1)))
+	DEPTH_ADD(leftWall, vec3(0.1, 0, 0), LinePlaneIntersection(startPos, endPos, vec2(0.067), vec2(1, 0)))
+	// DEPTH_ADD(circle, vec3(1), LineCircleIntersection(startPos, endPos, circleCenter, sceneScale))
+	// DEPTH_ADD(circle, vec3(0.5), LineBoxIntersection(startPos, endPos, circleCenter, vec2(sceneScale)))
+	if (isinf(result.a)) return vec4(0);
+	return clamp(result, 0, 1);
+}

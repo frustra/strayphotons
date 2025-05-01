@@ -136,7 +136,7 @@ void main() {
 		vec4 sampleValue = TraceCircle(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	} else if (DEBUG_MODE == 5) {
-        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+        float alpha = 0;//GetVoxelNearest(rayPos, 0, sampleRadiance);
 		vec4 sampleValue = TraceCircle2(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	}
