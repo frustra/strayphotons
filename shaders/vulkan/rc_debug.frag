@@ -92,7 +92,7 @@ vec4 TraceCircle(vec3 samplePos) {
 vec4 TraceCircle2(vec3 samplePos) {
     float rOffset = 0;//M_PI / samples;// + InterleavedGradientNoise(gl_FragCoord.xy) * 2 * M_PI;
 
-	float voxelScale = float(textureSize(radianceCascade[0], 0).x) / voxelInfo.gridSize.x;
+	vec2 voxelScale = float(textureSize(radianceCascade[0], 0).xy) / voxelInfo.gridSize.xz;
 
 	int c0 = BASE_SAMPLES;
 	float invC0 = 1.0 / c0;
@@ -107,15 +107,16 @@ vec4 TraceCircle2(vec3 samplePos) {
 void main() {
     ViewState view = views[gl_ViewID_OVR];
     vec3 viewPos = view.invViewMat[3].xyz;
-	viewPos.y -= 1.3;
     vec3 viewVoxelPos = (voxelInfo.worldToVoxel * vec4(viewPos, 1.0)).xyz;
+	viewPos.y -= voxelProjectOffset;
+    vec3 feetVoxelPos = (voxelInfo.worldToVoxel * vec4(viewPos, 1.0)).xyz;
 
 	vec2 screenSize = textureSize(overlayTex, 0).xy;
 	float visibleGridSize = max(voxelInfo.gridSize.x, voxelInfo.gridSize.z);
     vec2 scaledCoord = (inTexCoord - 0.5) * 0.5;
 	scaledCoord.x *= (screenSize.x / screenSize.y);
 	scaledCoord *= visibleGridSize / ZOOM;
-    vec3 rayPos = viewVoxelPos;
+    vec3 rayPos = feetVoxelPos;
 	rayPos.xz += scaledCoord.xy;
 
     vec3 sampleRadiance;
@@ -136,9 +137,22 @@ void main() {
 		vec4 sampleValue = TraceCircle(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
 	} else if (DEBUG_MODE == 5) {
-        float alpha = 0;//GetVoxelNearest(rayPos, 0, sampleRadiance);
+        float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
 		vec4 sampleValue = TraceCircle2(rayPos);
 		sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
+	} else if (DEBUG_MODE == 6) {
+		vec2 flippedCoord = vec2(inTexCoord.x, 1 - inTexCoord.y);
+		vec4 rayPos2 = view.invViewMat * vec4(ScreenPosToViewPos(flippedCoord, 0, view.invProjMat), 1);
+		vec3 rayDir = normalize(rayPos2.xyz - view.invViewMat[3].xyz);
+		float t = (-viewVoxelPos.y) / rayDir.y;
+		if (rayDir.y < -0.00001 && t > 0) {
+			rayPos = viewVoxelPos + rayDir * t;
+			float alpha = GetVoxelNearest(rayPos, 0, sampleRadiance);
+			vec4 sampleValue = TraceCircle2(rayPos);
+			sampleRadiance = max(sampleValue.rgb, vec3(alpha * 0.001));
+		} else {
+			sampleRadiance = vec3(0);
+		}
 	}
 
     vec3 overlay = texture(overlayTex, vec3(inTexCoord, gl_ViewID_OVR)).rgb; // pre-exposed

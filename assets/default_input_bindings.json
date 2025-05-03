@@ -15,7 +15,7 @@
                 {
                     "outputs": "player:flathead/script/camera_rotate",
                     "filter": "is_focused(Game)",
-                    "modify": ["event.x * 0.001", "event.y * 0.00"]
+                    "modify": ["event.x * 0.001", "event.y * 0.001"]
                 },
                 {
                     "outputs": "player:pointer/interact/rotate",

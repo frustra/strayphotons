@@ -7,6 +7,9 @@
 
 #include "rc_util.glsl"
 
+float voxelSampleOffset = 1.0;
+float voxelProjectOffset = 1.3;
+
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
     vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
     radiance = radianceData.rgb;
@@ -64,9 +67,9 @@ vec4 TraceGridLine(vec2 startPos, vec2 endPos, float height, int level) {
 	return vec4(0);
 }
 
-vec4 TraceGridLineScaled(vec2 startPosIn, vec2 endPosIn, float height, float scale) {
-	vec2 startPos = startPosIn / scale;
-	vec2 endPos = endPosIn / scale;
+vec4 TraceGridLineScaled(vec2 startPosIn, vec2 endPosIn, float height) {
+	vec2 startPos = startPosIn * voxelInfo.gridSize.xz;
+	vec2 endPos = endPosIn * voxelInfo.gridSize.xz;
 	vec2 delta = endPos - startPos;
 	vec2 absDelta = abs(delta);
 	ivec2 pos = ivec2(floor(startPos));
@@ -191,7 +194,7 @@ if (!isinf(name) && (isinf(result.a) || result.a > name)) { \
 }															\
 if (result.a <= 0) return vec4(clamp(result.rgb, 0, 1), 1);
 
-vec4 TraceSceneLine(vec2 startPos, vec2 endPos, vec2 circleCenter, float sceneScale) {
+vec4 TraceSceneLine(vec2 startPos, vec2 endPos, vec2 circleCenter, float circleScale) {
 	vec4 result = vec4(vec3(0), 1.0/0.0);
 	DEPTH_ADD(tallBox, vec3(0), LineBoxIntersection(startPos, endPos, vec2(0.35, 0.37), vec2(0.04, 0.13)))
 	DEPTH_ADD(shortBox, vec3(0), LineBoxIntersection(startPos, endPos, vec2(0.65, 0.66), vec2(0.13, 0.04)))
@@ -199,8 +202,8 @@ vec4 TraceSceneLine(vec2 startPos, vec2 endPos, vec2 circleCenter, float sceneSc
 	DEPTH_ADD(rightWall, vec3(0, 0, 0.1), LinePlaneIntersection(startPos, endPos, vec2(0.933), vec2(-1, 0)))
 	DEPTH_ADD(bottomWall, vec3(0, 0, 0), LinePlaneIntersection(startPos, endPos, vec2(0.921), vec2(0, -1)))
 	DEPTH_ADD(leftWall, vec3(0.1, 0, 0), LinePlaneIntersection(startPos, endPos, vec2(0.067), vec2(1, 0)))
-	// DEPTH_ADD(circle, vec3(1), LineCircleIntersection(startPos, endPos, circleCenter, sceneScale))
-	// DEPTH_ADD(circle, vec3(0.5), LineBoxIntersection(startPos, endPos, circleCenter, vec2(sceneScale)))
+	// DEPTH_ADD(circle, vec3(1), LineCircleIntersection(startPos, endPos, circleCenter, circleScale))
+	// DEPTH_ADD(circle, vec3(0.5), LineBoxIntersection(startPos, endPos, circleCenter, vec2(circleScale)))
 	if (isinf(result.a)) return vec4(0);
 	return clamp(result, 0, 1);
 }

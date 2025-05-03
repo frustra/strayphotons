@@ -29,9 +29,11 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         auto scope = graph.Scope("FlatlandRC");
 
-        if (glm::any(glm::lessThanEqual(voxels.GetGridSize(), glm::uvec3(0)))) return;
+        const glm::uvec3 voxelGridSize = voxels.GetGridSize();
+        if (glm::any(glm::lessThanEqual(voxelGridSize, glm::uvec3(0)))) return;
 
-        const int resolution = CVarRCResolution.Get();
+        const glm::uvec2 resolution = glm::uvec2(CVarRCResolution.Get(),
+            CVarRCResolution.Get() * voxelGridSize.z / voxelGridSize.x);
         const int numCascades = CVarRCNumCascades.Get();
         const int baseSamples = CVarRCBaseSamples.Get();
         const int nextSamples = CVarRCNextSamples.Get();
@@ -48,7 +50,9 @@ namespace sp::vulkan::renderer {
                         builder.ReadUniform("ViewState");
                         builder.ReadUniform("VoxelState");
 
-                        desc.extent = vk::Extent3D(resolution / (1 << cascadeNum), resolution / (1 << cascadeNum), 1);
+                        desc.extent = vk::Extent3D(resolution.x / (1 << cascadeNum),
+                            resolution.y / (1 << cascadeNum),
+                            1);
                         desc.arrayLayers = numSamples; // / std::pow(2, cascadeNum + 1);
                         desc.primaryViewType = vk::ImageViewType::e2DArray;
                         desc.imageType = vk::ImageType::e2D;
@@ -57,6 +61,7 @@ namespace sp::vulkan::renderer {
                     })
                     .Execute([cascadeNum,
                                  cascadeName,
+                                 resolution,
                                  gridSize = glm::ivec3(desc.extent.width, desc.extent.height, desc.arrayLayers),
                                  baseSamples,
                                  nextSamples](rg::Resources &resources, CommandContext &cmd) {
@@ -73,6 +78,8 @@ namespace sp::vulkan::renderer {
                         cmd.SetShaderConstant(ShaderStage::Compute, "NEXT_SAMPLES", nextSamples);
                         cmd.SetShaderConstant(ShaderStage::Compute, "SAMPLE_LENGTH", CVarRCTraceLength.Get());
                         cmd.SetShaderConstant(ShaderStage::Compute, "VOXEL_SCALE", CVarRCVoxelScale.Get());
+                        cmd.SetShaderConstant(ShaderStage::Compute, "RS_RESOLUTION_X", resolution.x);
+                        cmd.SetShaderConstant(ShaderStage::Compute, "RS_RESOLUTION_Y", resolution.y);
 
                         cmd.Dispatch(gridSize.x, gridSize.y, gridSize.z);
                     });
