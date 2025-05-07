@@ -54,7 +54,7 @@ void main() {
 		startPos += sampleDir * intervalLength;
 		// nextIntervalsampleDir * SAMPLE_LENGTH * max(0, CASCADE_NUM);
 	}
-	float intervalLength = (SAMPLE_LENGTH * 1.42) * sin((M_PI - thetaMult) * 0.5) / sin(thetaMult);
+	float intervalLength = SAMPLE_LENGTH * sin((M_PI - thetaMult) * 0.5) / sin(thetaMult);
 	vec2 endPos = startPos + sampleDir * intervalLength;
 	vec2 cascadeScale = 1.0 / vec2(RS_RESOLUTION_X, RS_RESOLUTION_X);
 	vec4 sampleValue = TraceGridLineScaled(startPos * cascadeScale, endPos * cascadeScale, viewVoxelPos.y);
