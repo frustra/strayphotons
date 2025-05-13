@@ -600,6 +600,7 @@ namespace sp::vulkan {
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
         radiance.AddFlatlandRC(graph);
+        radiance.AddHRC(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);

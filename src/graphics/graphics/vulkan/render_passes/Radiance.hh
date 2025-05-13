@@ -17,6 +17,7 @@ namespace sp::vulkan::renderer {
         Radiance(Voxels &voxels) : voxels(voxels) {}
 
         void AddFlatlandRC(RenderGraph &graph);
+        void AddHRC(RenderGraph &graph);
 
     private:
         Voxels &voxels;

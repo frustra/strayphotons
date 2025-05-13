@@ -1,0 +1,59 @@
+/*
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0, rgba16f) uniform image2DArray radianceIn0;
+layout(binding = 1, rgba16f) uniform image2DArray radianceIn1;
+layout(binding = 2, rgba16f) uniform image2DArray radianceOut;
+
+layout(constant_id = 0) const int CASCADE_NUM = 0;
+layout(constant_id = 1) const float SAMPLE_LENGTH = 4;
+layout(constant_id = 2) const int DIRECTION = 0;
+
+const vec2[4] AxisDirections2D = vec2[](
+    vec2(0, 1),
+	vec2(1, 0),
+    vec2(0, -1),
+    vec2(-1, 0)
+);
+
+#include "../lib/voxel_shared.glsl"
+#include "lib/rc_util.glsl"
+
+void main() {
+    if (any(greaterThanEqual(gl_GlobalInvocationID, imageSize(radianceOut)))) return;
+    vec3 xyr = vec3(gl_GlobalInvocationID);
+
+	vec2 axisDir = AxisDirections2D[DIRECTION];
+	vec3 cascadeScale = vec3(1 + abs(axisDir.x), 1 + abs(axisDir.y), 0.5);
+
+	vec4 sample0 = imageLoad(radianceIn0, ivec3(xyr));
+	if (sample0.a < 0.001) {
+		for (int n1 = 0; n1 < 2; n1++) {
+			float skew = (xyr.z + n1) / imageSize(radianceOut).z * 2 - 1;
+			vec2 sampleDir = axisDir + abs(axisDir.yx) * skew * (1 << CASCADE_NUM);
+			vec2 startPos = xyr.xy + sampleDir * SAMPLE_LENGTH;
+			ivec3 samplePos2 = ivec3(vec3(startPos, xyr.z + n1 * 0.5) / cascadeScale);
+			vec4 sample1a = imageLoad(radianceIn1, samplePos2 + ivec3(0, 0, 0));
+			// vec4 sample1b = imageLoad(radianceIn1, samplePos2 + ivec3(1, 0, 0));
+			// vec4 sample1c = imageLoad(radianceIn1, samplePos2 + ivec3(0, 1, 0));
+			// vec4 sample1d = imageLoad(radianceIn1, samplePos2 + ivec3(1, 1, 0));
+			// vec4 top = mix(sample1a, sample1b, fract(xyr.x / 2.0));
+			// vec4 bottom = mix(sample1c, sample1d, fract(xyr.x / 2.0));
+			// sample0 += mix(top, bottom, fract(xyr.y / 2.0));
+			sample0 += sample1a;
+		}
+	}
+
+    imageStore(radianceOut, ivec3(xyr), sample0);
+}

@@ -47,7 +47,7 @@
 			"transform": {
 				"parent": "player:player",
 				"translate": [0, 0, 0],
-				"scale": [0.02, 1, 0.02]
+				"scale": [0.05, 1, 0.05]
 			},
 			"renderable": {
 				"model": "box",

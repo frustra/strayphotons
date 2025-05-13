@@ -45,19 +45,26 @@ void main() {
     vec3 viewVoxelPos = (voxelInfo.worldToVoxel * vec4(viewPos, 1.0)).xyz / vec3(voxelInfo.gridSize.x, 1, voxelInfo.gridSize.z);
 
 	float thetaMult = 2.0 * M_PI / imageSize(radianceOut).z;
-	float theta = xyr.z * thetaMult;
-	vec2 sampleDir = vec2(sin(theta), cos(theta));
+	float theta = xyr.z * thetaMult + thetaMult * 0.5;
 	vec2 startPos = vec2(xyr.xy * (1 << CASCADE_NUM));
+	vec2 lastPoint = startPos;
+	float radius = 0.0;
 	for (int i = 0; i < CASCADE_NUM; i++) {
+		float numSamples = BASE_SAMPLES * pow(NEXT_SAMPLES, i);
+		float cascadeThetaMult = 2.0 * M_PI / numSamples;
+		float cascadeTheta = floor(theta / cascadeThetaMult) * cascadeThetaMult + cascadeThetaMult * 0.5;
+		vec2 sampleDir = vec2(sin(cascadeTheta), cos(cascadeTheta));
+
 		float relativeScale = pow(NEXT_SAMPLES, CASCADE_NUM - i);
 		float intervalLength = SAMPLE_LENGTH * sin((M_PI - thetaMult * relativeScale) * 0.5) / sin(thetaMult * relativeScale);
-		startPos += sampleDir * intervalLength;
-		// nextIntervalsampleDir * SAMPLE_LENGTH * max(0, CASCADE_NUM);
+		radius += intervalLength;
+		lastPoint = startPos + sampleDir * radius;
 	}
-	float intervalLength = SAMPLE_LENGTH * sin((M_PI - thetaMult) * 0.5) / sin(thetaMult);
-	vec2 endPos = startPos + sampleDir * intervalLength;
+	vec2 sampleDir = vec2(sin(theta), cos(theta));
+	radius += SAMPLE_LENGTH * sin((M_PI - thetaMult) * 0.5) / sin(thetaMult);
+	vec2 endPos = startPos + sampleDir * radius;
 	vec2 cascadeScale = 1.0 / vec2(RS_RESOLUTION_X, RS_RESOLUTION_X);
-	vec4 sampleValue = TraceGridLineScaled(startPos * cascadeScale, endPos * cascadeScale, viewVoxelPos.y);
+	vec4 sampleValue = TraceGridLineScaled(lastPoint * cascadeScale, endPos * cascadeScale, viewVoxelPos.y);
 	// vec4 sampleValue = TraceSceneLine(startPos, endPos, viewVoxelPos.xz, VOXEL_SCALE * cascadeScale.x);
 
     imageStore(radianceOut, xyr, sampleValue);

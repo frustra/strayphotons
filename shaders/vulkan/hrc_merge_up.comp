@@ -1,0 +1,56 @@
+/*
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/util.glsl"
+
+layout(binding = 0, rgba16f) uniform image2DArray radianceIn;
+layout(binding = 1, rgba16f) uniform image2DArray radianceOut;
+
+layout(constant_id = 0) const int CASCADE_NUM = 0;
+layout(constant_id = 1) const float SAMPLE_LENGTH = 4;
+layout(constant_id = 2) const int DIRECTION = 0;
+
+const vec2[4] AxisDirections2D = vec2[](
+    vec2(0, 1),
+	vec2(1, 0),
+    vec2(0, -1),
+    vec2(-1, 0)
+);
+
+#include "../lib/voxel_shared.glsl"
+
+void main() {
+    if (any(greaterThanEqual(gl_GlobalInvocationID, imageSize(radianceOut)))) return;
+    vec3 xyr = vec3(gl_GlobalInvocationID);
+
+	vec2 axisDir = AxisDirections2D[DIRECTION];
+
+	float r0 = floor(xyr.z * 0.5) * 2;
+	float r1 = ceil(xyr.z * 0.5) * 2;
+	float skew0 = r0 / (imageSize(radianceOut).z - 1) * 2 - 1;
+	float skew1 = r1 / (imageSize(radianceOut).z - 1) * 2 - 1;
+	vec2 sampleDir0 = axisDir + abs(axisDir.yx) * skew0 * (1 << (CASCADE_NUM - 1));
+	vec2 sampleDir1 = axisDir + abs(axisDir.yx) * skew1 * (1 << (CASCADE_NUM - 1));
+	vec3 cascadeScale = vec3(1 + abs(axisDir.x), 1 + abs(axisDir.y), 0.5);
+	vec2 startPos0 = xyr.xy + sampleDir0 * SAMPLE_LENGTH / cascadeScale.xy;
+	vec2 startPos1 = xyr.xy + sampleDir1 * SAMPLE_LENGTH / cascadeScale.xy;
+
+	vec4 sample0 = imageLoad(radianceIn, ivec3(vec3(xyr.xy, r0) * cascadeScale));
+	vec4 sample1 = imageLoad(radianceIn, ivec3(vec3(xyr.xy, r1) * cascadeScale));
+	vec4 sample2 = imageLoad(radianceIn, ivec3(vec3(startPos0, r1) * cascadeScale));
+	vec4 sample3 = imageLoad(radianceIn, ivec3(vec3(startPos1, r0) * cascadeScale));
+	vec4 frontSample = mix(sample0, sample1, 0.5);
+	vec4 backSample = sample2 * (1 - max(sample0.a, sample1.a));
+	backSample += sample3 * (1 - max(sample0.a, sample1.a));
+	frontSample += backSample * 0.5 * (1 - frontSample.a);
+	imageStore(radianceOut, ivec3(xyr), frontSample);
+}
