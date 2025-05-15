@@ -8,6 +8,7 @@
 set(PROJECT_COMMON_LIB ${PROJECT_BASE_NAME}-common CACHE INTERNAL "Library containing common unitility functions")
 set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containing core components such as the ECS and asset loading")
 set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
+set(PROJECT_ECS_C_ABI_LIB ${PROJECT_BASE_NAME}-ecs-c-abi CACHE INTERNAL "Shared library implementing ECS access via a C API")
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
@@ -21,6 +22,21 @@ set(PROJECT_XR_OPENVR_LIB ${PROJECT_BASE_NAME}-xr-openvr CACHE INTERNAL "Library
 
 set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library containing built-in scripts")
 
+TecsGenerateCHeaders(
+    TARGET_NAME ${PROJECT_ECS_C_ABI_LIB} OBJECT_TARGET
+    ECS_INCLUDE_PATH "ecs/EcsImpl.hh"
+    ECS_NAME ecs::ECS
+    LINK_LIBRARIES
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+    INCLUDE_DIRECTORIES
+        ${PROJECT_ROOT_DIR}/include
+    COMPILE_DEFINITIONS
+        SP_SHARED_INTERNAL
+        TECS_SHARED_INTERNAL
+        VULKAN_HPP_STORAGE_SHARED
+        VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
+)
 
 add_library(${PROJECT_LIB_NAME} SHARED)
 
@@ -28,21 +44,25 @@ target_include_directories(${PROJECT_LIB_NAME} PUBLIC
     ${PROJECT_ROOT_DIR}/include
 )
 
-target_link_libraries(${PROJECT_LIB_NAME} PRIVATE
-    ${PROJECT_COMMON_LIB}
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GAME_LIB}
-    ${PROJECT_PHYSICS_PHYSX_LIB}
-    ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
-    "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
-    "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
-    "$<IF:$<BOOL:${SP_BUILD_RUST}>,sp-rs-wasm,>"
-    ${PROJECT_SCRIPTS_LIB}
+target_link_libraries(${PROJECT_LIB_NAME}
+    PRIVATE
+        ${PROJECT_COMMON_LIB}
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
+        ${PROJECT_PHYSICS_PHYSX_LIB}
+        ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
+        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        "$<IF:$<BOOL:${SP_BUILD_RUST}>,sp-rs-wasm,>"
+        ${PROJECT_SCRIPTS_LIB}
+    PUBLIC
+        ${PROJECT_ECS_C_ABI_LIB}
 )
 
 target_compile_definitions(${PROJECT_LIB_NAME}
     PRIVATE
         SP_SHARED_INTERNAL
+        TECS_SHARED_INTERNAL
     PUBLIC
         VULKAN_HPP_STORAGE_SHARED
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC

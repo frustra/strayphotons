@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <ecs/Components.hh>
+#include "ecs/Components.hh"
 
 namespace ecs {
     enum class XrEye {

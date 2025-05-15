@@ -33,6 +33,9 @@ using namespace std;
     #include <glfw/glfw3native.h>
 #endif
 
+#include <c_abi/Tecs.hh>
+#include <core/ecs/Ecs.hh>
+#include <core/ecs/components/Name.hh>
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
@@ -42,7 +45,48 @@ using namespace std;
 #include <strayphotons.h>
 #include <vulkan/vulkan.hpp>
 
+TECS_IMPLEMENT_C_ABI
+
 using cxxopts::value;
+
+namespace ecs {
+    using AbiECS = Tecs::abi::ECS<Name,
+        SceneInfo,
+        SceneProperties,
+        TransformSnapshot,
+        TransformTree,
+        Renderable,
+        Physics,
+
+        ActiveScene,
+        Animation,
+        Audio,
+        CharacterController,
+        FocusLock,
+        Gui,
+        LaserEmitter,
+        LaserLine,
+        LaserSensor,
+        Light,
+        LightSensor,
+        OpticalElement,
+        PhysicsJoints,
+        PhysicsQuery,
+        SceneConnection,
+        Screen,
+        TriggerArea,
+        TriggerGroup,
+        View,
+        VoxelArea,
+        XRView,
+
+        EventInput,
+        EventBindings,
+        Signals,
+        SignalOutput,
+        SignalBindings,
+        Scripts>;
+} // namespace ecs
 
 namespace sp {
     sp_game_t *GameInstance = nullptr;
@@ -403,6 +447,10 @@ int main(int argc, char **argv) {
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
+        TecsECS *liveEcs = sp_get_live_ecs();
+        ecs::AbiECS world(liveEcs);
+        bool foundPlayer = false;
+
         auto frameEnd = chrono_clock::now();
         while (!sp_game_is_exit_triggered(GameInstance)) {
             static const char *frameName = "WindowInput";
@@ -420,6 +468,17 @@ int main(int argc, char **argv) {
                 if (!sp_graphics_handle_input_frame(GameGraphics)) {
                     Tracef("Exit triggered via window manager");
                     break;
+                }
+            }
+            if (!foundPlayer) {
+                auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
+                for (auto &ent : lock.EntitiesWith<ecs::Name>()) {
+                    const ecs::Name &name = ent.Get<ecs::Name>(lock);
+                    if (name.scene == "player" && name.entity == "player") {
+                        Logf("C ABI! Player entity: %s", std::to_string(ent));
+                        foundPlayer = true;
+                        break;
+                    }
                 }
             }
 

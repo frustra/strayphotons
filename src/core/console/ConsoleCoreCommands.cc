@@ -284,9 +284,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 trace.SetThreadName(tracy::GetThreadName(thread_id), event.thread);
             }
 
-            std::ofstream traceFile("tecs-trace.csv");
-            trace.SaveToCSV(traceFile);
-            traceFile.close();
+            trace.SaveToCSV("tecs-trace.csv");
 
             Logf("Tecs performance trace complete");
             tracingStarted = false;
