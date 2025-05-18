@@ -30,7 +30,9 @@ namespace sp {
 
 namespace ecs {
     template<typename>
-    class Component;
+    class EntityComponent;
+    template<typename>
+    class GlobalComponent;
 
     using PhysicsWriteLock = Lock<
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
@@ -39,6 +41,7 @@ namespace ecs {
     public:
         ComponentBase(const char *name, StructMetadata &&metadata) : name(name), metadata(std::move(metadata)) {}
 
+        virtual bool IsGlobal() const = 0;
         virtual bool LoadEntity(FlatEntity &dst, const picojson::value &src) const = 0;
         virtual void SaveEntity(const Lock<ReadAll> &lock,
             const EntityScope &scope,
@@ -58,12 +61,20 @@ namespace ecs {
 
         template<typename T>
         void ApplyComponent(T &dst, const T &src, bool liveTarget) const {
-            dynamic_cast<const Component<T> *>(this)->ApplyComponent(dst, src, liveTarget);
+            if constexpr (Tecs::is_global_component<T>()) {
+                dynamic_cast<const GlobalComponent<T> *>(this)->ApplyComponent(dst, src, liveTarget);
+            } else {
+                dynamic_cast<const EntityComponent<T> *>(this)->ApplyComponent(dst, src, liveTarget);
+            }
         }
 
         template<typename T>
         const T &GetStagingDefault() const {
-            return *static_cast<const T *>(dynamic_cast<const Component<T> *>(this)->GetStagingDefault());
+            if constexpr (Tecs::is_global_component<T>()) {
+                return *static_cast<const T *>(dynamic_cast<const GlobalComponent<T> *>(this)->GetStagingDefault());
+            } else {
+                return *static_cast<const T *>(dynamic_cast<const EntityComponent<T> *>(this)->GetStagingDefault());
+            }
         }
 
         std::string name;
@@ -77,15 +88,22 @@ namespace ecs {
     // Calls the provided function for all components except Name and SceneInfo
     void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
 
-    template<typename T>
-    const Component<T> &LookupComponent() {
+    template<typename T, std::enable_if_t<Tecs::is_global_component<T>::value, int> = 0>
+    const GlobalComponent<T> &LookupComponent() {
         auto ptr = LookupComponent(std::type_index(typeid(T)));
         Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *dynamic_cast<const Component<T> *>(ptr);
+        return *dynamic_cast<const GlobalComponent<T> *>(ptr);
+    }
+
+    template<typename T, std::enable_if_t<!Tecs::is_global_component<T>::value, int> = 0>
+    const EntityComponent<T> &LookupComponent() {
+        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
+        return *dynamic_cast<const EntityComponent<T> *>(ptr);
     }
 
     template<typename CompType>
-    class Component : public ComponentBase {
+    class EntityComponent : public ComponentBase {
     private:
         const CompType defaultLiveComponent = {};
         const CompType defaultStagingComponent;
@@ -101,9 +119,9 @@ namespace ecs {
         }
 
     public:
-        Component(StructMetadata &&metadata, const char *name)
+        EntityComponent(StructMetadata &&metadata, const char *name)
             : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
-            auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
+            auto existing = dynamic_cast<const EntityComponent<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
             } else if (*this != *existing) {
@@ -111,7 +129,15 @@ namespace ecs {
             }
         }
 
-        Component(StructMetadata &&metadata) : Component(std::move(metadata), metadata.name.c_str()) {}
+        EntityComponent(StructMetadata &&metadata) : EntityComponent(std::move(metadata), metadata.name.c_str()) {}
+
+        template<typename... Fields>
+        EntityComponent(const char *name, const char *desc, Fields &&...fields)
+            : EntityComponent({typeid(CompType), sizeof(CompType), name, desc, std::forward<Fields>(fields)...}) {}
+
+        bool IsGlobal() const override {
+            return false;
+        }
 
         bool LoadFields(CompType &dst, const picojson::value &src) const {
             for (auto &field : metadata.fields) {
@@ -208,11 +234,134 @@ namespace ecs {
             return defaultStagingComponent;
         }
 
-        bool operator==(const Component<CompType> &other) const {
+        bool operator==(const EntityComponent<CompType> &other) const {
             return name == other.name && metadata == other.metadata;
         }
 
-        bool operator!=(const Component<CompType> &other) const {
+        bool operator!=(const EntityComponent<CompType> &other) const {
+            return !(*this == other);
+        }
+
+    protected:
+        static void Apply(CompType &dst, const CompType &src, bool liveTarget) {
+            // Custom field apply is always called, default to no-op.
+        }
+    };
+
+    template<typename CompType>
+    class GlobalComponent : public ComponentBase {
+    private:
+        const CompType defaultLiveComponent = {};
+        const CompType defaultStagingComponent;
+
+        CompType makeDefaultStagingComponent(const StructMetadata &metadata) {
+            static const CompType defaultComp = {};
+            CompType comp = {};
+            for (auto &field : metadata.fields) {
+                field.InitUndefined(&comp, &defaultComp);
+            }
+            StructMetadata::InitUndefined(comp);
+            return comp;
+        }
+
+    public:
+        GlobalComponent(StructMetadata &&metadata, const char *name)
+            : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
+            auto existing = dynamic_cast<const GlobalComponent<CompType> *>(LookupComponent(std::string(name)));
+            if (existing == nullptr) {
+                RegisterComponent(name, std::type_index(typeid(CompType)), this);
+            } else if (*this != *existing) {
+                throw std::runtime_error("Duplicate component type registered: "s + name);
+            }
+        }
+
+        GlobalComponent(StructMetadata &&metadata) : GlobalComponent(std::move(metadata), metadata.name.c_str()) {}
+
+        template<typename... Fields>
+        GlobalComponent(const char *name, const char *desc, Fields &&...fields)
+            : GlobalComponent({typeid(CompType), sizeof(CompType), name, desc, std::forward<Fields>(fields)...}) {}
+
+        bool IsGlobal() const override {
+            return true;
+        }
+
+        bool LoadFields(CompType &dst, const picojson::value &src) const {
+            for (auto &field : metadata.fields) {
+                if (!field.Load(&dst, src)) {
+                    Errorf("Component %s has invalid field: %s", name, field.name);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool LoadEntity(FlatEntity &, const picojson::value &) const override {
+            return false;
+        }
+
+        void SaveEntity(const Lock<ReadAll> &, const EntityScope &, picojson::value &, const Entity &) const override {}
+
+        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
+            const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
+            // Merge existing component with a new one
+            for (auto &field : metadata.fields) {
+                field.Apply(&dst, &src, &defaultComponent);
+            }
+            Apply(dst, src, liveTarget);
+        }
+
+        void SetComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &,
+            const FlatEntity &src) const override {
+            auto &opt = std::get<std::shared_ptr<CompType>>(src);
+            if (opt) {
+                auto &comp = lock.Set<CompType>(*opt);
+                scope::SetScope(comp, scope);
+            }
+        }
+
+        bool HasComponent(const Lock<> &lock, Entity) const override {
+            return lock.Has<CompType>();
+        }
+
+        bool HasComponent(const FlatEntity &ent) const override {
+            return (bool)std::get<std::shared_ptr<CompType>>(ent);
+        }
+
+        const void *Access(const Lock<ReadAll> &lock, Entity) const override {
+            return &lock.Get<CompType>();
+        }
+
+        void *Access(const Lock<WriteAll> &lock, Entity) const override {
+            return &lock.Get<CompType>();
+        }
+
+        void *Access(const PhysicsWriteLock &lock, Entity) const override {
+            if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
+                return &lock.Get<CompType>();
+            } else {
+                return nullptr;
+            }
+        }
+
+        const void *GetLiveDefault() const override {
+            return &defaultLiveComponent;
+        }
+
+        const void *GetStagingDefault() const override {
+            return &defaultStagingComponent;
+        }
+
+        const CompType &StagingDefault() const {
+            return defaultStagingComponent;
+        }
+
+        bool operator==(const GlobalComponent<CompType> &other) const {
+            return name == other.name && metadata == other.metadata;
+        }
+
+        bool operator!=(const GlobalComponent<CompType> &other) const {
             return !(*this == other);
         }
 
@@ -223,10 +372,12 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static Component<Name> ComponentName({typeid(Name), "Name", DocsDescriptionName}, "name");
-    static Component<SceneInfo> ComponentSceneInfo({typeid(SceneInfo),
-        "SceneInfo",
-        "This is an internal component storing each entity's source scene and other creation info."});
+    static EntityComponent<Name> ComponentName({typeid(Name), sizeof(Name), "Name", DocsDescriptionName}, "name");
+    static EntityComponent<SceneInfo> ComponentSceneInfo("SceneInfo",
+        "This is an internal component storing each entity's source scene and other creation info.");
 
-    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef", DocsDescriptionEntityRef);
+    static StructMetadata MetadataEntityRef(typeid(EntityRef),
+        sizeof(EntityRef),
+        "EntityRef",
+        DocsDescriptionEntityRef);
 }; // namespace ecs

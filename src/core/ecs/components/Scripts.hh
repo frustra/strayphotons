@@ -57,6 +57,7 @@ namespace ecs {
         std::shared_ptr<ScriptState> state;
     };
     static StructMetadata MetadataScriptInstance(typeid(ScriptInstance),
+        sizeof(ScriptInstance),
         "ScriptInstance",
         R"(
 Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
@@ -116,12 +117,12 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
         std::vector<ScriptInstance> scripts;
     };
 
-    static Component<Scripts> ComponentScripts(
-        {typeid(Scripts), "Scripts", "", StructField::New(&Scripts::scripts, ~FieldAction::AutoApply)},
+    static EntityComponent<Scripts> ComponentScripts(
+        {typeid(Scripts), sizeof(Scripts), "Scripts", "", StructField::New(&Scripts::scripts, ~FieldAction::AutoApply)},
         "script");
 
     template<>
-    void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
+    void EntityComponent<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
 
     // Cheecks if the script has an Init(ScriptState &state) function
     template<typename T, typename = void>

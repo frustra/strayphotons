@@ -180,7 +180,7 @@ namespace sp::scripts {
                 auto snapRadians = glm::radians(CVarEditRotateSnapDegrees.Get());
                 auto angle = std::round(toolDepth * CVarEditRotateSensitivity.Get() / snapRadians) * snapRadians;
                 if (angle == 0.0f) return false;
-                targetTree.pose.Rotate(angle, relativeNormal);
+                targetTree.pose.RotateAxis(angle, relativeNormal);
             }
             selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
             return true;

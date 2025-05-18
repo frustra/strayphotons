@@ -25,8 +25,7 @@ namespace ecs {
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
     };
 
-    static Component<Light> ComponentLight({typeid(Light),
-        "light",
+    static EntityComponent<Light> ComponentLight("light",
         "",
         StructField::New("intensity",
             "The brightness of the light measured in candela (lumens per solid angle). This value is ignored if "
@@ -55,5 +54,5 @@ namespace ecs {
             "The near and far clipping plane distances for this light. For example, with a clip value of `[1, 10]`, "
             "light won't start hitting objects until the near plane, 1 meter from the light. "
             "The light will then cast shadows for the next 9 meters until the far plane, 10 meters from the light.",
-            &Light::shadowMapClip)});
+            &Light::shadowMapClip));
 } // namespace ecs

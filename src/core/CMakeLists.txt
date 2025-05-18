@@ -29,7 +29,7 @@ target_link_libraries(${PROJECT_CORE_LIB}
 )
 
 if(WIN32)
-    # Disable warnings for warning C4506: no definition for inline function 'bool ecs::Component<...>::Load()'
+    # Disable warnings for warning C4506: no definition for inline function 'bool ecs::EntityComponent<...>::Load()'
     target_compile_options(${PROJECT_CORE_LIB} PUBLIC
         /wd4506
     )

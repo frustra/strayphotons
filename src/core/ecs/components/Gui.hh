@@ -28,9 +28,8 @@ namespace ecs {
         Gui(std::string windowName, GuiTarget target = GuiTarget::World) : target(target), windowName(windowName) {}
     };
 
-    static Component<Gui> ComponentGui({typeid(Gui),
-        "gui",
+    static EntityComponent<Gui> ComponentGui("gui",
         "",
         StructField::New("window_name", &Gui::windowName),
-        StructField::New("target", &Gui::target)});
+        StructField::New("target", &Gui::target));
 } // namespace ecs

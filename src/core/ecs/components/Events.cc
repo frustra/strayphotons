@@ -132,7 +132,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget) {
+    void EntityComponent<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget) {
         for (auto &[source, srcList] : src.sourceToDest) {
             for (auto &binding : srcList) {
                 dst.Bind(source, binding);

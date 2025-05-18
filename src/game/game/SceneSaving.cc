@@ -148,7 +148,7 @@ namespace sp {
                         auto stagingBindings = BuildFlatComponent<SignalBindings>(staging, sceneInfo.rootStagingId);
 
                         if (liveOutputs) {
-                            const Component<SignalOutput> &base = LookupComponent<SignalOutput>();
+                            const EntityComponent<SignalOutput> &base = LookupComponent<SignalOutput>();
                             auto &value = components[base.name];
                             SignalOutput *outputsPtr = nullptr;
                             if (stagingOutputs) outputsPtr = &stagingOutputs.value();
@@ -161,7 +161,7 @@ namespace sp {
                             }
                         }
                         if (liveBindings) {
-                            const Component<SignalBindings> &base = LookupComponent<SignalBindings>();
+                            const EntityComponent<SignalBindings> &base = LookupComponent<SignalBindings>();
                             auto &value = components[base.name];
                             SignalBindings *bindingsPtr = nullptr;
                             if (stagingBindings) bindingsPtr = &stagingBindings.value();
@@ -175,7 +175,7 @@ namespace sp {
                         }
                     }
                 } else if constexpr (!Tecs::is_global_component<T>()) {
-                    const Component<T> &base = LookupComponent<T>();
+                    const EntityComponent<T> &base = LookupComponent<T>();
                     if (src.Has<T>(live)) {
                         picojson::value &value = components[base.name];
                         auto liveComp = src.Get<T>(live);

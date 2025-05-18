@@ -43,7 +43,7 @@
 #include "ecs/components/Triggers.hh"
 #include "ecs/components/View.hh"
 #include "ecs/components/VoxelArea.hh"
-#include "ecs/components/XRView.hh"
+#include "ecs/components/XrView.hh"
 
 namespace ecs {
     struct EventQueuePool : public sp::NonMoveable {

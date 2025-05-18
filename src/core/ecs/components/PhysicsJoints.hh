@@ -48,6 +48,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),
+        sizeof(PhysicsJoint),
         "PhysicsJoint",
         "",
         StructField::New("target", &PhysicsJoint::target),
@@ -64,11 +65,10 @@ namespace ecs {
         }
     };
 
-    static Component<PhysicsJoints> ComponentPhysicsJoints({typeid(PhysicsJoints),
-        "physics_joints",
+    static EntityComponent<PhysicsJoints> ComponentPhysicsJoints("physics_joints",
         "",
-        StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply)});
+        StructField::New(&PhysicsJoints::joints, ~FieldAction::AutoApply));
 
     template<>
-    void Component<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget);
+    void EntityComponent<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget);
 } // namespace ecs

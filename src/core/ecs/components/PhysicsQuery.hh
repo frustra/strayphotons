@@ -148,7 +148,7 @@ namespace ecs {
         }
     };
 
-    static Component<PhysicsQuery> ComponentPhysicsQuery({typeid(PhysicsQuery), "physics_query", ""});
+    static EntityComponent<PhysicsQuery> ComponentPhysicsQuery("physics_query", "");
     template<>
-    void Component<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget);
+    void EntityComponent<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget);
 } // namespace ecs

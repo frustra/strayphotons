@@ -173,8 +173,8 @@ namespace sp::vulkan::renderer {
         voxelCenter.Translate(voxelCenter * (0.5f * glm::vec4(voxelGridSize, 0)));
 
         std::array<ecs::Transform, 3> axisTransform = {voxelCenter, voxelCenter, voxelCenter};
-        axisTransform[0].Rotate(M_PI_2, glm::vec3(0, 1, 0));
-        axisTransform[1].Rotate(M_PI_2, glm::vec3(1, 0, 0));
+        axisTransform[0].RotateAxis(M_PI_2, glm::vec3(0, 1, 0));
+        axisTransform[1].RotateAxis(M_PI_2, glm::vec3(1, 0, 0));
 
         axisTransform[0].Scale(glm::vec3(voxelGridSize.z, voxelGridSize.y, voxelGridSize.x));
         axisTransform[1].Scale(glm::vec3(voxelGridSize.x, voxelGridSize.z, voxelGridSize.y));

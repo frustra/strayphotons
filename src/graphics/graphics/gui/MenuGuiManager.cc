@@ -289,10 +289,10 @@ namespace sp {
                     CVarWindowFullscreen.Set(fullscreen);
                 }
 
-                auto &mirrorXRCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
-                bool mirrorXR = mirrorXRCVar.Get();
+                auto &mirrorXrCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
+                bool mirrorXR = mirrorXrCVar.Get();
                 if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
-                    mirrorXRCVar.Set(mirrorXR);
+                    mirrorXrCVar.Set(mirrorXR);
                 }
             }
 

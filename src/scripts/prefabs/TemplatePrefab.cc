@@ -307,11 +307,11 @@ namespace ecs {
                         if (haveCorner) {
                             Transform transform;
                             if (x != 0 && y != 0) {
-                                transform.Rotate(M_PI, normal);
+                                transform.RotateAxis(M_PI, normal);
                             } else if (x != 0) {
-                                transform.Rotate(-M_PI / 2, normal);
+                                transform.RotateAxis(-M_PI / 2, normal);
                             } else if (y != 0) {
-                                transform.Rotate(M_PI / 2, normal);
+                                transform.RotateAxis(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
                             corner.ApplyComponents(lock, tileScope, transform);
@@ -321,11 +321,11 @@ namespace ecs {
                         if (haveEdge) {
                             Transform transform;
                             if (x == (count.x - 1)) {
-                                transform.Rotate(-M_PI / 2, normal);
+                                transform.RotateAxis(-M_PI / 2, normal);
                             } else if (y == (count.y - 1)) {
-                                transform.Rotate(M_PI, normal);
+                                transform.RotateAxis(M_PI, normal);
                             } else if (x == 0) {
-                                transform.Rotate(M_PI / 2, normal);
+                                transform.RotateAxis(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
                             edge.ApplyComponents(lock, tileScope, transform);

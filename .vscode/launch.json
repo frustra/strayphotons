@@ -203,6 +203,17 @@
             "console": "integratedTerminal",
         },
         {
+            "name": "StrayPhotons Components Codegen (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/strayphotons-codgen-generator.exe",
+            "args": ["include/strayphotons/components.h", "components_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+        {
             "name": "StrayPhotons Test (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

@@ -75,8 +75,8 @@ namespace sp::scripts {
             }
 
             transform.pose.SetRotation(glm::quat());
-            transform.pose.Rotate(glm::radians(-90.0), glm::vec3(1, 0, 0));
-            transform.pose.Rotate(sunPos, glm::vec3(0, 1, 0));
+            transform.pose.RotateAxis(glm::radians(-90.0), glm::vec3(1, 0, 0));
+            transform.pose.RotateAxis(sunPos, glm::vec3(0, 1, 0));
             transform.pose.SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
         }
     };

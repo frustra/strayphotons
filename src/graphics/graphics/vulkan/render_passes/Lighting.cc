@@ -160,7 +160,7 @@ namespace sp::vulkan::renderer {
 
                 // Make sure the optic is facing the light origin
                 if (glm::dot(lastOpticTransform.GetPosition() - lightOrigin, opticNormal) < 0) {
-                    lastOpticTransform.Rotate(M_PI, glm::vec3(0, 1, 0));
+                    lastOpticTransform.RotateAxis(M_PI, glm::vec3(0, 1, 0));
                 }
             }
             if (i < rbLight.lightPath.size()) continue;

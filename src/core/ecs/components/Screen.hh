@@ -17,11 +17,10 @@ namespace ecs {
         glm::vec3 luminanceScale = glm::vec3(1);
     };
 
-    static Component<Screen> ComponentScreen({typeid(Screen),
-        "screen",
+    static EntityComponent<Screen> ComponentScreen("screen",
         "",
         StructField::New("texture", &Screen::textureName),
         StructField::New("resolution", &Screen::resolution),
         StructField::New("scale", &Screen::scale),
-        StructField::New("luminance", &Screen::luminanceScale)});
+        StructField::New("luminance", &Screen::luminanceScale));
 } // namespace ecs

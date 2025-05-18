@@ -23,7 +23,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
+    void EntityComponent<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
         if (liveTarget || (!dst.model && src.model)) {
             dst.model = src.model;
         }

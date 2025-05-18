@@ -33,9 +33,6 @@ using namespace std;
     #include <glfw/glfw3native.h>
 #endif
 
-#include <c_abi/Tecs.hh>
-#include <core/ecs/Ecs.hh>
-#include <core/ecs/components/Name.hh>
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
@@ -45,9 +42,16 @@ using namespace std;
 #include <strayphotons.h>
 #include <vulkan/vulkan.hpp>
 
-TECS_IMPLEMENT_C_ABI
-
 using cxxopts::value;
+
+#ifndef SP_TEST_MODE
+    #include <c_abi/Tecs.hh>
+    #include <ecs/Ecs.hh>
+    #include <ecs/components/Name.hh>
+    #include <ecs/components/Renderable.hh>
+    #include <ecs/components/Transform.h>
+
+TECS_IMPLEMENT_C_ABI
 
 namespace ecs {
     using AbiECS = Tecs::abi::ECS<Name,
@@ -78,7 +82,7 @@ namespace ecs {
         TriggerGroup,
         View,
         VoxelArea,
-        XRView,
+        XrView,
 
         EventInput,
         EventBindings,
@@ -87,6 +91,7 @@ namespace ecs {
         SignalBindings,
         Scripts>;
 } // namespace ecs
+#endif
 
 namespace sp {
     sp_game_t *GameInstance = nullptr;
@@ -447,9 +452,12 @@ int main(int argc, char **argv) {
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
+#ifndef SP_TEST_MODE
         TecsECS *liveEcs = sp_get_live_ecs();
         ecs::AbiECS world(liveEcs);
-        bool foundPlayer = false;
+        Tecs::abi::Entity testEnt;
+        uint64_t frameCount = 0;
+#endif
 
         auto frameEnd = chrono_clock::now();
         while (!sp_game_is_exit_triggered(GameInstance)) {
@@ -470,17 +478,34 @@ int main(int argc, char **argv) {
                     break;
                 }
             }
-            if (!foundPlayer) {
+
+#ifndef SP_TEST_MODE
+            if (!testEnt) {
                 auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
                 for (auto &ent : lock.EntitiesWith<ecs::Name>()) {
-                    const ecs::Name &name = ent.Get<ecs::Name>(lock);
-                    if (name.scene == "player" && name.entity == "player") {
-                        Logf("C ABI! Player entity: %s", std::to_string(ent));
-                        foundPlayer = true;
+                    auto &name = ent.Get<ecs::Name>(lock);
+                    if (name == ecs::Name("cabi", "ABI_TEST")) {
+                        testEnt = ent;
                         break;
                     }
                 }
+            } else {
+                auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::Renderable>>();
+                if (testEnt.Has<ecs::TransformTree, ecs::Renderable>(lock)) {
+                    auto &transformTree = testEnt.Get<ecs::TransformTree>(lock);
+                    transformTree.pose.SetPosition(
+                        glm::vec3(std::sin(frameCount / 100.0f), 1.0f, std::cos(frameCount / 100.0f)));
+                    auto &renderable = testEnt.Get<ecs::Renderable>(lock);
+                    renderable.colorOverride = glm::vec4(std::sin(frameCount) * 0.5 + 0.5,
+                        std::sin(frameCount + 1) * 0.5 + 0.5,
+                        std::cos(frameCount) * 0.5 + 0.5,
+                        1);
+                } else {
+                    testEnt = {};
+                }
             }
+            frameCount++;
+#endif
 
             auto realFrameEnd = chrono_clock::now();
             chrono_clock::duration interval(0);

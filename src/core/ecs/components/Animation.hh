@@ -22,6 +22,7 @@ namespace ecs {
     };
 
     static const StructMetadata MetadataInterpolationMode(typeid(InterpolationMode),
+        sizeof(InterpolationMode),
         "InterpolationMode",
         "",
         StructMetadata::EnumDescriptions{
@@ -85,6 +86,7 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
     };
 
     static StructMetadata MetadataAnimationState(typeid(AnimationState),
+        sizeof(AnimationState),
         "AnimationState",
         DocsDescriptionAnimationState,
         StructField::New("delay",
@@ -120,13 +122,12 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
             Entity ent);
     };
 
-    static Component<Animation> ComponentAnimation({typeid(Animation),
-        "animation",
+    static EntityComponent<Animation> ComponentAnimation("animation",
         DocsDescriptionAnimation,
         StructField::New("states", &Animation::states, ~FieldAction::AutoApply),
         StructField::New("interpolation", &Animation::interpolation),
-        StructField::New("cubic_tension", &Animation::tension)});
+        StructField::New("cubic_tension", &Animation::tension));
 
     template<>
-    void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);
+    void EntityComponent<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget);
 } // namespace ecs

@@ -35,6 +35,7 @@ namespace ecs {
         std::string>;
 
     static StructMetadata MetadataEventData(typeid(EventData),
+        sizeof(EventData),
         "EventData",
         "Stores a variety of possible data types for sending in events "
         "(JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).");

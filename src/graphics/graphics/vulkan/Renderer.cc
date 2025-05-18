@@ -36,7 +36,7 @@
 
 namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
-    static const std::string defaultXRViewTarget = "XRView.LastOutput";
+    static const std::string defaultXrViewTarget = "XrView.LastOutput";
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
@@ -44,7 +44,7 @@ namespace sp::vulkan {
 
     static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
-    static CVar<string> CVarXRViewTarget("r.XRView", defaultXRViewTarget, "HMD's render target");
+    static CVar<string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
@@ -76,7 +76,7 @@ namespace sp::vulkan {
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
         if (CVarMirrorXR.Changed()) {
             bool mirrorXR = CVarMirrorXR.Get(true);
-            CVarWindowViewTarget.Set(mirrorXR ? CVarXRViewTarget.Get() : defaultWindowViewTarget);
+            CVarWindowViewTarget.Set(mirrorXR ? CVarXrViewTarget.Get() : defaultWindowViewTarget);
         }
 
         if (game.xr) game.xr->WaitFrame();
@@ -94,7 +94,7 @@ namespace sp::vulkan {
             }
         });
 
-        CVarXRViewTarget.UpdateCompletions([&](vector<string> &completions) {
+        CVarXrViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
                 completions.push_back(info.name);
@@ -129,7 +129,7 @@ namespace sp::vulkan {
             ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
-            ecs::XRView,
+            ecs::XrView,
             ecs::OpticalElement,
             ecs::Gui,
             ecs::Screen,
@@ -151,11 +151,11 @@ namespace sp::vulkan {
 
         if (game.xr) {
             {
-                auto scope = graph.Scope("XRView");
-                auto view = AddXRView(lock);
+                auto scope = graph.Scope("XrView");
+                auto view = AddXrView(lock);
                 if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
             }
-            AddXRSubmit(lock);
+            AddXrSubmit(lock);
         }
 
         {
@@ -305,10 +305,10 @@ namespace sp::vulkan {
         return view;
     }
 
-    ecs::View Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
+    ecs::View Renderer::AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock) {
         if (!game.xr) return {};
 
-        auto xrViews = lock.EntitiesWith<ecs::XRView>();
+        auto xrViews = lock.EntitiesWith<ecs::XrView>();
         if (xrViews.size() == 0) return {};
 
         glm::ivec2 viewExtents = glm::ivec2(0);
@@ -321,7 +321,7 @@ namespace sp::vulkan {
             if (viewExtents == glm::ivec2(0)) viewExtents = view.extents;
             Assert(viewExtents == view.extents, "All XR views must have the same extents");
 
-            auto &xrView = ent.Get<ecs::XRView>(lock);
+            auto &xrView = ent.Get<ecs::XrView>(lock);
             viewsByEye[xrView.eye] = view;
             viewsByEye[xrView.eye].UpdateViewMatrix(lock, ent);
         }
@@ -453,21 +453,21 @@ namespace sp::vulkan {
         return viewsByEye[ecs::XrEye::Left];
     }
 
-    void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {
+    void Renderer::AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock) {
         if (!game.xr) return;
 
-        auto xrViews = lock.EntitiesWith<ecs::XRView>();
+        auto xrViews = lock.EntitiesWith<ecs::XrView>();
         if (xrViews.size() != 2) return;
 
         rg::ResourceID sourceID;
-        graph.AddPass("XRSubmit")
+        graph.AddPass("XrSubmit")
             .Build([&](rg::PassBuilder &builder) {
-                auto &sourceName = CVarXRViewTarget.Get();
+                auto &sourceName = CVarXrViewTarget.Get();
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultXRViewTarget) {
-                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXRViewTarget);
-                    CVarXRViewTarget.Set(defaultXRViewTarget);
-                    sourceID = builder.GetID(defaultXRViewTarget, false);
+                if (sourceID == rg::InvalidResource && sourceName != defaultXrViewTarget) {
+                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
+                    CVarXrViewTarget.Set(defaultXrViewTarget);
+                    sourceID = builder.GetID(defaultXrViewTarget, false);
                 }
 
                 if (sourceID != rg::InvalidResource) {

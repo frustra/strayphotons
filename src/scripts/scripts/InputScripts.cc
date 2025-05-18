@@ -92,7 +92,7 @@ namespace sp::scripts {
                 auto smoothRotation = SignalRef(ent, "smooth_rotation").GetSignal(lock);
                 if (smoothRotation != 0.0f) {
                     // smooth_rotation unit is RPM
-                    transform.pose.Rotate(smoothRotation * M_PI * 2.0 / 60.0 * interval.count() / 1e9,
+                    transform.pose.RotateAxis(smoothRotation * M_PI * 2.0 / 60.0 * interval.count() / 1e9,
                         glm::vec3(0, -1, 0));
                     changed = true;
                 }
@@ -103,7 +103,7 @@ namespace sp::scripts {
 
                     auto angleDiff = std::get<double>(event.data);
                     if (angleDiff != 0.0f) {
-                        transform.pose.Rotate(glm::radians(angleDiff), glm::vec3(0, -1, 0));
+                        transform.pose.RotateAxis(glm::radians(angleDiff), glm::vec3(0, -1, 0));
                         changed = true;
                     }
                 }

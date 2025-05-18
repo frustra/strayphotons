@@ -38,6 +38,8 @@ namespace ecs {
     };
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);
+
+    static GlobalComponent<FocusLock> ComponentFocusLock("focus_lock", "");
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::FocusLock);

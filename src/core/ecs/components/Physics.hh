@@ -34,6 +34,7 @@ namespace ecs {
         UserInterface,
     };
     static const StructMetadata MetadataPhysicsGroup(typeid(PhysicsGroup),
+        sizeof(PhysicsGroup),
         "PhysicsGroup",
         "An actor's physics group determines both what it will collide with in the physics simulation, "
         "and which physics queries it is visible to.",
@@ -78,6 +79,7 @@ namespace ecs {
         bool operator==(const PhysicsMaterial &) const = default;
     };
     static StructMetadata MetadataPhysicsMaterial(typeid(PhysicsMaterial),
+        sizeof(PhysicsMaterial),
         "PhysicsMaterial",
         "",
         StructField::New("static_friction",
@@ -157,6 +159,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataPhysicsShape(typeid(PhysicsShape),
+        sizeof(PhysicsShape),
         "PhysicsShape",
         R"(
 Most physics shapes correlate with the underlying [PhysX Geometry Shapes](https://gameworksdocs.nvidia.com/PhysX/4.1/documentation/physxguide/Manual/Geometry.html).
@@ -203,6 +206,7 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         SubActor,
     };
     static const StructMetadata MetadataPhysicsActorType(typeid(PhysicsActorType),
+        sizeof(PhysicsActorType),
         "PhysicsActorType",
         "A physics actor's type determines how it behaves in the world. The type should match the intended usage of an "
         "object. Dynamic actor's positions are taken over by the physics system, but scripts may still control these "
@@ -239,8 +243,7 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         glm::vec3 constantForce = glm::vec3(0);
     };
 
-    static Component<Physics> ComponentPhysics({typeid(Physics),
-        "physics",
+    static EntityComponent<Physics> ComponentPhysics("physics",
         "",
         StructField::New("shapes",
             "A list of individual shapes and models that combine to form the actor's overall collision shape.",
@@ -276,5 +279,5 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         StructField::New("constant_force",
             "A vector defining a constant force (in Newtons, N) that should be applied to the actor. "
             "The force vector is applied relative to the actor at its center of mass.",
-            &Physics::constantForce)});
+            &Physics::constantForce));
 } // namespace ecs

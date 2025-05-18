@@ -179,7 +179,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
+    void EntityComponent<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &instance : src.scripts) {
             if (!instance) continue;
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {

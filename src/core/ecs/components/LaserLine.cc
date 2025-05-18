@@ -79,7 +79,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<LaserLine>::Apply(LaserLine &dst, const LaserLine &src, bool liveTarget) {
+    void EntityComponent<LaserLine>::Apply(LaserLine &dst, const LaserLine &src, bool liveTarget) {
         auto &defaultComp = liveTarget ? ComponentLaserLine.defaultLiveComponent
                                        : ComponentLaserLine.defaultStagingComponent;
         auto *defaultLine = std::get_if<LaserLine::Line>(&defaultComp.line);

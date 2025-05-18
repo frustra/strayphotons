@@ -134,7 +134,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget) {
+    void EntityComponent<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget) {
         DebugAssert(!std::isnan(src.pose.offset[0][0]), "TransformTree::Apply source pose is NaN");
         auto &defaultTree = liveTarget ? ComponentTransformTree.defaultLiveComponent
                                        : ComponentTransformTree.defaultStagingComponent;
@@ -170,7 +170,7 @@ namespace ecs {
         offset[3] += xyz;
     }
 
-    void Transform::Rotate(float radians, const glm::vec3 &axis) {
+    void Transform::RotateAxis(float radians, const glm::vec3 &axis) {
         initIfUndefined(*this);
         glm::mat3 *rotation = reinterpret_cast<glm::mat3 *>(glm::value_ptr(offset));
         *rotation = glm::rotate(glm::mat4(*rotation), radians, axis);
@@ -366,7 +366,7 @@ namespace ecs {
         t->Translate(*xyz);
     }
     void transform_rotate(Transform *t, float radians, const GlmVec3 *axis) {
-        t->Rotate(radians, *axis);
+        t->RotateAxis(radians, *axis);
     }
     void transform_scale(Transform *t, const GlmVec3 *xyz) {
         t->Scale(*xyz);

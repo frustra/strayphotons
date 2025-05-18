@@ -60,6 +60,7 @@ namespace ecs {
         glm::uvec4,
         sp::color_t,
         glm::quat,
+        glm::mat4,
 
         // Structs
         SignalExpression,
@@ -72,11 +73,13 @@ namespace ecs {
         PhysicsShape,
         ScriptInstance,
         Sound,
+        sp::SceneRef,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
         std::vector<SignalExpression>,
         std::vector<EventDest>,
+        std::vector<EventBinding>,
         std::vector<AnimationState>,
         std::vector<PhysicsJoint>,
         std::vector<PhysicsShape>,
@@ -84,6 +87,7 @@ namespace ecs {
         std::vector<Sound>,
         std::vector<EntityRef>,
         std::vector<std::pair<EntityRef, EntityRef>>,
+        std::pair<EntityRef, EntityRef>,
         std::optional<double>,
         std::optional<EventData>,
         std::optional<SignalExpression>,
@@ -104,7 +108,7 @@ namespace ecs {
         PhysicsJointType,
         sp::ScenePriority,
         SoundType,
-        TriggerGroup,
+        // TriggerGroup, // Also a Component type
         TriggerShape,
         XrEye>;
 

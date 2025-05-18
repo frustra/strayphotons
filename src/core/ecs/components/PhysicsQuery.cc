@@ -13,7 +13,7 @@
 
 namespace ecs {
     template<>
-    void Component<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget) {
+    void EntityComponent<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget) {
         if (liveTarget && dst.queries.empty()) dst.queries = src.queries;
     }
 } // namespace ecs

@@ -86,7 +86,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget) {
+    void EntityComponent<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget) {
         if (liveTarget) {
             dst = src;
         } else if (!dst.gravityFunction && src.gravityFunction) {

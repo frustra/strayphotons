@@ -90,6 +90,8 @@ namespace ecs {
     };
 
     std::ostream &operator<<(std::ostream &out, const SignalKey &v);
+
+    static GlobalComponent<Signals> ComponentSignals("signals", "");
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::Signals);
@@ -112,8 +114,7 @@ namespace ecs {
         robin_hood::unordered_map<std::string, SignalExpression> bindings;
     };
 
-    static Component<SignalOutput> ComponentSignalOutput({typeid(SignalOutput),
-        "signal_output",
+    static EntityComponent<SignalOutput> ComponentSignalOutput("signal_output",
         R"(
 The `signal_output` component stores a list of mutable signal values by name.  
 These values are stored as 64-bit double floating-point numbers that exist continuously over time, 
@@ -134,12 +135,11 @@ Signal output components can have their initial values defined like this:
 ```
 In the above case, setting the "other" output signal to `0.0` will override any `signal_bindings` named "other".
 )",
-        StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply)});
+        StructField::New(&SignalOutput::signals, ~FieldAction::AutoApply));
     template<>
-    void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget);
+    void EntityComponent<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget);
 
-    static Component<SignalBindings> ComponentSignalBindings({typeid(SignalBindings),
-        "signal_bindings",
+    static EntityComponent<SignalBindings> ComponentSignalBindings("signal_bindings",
         R"(
 A signal binding is a read-only signal who's value is determined by a [SignalExpression](#signalexpression-type). 
 Signal bindings can be referenced the same as signals from the [`signal_output` component](#signal_output-component).
@@ -183,7 +183,7 @@ Extra multipliers could also be added to adjust joystick senstiivity, movement s
 
 For binding state associated with a time, [`event_bindings`](#event_bindings-component) are used instead of signals.
 )",
-        StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply)});
+        StructField::New(&SignalBindings::bindings, ~FieldAction::AutoApply));
     template<>
-    void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget);
+    void EntityComponent<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget);
 } // namespace ecs

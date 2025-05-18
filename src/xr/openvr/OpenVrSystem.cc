@@ -118,7 +118,7 @@ namespace sp::xr {
                     auto eye = (ecs::XrEye)i;
 
                     auto ent = scene->NewSystemEntity(lock, scene, views[eye].Name());
-                    ent.Set<ecs::XRView>(lock, eye);
+                    ent.Set<ecs::XrView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::TransformTree>(lock);
                     transform.parent = vrOriginEntity;

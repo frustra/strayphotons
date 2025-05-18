@@ -15,7 +15,7 @@
 
 namespace ecs {
     template<>
-    void Component<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget) {
+    void EntityComponent<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget) {
         if (liveTarget || dst.states.empty()) {
             dst.states = src.states;
         }

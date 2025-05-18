@@ -21,6 +21,7 @@ target_link_libraries(sp-vk PRIVATE
     ${PROJECT_COMMON_EXE}
     ${PROJECT_LIB_NAME}
     ${PROJECT_COMMON_LIB}
+    ${PROJECT_CORE_LIB}
     glfw
     Vulkan::Vulkan
 )
@@ -45,5 +46,5 @@ target_link_libraries(sp-test PRIVATE
     glfw-egl
     Vulkan::Vulkan
 )
-target_compile_definitions(sp-test PRIVATE SP_GRAPHICS_SUPPORT_HEADLESS)
+target_compile_definitions(sp-test PRIVATE SP_TEST_MODE SP_GRAPHICS_SUPPORT_HEADLESS)
 # set_target_properties(sp-test PROPERTIES EXPORT_COMPILE_COMMANDS 1)

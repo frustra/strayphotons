@@ -10,6 +10,7 @@
 #include "common/Async.hh"
 #include "common/Common.hh"
 #include "common/EnumTypes.hh"
+#include "common/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalRef.hh"
@@ -175,18 +176,175 @@ namespace ecs {
         void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
     };
 
+    struct ArgDesc {
+        std::string name, desc;
+
+        ArgDesc(const std::string_view &name, const std::string_view &desc) : name(name), desc(desc) {}
+    };
+
+    struct StructFunction {
+        std::string name, desc;
+        bool isStatic, isConst;
+        std::type_index returnType;
+        std::vector<std::type_index> argTypes;
+        std::vector<ArgDesc> argDescs;
+        std::shared_ptr<void> funcPtr = nullptr;
+        int funcIndex = -1;
+
+        StructFunction(const std::string &name,
+            const std::string &desc,
+            bool isStatic,
+            bool isConst,
+            std::type_index returnType,
+            std::vector<std::type_index> argTypes,
+            std::vector<ArgDesc> argDescs,
+            std::shared_ptr<void> &&funcPtr)
+            : name(name), desc(sp::trim(desc)), isStatic(isStatic), isConst(isConst), returnType(returnType),
+              argTypes(argTypes), argDescs(argDescs), funcPtr(std::move(funcPtr)) {}
+
+        /**
+         * Registers a struct's member function as a callable scripting function. For example:
+         * StructFunction::New("GetParent", &Transform::GetParent)
+         */
+        template<typename T, typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (T::*F)(Args...)) {
+            return StructFunction(name,
+                "No description",
+                false, // isStatic
+                false, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                {},
+                std::make_shared<R (T::*)(Args...)>(F));
+        }
+
+        template<typename T, typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (T::*F)(Args...),
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                false, // isStatic
+                false, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                std::vector<ArgDesc>({argDescs...}),
+                std::make_shared<R (T::*)(Args...)>(F));
+        }
+
+        template<typename T, typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (T::*F)(Args...) const) {
+            return StructFunction(name,
+                "No description",
+                false, // isStatic
+                true, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                {},
+                std::make_shared<R (T::*)(Args...) const>(F));
+        }
+
+        template<typename T, typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (T::*F)(Args...) const,
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                false, // isStatic
+                true, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                std::vector<ArgDesc>({argDescs...}),
+                std::make_shared<R (T::*)(Args...) const>(F));
+        }
+
+        /**
+         * Registers a static function as a callable scripting function. For example:
+         * StructFunction::New("NewScript", &Script::New)
+         */
+        template<typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (*F)(Args...)) {
+            return StructFunction(name,
+                "No description",
+                true, // isStatic
+                false, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                {},
+                std::make_shared<R (*)(Args...)>(F));
+        }
+
+        template<typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (*F)(Args...),
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                true, // isStatic
+                false, // isConst
+                std::type_index(typeid(R)),
+                std::vector<std::type_index>({std::type_index(typeid(Args))...}),
+                std::vector<ArgDesc>({argDescs...}),
+                std::make_shared<R (*)(Args...)>(F));
+        }
+
+        template<typename R, typename... Args>
+        R CallStatic(Args... args) const {
+            Assertf(returnType == typeid(R),
+                "StructFunction::CallStatic called with wrong return type: %s, expected %s",
+                typeid(R).name(),
+                returnType.name());
+            Assertf(isStatic, "StructFunction::CallStatic called on member function");
+            Assertf(funcPtr, "StructFunction::CallStatic called on null function");
+            return std::invoke(reinterpret_cast<R (*)(Args...)>(*funcPtr), std::forward<Args...>(args));
+        }
+
+        template<typename T, typename R, typename... Args>
+        R Call(T *structPtr, Args... args) const {
+            Assertf(returnType == typeid(R),
+                "StructFunction::Call called with wrong return type: %s, expected %s",
+                typeid(R).name(),
+                returnType.name());
+            Assertf(!isStatic, "StructFunction::Call called on static function");
+            Assertf(!isConst, "StructFunction::Call called on const function");
+            Assertf(funcPtr, "StructFunction::Call called on null function");
+            return std::invoke(reinterpret_cast<R (T::*)(Args...)>(*funcPtr), *structPtr, std::forward<Args...>(args));
+        }
+
+        template<typename T, typename R, typename... Args>
+        R CallConst(T *structPtr, Args... args) const {
+            Assertf(returnType == typeid(R),
+                "StructFunction::CallConst called with wrong return type: %s, expected %s",
+                typeid(R).name(),
+                returnType.name());
+            Assertf(!isStatic, "StructFunction::CallConst called on static function");
+            Assertf(isConst, "StructFunction::CallConst called on non-const function");
+            Assertf(funcPtr, "StructFunction::CallConst called on null function");
+            return std::invoke(reinterpret_cast<R (T::*)(Args...) const>(*funcPtr),
+                *structPtr,
+                std::forward<Args...>(args));
+        }
+
+        bool operator==(const StructFunction &) const = default;
+    };
+
     class StructMetadata : public sp::NonCopyable {
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
 
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, const char *name, const char *desc, Fields &&...fields)
-            : type(idx), name(name), description(sp::trim(desc)) {
+        StructMetadata(const std::type_index &idx, size_t size, const char *name, const char *desc, Fields &&...fields)
+            : type(idx), size(size), name(name), description(sp::trim(desc)) {
             (
                 [&] {
                     using FieldT = std::decay_t<Fields>;
                     if constexpr (std::is_same_v<FieldT, EnumDescriptions>) {
                         enumMap = fields;
+                    } else if constexpr (std::is_same_v<FieldT, StructFunction>) {
+                        this->functions.emplace_back(fields);
                     } else {
                         this->fields.emplace_back(fields);
                     }
@@ -195,12 +353,15 @@ namespace ecs {
             for (size_t i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
             }
+            for (size_t i = 0; i < this->functions.size(); i++) {
+                this->functions[i].funcIndex = i;
+            }
             Register(type, this);
         }
 
         StructMetadata(const StructMetadata &&other)
-            : type(other.type), name(other.name), description(other.description), fields(other.fields),
-              enumMap(other.enumMap) {
+            : type(other.type), size(other.size), name(other.name), description(other.description),
+              fields(other.fields), functions(other.functions), enumMap(other.enumMap) {
             Register(type, this);
         }
 
@@ -214,9 +375,11 @@ namespace ecs {
         }
 
         const std::type_index type;
+        const size_t size;
         const std::string name;
         const std::string description;
         std::vector<StructField> fields;
+        std::vector<StructFunction> functions;
         EnumDescriptions enumMap;
 
         // === The following functions are meant to specialized by individual structs

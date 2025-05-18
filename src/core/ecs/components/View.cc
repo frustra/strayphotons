@@ -17,7 +17,7 @@
 
 namespace ecs {
     template<>
-    void Component<View>::Apply(View &dst, const View &src, bool liveTarget) {
+    void EntityComponent<View>::Apply(View &dst, const View &src, bool liveTarget) {
         if (src.projMat != glm::identity<glm::mat4>()) {
             dst.projMat = src.projMat;
             dst.invProjMat = src.invProjMat;

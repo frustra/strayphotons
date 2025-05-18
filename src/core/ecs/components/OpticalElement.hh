@@ -19,10 +19,9 @@ namespace ecs {
         bool singleDirection = false;
     };
 
-    static Component<OpticalElement> ComponentOpticalElement({typeid(OpticalElement),
-        "optic",
+    static EntityComponent<OpticalElement> ComponentOpticalElement("optic",
         "",
         StructField::New("pass_tint", &OpticalElement::passTint),
         StructField::New("reflect_tint", &OpticalElement::reflectTint),
-        StructField::New("single_direction", &OpticalElement::singleDirection)});
+        StructField::New("single_direction", &OpticalElement::singleDirection));
 } // namespace ecs
