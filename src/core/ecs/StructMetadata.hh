@@ -57,6 +57,7 @@ namespace ecs {
     struct StructField {
         std::string name, desc;
         std::type_index type;
+        size_t size;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
@@ -64,9 +65,10 @@ namespace ecs {
         StructField(const std::string &name,
             const std::string &desc,
             std::type_index type,
+            size_t size,
             size_t offset,
             FieldAction actions)
-            : name(name), desc(sp::trim(desc)), type(type), offset(offset), actions(actions) {}
+            : name(name), desc(sp::trim(desc)), type(type), size(size), offset(offset), actions(actions) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
@@ -90,6 +92,7 @@ namespace ecs {
             return StructField(name,
                 "No description",
                 std::type_index(typeid(std::remove_cv_t<F>)),
+                sizeof(F),
                 OffsetOf(M),
                 actions);
         }
@@ -99,7 +102,12 @@ namespace ecs {
             const std::string &desc,
             const F T::*M,
             FieldAction actions = ~FieldAction::None) {
-            return StructField(name, desc, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
+            return StructField(name,
+                desc,
+                std::type_index(typeid(std::remove_cv_t<F>)),
+                sizeof(F),
+                OffsetOf(M),
+                actions);
         }
 
         /**
@@ -131,7 +139,12 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("", "No description", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return StructField("",
+                "No description",
+                std::type_index(typeid(std::remove_cv_t<T>)),
+                sizeof(T),
+                0,
+                actions);
         }
 
         void *Access(void *structPtr) const {

@@ -378,7 +378,7 @@ namespace ecs {
                             return nullptr;
                         }
                     } else {
-                        StructField field(std::string(token), "", typeid(double), 0, FieldAction::None);
+                        StructField field(std::string(token), "", typeid(double), sizeof(double), 0, FieldAction::None);
                         node = manager.GetNode(Node(IdentifierNode{field}, std::string(token)));
                     }
                 } else if (token[delimiter] == '/') {

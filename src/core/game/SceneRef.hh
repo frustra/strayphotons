@@ -77,4 +77,6 @@ namespace sp {
     private:
         std::weak_ptr<Scene> ptr;
     };
+
+    static ecs::StructMetadata MetadataSceneRef(typeid(SceneRef), sizeof(SceneRef), "SceneRef", "");
 } // namespace sp

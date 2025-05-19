@@ -90,6 +90,7 @@ namespace ecs {
             "Specifies the entity's position in 3D space. "
             "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
             typeid(glm::vec3),
+            sizeof(glm::vec3),
             StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
             FieldAction::None),
         StructField("rotate",
@@ -98,6 +99,7 @@ namespace ecs {
             "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. "
             "The rotation axis is automatically normalized.",
             typeid(glm::mat3),
+            sizeof(glm::mat3),
             StructField::OffsetOf(&Transform::offset),
             FieldAction::None),
         StructField::New("scale",
