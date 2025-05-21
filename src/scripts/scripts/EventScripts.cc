@@ -25,7 +25,11 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataInitEvent(typeid(InitEvent), "InitEvent", "", StructField::New(&InitEvent::outputs));
+    StructMetadata MetadataInitEvent(typeid(InitEvent),
+        sizeof(InitEvent),
+        "InitEvent",
+        "",
+        StructField::New(&InitEvent::outputs));
     InternalScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
@@ -54,6 +58,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEventGateBySignal(typeid(EventGateBySignal),
+        sizeof(EventGateBySignal),
         "EventGateBySignal",
         "",
         StructField::New("input_event", &EventGateBySignal::inputEvent),
@@ -96,6 +101,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataCollapseEvents(typeid(CollapseEvents),
+        sizeof(CollapseEvents),
         "CollapseEvents",
         "",
         StructField::New(&CollapseEvents::mapping));
@@ -163,6 +169,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSignalFromEvent(typeid(SignalFromEvent),
+        sizeof(SignalFromEvent),
         "SignalFromEvent",
         "",
         StructField::New("outputs", &SignalFromEvent::outputs));
@@ -191,6 +198,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEventFromSignal(typeid(EventFromSignal),
+        sizeof(EventFromSignal),
         "EventFromSignal",
         "",
         StructField::New(&EventFromSignal::outputs));
@@ -310,6 +318,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),
+        sizeof(ComponentFromEvent),
         "ComponentFromEvent",
         "",
         StructField::New("outputs", &ComponentFromEvent::outputs));

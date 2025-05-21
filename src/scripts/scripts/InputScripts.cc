@@ -66,6 +66,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRelativeMovement(typeid(RelativeMovement),
+        sizeof(RelativeMovement),
         "RelativeMovement",
         "",
         StructField::New("relative_to", &RelativeMovement::targetEntity),
@@ -116,6 +117,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataPlayerRotation(typeid(PlayerRotation),
+        sizeof(PlayerRotation),
         "PlayerRotation",
         "",
         StructField::New("relative_to", &PlayerRotation::targetEntity),
@@ -163,7 +165,7 @@ namespace sp::scripts {
             updateCamera(state, lock, ent);
         }
     };
-    StructMetadata MetadataCameraView(typeid(CameraView), "CameraView", "");
+    StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
     InternalScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
     InternalPhysicsScript<CameraView> physicsCameraView("physics_camera_view",
         MetadataCameraView,

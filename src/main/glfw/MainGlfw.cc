@@ -44,54 +44,10 @@ using namespace std;
 
 using cxxopts::value;
 
-#ifndef SP_TEST_MODE
-    #include <c_abi/Tecs.hh>
-    #include <ecs/Ecs.hh>
-    #include <ecs/components/Name.hh>
-    #include <ecs/components/Renderable.hh>
-    #include <ecs/components/Transform.h>
+#include <c_abi/Tecs.hh>
+#include <strayphotons/components.h>
 
 TECS_IMPLEMENT_C_ABI
-
-namespace ecs {
-    using AbiECS = Tecs::abi::ECS<Name,
-        SceneInfo,
-        SceneProperties,
-        TransformSnapshot,
-        TransformTree,
-        Renderable,
-        Physics,
-
-        ActiveScene,
-        Animation,
-        Audio,
-        CharacterController,
-        FocusLock,
-        Gui,
-        LaserEmitter,
-        LaserLine,
-        LaserSensor,
-        Light,
-        LightSensor,
-        OpticalElement,
-        PhysicsJoints,
-        PhysicsQuery,
-        SceneConnection,
-        Screen,
-        TriggerArea,
-        TriggerGroup,
-        View,
-        VoxelArea,
-        XrView,
-
-        EventInput,
-        EventBindings,
-        Signals,
-        SignalOutput,
-        SignalBindings,
-        Scripts>;
-} // namespace ecs
-#endif
 
 namespace sp {
     sp_game_t *GameInstance = nullptr;
@@ -452,12 +408,9 @@ int main(int argc, char **argv) {
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
-#ifndef SP_TEST_MODE
         TecsECS *liveEcs = sp_get_live_ecs();
-        ecs::AbiECS world(liveEcs);
-        Tecs::abi::Entity testEnt;
+        sp_entity_t testEnt = 0;
         uint64_t frameCount = 0;
-#endif
 
         auto frameEnd = chrono_clock::now();
         while (!sp_game_is_exit_triggered(GameInstance)) {
@@ -478,34 +431,53 @@ int main(int argc, char **argv) {
                     break;
                 }
             }
+            struct Name {
+                std::string scene, entity;
+            };
 
-#ifndef SP_TEST_MODE
             if (!testEnt) {
-                auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
-                for (auto &ent : lock.EntitiesWith<ecs::Name>()) {
-                    auto &name = ent.Get<ecs::Name>(lock);
-                    if (name == ecs::Name("cabi", "ABI_TEST")) {
-                        testEnt = ent;
+                // auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
+                TecsLock *lock = Tecs_ecs_start_transaction(liveEcs, 1 + SP_ACCESS_NAME, 0);
+                TecsEntityView view;
+                size_t count = Tecs_entities_with(lock, SP_NAME_INDEX, &view);
+                const TecsEntity *entities = Tecs_entity_view_begin(&view);
+                // for (auto &ent : lock.EntitiesWith<ecs::Name>()) {
+                for (size_t i = 0; i < count; i++) {
+                    const void *namePtr = Tecs_entity_const_get(lock, entities[i], SP_NAME_INDEX);
+                    const Name &name = *static_cast<const Name *>(namePtr);
+                    // auto &name = ent.Get<ecs::Name>(lock);
+                    if (name.scene == "cabi" && name.entity == "ABI_TEST") {
+                        testEnt = entities[i];
                         break;
                     }
                 }
+                Tecs_lock_release(lock);
             } else {
-                auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::Renderable>>();
-                if (testEnt.Has<ecs::TransformTree, ecs::Renderable>(lock)) {
-                    auto &transformTree = testEnt.Get<ecs::TransformTree>(lock);
-                    transformTree.pose.SetPosition(
-                        glm::vec3(std::sin(frameCount / 100.0f), 1.0f, std::cos(frameCount / 100.0f)));
-                    auto &renderable = testEnt.Get<ecs::Renderable>(lock);
-                    renderable.colorOverride = glm::vec4(std::sin(frameCount) * 0.5 + 0.5,
-                        std::sin(frameCount + 1) * 0.5 + 0.5,
-                        std::cos(frameCount) * 0.5 + 0.5,
-                        1);
+                // auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::Renderable>>();
+                TecsLock *lock = Tecs_ecs_start_transaction(liveEcs,
+                    1 + SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE,
+                    SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE);
+                // if (testEnt.Has<ecs::TransformTree, ecs::Renderable>(lock)) {
+                if (Tecs_entity_has_bitset(lock, testEnt, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE)) {
+                    // auto &transformTree = testEnt.Get<ecs::TransformTree>(lock);
+                    void *transformTreePtr = Tecs_entity_get(lock, testEnt, SP_TRANSFORM_TREE_INDEX);
+                    sp_ecs_transform_tree_t &transformTree = *static_cast<sp_ecs_transform_tree_t *>(transformTreePtr);
+                    // transformTree.pose.SetPosition(newPos);
+                    vec3_t newPos{std::sin(frameCount / 100.0f), 1, std::cos(frameCount / 100.0f)};
+                    sp_transform_set_position(&transformTree.transform, &newPos);
+                    // auto &renderable = testEnt.Get<ecs::Renderable>(lock);
+                    void *renderablePtr = Tecs_entity_get(lock, testEnt, SP_RENDERABLE_INDEX);
+                    sp_ecs_renderable_t &renderable = *static_cast<sp_ecs_renderable_t *>(renderablePtr);
+                    renderable.color_override.rgba[0] = std::sin(frameCount / 100.0f) * 0.5 + 0.5;
+                    renderable.color_override.rgba[1] = std::sin(frameCount / 100.0f + 1) * 0.5 + 0.5;
+                    renderable.color_override.rgba[2] = std::cos(frameCount / 100.0f) * 0.5 + 0.5;
+                    renderable.color_override.rgba[3] = 1;
                 } else {
                     testEnt = {};
                 }
+                Tecs_lock_release(lock);
             }
             frameCount++;
-#endif
 
             auto realFrameEnd = chrono_clock::now();
             chrono_clock::duration interval(0);

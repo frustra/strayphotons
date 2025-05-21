@@ -119,6 +119,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataGltfPrefab(typeid(GltfPrefab),
+        sizeof(GltfPrefab),
         "GltfPrefab",
         "",
         StructField::New("model", &GltfPrefab::modelName),

@@ -50,6 +50,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataFlashlight(typeid(Flashlight),
+        sizeof(Flashlight),
         "Flashlight",
         "",
         StructField::New("parent", &Flashlight::parentEntity));
@@ -80,6 +81,6 @@ namespace sp::scripts {
             transform.pose.SetPosition(glm::vec3(sin(sunPos) * 40.0, cos(sunPos) * 40.0, 0));
         }
     };
-    StructMetadata MetadataSunScript(typeid(SunScript), "SunScript", "");
+    StructMetadata MetadataSunScript(typeid(SunScript), sizeof(SunScript), "SunScript", "");
     InternalScript<SunScript> sun("sun", MetadataSunScript);
 } // namespace sp::scripts

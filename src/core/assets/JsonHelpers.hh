@@ -564,7 +564,7 @@ namespace sp::json {
             anyOfArray[0] = subSchema;
             anyOfArray[1] = picojson::value(arraySchema);
             typeSchema["anyOf"] = picojson::value(anyOfArray);
-        } else if constexpr (sp::is_unordered_map<T>()) {
+        } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
             typeSchema["type"] = picojson::value("object");
             static_assert(std::is_same_v<typename T::key_type, std::string>, "Only string map keys are supported!");
             SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);

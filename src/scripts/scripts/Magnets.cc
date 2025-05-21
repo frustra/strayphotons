@@ -113,6 +113,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticPlug(typeid(MagneticPlug),
+        sizeof(MagneticPlug),
         "MagneticPlug",
         "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
@@ -152,7 +153,7 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), "MagneticSocket", "");
+    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), sizeof(MagneticSocket), "MagneticSocket", "");
     InternalScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,

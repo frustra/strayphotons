@@ -49,6 +49,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataLifeCell(typeid(LifeCell),
+        sizeof(LifeCell),
         "LifeCell",
         "",
         StructField::New("alive", &LifeCell::alive),

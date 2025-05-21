@@ -73,7 +73,7 @@ private:
         } else if constexpr (sp::is_pair<T>()) {
             return "pair&lt;" + fieldTypeName<typename T::first_type>() + ", " +
                    fieldTypeName<typename T::first_type>() + "&gt;";
-        } else if constexpr (sp::is_unordered_map<T>()) {
+        } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
             return "map&lt;" + fieldTypeName<typename T::key_type>() + ", " + fieldTypeName<typename T::mapped_type>() +
                    "&gt;";
         } else if constexpr (sp::is_optional<T>()) {

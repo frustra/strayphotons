@@ -208,11 +208,13 @@ namespace sp {
     struct is_pair<std::pair<A, B>> : std::true_type {};
 
     template<typename T>
-    struct is_unordered_map : std::false_type {};
+    struct is_unordered_flat_map : std::false_type {};
     template<typename K, typename V>
-    struct is_unordered_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
+    struct is_unordered_flat_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
+    template<typename T>
+    struct is_unordered_node_map : std::false_type {};
     template<typename K, typename V>
-    struct is_unordered_map<robin_hood::unordered_node_map<K, V>> : std::true_type {};
+    struct is_unordered_node_map<robin_hood::unordered_node_map<K, V>> : std::true_type {};
 
     template<typename T>
     struct is_optional : std::false_type {};

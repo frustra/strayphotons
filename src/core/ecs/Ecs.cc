@@ -34,13 +34,9 @@ namespace ecs {
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     int getComponentIndex(ECSType<AllComponentTypes...> *, const std::string &componentName) {
         static const std::array<std::string, sizeof...(AllComponentTypes)> componentNames = {[&] {
-            if constexpr (Tecs::is_global_component<AllComponentTypes>()) {
-                return "";
-            } else {
-                auto comp = LookupComponent(typeid(AllComponentTypes));
-                Assertf(comp, "Unknown component name: %s", typeid(AllComponentTypes).name());
-                return comp->name;
-            }
+            auto comp = LookupComponent(typeid(AllComponentTypes));
+            Assertf(comp, "Unknown component name: %s", typeid(AllComponentTypes).name());
+            return comp->name;
         }()...};
 
         auto it = std::find(componentNames.begin(), componentNames.end(), componentName);

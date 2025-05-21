@@ -197,6 +197,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractiveObject(typeid(InteractiveObject),
+        sizeof(InteractiveObject),
         "InteractiveObject",
         "",
         StructField::New("disabled", &InteractiveObject::disabled),
@@ -334,6 +335,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataInteractHandler(typeid(InteractHandler),
+        sizeof(InteractHandler),
         "InteractHandler",
         "",
         StructField::New("grab_distance", &InteractHandler::grabDistance),

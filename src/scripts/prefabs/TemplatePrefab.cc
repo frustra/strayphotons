@@ -230,6 +230,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab),
+        sizeof(TemplatePrefab),
         "TemplatePrefab",
         "",
         StructField::New("source", &TemplatePrefab::source));
@@ -340,6 +341,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataTilePrefab(typeid(TilePrefab),
+        sizeof(TilePrefab),
         "TilePrefab",
         "",
         StructField::New("count", &TilePrefab::count),

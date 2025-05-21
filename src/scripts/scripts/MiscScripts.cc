@@ -63,6 +63,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
+        sizeof(EdgeTrigger),
         "EdgeTrigger",
         "",
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
@@ -134,6 +135,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataModelSpawner(typeid(ModelSpawner),
+        sizeof(ModelSpawner),
         "ModelSpawner",
         "",
         StructField::New("relative_to", &ModelSpawner::targetEntity),
@@ -157,6 +159,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotate(typeid(Rotate),
+        sizeof(Rotate),
         "Rotate",
         "",
         StructField::New("axis", &Rotate::rotationAxis),
@@ -197,6 +200,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotateToEntity(typeid(RotateToEntity),
+        sizeof(RotateToEntity),
         "RotateToEntity",
         "",
         StructField::New("up", &RotateToEntity::upEntityRef),
@@ -252,6 +256,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
+        sizeof(ChargeCell),
         "ChargeCell",
         "",
         StructField::New("discharging", &ChargeCell::discharging),
@@ -325,6 +330,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
+        sizeof(ComponentFromSignal),
         "ComponentFromSignal",
         "",
         StructField::New(&ComponentFromSignal::mapping));
@@ -361,6 +367,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSignalFromSignal(typeid(SignalFromSignal),
+        sizeof(SignalFromSignal),
         "SignalFromSignal",
         "",
         StructField::New(&SignalFromSignal::mapping));
@@ -406,6 +413,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
+        sizeof(DebounceSignal),
         "DebounceSignal",
         "",
         StructField::New("delay_frames", &DebounceSignal::delayFrames),
@@ -476,6 +484,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataTimerSignal(typeid(TimerSignal),
+        sizeof(TimerSignal),
         "TimerSignal",
         "",
         StructField::New("names", &TimerSignal::names));

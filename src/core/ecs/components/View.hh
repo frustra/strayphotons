@@ -60,7 +60,7 @@ namespace ecs {
     };
 
     static EntityComponent<View> ComponentView("view",
-        "",
+        "A camera view into the world that will be rendered to a texture.",
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),

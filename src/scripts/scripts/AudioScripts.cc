@@ -52,7 +52,7 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), "SoundOcclusion", "");
+    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), sizeof(SoundOcclusion), "SoundOcclusion", "");
     InternalScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
 
     struct VolumeControl {
@@ -93,6 +93,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVolumeControl(typeid(VolumeControl),
+        sizeof(VolumeControl),
         "VolumeControl",
         "",
         StructField::New("volume", &VolumeControl::volumeInput));
@@ -133,6 +134,9 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataSpeedControlledSound(typeid(SpeedControlledSound), "SpeedControlledSound", "");
+    StructMetadata MetadataSpeedControlledSound(typeid(SpeedControlledSound),
+        sizeof(SpeedControlledSound),
+        "SpeedControlledSound",
+        "");
     InternalScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
 } // namespace sp::scripts

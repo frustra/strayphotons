@@ -443,6 +443,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVrHandScript(typeid(VrHandScript),
+        sizeof(VrHandScript),
         "VrHandScript",
         "",
         StructField::New("hand", &VrHandScript::handStr),

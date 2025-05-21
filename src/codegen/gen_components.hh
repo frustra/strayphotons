@@ -13,10 +13,10 @@ void GenerateComponentsH(T &out) {
 #include <strayphotons/entity.h>
 #include <strayphotons/export.h>
 
+#if !defined(__cplusplus) || !defined(SP_SHARED_INTERNAL)
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 #pragma pack(push, 1)
 )RAWSTR";
     ForEachComponentType([&](auto *typePtr) {
@@ -27,6 +27,28 @@ extern "C" {
     out << R"RAWSTR(
 #pragma pack(pop)
 #ifdef __cplusplus
+} // extern "C"
+#endif
+#else
+
+#include "ecs/EcsImpl.hh"
+
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <vector>
+#include <cstdint>
+#include <robin_hood.h>
+
+extern "C" {
+#pragma pack(push, 1)
+)RAWSTR";
+    ForEachComponentType([&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        auto &comp = ecs::LookupComponent<T>();
+        GenerateCppTypeDefinition(out, comp.metadata.type);
+    });
+    out << R"RAWSTR(
+#pragma pack(pop)
 } // extern "C"
 #endif
 )RAWSTR";
@@ -44,7 +66,7 @@ extern "C" {
 )RAWSTR";
     ForEachComponentType([&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
-        std::string name(TypeToString<T>());
+        std::string name = TypeToString<T>();
         std::string scn = SnakeCaseTypeName(name);
         std::string full;
         if (sp::starts_with(scn, "ecs_")) {
@@ -141,55 +163,20 @@ extern "C" {
     out                                                                                                                                     << std::endl;
         }
         // clang-format on
-        auto &metadata = ecs::StructMetadata::Get<T>();
-        auto functionList = GetTypeFunctionList(metadata);
-        for (auto &func : functionList) {
-            std::string functionName = "sp_ecs_"s + scn + "_" + SnakeCaseTypeName(func.name);
-            std::string returnTypeName(LookupCTypeName(func.returnType));
-            out << "SP_EXPORT " << returnTypeName << " " << functionName << "(";
-            out << (func.isConst ? "const " : "") << full << " *compPtr";
-            size_t argI = 0;
-            for (auto &arg : func.argTypes) {
-                if (argI < func.argDescs.size()) {
-                    out << ", " << LookupCTypeName(arg) << " " << func.argDescs[argI].name;
-                } else {
-                    out << ", " << LookupCTypeName(arg) << " arg" << argI;
-                }
-                argI++;
-            }
-            out << ") {" << std::endl;
-            if (!func.isStatic) {
-                out << "    " << (func.isConst ? "const " : "") << TypeToString<T>()
-                    << " &component = *reinterpret_cast<" << (func.isConst ? "const " : "") << TypeToString<T>()
-                    << " *>(compPtr);" << std::endl;
-            }
-            if (func.returnType != typeid(void)) {
-                out << "    return reinterpret_cast<" << returnTypeName << ">(";
-            } else {
-                out << "    ";
-            }
-            if (func.isStatic) {
-                out << TypeToString<T>() << "::" << func.name << "(";
-            } else {
-                out << "component." << func.name << "(";
-            }
-            for (size_t i = 0; i < func.argTypes.size(); i++) {
-                if (i > 0) out << ", ";
-                if (i < func.argDescs.size()) {
-                    out << func.argDescs[i].name;
-                } else {
-                    out << "arg" << i;
-                }
-            }
-            if (func.returnType != typeid(void)) {
-                out << "));" << std::endl;
-            } else {
-                out << ");" << std::endl;
-            }
-            out << "}" << std::endl;
-            out << std::endl;
-        }
+        GenerateCppTypeFunctionImplementations<T>(out, full);
     });
+    for (auto &type : ReferencedCTypes()) {
+        if (type == typeid(void)) continue;
+        ecs::GetFieldType(type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            std::string scn = SnakeCaseTypeName(TypeToString<T>());
+            if (sp::starts_with(scn, "ecs_")) {
+                scn = scn.substr("ecs_"s.size());
+            }
+            std::string full = "sp_" + scn + "_t";
+            GenerateCppTypeFunctionImplementations<T>(out, full);
+        });
+    }
 
     out << "} // extern \"C\"" << std::endl;
 }

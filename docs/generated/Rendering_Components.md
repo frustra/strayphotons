@@ -90,6 +90,8 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 ## `light` Component
 
+A shadow-casting spot-light with optional gel masking texture
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | 0 | The brightness of the light measured in candela (lumens per solid angle). This value is ignored if **illuminance** != 0. |
@@ -134,6 +136,8 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `view` Component
+
+A camera view into the world that will be rendered to a texture.
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
