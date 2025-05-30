@@ -542,31 +542,31 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef sp::color_alpha_t sp_color_alpha_t;" << std::endl;
         } else if constexpr (sp::is_optional<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(T::value_type)));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             std::string subCppType = TypeToString<typename T::value_type>();
             out << "typedef std::optional<" << subCppType << "> sp_optional_" << subCType << "_t;" << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(T::value_type)));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             std::string subCppType = TypeToString<typename T::value_type>();
             out << "typedef std::vector<" << subCppType << "> sp_" << subCType << "_vector_t;" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(T::first_type)));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
-                subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::second_type)));
+                subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
             std::string subCppType = TypeToString<typename T::first_type>() + ", " +
                                      TypeToString<typename T::second_type>();
             out << "typedef std::pair<" << subCppType << "> sp_" << subCType << "_pair_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             std::string subCppType = TypeToString<typename T::key_type>() + ", " +
                                      TypeToString<typename T::mapped_type>();
             out << "typedef robin_hood::unordered_flat_map<" << subCppType << "> sp_" << subCType << "_flatmap_t;"
                 << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             std::string subCppType = TypeToString<typename T::key_type>() + ", " +
                                      TypeToString<typename T::mapped_type>();
             out << "typedef robin_hood::unordered_node_map<" << subCppType << "> sp_" << subCType << "_map_t;"
