@@ -214,6 +214,8 @@ namespace ecs {
                 .isReference = std::is_reference<T>(),
             };
         }
+
+        bool operator==(const TypeInfo &other) const = default;
     };
 
     struct StructFunction {

@@ -92,23 +92,23 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             return "sp_color_alpha_t"s;
         } else if constexpr (sp::is_optional<T>()) {
-            return "const " + LookupCTypeName(typeid(T::value_type)) + " *";
+            return "const " + LookupCTypeName(typeid(typename T::value_type)) + " *";
         } else if constexpr (sp::is_vector<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::value_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_" + subtype + "_vector_t *";
         } else if constexpr (sp::is_pair<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::first_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
-                subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::second_type)));
+                subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
             return "sp_" + subtype + "_pair_t *";
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             return "sp_" + subtype + "_flatmap_t *";
         } else if constexpr (sp::is_unordered_node_map<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             return "sp_" + subtype + "_map_t *";
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
