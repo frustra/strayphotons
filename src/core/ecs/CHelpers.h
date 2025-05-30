@@ -20,7 +20,7 @@
 
 extern "C" {
 #else
-typedef unsigned int bool;
+typedef uint8_t bool;
 #endif
 
 typedef uint64_t TecsEntity;

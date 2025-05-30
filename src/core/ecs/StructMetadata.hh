@@ -203,7 +203,7 @@ namespace ecs {
         bool isReference;
 
         template<typename T>
-        static constexpr TypeInfo Lookup() {
+        static inline TypeInfo Lookup() {
             return TypeInfo{
                 .type = typeid(T),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
@@ -333,7 +333,7 @@ namespace ecs {
                 returnType.type.name());
             Assertf(isStatic, "StructFunction::CallStatic called on member function");
             Assertf(funcPtr, "StructFunction::CallStatic called on null function");
-            return std::invoke(reinterpret_cast<R (*)(Args...)>(*funcPtr), std::forward<Args...>(args));
+            return std::invoke(reinterpret_cast<R (*)(Args...)>(funcPtr.get()), std::forward<Args...>(args...));
         }
 
         template<typename T, typename R, typename... Args>
@@ -345,7 +345,9 @@ namespace ecs {
             Assertf(!isStatic, "StructFunction::Call called on static function");
             Assertf(!isConst, "StructFunction::Call called on const function");
             Assertf(funcPtr, "StructFunction::Call called on null function");
-            return std::invoke(reinterpret_cast<R (T::*)(Args...)>(*funcPtr), *structPtr, std::forward<Args...>(args));
+            return std::invoke(reinterpret_cast<R (T::*)(Args...)>(funcPtr.get()),
+                *structPtr,
+                std::forward<Args...>(args...));
         }
 
         template<typename T, typename R, typename... Args>
@@ -357,9 +359,9 @@ namespace ecs {
             Assertf(!isStatic, "StructFunction::CallConst called on static function");
             Assertf(isConst, "StructFunction::CallConst called on non-const function");
             Assertf(funcPtr, "StructFunction::CallConst called on null function");
-            return std::invoke(reinterpret_cast<R (T::*)(Args...) const>(*funcPtr),
+            return std::invoke(reinterpret_cast<R (T::*)(Args...) const>(funcPtr.get()),
                 *structPtr,
-                std::forward<Args...>(args));
+                std::forward<Args...>(args...));
         }
 
         bool operator==(const StructFunction &) const = default;

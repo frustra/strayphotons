@@ -22,7 +22,7 @@ typedef sp::CVarBase sp_cvar_t;
     #include <stdint.h>
 
 typedef void sp_cvar_t;
-typedef unsigned int bool;
+typedef uint8_t bool;
 #endif
 
 // The following functions are declared in src/exports/Console.cc
