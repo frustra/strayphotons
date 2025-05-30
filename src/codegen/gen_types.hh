@@ -292,8 +292,8 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
         for (size_t i = 0; i < func.argTypes.size(); i++) {
             if (i > 0) out << ", ";
             std::string argTypeName = ecs::GetFieldType(func.argTypes[i].type, [&](auto *typePtr) {
-                using T = std::remove_pointer_t<decltype(typePtr)>;
-                return TypeToString<T>();
+                using ArgT = std::remove_pointer_t<decltype(typePtr)>;
+                return TypeToString<ArgT>();
             });
             // out << "reinterpret_cast<" << argTypeName << " &>(";
             if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
@@ -382,32 +382,32 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef struct sp_color_alpha_t { float rgba[4]; } sp_color_alpha_t;" << std::endl;
         } else if constexpr (sp::is_optional<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::value_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             out << "typedef struct sp_optional_" << subtype << "_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_optional_" << subtype << "_t;" << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::value_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             out << "typedef struct sp_" << subtype << "_vector_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_vector_t;" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::first_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
-                subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::second_type)));
+                subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
             out << "typedef struct sp_" << subtype << "_pair_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_pair_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_flatmap_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_flatmap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(T::key_type)));
-            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(T::mapped_type)));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_map_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_map_t;" << std::endl;

@@ -5,8 +5,8 @@
 
 #include <ranges>
 
-template<typename T>
-void GenerateComponentsH(T &out) {
+template<typename S>
+void GenerateComponentsH(S &out) {
     out << R"RAWSTR(#pragma once
 
 #include <c_abi/Tecs.h>
@@ -54,8 +54,8 @@ extern "C" {
 )RAWSTR";
 }
 
-template<typename T>
-void GenerateComponentsCC(T &out) {
+template<typename S>
+void GenerateComponentsCC(S &out) {
     out << R"RAWSTR(#include <strayphotons/components.h>
 #include <ecs/EcsImpl.hh>
 
