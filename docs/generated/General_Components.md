@@ -20,6 +20,10 @@ Relative names specified in a template take the form:
 
 The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **scene** | string | "" | No description |
+| **entity** | string | "" | No description |
 
 </div>
 

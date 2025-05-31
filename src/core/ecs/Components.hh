@@ -372,7 +372,16 @@ namespace ecs {
     };
 
     // Define these special components here to solve circular includes
-    static EntityComponent<Name> ComponentName({typeid(Name), sizeof(Name), "Name", DocsDescriptionName}, "name");
+    static EntityComponent<Name> ComponentName(
+        StructMetadata{
+            typeid(Name),
+            sizeof(Name),
+            "Name",
+            DocsDescriptionName,
+            StructField::New("scene", &Name::scene, FieldAction::None),
+            StructField::New("entity", &Name::entity, FieldAction::None),
+        },
+        "name");
     static EntityComponent<SceneInfo> ComponentSceneInfo("SceneInfo",
         "This is an internal component storing each entity's source scene and other creation info.");
 

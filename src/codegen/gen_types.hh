@@ -245,68 +245,88 @@ void GenerateCTypeFunctionDefinitions(S &out, const std::string &full) {
 
 template<typename T, typename S>
 void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
-    auto *metadata = ecs::StructMetadata::Get(typeid(T));
-    if (!metadata) return;
-    std::string scn = (sp::starts_with(full, "sp_") ? full.substr("sp_"s.size()) : full);
-    if (sp::ends_with(scn, "_t")) scn = scn.substr(0, scn.size() - "_t"s.size());
-    for (auto &func : metadata->functions) {
-        std::string functionName = "sp_"s + scn + "_" + SnakeCaseTypeName(func.name);
-        out << "SP_EXPORT ";
-        if (func.returnType.isTrivial) {
-            out << ArgTypeToString(func.returnType);
-        } else {
-            out << "void";
-        }
-        out << " " << functionName << "(";
-        out << (func.isConst ? "const " : "") << full << " *selfPtr";
-        size_t argI = 0;
-        for (auto &arg : func.argTypes) {
-            if (argI < func.argDescs.size()) {
-                out << ", " << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
-            } else {
-                out << ", " << ArgTypeToString(arg) << " arg" << argI;
-            }
-            argI++;
-        }
-        if (!func.returnType.isTrivial) {
-            out << ", " << LookupCTypeName(func.returnType.type) << " *result";
-        }
-        out << ") {" << std::endl;
-        if (!func.isStatic) {
-            out << "    " << (func.isConst ? "const " : "") << TypeToString<T>() << " &self = *reinterpret_cast<"
-                << (func.isConst ? "const " : "") << TypeToString<T>() << " *>(selfPtr);" << std::endl;
-        }
-        if (func.returnType.type == typeid(void)) {
-            out << "    ";
-        } else if (func.returnType.isTrivial) {
-            out << "    return ";
-            if (func.returnType.isReference) out << "&";
-        } else {
-            out << "    *result = ";
-        }
-        if (func.isStatic) {
-            out << TypeToString<T>() << "::" << func.name << "(";
-        } else {
-            out << "self." << func.name << "(";
-        }
-        for (size_t i = 0; i < func.argTypes.size(); i++) {
-            if (i > 0) out << ", ";
-            std::string argTypeName = ecs::GetFieldType(func.argTypes[i].type, [&](auto *typePtr) {
-                using ArgT = std::remove_pointer_t<decltype(typePtr)>;
-                return TypeToString<ArgT>();
-            });
-            // out << "reinterpret_cast<" << argTypeName << " &>(";
-            if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
-            if (i < func.argDescs.size()) {
-                out << func.argDescs[i].name;
-            } else {
-                out << "arg" << i;
-            }
-            // out << ")";
-        }
-        out << ");" << std::endl;
+    if constexpr (std::is_same<T, std::string>()) {
+        out << "SP_EXPORT size_t sp_string_get_size(const string_t *str) {" << std::endl;
+        out << "    return str->size();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
+        out << "SP_EXPORT const char *sp_string_get_c_str(const string_t *str) {" << std::endl;
+        out << "    return str->c_str();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT char *sp_string_get_data(string_t *str) {" << std::endl;
+        out << "    return str->data();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char) {" << std::endl;
+        out << "    str->resize(new_size, fill_char);" << std::endl;
+        out << "    return str->data();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+    } else {
+        auto *metadata = ecs::StructMetadata::Get(typeid(T));
+        if (!metadata) return;
+        std::string scn = (sp::starts_with(full, "sp_") ? full.substr("sp_"s.size()) : full);
+        if (sp::ends_with(scn, "_t")) scn = scn.substr(0, scn.size() - "_t"s.size());
+        for (auto &func : metadata->functions) {
+            std::string functionName = "sp_"s + scn + "_" + SnakeCaseTypeName(func.name);
+            out << "SP_EXPORT ";
+            if (func.returnType.isTrivial) {
+                out << ArgTypeToString(func.returnType);
+            } else {
+                out << "void";
+            }
+            out << " " << functionName << "(";
+            out << (func.isConst ? "const " : "") << full << " *selfPtr";
+            size_t argI = 0;
+            for (auto &arg : func.argTypes) {
+                if (argI < func.argDescs.size()) {
+                    out << ", " << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
+                } else {
+                    out << ", " << ArgTypeToString(arg) << " arg" << argI;
+                }
+                argI++;
+            }
+            if (!func.returnType.isTrivial) {
+                out << ", " << LookupCTypeName(func.returnType.type) << " *result";
+            }
+            out << ") {" << std::endl;
+            if (!func.isStatic) {
+                out << "    " << (func.isConst ? "const " : "") << TypeToString<T>() << " &self = *reinterpret_cast<"
+                    << (func.isConst ? "const " : "") << TypeToString<T>() << " *>(selfPtr);" << std::endl;
+            }
+            if (func.returnType.type == typeid(void)) {
+                out << "    ";
+            } else if (func.returnType.isTrivial) {
+                out << "    return ";
+                if (func.returnType.isReference) out << "&";
+            } else {
+                out << "    *result = ";
+            }
+            if (func.isStatic) {
+                out << TypeToString<T>() << "::" << func.name << "(";
+            } else {
+                out << "self." << func.name << "(";
+            }
+            for (size_t i = 0; i < func.argTypes.size(); i++) {
+                if (i > 0) out << ", ";
+                std::string argTypeName = ecs::GetFieldType(func.argTypes[i].type, [&](auto *typePtr) {
+                    using ArgT = std::remove_pointer_t<decltype(typePtr)>;
+                    return TypeToString<ArgT>();
+                });
+                // out << "reinterpret_cast<" << argTypeName << " &>(";
+                if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
+                if (i < func.argDescs.size()) {
+                    out << func.argDescs[i].name;
+                } else {
+                    out << "arg" << i;
+                }
+                // out << ")";
+            }
+            out << ");" << std::endl;
+            out << "}" << std::endl;
+            out << std::endl;
+        }
     }
 }
 
@@ -357,6 +377,11 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef struct string_t { uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_string_get_size(const string_t *str);" << std::endl;
+            out << "SP_EXPORT const char *sp_string_get_c_str(const string_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_get_data(string_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_glm_vec<T>()) {
             if constexpr (std::is_same<typename T::value_type, int32_t>()) {
                 out << "typedef struct ivec" << std::to_string(T::length()) << "_t { int32_t v["
@@ -447,19 +472,19 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                 out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull << SP_" << flagName << "_INDEX;"
                     << std::endl;
                 if (comp->IsGlobal()) {
-                    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
-                    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
-                    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(TecsLock *dynLockPtr);"
+                    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(tecs_lock_t *dynLockPtr);"
                         << std::endl;
-                    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
                 } else {
                     out << "SP_EXPORT " << full << " *sp_entity_set_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
                     out << "SP_EXPORT " << full << " *sp_entity_get_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
                     out << "SP_EXPORT const " << full << " *sp_entity_get_const_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
-                    out << "SP_EXPORT void sp_entity_unset_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent);"
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
+                    out << "SP_EXPORT void sp_entity_unset_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);"
                         << std::endl;
                 }
                 GenerateCTypeFunctionDefinitions<T>(out, full);
@@ -517,6 +542,11 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef std::string string_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_string_get_size(const string_t *str);" << std::endl;
+            out << "SP_EXPORT const char *sp_string_get_c_str(const string_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_get_data(string_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_glm_vec<T>()) {
             if constexpr (std::is_same<typename T::value_type, int32_t>()) {
                 out << "typedef glm::ivec" << std::to_string(T::length()) << " ivec" << std::to_string(T::length())
@@ -603,19 +633,19 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                 out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull << SP_" << flagName << "_INDEX;"
                     << std::endl;
                 if (comp->IsGlobal()) {
-                    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
-                    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
-                    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(TecsLock *dynLockPtr);"
+                    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(tecs_lock_t *dynLockPtr);"
                         << std::endl;
-                    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(TecsLock *dynLockPtr);" << std::endl;
+                    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
                 } else {
                     out << "SP_EXPORT " << full << " *sp_entity_set_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
                     out << "SP_EXPORT " << full << " *sp_entity_get_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
                     out << "SP_EXPORT const " << full << " *sp_entity_get_const_" << scn
-                        << "(TecsLock *dynLockPtr, sp_entity_t ent);" << std::endl;
-                    out << "SP_EXPORT void sp_entity_unset_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent);"
+                        << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);" << std::endl;
+                    out << "SP_EXPORT void sp_entity_unset_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);"
                         << std::endl;
                 }
                 GenerateCTypeFunctionDefinitions<T>(out, full);

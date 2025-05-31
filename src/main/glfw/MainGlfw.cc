@@ -45,6 +45,8 @@ using namespace std;
 using cxxopts::value;
 
 #include <c_abi/Tecs.hh>
+#include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
+#include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
 #include <strayphotons/components.h>
 
 TECS_IMPLEMENT_C_ABI
@@ -408,7 +410,7 @@ int main(int argc, char **argv) {
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
-        TecsECS *liveEcs = sp_get_live_ecs();
+        tecs_ecs_t *liveEcs = sp_get_live_ecs();
         sp_entity_t testEnt = 0;
         uint64_t frameCount = 0;
 
@@ -437,16 +439,14 @@ int main(int argc, char **argv) {
 
             if (!testEnt) {
                 // auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
-                TecsLock *lock = Tecs_ecs_start_transaction(liveEcs, 1 + SP_ACCESS_NAME, 0);
-                TecsEntityView view;
+                tecs_lock_t *lock = Tecs_ecs_start_transaction(liveEcs, 1 + SP_ACCESS_NAME, 0);
+                tecs_entity_view_t view;
                 size_t count = Tecs_entities_with(lock, SP_NAME_INDEX, &view);
-                const TecsEntity *entities = Tecs_entity_view_begin(&view);
-                // for (auto &ent : lock.EntitiesWith<ecs::Name>()) {
+                const tecs_entity_t *entities = Tecs_entity_view_begin(&view);
                 for (size_t i = 0; i < count; i++) {
-                    const void *namePtr = Tecs_entity_const_get(lock, entities[i], SP_NAME_INDEX);
-                    const Name &name = *static_cast<const Name *>(namePtr);
-                    // auto &name = ent.Get<ecs::Name>(lock);
-                    if (name.scene == "cabi" && name.entity == "ABI_TEST") {
+                    const sp_ecs_name_t *name = Tecs_entity_const_get_name(lock, entities[i]);
+                    if (sp_string_get_c_str(&name->scene) == "cabi"s &&
+                        sp_string_get_c_str(&name->entity) == "ABI_TEST"s) {
                         testEnt = entities[i];
                         break;
                     }
@@ -454,24 +454,24 @@ int main(int argc, char **argv) {
                 Tecs_lock_release(lock);
             } else {
                 // auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::Renderable>>();
-                TecsLock *lock = Tecs_ecs_start_transaction(liveEcs,
+                tecs_lock_t *lock = Tecs_ecs_start_transaction(liveEcs,
                     1 + SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE,
                     SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE);
                 // if (testEnt.Has<ecs::TransformTree, ecs::Renderable>(lock)) {
                 if (Tecs_entity_has_bitset(lock, testEnt, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE)) {
-                    // auto &transformTree = testEnt.Get<ecs::TransformTree>(lock);
-                    void *transformTreePtr = Tecs_entity_get(lock, testEnt, SP_TRANSFORM_TREE_INDEX);
-                    sp_ecs_transform_tree_t &transformTree = *static_cast<sp_ecs_transform_tree_t *>(transformTreePtr);
-                    // transformTree.pose.SetPosition(newPos);
-                    vec3_t newPos{std::sin(frameCount / 100.0f), 1, std::cos(frameCount / 100.0f)};
-                    sp_transform_set_position(&transformTree.transform, &newPos);
-                    // auto &renderable = testEnt.Get<ecs::Renderable>(lock);
-                    void *renderablePtr = Tecs_entity_get(lock, testEnt, SP_RENDERABLE_INDEX);
-                    sp_ecs_renderable_t &renderable = *static_cast<sp_ecs_renderable_t *>(renderablePtr);
-                    renderable.color_override.rgba[0] = std::sin(frameCount / 100.0f) * 0.5 + 0.5;
-                    renderable.color_override.rgba[1] = std::sin(frameCount / 100.0f + 1) * 0.5 + 0.5;
-                    renderable.color_override.rgba[2] = std::cos(frameCount / 100.0f) * 0.5 + 0.5;
-                    renderable.color_override.rgba[3] = 1;
+                    sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, testEnt);
+                    vec3_t newPos{
+                        std::sin(frameCount / 100.0f),
+                        1,
+                        std::cos(frameCount / 100.0f),
+                    };
+                    sp_transform_set_position(&transformTree->transform, &newPos);
+
+                    sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, testEnt);
+                    renderable->color_override.rgba[0] = std::sin(frameCount / 100.0f) * 0.5 + 0.5;
+                    renderable->color_override.rgba[1] = std::sin(frameCount / 100.0f + 1) * 0.5 + 0.5;
+                    renderable->color_override.rgba[2] = std::cos(frameCount / 100.0f) * 0.5 + 0.5;
+                    renderable->color_override.rgba[3] = 1;
                 } else {
                     testEnt = {};
                 }

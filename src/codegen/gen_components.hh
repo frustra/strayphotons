@@ -80,7 +80,7 @@ extern "C" {
         out << " */" << std::endl;
         // clang-format off
         if constexpr (Tecs::is_global_component<T>()) {
-    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(TecsLock *dynLockPtr) {"                                                     << std::endl;
+    out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(tecs_lock_t *dynLockPtr) {"                                                     << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_ecs_set_" << scn << "() called with null lock\");"                                                    << std::endl;
     out << "    auto lock1 = dynLock->TryLock<Tecs::AddRemove>();"                                                                          << std::endl;
@@ -92,7 +92,7 @@ extern "C" {
     out << "    return reinterpret_cast<" << full << " *>(&lock2->Set<" << name << ">());"                                                  << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(TecsLock *dynLockPtr) {"                                                     << std::endl;
+    out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(tecs_lock_t *dynLockPtr) {"                                                     << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_ecs_get_" << scn << "() called with null lock\");"                                                    << std::endl;
     out << "    auto lock1 = dynLock->TryLock<Tecs::AddRemove>();"                                                                          << std::endl;
@@ -104,7 +104,7 @@ extern "C" {
     out << "    return reinterpret_cast<" << full << " *>(&lock2->Get<" << name << ">());"                                                  << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(TecsLock *dynLockPtr) {"                                         << std::endl;
+    out << "SP_EXPORT const " << full << " *sp_ecs_get_const_" << scn << "(tecs_lock_t *dynLockPtr) {"                                         << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_ecs_get_const_" << scn << "() called with null lock\");"                                              << std::endl;
     out << "    auto lock = dynLock->TryLock<Tecs::Read<" << name << ">>();"                                                                << std::endl;
@@ -112,7 +112,7 @@ extern "C" {
     out << "    return reinterpret_cast<const " << full << " *>(&lock->Get<const " << name << ">());"                                       << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(TecsLock *dynLockPtr) {"                                                              << std::endl;
+    out << "SP_EXPORT void sp_ecs_unset_" << scn << "(tecs_lock_t *dynLockPtr) {"                                                              << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_ecs_unset_" << scn << "() called with null lock\");"                                                  << std::endl;
     out << "    auto lock = dynLock->TryLock<Tecs::AddRemove>();"                                                                           << std::endl;
@@ -121,7 +121,7 @@ extern "C" {
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
         } else {
-    out << "SP_EXPORT " << full << " *sp_entity_set_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent) {"                                 << std::endl;
+    out << "SP_EXPORT " << full << " *sp_entity_set_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent) {"                                 << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_entity_set_" << scn << "() called with null lock\");"                                                 << std::endl;
     out << "    auto lock1 = dynLock->TryLock<Tecs::AddRemove>();"                                                                          << std::endl;
@@ -133,7 +133,7 @@ extern "C" {
     out << "    return reinterpret_cast<" << full << " *>(&Tecs::Entity(ent).Set<" << name << ">(*lock2));"                                 << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT " << full << " *sp_entity_get_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent) {"                                 << std::endl;
+    out << "SP_EXPORT " << full << " *sp_entity_get_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent) {"                                 << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_entity_get_" << scn << "() called with null lock\");"                                                 << std::endl;
     out << "    auto lock1 = dynLock->TryLock<Tecs::AddRemove>();"                                                                          << std::endl;
@@ -145,7 +145,7 @@ extern "C" {
     out << "    return reinterpret_cast<" << full << " *>(&Tecs::Entity(ent).Get<" << name << ">(*lock2));"                                 << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT const " << full << " *sp_entity_get_const_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent) {"                     << std::endl;
+    out << "SP_EXPORT const " << full << " *sp_entity_get_const_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent) {"                     << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_entity_get_const_" << scn << "() called with null lock\");"                                           << std::endl;
     out << "    auto lock = dynLock->TryLock<Tecs::Read<" << name << ">>();"                                                                << std::endl;
@@ -153,7 +153,7 @@ extern "C" {
     out << "    return reinterpret_cast<const " << full << " *>(&Tecs::Entity(ent).Get<const " << name << ">(*lock));"                      << std::endl;
     out << "}"                                                                                                                              << std::endl;
     out                                                                                                                                     << std::endl;
-    out << "SP_EXPORT void sp_entity_unset_" << scn << "(TecsLock *dynLockPtr, sp_entity_t ent) {"                                          << std::endl;
+    out << "SP_EXPORT void sp_entity_unset_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent) {"                                          << std::endl;
     out << "    DynamicLock *dynLock = static_cast<DynamicLock *>(dynLockPtr);"                                                             << std::endl;
     out << "    Assertf(dynLock, \"sp_entity_unset_" << scn << "() called with null lock\");"                                               << std::endl;
     out << "    auto lock = dynLock->TryLock<Tecs::AddRemove>();"                                                                           << std::endl;
