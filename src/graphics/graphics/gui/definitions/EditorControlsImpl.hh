@@ -438,18 +438,15 @@ namespace sp {
 
         if (valueChanged) {
             if (ecs::IsLive(target)) {
-                ecs::QueueTransaction<ecs::WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
-                    void *component = comp.Access(lock, target);
+                ecs::QueueTransaction<ecs::Write<T>>([target = this->target, value, &comp, &field](auto &lock) {
+                    void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
                 });
             } else if (scene) {
-                GetSceneManager().QueueAction(SceneAction::EditStagingScene,
-                    scene.data->name,
-                    [target = this->target, value, &comp, &field](ecs::Lock<ecs::AddRemove> lock,
-                        std::shared_ptr<Scene> scene) {
-                        void *component = comp.Access((ecs::Lock<ecs::WriteAll>)lock, target);
-                        field.Access<T>(component) = value;
-                    });
+                ecs::QueueStagingTransaction<ecs::Write<T>>([target = this->target, value, &comp, &field](auto &lock) {
+                    void *component = comp.AccessMut(lock, target);
+                    field.Access<T>(component) = value;
+                });
             } else {
                 Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
             }

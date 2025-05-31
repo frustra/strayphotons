@@ -137,24 +137,22 @@ namespace sp::scripts {
                 if (event.name != "/script/camera_rotate") continue;
 
                 auto angleDiff = std::get<glm::vec2>(event.data);
-                if (SignalRef(ent, "interact_rotate").GetSignal(lock) < 0.5) {
-                    // Apply pitch/yaw rotations
-                    auto &transform = ent.Get<TransformTree>(lock);
-                    auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *
-                                    glm::quat(glm::vec3(-angleDiff.y, 0, 0));
+                // Apply pitch/yaw rotations
+                auto &transform = ent.Get<TransformTree>(lock);
+                auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *
+                                glm::quat(glm::vec3(-angleDiff.y, 0, 0));
 
-                    auto up = rotation * glm::vec3(0, 1, 0);
-                    if (up.y < 0) {
-                        // Camera is turning upside-down, reset it
-                        auto right = rotation * glm::vec3(1, 0, 0);
-                        right.y = 0;
-                        up.y = 0;
-                        glm::vec3 forward = glm::cross(right, up);
-                        rotation = glm::quat_cast(
-                            glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
-                    }
-                    transform.pose.SetRotation(rotation);
+                auto up = rotation * glm::vec3(0, 1, 0);
+                if (up.y < 0) {
+                    // Camera is turning upside-down, reset it
+                    auto right = rotation * glm::vec3(1, 0, 0);
+                    right.y = 0;
+                    up.y = 0;
+                    glm::vec3 forward = glm::cross(right, up);
+                    rotation = glm::quat_cast(
+                        glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
                 }
+                transform.pose.SetRotation(rotation);
             }
         }
 

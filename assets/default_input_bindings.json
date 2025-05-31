@@ -14,7 +14,12 @@
             "/mouse/move": [
                 {
                     "outputs": "player:flathead/script/camera_rotate",
-                    "filter": "is_focused(Game)",
+                    "filter": "is_focused(Game) && !player:pointer/interact_rotate",
+                    "modify": ["event.x * 0.001", "event.y * 0.001"]
+                },
+                {
+                    "outputs": "player:flathead/camera/rotate",
+                    "filter": "is_focused(Game) && !player:pointer/interact_rotate",
                     "modify": ["event.x * 0.001", "event.y * 0.001"]
                 },
                 {
@@ -258,8 +263,7 @@
             "move_left": "if_focused(Game, input:keyboard/key_a)",
             "move_back": "if_focused(Game, input:keyboard/key_s)",
             "move_up": "if_focused(Game, input:keyboard/key_space)",
-            "move_down": "if_focused(Game, input:keyboard/key_left_control)",
-            "interact_rotate": "if_focused(Game, input:keyboard/key_r)"
+            "move_down": "if_focused(Game, input:keyboard/key_left_control)"
         }
     }
 }

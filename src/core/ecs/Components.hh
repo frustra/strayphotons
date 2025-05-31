@@ -53,9 +53,8 @@ namespace ecs {
             const FlatEntity &src) const = 0;
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
         virtual bool HasComponent(const FlatEntity &ent) const = 0;
-        virtual const void *Access(const Lock<ReadAll> &lock, Entity ent) const = 0;
-        virtual void *Access(const Lock<WriteAll> &lock, Entity ent) const = 0;
-        virtual void *Access(const PhysicsWriteLock &lock, Entity ent) const = 0;
+        virtual const void *Access(const DynamicLock<> &lock, Entity ent) const = 0;
+        virtual void *AccessMut(const DynamicLock<> &lock, Entity ent) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
 
@@ -206,17 +205,17 @@ namespace ecs {
             return (bool)std::get<std::shared_ptr<CompType>>(ent);
         }
 
-        const void *Access(const Lock<ReadAll> &lock, Entity ent) const override {
-            return &ent.Get<CompType>(lock);
+        const void *Access(const DynamicLock<> &lock, Entity ent) const override {
+            if (auto tryLock = lock.TryLock<Read<CompType>>()) {
+                return &ent.Get<const CompType>(*tryLock);
+            } else {
+                return nullptr;
+            }
         }
 
-        void *Access(const Lock<WriteAll> &lock, Entity ent) const override {
-            return &ent.Get<CompType>(lock);
-        }
-
-        void *Access(const PhysicsWriteLock &lock, Entity ent) const override {
-            if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
-                return &ent.Get<CompType>(lock);
+        void *AccessMut(const DynamicLock<> &lock, Entity ent) const override {
+            if (auto tryLock = lock.TryLock<Write<CompType>>()) {
+                return &ent.Get<CompType>(*tryLock);
             } else {
                 return nullptr;
             }
@@ -329,17 +328,17 @@ namespace ecs {
             return (bool)std::get<std::shared_ptr<CompType>>(ent);
         }
 
-        const void *Access(const Lock<ReadAll> &lock, Entity) const override {
-            return &lock.Get<CompType>();
+        const void *Access(const DynamicLock<> &lock, Entity) const override {
+            if (auto tryLock = lock.TryLock<Read<CompType>>()) {
+                return &tryLock->Get<const CompType>();
+            } else {
+                return nullptr;
+            }
         }
 
-        void *Access(const Lock<WriteAll> &lock, Entity) const override {
-            return &lock.Get<CompType>();
-        }
-
-        void *Access(const PhysicsWriteLock &lock, Entity) const override {
-            if constexpr (Tecs::is_write_allowed<CompType, PhysicsWriteLock>()) {
-                return &lock.Get<CompType>();
+        void *AccessMut(const DynamicLock<> &lock, Entity) const override {
+            if (auto tryLock = lock.TryLock<Write<CompType>>()) {
+                return &tryLock->Get<CompType>();
             } else {
                 return nullptr;
             }

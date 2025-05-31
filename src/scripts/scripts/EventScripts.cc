@@ -265,7 +265,7 @@ namespace sp::scripts {
                 }
                 if (!comp->HasComponent(lock, ent)) continue;
 
-                void *compPtr = comp->Access(lock, ent);
+                void *compPtr = comp->AccessMut(lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromEvent %s access returned null data: %s",
                         componentName,

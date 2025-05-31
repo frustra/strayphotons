@@ -309,7 +309,7 @@ namespace sp::scripts {
 
                 auto signalValue = signalExpr.Evaluate(lock);
 
-                void *compPtr = comp->Access(lock, ent);
+                void *compPtr = comp->AccessMut(lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromSignal %s access returned null data: %s",
                         componentName,

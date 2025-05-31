@@ -453,19 +453,24 @@ int main(int argc, char **argv) {
                 }
                 Tecs_lock_release(lock);
             } else {
-                // auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::Renderable>>();
+                // auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot,
+                // ecs::Renderable>>();
                 tecs_lock_t *lock = Tecs_ecs_start_transaction(liveEcs,
-                    1 + SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE,
-                    SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE);
-                // if (testEnt.Has<ecs::TransformTree, ecs::Renderable>(lock)) {
-                if (Tecs_entity_has_bitset(lock, testEnt, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_RENDERABLE)) {
+                    1 + SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE,
+                    SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE);
+                // if (testEnt.Has<ecs::TransformTree, ecs::TransformSnapshot, ecs::Renderable>(lock)) {
+                if (Tecs_entity_has_bitset(lock,
+                        testEnt,
+                        SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE)) {
                     sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, testEnt);
+                    sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, testEnt);
                     vec3_t newPos{
                         std::sin(frameCount / 100.0f),
                         1,
                         std::cos(frameCount / 100.0f),
                     };
                     sp_transform_set_position(&transformTree->transform, &newPos);
+                    transformSnapshot->transform = transformTree->transform;
 
                     sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, testEnt);
                     renderable->color_override.rgba[0] = std::sin(frameCount / 100.0f) * 0.5 + 0.5;
