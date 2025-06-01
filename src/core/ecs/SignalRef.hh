@@ -21,7 +21,7 @@ namespace ecs {
         struct Node;
     }
 
-    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, FocusLock>>;
+    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, EventInput, FocusLock>>;
 
     class SignalRef {
     private:

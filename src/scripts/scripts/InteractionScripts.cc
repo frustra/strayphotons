@@ -9,6 +9,7 @@
 #include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
@@ -205,7 +206,7 @@ namespace sp::scripts {
         StructField::New("_grab_entities", &InteractiveObject::grabEntities),
         StructField::New("_point_entities", &InteractiveObject::pointEntities),
         StructField::New("_render_outline", &InteractiveObject::renderOutline));
-    InternalScript<InteractiveObject> interactiveObject("interactive_object",
+    LogicScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
         true,
         INTERACT_EVENT_INTERACT_POINT,
@@ -343,7 +344,7 @@ namespace sp::scripts {
         StructField::New("_grab_entity", &InteractHandler::grabEntity),
         StructField::New("_point_entity", &InteractHandler::pointEntity),
         StructField::New("_press_entity", &InteractHandler::pressEntity));
-    InternalScript<InteractHandler> interactHandler("interact_handler",
+    LogicScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
         false,
         INTERACT_EVENT_INTERACT_GRAB,

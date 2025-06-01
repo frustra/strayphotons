@@ -9,6 +9,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptImpl.hh"
 
 namespace sp::scripts {
     using namespace ecs;
@@ -54,7 +55,7 @@ namespace sp::scripts {
         "Flashlight",
         "",
         StructField::New("parent", &Flashlight::parentEntity));
-    InternalScript<Flashlight> flashlight("flashlight",
+    LogicScript<Flashlight> flashlight("flashlight",
         MetadataFlashlight,
         false,
         "/action/flashlight/toggle",
@@ -82,5 +83,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSunScript(typeid(SunScript), sizeof(SunScript), "SunScript", "");
-    InternalScript<SunScript> sun("sun", MetadataSunScript);
+    LogicScript<SunScript> sun("sun", MetadataSunScript);
 } // namespace sp::scripts

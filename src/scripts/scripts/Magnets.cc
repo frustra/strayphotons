@@ -8,6 +8,7 @@
 #include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptImpl.hh"
 #include "input/BindingNames.hh"
 
 #include <glm/gtx/component_wise.hpp>
@@ -118,7 +119,7 @@ namespace sp::scripts {
         "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
         StructField::New("disabled", &MagneticPlug::disabled));
-    InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
+    LogicScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,
         "/magnet/nearby",
@@ -154,7 +155,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), sizeof(MagneticSocket), "MagneticSocket", "");
-    InternalScript<MagneticSocket> magneticSocket("magnetic_socket",
+    LogicScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,
         "/trigger/magnetic/enter",

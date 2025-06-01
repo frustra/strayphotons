@@ -9,6 +9,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
@@ -29,7 +30,10 @@ namespace sp::scripts {
         std::string templateSource;
         bool resetScale = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<ActiveScene>, Read<TransformTree, TransformSnapshot, SceneInfo>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
@@ -76,7 +80,7 @@ namespace sp::scripts {
                     if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
                 }
                 if (!scene) {
-                    auto &spawnInfo = entities::Spawn.Get(lock).Get<ecs::SceneInfo>(lock);
+                    const auto &spawnInfo = entities::Spawn.Get(lock).Get<const ecs::SceneInfo>(lock);
                     scene = spawnInfo.scene;
                     if (scene) Logf("TraySpawner using spawn scene: %s", scene.data->path);
                 }
@@ -133,7 +137,7 @@ namespace sp::scripts {
         "",
         StructField::New("source", &TraySpawner::templateSource),
         StructField::New("reset_scale", &TraySpawner::resetScale));
-    InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+    LogicScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {
         Entity selectedEntity;
@@ -296,5 +300,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEditTool(typeid(EditTool), sizeof(EditTool), "EditTool", "");
-    InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
+    LogicScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

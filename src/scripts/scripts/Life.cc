@@ -9,6 +9,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -55,9 +56,5 @@ namespace sp::scripts {
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-    InternalScript<LifeCell> lifeCell("life_cell",
-        MetadataLifeCell,
-        false,
-        "/life/neighbor_alive",
-        "/life/toggle_alive");
+    LogicScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive", "/life/toggle_alive");
 } // namespace sp::scripts

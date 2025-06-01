@@ -36,23 +36,22 @@ namespace ecs {
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
+    using OnTickFunc = std::function<
+        void(ScriptState &, const DynamicLock<ReadSignalsLock> &, Entity, chrono_clock::duration)>;
+    using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
+    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnEventFunc, PrefabFunc>;
 
-    template<typename T>
-    struct ScriptCallbackIndex : std::integral_constant<size_t, 0> {};
-    template<>
-    struct ScriptCallbackIndex<OnTickFunc> : std::integral_constant<size_t, 1> {};
-    template<>
-    struct ScriptCallbackIndex<OnPhysicsUpdateFunc> : std::integral_constant<size_t, 2> {};
-    template<>
-    struct ScriptCallbackIndex<PrefabFunc> : std::integral_constant<size_t, 3> {};
+    enum class ScriptType {
+        LogicScript = 0,
+        PhysicsScript,
+        PrefabScript,
+        EventScript,
+    };
 
-    struct InternalScriptBase {
+    struct ScriptBase {
         const StructMetadata &metadata;
-        InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
+        ScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
         virtual const void *GetDefault() const = 0;
         virtual void *Access(ScriptState &state) const = 0;
         virtual const void *Access(const ScriptState &state) const = 0;
@@ -60,9 +59,10 @@ namespace ecs {
 
     struct ScriptDefinition {
         std::string name;
+        ScriptType type;
         std::vector<std::string> events;
         bool filterOnEvent = false;
-        const InternalScriptBase *context = nullptr;
+        const ScriptBase *context = nullptr;
         std::optional<ScriptInitFunc> initFunc;
         ScriptCallback callback;
     };
@@ -151,6 +151,12 @@ namespace ecs {
         friend class ScriptManager;
     };
 
+    struct ScriptSet {
+        std::deque<std::pair<Entity, ScriptState>> scripts;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
+        sp::LockFreeMutex mutex;
+    };
+
     class ScriptManager {
         sp::LogOnExit logOnExit = "Scripts shut down =====================================================";
 
@@ -172,27 +178,9 @@ namespace ecs {
     private:
         void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
             const Entity &ent,
-            ScriptState &state) const;
+            ScriptState &state);
 
-        std::deque<EventQueue> eventQueues;
-        std::deque<std::pair<Entity, ScriptState>> onTickScripts;
-        std::deque<std::pair<Entity, ScriptState>> onPhysicsUpdateScripts;
-        std::deque<std::pair<Entity, ScriptState>> prefabScripts;
-
-        // Mutex index 0 is for eventQeuues, 1+ are for script lists
-        std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> mutexes;
-
-        const std::array<decltype(onTickScripts) *, std::variant_size_v<ScriptCallback>> scriptLists = {
-            nullptr, // std::monostate
-            &onTickScripts,
-            &onPhysicsUpdateScripts,
-            &prefabScripts,
-        };
-
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeEventQueues;
-        std::array<std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>>,
-            std::variant_size_v<ScriptCallback>>
-            freeScriptLists;
+        sp::EnumArray<ScriptSet, ScriptType> scripts = {};
 
         friend class StructMetadata;
         friend class ScriptInstance;

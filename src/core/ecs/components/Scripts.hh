@@ -26,12 +26,6 @@ namespace ecs {
         ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
             : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
-        ScriptInstance(const EntityScope &scope, OnTickFunc callback)
-            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
-        ScriptInstance(const EntityScope &scope, OnPhysicsUpdateFunc callback)
-            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
-        ScriptInstance(const EntityScope &scope, PrefabFunc callback)
-            : ScriptInstance(scope, ScriptDefinition{"", {}, false, nullptr, {}, callback}) {}
 
         explicit operator bool() const {
             return state && *state;
@@ -95,21 +89,14 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
     void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope);
 
     struct Scripts {
-        ScriptState &AddOnTick(const EntityScope &scope, const std::string &scriptName) {
+        ScriptState &AddScript(const EntityScope &scope, const ScriptDefinition &definition) {
+            return *(scripts.emplace_back(scope, definition).state);
+        }
+        ScriptState &AddScript(const EntityScope &scope, const std::string &scriptName) {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().scripts.at(scriptName)).state);
         }
         ScriptState &AddPrefab(const EntityScope &scope, const std::string &scriptName) {
             return *(scripts.emplace_back(scope, GetScriptDefinitions().prefabs.at(scriptName)).state);
-        }
-
-        ScriptState &AddOnTick(const EntityScope &scope, OnTickFunc callback) {
-            return *(scripts.emplace_back(scope, callback).state);
-        }
-        ScriptState &AddOnPhysicsUpdate(const EntityScope &scope, OnPhysicsUpdateFunc callback) {
-            return *(scripts.emplace_back(scope, callback).state);
-        }
-        ScriptState &AddPrefab(const EntityScope &scope, PrefabFunc callback) {
-            return *(scripts.emplace_back(scope, callback).state);
         }
 
         const ScriptState *FindScript(size_t instanceId) const;
@@ -123,135 +110,4 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
 
     template<>
     void EntityComponent<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget);
-
-    // Cheecks if the script has an Init(ScriptState &state) function
-    template<typename T, typename = void>
-    struct script_has_init_func : std::false_type {};
-    template<typename T>
-    struct script_has_init_func<T, std::void_t<decltype(std::declval<T>().Init(std::declval<ScriptState &>()))>>
-        : std::true_type {};
-
-    template<typename T>
-    struct InternalScript final : public InternalScriptBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            if constexpr (script_has_init_func<T>()) ptr->Init(state);
-        }
-
-        static void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            ptr->OnTick(state, lock, ent, interval);
-        }
-
-        InternalScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript({name, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
-        }
-
-        template<typename... Events>
-        InternalScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
-            : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
-        }
-    };
-
-    template<typename T>
-    struct InternalPhysicsScript final : public InternalScriptBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            if constexpr (script_has_init_func<T>()) ptr->Init(state);
-        }
-
-        static void OnPhysicsUpdate(ScriptState &state,
-            PhysicsUpdateLock lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            ptr->OnPhysicsUpdate(state, lock, ent, interval);
-        }
-
-        InternalPhysicsScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, {}, false, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
-        }
-
-        template<typename... Events>
-        InternalPhysicsScript(const std::string &name,
-            const StructMetadata &metadata,
-            bool filterOnEvent,
-            Events... events)
-            : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, {events...}, filterOnEvent, this, ScriptInitFunc(&Init), OnPhysicsUpdateFunc(&OnPhysicsUpdate)});
-        }
-    };
-
-    template<typename T>
-    struct PrefabScript final : public InternalScriptBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
-            const T *ptr = std::any_cast<T>(&state.userData);
-            T data;
-            if (ptr) data = *ptr;
-            data.Prefab(state, scene.Lock(), lock, ent);
-        }
-
-        PrefabScript(const std::string &name, const StructMetadata &metadata) : InternalScriptBase(metadata) {
-            GetScriptDefinitions().RegisterPrefab({name, {}, false, this, {}, PrefabFunc(&Prefab)});
-        }
-    };
 } // namespace ecs

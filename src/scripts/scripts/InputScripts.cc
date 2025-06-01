@@ -9,6 +9,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 #include "input/BindingNames.hh"
 
@@ -71,7 +72,7 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &RelativeMovement::targetEntity),
         StructField::New("up_reference", &RelativeMovement::referenceEntity));
-    InternalScript<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
+    LogicScript<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
 
     struct PlayerRotation {
         EntityRef targetEntity;
@@ -122,14 +123,13 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &PlayerRotation::targetEntity),
         StructField::New("smooth_rotation", &PlayerRotation::enableSmoothRotation));
-    InternalScript<PlayerRotation> playerRotation("player_rotation",
-        MetadataPlayerRotation,
-        false,
-        "/action/snap_rotate");
+    LogicScript<PlayerRotation> playerRotation("player_rotation", MetadataPlayerRotation, false, "/action/snap_rotate");
 
     struct CameraView {
-        template<typename LockType>
-        void updateCamera(ScriptState &state, LockType &lock, Entity ent) {
+        void OnTick(ScriptState &state,
+            Lock<Write<TransformTree>, Read<EventInput>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             Event event;
@@ -155,17 +155,10 @@ namespace sp::scripts {
                 transform.pose.SetRotation(rotation);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateCamera(state, lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateCamera(state, lock, ent);
-        }
     };
     StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
-    InternalScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
-    InternalPhysicsScript<CameraView> physicsCameraView("physics_camera_view",
+    LogicScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
+    PhysicsScript<CameraView> physicsCameraView("physics_camera_view",
         MetadataCameraView,
         true,
         "/script/camera_rotate");

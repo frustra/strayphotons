@@ -75,26 +75,44 @@ namespace ecs {
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state, bool runInit) {
         // ZoneScoped;
-        auto *scriptListPtr = scriptLists[state.definition.callback.index()];
-        Assertf(scriptListPtr, "Invalid script callback type: %s", state.definition.name);
-        auto &scriptList = *scriptListPtr;
-        auto &freeScriptList = freeScriptLists[state.definition.callback.index()];
-        auto &scriptMutex = mutexes[state.definition.callback.index()];
+        auto &scriptSet = scripts[state.definition.type];
+        switch (state.definition.type) {
+        case ScriptType::LogicScript:
+            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: LogicScript != OnTick",
+                state.definition.name);
+            break;
+        case ScriptType::PhysicsScript:
+            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: PhysicsScript != OnTick",
+                state.definition.name);
+            break;
+        case ScriptType::EventScript:
+            Assertf(std::holds_alternative<OnEventFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: EventScript != OnEvent",
+                state.definition.name);
+            break;
+        case ScriptType::PrefabScript:
+            Assertf(std::holds_alternative<PrefabFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: PrefabScript != Prefab",
+                state.definition.name);
+            break;
+        }
 
         ScriptState *scriptStatePtr = nullptr;
         {
             // ZoneScopedN("InitScriptState");
-            std::lock_guard l(scriptMutex);
+            std::lock_guard l(scriptSet.mutex);
             size_t newIndex;
-            if (freeScriptList.empty()) {
-                newIndex = scriptList.size();
-                scriptList.emplace_back(Entity(), state);
+            if (scriptSet.freeScriptList.empty()) {
+                newIndex = scriptSet.scripts.size();
+                scriptSet.scripts.emplace_back(Entity(), state);
             } else {
-                newIndex = freeScriptList.top();
-                freeScriptList.pop();
-                scriptList[newIndex] = {Entity(), state};
+                newIndex = scriptSet.freeScriptList.top();
+                scriptSet.freeScriptList.pop();
+                scriptSet.scripts[newIndex] = {Entity(), state};
             }
-            auto &newState = scriptList[newIndex].second;
+            auto &newState = scriptSet.scripts[newIndex].second;
             newState.index = newIndex;
             if (runInit) {
                 newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
@@ -103,12 +121,11 @@ namespace ecs {
 
             scriptStatePtr = &newState;
         }
-        return std::shared_ptr<ScriptState>(scriptStatePtr,
-            [&scriptList, &freeScriptList, &scriptMutex](ScriptState *state) {
-                std::lock_guard l(scriptMutex);
-                freeScriptList.push(state->index);
-                scriptList[state->index] = {};
-            });
+        return std::shared_ptr<ScriptState>(scriptStatePtr, [&scriptSet](ScriptState *state) {
+            std::lock_guard l(scriptSet.mutex);
+            scriptSet.freeScriptList.push(state->index);
+            scriptSet.scripts[state->index] = {};
+        });
     }
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const EntityScope &scope,
@@ -118,13 +135,11 @@ namespace ecs {
 
     void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
         const Entity &ent,
-        ScriptState &state) const {
-        auto *scriptListPtr = scriptLists[state.definition.callback.index()];
-        if (!scriptListPtr) return;
-        auto &scriptList = *scriptListPtr;
-        Assertf(state.index < scriptList.size(), "Invalid script index: %s", state.definition.name);
+        ScriptState &state) {
+        auto &scriptSet = scripts[state.definition.type];
+        Assertf(state.index < scriptSet.scripts.size(), "Invalid script index: %s", state.definition.name);
 
-        auto &entry = scriptList[state.index];
+        auto &entry = scriptSet.scripts[state.index];
         if (!entry.first) {
             if (ent.Has<EventInput>(lock)) {
                 auto &eventInput = ent.Get<EventInput>(lock);
@@ -145,8 +160,8 @@ namespace ecs {
 
     void ScriptManager::RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock) {
         ZoneScoped;
-        for (size_t i = 1; i < mutexes.size(); i++) {
-            mutexes[i].lock_shared();
+        for (size_t i = 0; i < scripts.size(); i++) {
+            scripts.at(i).mutex.lock_shared();
         }
         for (auto &ent : lock.EntitiesWith<ecs::Scripts>()) {
             if (!ent.Has<Scripts>(lock)) continue;
@@ -155,8 +170,8 @@ namespace ecs {
                 internalRegisterEvents(lock, ent, *instance.state);
             }
         }
-        for (size_t i = mutexes.size() - 1; i > 0; i--) {
-            mutexes[i].unlock_shared();
+        for (size_t i = 0; i < scripts.size(); i++) {
+            scripts.at(scripts.size() - i - 1).mutex.unlock_shared();
         }
     }
 
@@ -165,15 +180,16 @@ namespace ecs {
         if (!ent.Has<Scripts>(lock)) return;
         for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
             if (!instance) continue;
-            std::shared_lock l(mutexes[instance.state->definition.callback.index()]);
+            std::shared_lock l(scripts[instance.state->definition.type].mutex);
             internalRegisterEvents(lock, ent, *instance.state);
         }
     }
 
     void ScriptManager::RunOnTick(const Lock<WriteAll> &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
-        std::shared_lock l(mutexes[ScriptCallbackIndex<OnTickFunc>()]);
-        for (auto &[ent, state] : onTickScripts) {
+        auto &scriptSet = scripts[ScriptType::LogicScript];
+        std::shared_lock l(scriptSet.mutex);
+        for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
             auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
@@ -185,10 +201,11 @@ namespace ecs {
 
     void ScriptManager::RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
-        std::shared_lock l(mutexes[ScriptCallbackIndex<OnPhysicsUpdateFunc>()]);
-        for (auto &[ent, state] : onPhysicsUpdateScripts) {
+        auto &scriptSet = scripts[ScriptType::PhysicsScript];
+        std::shared_lock l(scriptSet.mutex);
+        for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
-            auto &callback = std::get<OnPhysicsUpdateFunc>(state.definition.callback);
+            auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             // ZoneScopedN("OnPhysicsUpdate");
             // ZoneStr(ecs::ToString(lock, ent));
@@ -211,9 +228,9 @@ namespace ecs {
         static thread_local size_t recursionDepth = 0;
         std::optional<sp::Defer<std::function<void()>>> l;
         if (++recursionDepth == 1) {
-            mutexes[ScriptCallbackIndex<PrefabFunc>()].lock();
+            scripts[ScriptType::PrefabScript].mutex.lock();
             l.emplace([this]() {
-                mutexes[ScriptCallbackIndex<PrefabFunc>()].unlock();
+                scripts[ScriptType::PrefabScript].mutex.unlock();
             });
         }
 

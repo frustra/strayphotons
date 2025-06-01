@@ -7,6 +7,7 @@
 
 #include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
 
@@ -30,7 +31,7 @@ namespace sp::scripts {
         "InitEvent",
         "",
         StructField::New(&InitEvent::outputs));
-    InternalScript<InitEvent> initEvent("init_event", MetadataInitEvent);
+    LogicScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
         std::string inputEvent, outputEvent;
@@ -64,7 +65,7 @@ namespace sp::scripts {
         StructField::New("input_event", &EventGateBySignal::inputEvent),
         StructField::New("output_event", &EventGateBySignal::outputEvent),
         StructField::New("gate_expr", &EventGateBySignal::gateExpression));
-    InternalScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
+    LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
         robin_hood::unordered_map<std::string, std::string> mapping;
@@ -78,8 +79,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -92,21 +92,14 @@ namespace sp::scripts {
                 if (outputEvent) EventBindings::SendEvent(lock, ent, *outputEvent);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateEvents(state, lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateEvents(state, lock, ent, interval);
-        }
     };
     StructMetadata MetadataCollapseEvents(typeid(CollapseEvents),
         sizeof(CollapseEvents),
         "CollapseEvents",
         "",
         StructField::New(&CollapseEvents::mapping));
-    InternalScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
-    InternalPhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
+    LogicScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
+    PhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
     struct SignalFromEvent {
         std::vector<std::string> outputs;
@@ -173,13 +166,12 @@ namespace sp::scripts {
         "SignalFromEvent",
         "",
         StructField::New("outputs", &SignalFromEvent::outputs));
-    InternalScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
+    LogicScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
 
     struct EventFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> outputs;
 
-        template<typename LockType>
-        void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
                 ZoneScopedN("EventFromSignal::sendOutputEvents");
                 auto value = expr.Evaluate(lock);
@@ -189,21 +181,14 @@ namespace sp::scripts {
                 }
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            sendOutputEvents(state, lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            sendOutputEvents(state, lock, ent, interval);
-        }
     };
     StructMetadata MetadataEventFromSignal(typeid(EventFromSignal),
         sizeof(EventFromSignal),
         "EventFromSignal",
         "",
         StructField::New(&EventFromSignal::outputs));
-    InternalScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
-    InternalPhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
+    LogicScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
+    PhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
     struct ComponentFromEvent {
         std::vector<std::string> outputs;
@@ -225,8 +210,10 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateComponentFromEvent(ScriptState &state, LockType &lock, Entity ent) {
+        void OnTick(ScriptState &state,
+            DynamicLock<Read<Name, EventInput>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {
@@ -309,20 +296,13 @@ namespace sp::scripts {
                     event.data);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromEvent(state, lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromEvent(state, lock, ent);
-        }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),
         sizeof(ComponentFromEvent),
         "ComponentFromEvent",
         "",
         StructField::New("outputs", &ComponentFromEvent::outputs));
-    InternalScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
-    InternalPhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",
+    LogicScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
+    PhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",
         MetadataComponentFromEvent);
 } // namespace sp::scripts

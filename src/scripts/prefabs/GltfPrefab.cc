@@ -10,6 +10,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 namespace ecs {
@@ -105,7 +106,7 @@ namespace ecs {
                             newEntity.Set<PhysicsQuery>(lock);
                             newEntity.Set<EventInput>(lock);
                             auto &scripts = newEntity.Set<Scripts>(lock);
-                            scripts.AddOnTick(prefixName, "interactive_object");
+                            scripts.AddScript(prefixName, "interactive_object");
                             GetScriptManager().RegisterEvents(lock, newEntity);
                         }
                     }

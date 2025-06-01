@@ -99,6 +99,7 @@ namespace ecs {
         } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
+            obj["type"] = picojson::value(std::string(magic_enum::enum_name(state.definition.type)));
             if (std::holds_alternative<PrefabFunc>(state.definition.callback)) {
                 obj["prefab"] = picojson::value(state.definition.name);
             } else {
@@ -106,7 +107,7 @@ namespace ecs {
             }
 
             if (state.definition.context) {
-                std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+                std::lock_guard l(GetScriptManager().scripts[state.definition.type].mutex);
 
                 const void *dataPtr = state.definition.context->Access(state);
                 const void *defaultPtr = state.definition.context->GetDefault();

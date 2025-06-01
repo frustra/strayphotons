@@ -203,7 +203,7 @@ namespace ecs {
         bool isReference;
 
         template<typename T>
-        static inline TypeInfo Lookup() {
+        static inline constexpr TypeInfo Lookup() {
             return TypeInfo{
                 .type = typeid(T),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
@@ -224,7 +224,6 @@ namespace ecs {
         TypeInfo returnType;
         std::vector<TypeInfo> argTypes;
         std::vector<ArgDesc> argDescs;
-        std::shared_ptr<void> funcPtr = nullptr;
         int funcIndex = -1;
 
         StructFunction(const std::string &name,
@@ -233,10 +232,9 @@ namespace ecs {
             bool isConst,
             TypeInfo returnType,
             std::vector<TypeInfo> argTypes,
-            std::vector<ArgDesc> argDescs,
-            std::shared_ptr<void> &&funcPtr)
+            std::vector<ArgDesc> argDescs)
             : name(name), desc(sp::trim(desc)), isStatic(isStatic), isConst(isConst), returnType(returnType),
-              argTypes(argTypes), argDescs(argDescs), funcPtr(std::move(funcPtr)) {}
+              argTypes(argTypes), argDescs(argDescs) {}
 
         /**
          * Registers a struct's member function as a callable scripting function. For example:
@@ -250,8 +248,7 @@ namespace ecs {
                 false, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                {},
-                std::make_shared<R (T::*)(Args...)>(F));
+                {});
         }
 
         template<typename T, typename R, typename... Args, typename... Descs>
@@ -265,8 +262,7 @@ namespace ecs {
                 false, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}),
-                std::make_shared<R (T::*)(Args...)>(F));
+                std::vector<ArgDesc>({argDescs...}));
         }
 
         template<typename T, typename R, typename... Args>
@@ -277,8 +273,7 @@ namespace ecs {
                 true, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                {},
-                std::make_shared<R (T::*)(Args...) const>(F));
+                {});
         }
 
         template<typename T, typename R, typename... Args, typename... Descs>
@@ -292,8 +287,7 @@ namespace ecs {
                 true, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}),
-                std::make_shared<R (T::*)(Args...) const>(F));
+                std::vector<ArgDesc>({argDescs...}));
         }
 
         /**
@@ -308,8 +302,7 @@ namespace ecs {
                 false, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                {},
-                std::make_shared<R (*)(Args...)>(F));
+                {});
         }
 
         template<typename R, typename... Args, typename... Descs>
@@ -323,47 +316,7 @@ namespace ecs {
                 false, // isConst
                 TypeInfo::Lookup<R>(),
                 std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}),
-                std::make_shared<R (*)(Args...)>(F));
-        }
-
-        template<typename R, typename... Args>
-        R CallStatic(Args... args) const {
-            Assertf(returnType.type == typeid(R),
-                "StructFunction::CallStatic called with wrong return type: %s, expected %s",
-                typeid(R).name(),
-                returnType.type.name());
-            Assertf(isStatic, "StructFunction::CallStatic called on member function");
-            Assertf(funcPtr, "StructFunction::CallStatic called on null function");
-            return std::invoke(reinterpret_cast<R (*)(Args...)>(funcPtr.get()), std::forward<Args...>(args...));
-        }
-
-        template<typename T, typename R, typename... Args>
-        R Call(T *structPtr, Args... args) const {
-            Assertf(returnType.type == typeid(R),
-                "StructFunction::Call called with wrong return type: %s, expected %s",
-                typeid(R).name(),
-                returnType.type.name());
-            Assertf(!isStatic, "StructFunction::Call called on static function");
-            Assertf(!isConst, "StructFunction::Call called on const function");
-            Assertf(funcPtr, "StructFunction::Call called on null function");
-            return std::invoke(reinterpret_cast<R (T::*)(Args...)>(funcPtr.get()),
-                *structPtr,
-                std::forward<Args...>(args...));
-        }
-
-        template<typename T, typename R, typename... Args>
-        R CallConst(T *structPtr, Args... args) const {
-            Assertf(returnType.type == typeid(R),
-                "StructFunction::CallConst called with wrong return type: %s, expected %s",
-                typeid(R).name(),
-                returnType.type.name());
-            Assertf(!isStatic, "StructFunction::CallConst called on static function");
-            Assertf(isConst, "StructFunction::CallConst called on non-const function");
-            Assertf(funcPtr, "StructFunction::CallConst called on null function");
-            return std::invoke(reinterpret_cast<R (T::*)(Args...) const>(funcPtr.get()),
-                *structPtr,
-                std::forward<Args...>(args...));
+                std::vector<ArgDesc>({argDescs...}));
         }
 
         bool operator==(const StructFunction &) const = default;

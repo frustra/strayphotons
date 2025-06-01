@@ -12,6 +12,7 @@
 #include "console/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -60,12 +61,8 @@ namespace sp {
                 auto pointerEnt = scene->NewSystemEntity(lock, scene, entities::Pointer.Name());
                 auto &pointerTree = pointerEnt.Set<ecs::TransformTree>(lock);
                 pointerTree.parent = entities::FlatHead;
-                auto &pointerScripts = pointerEnt.Set<ecs::Scripts>(lock);
-                pointerScripts.AddOnTick(ecs::Name(scene->data->name, ""),
-                    [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
-                        ecs::Entity ent,
-                        chrono_clock::duration interval) {
+                auto pointerUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                    [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &tree = ent.Get<ecs::TransformTree>(lock);
 
@@ -77,17 +74,15 @@ namespace sp {
                             tree.parent = flathead;
                         }
                     });
+                auto &pointerScripts = pointerEnt.Set<ecs::Scripts>(lock);
+                pointerScripts.AddScript(ecs::Name(scene->data->name, ""), pointerUpdateScript);
 
                 // Create Head entity which automatically points to the active player mode
                 auto headEnt = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
                 headTree.parent = entities::FlatHead;
-                auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
-                headScripts.AddOnTick(ecs::Name(scene->data->name, ""),
-                    [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
-                        ecs::Entity ent,
-                        chrono_clock::duration interval) {
+                auto headUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                    [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &tree = ent.Get<ecs::TransformTree>(lock);
 
@@ -99,17 +94,15 @@ namespace sp {
                             tree.parent = flathead;
                         }
                     });
+                auto &headScripts = headEnt.Set<ecs::Scripts>(lock);
+                headScripts.AddScript(ecs::Name(scene->data->name, ""), headUpdateScript);
 
                 // Create Direction entity which automatically points to the active player mode
                 auto dirEnt = scene->NewSystemEntity(lock, scene, entities::Direction.Name());
                 auto &dirTree = dirEnt.Set<ecs::TransformTree>(lock);
                 dirTree.parent = entities::Player;
-                auto &dirScripts = dirEnt.Set<ecs::Scripts>(lock);
-                dirScripts.AddOnPhysicsUpdate(ecs::Name(scene->data->name, ""),
-                    [](ecs::ScriptState &state,
-                        ecs::PhysicsUpdateLock lock,
-                        ecs::Entity ent,
-                        chrono_clock::duration interval) {
+                auto dirUpdateScript = ecs::CreatePhysicsScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                    [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &dirTree = ent.Get<ecs::TransformTree>(lock);
 
@@ -132,6 +125,8 @@ namespace sp {
                         dirTree.pose.offset[0] = glm::vec3(-forward.z, 0, forward.x);
                         dirTree.pose.offset[2] = -forward;
                     });
+                auto &dirScripts = dirEnt.Set<ecs::Scripts>(lock);
+                dirScripts.AddScript(ecs::Name(scene->data->name, ""), dirUpdateScript);
             });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();

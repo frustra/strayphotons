@@ -10,6 +10,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"

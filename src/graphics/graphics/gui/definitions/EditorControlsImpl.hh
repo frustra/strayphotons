@@ -28,6 +28,8 @@
 #include <map>
 
 namespace sp {
+    using namespace ecs;
+
     template<typename T>
     bool EditorContext::AddImGuiElement(const std::string &name, T &value) {
         bool changed = false;
@@ -174,7 +176,7 @@ namespace sp {
         return ImGui::InputText(name.c_str(), &value);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, ecs::SignalExpression &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, SignalExpression &value) {
         bool borderEnable = !value && !value.IsNull();
         if (borderEnable) {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
@@ -189,7 +191,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, ecs::EntityRef &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, EntityRef &value) {
         bool changed = false;
         if (!fieldName.empty()) {
             ImGui::Text("%s:", fieldName.c_str());
@@ -208,7 +210,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, ecs::Transform &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, Transform &value) {
         // TODO: Add grab handle in view
         bool groupTransformControls = !fieldName.empty();
         if (groupTransformControls) {
@@ -239,7 +241,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::AnimationState> &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<AnimationState> &value) {
         for (auto &state : value) {
             picojson::value jsonValue;
             json::Save({}, jsonValue, state);
@@ -248,30 +250,36 @@ namespace sp {
         return false;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ecs::ScriptInstance> &value) {
+    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
         for (auto &instance : value) {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            bool isOnTick = std::holds_alternative<ecs::OnTickFunc>(state.definition.callback);
-            bool isOnPhysicsUpdate = std::holds_alternative<ecs::OnPhysicsUpdateFunc>(state.definition.callback);
-            bool isPrefab = std::holds_alternative<ecs::PrefabFunc>(state.definition.callback);
+            bool isOnTick = std::holds_alternative<OnTickFunc>(state.definition.callback);
+            bool isOnEvent = std::holds_alternative<OnEventFunc>(state.definition.callback);
+            bool isPrefab = std::holds_alternative<PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
-            if (isOnTick) {
+            switch (state.definition.type) {
+            case ScriptType::LogicScript:
                 if (state.definition.filterOnEvent) {
-                    scriptLabel = "OnEvent: " + state.definition.name;
+                    scriptLabel = "OnTick(filtered): " + state.definition.name;
                 } else {
                     scriptLabel = "OnTick: " + state.definition.name;
                 }
-            } else if (isOnPhysicsUpdate) {
+                break;
+            case ScriptType::PhysicsScript:
                 if (state.definition.filterOnEvent) {
                     scriptLabel = "OnPhysicsUpdateEvent: " + state.definition.name;
                 } else {
                     scriptLabel = "OnPhysicsUpdate: " + state.definition.name;
                 }
-            } else if (isPrefab) {
+                break;
+            case ScriptType::EventScript:
+                scriptLabel = "OnEvent: " + state.definition.name;
+                break;
+            case ScriptType::PrefabScript:
                 if (state.definition.name == "template") {
                     scriptLabel = "Template: " + state.GetParam<std::string>("source");
                 } else if (state.definition.name == "gltf") {
@@ -279,26 +287,35 @@ namespace sp {
                 } else {
                     scriptLabel = "Prefab: " + state.definition.name;
                 }
+                break;
+            }
+            if (state.definition.name.empty()) {
+                scriptLabel += "(inline C++ lambda)";
             }
 
-            std::lock_guard l(ecs::GetScriptManager().mutexes[state.definition.callback.index()]);
+            std::lock_guard l(GetScriptManager().scripts[state.definition.type].mutex);
+            auto scriptType = std::string(magic_enum::enum_name(state.definition.type));
 
-            if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", scriptLabel.c_str())) {
-                if (ecs::IsLive(target) && isPrefab) {
+            if (ImGui::TreeNodeEx(rowId.c_str(),
+                    ImGuiTreeNodeFlags_DefaultOpen,
+                    "%s %s",
+                    scriptType.c_str(),
+                    scriptLabel.c_str())) {
+                if (IsLive(target) && isPrefab) {
                     ImGui::BeginDisabled();
-                } else if (ecs::IsStaging(target)) {
+                } else if (IsStaging(target)) {
                     if (ImGui::Button("-", ImVec2(20, 0))) {
                         removeList.emplace_back(state.GetInstanceId());
                     }
                     ImGui::SameLine();
                 }
-                if (isOnTick || isOnPhysicsUpdate) {
+                if (isOnTick || isOnEvent) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                        auto &scripts = ecs::GetScriptDefinitions().scripts;
+                        auto &scripts = GetScriptDefinitions().scripts;
                         for (auto &[scriptName, definition] : scripts) {
-                            // Don't allow changing the callback type, it will break ScriptManager's index
-                            if (definition.callback.index() != state.definition.callback.index()) continue;
+                            // Don't allow changing the script type, it will break ScriptManager's index
+                            if (definition.type != state.definition.type) continue;
                             const bool isSelected = state.definition.name == scriptName;
                             if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
                                 state.definition = definition;
@@ -311,7 +328,7 @@ namespace sp {
                 } else if (isPrefab) {
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                        auto &prefabs = ecs::GetScriptDefinitions().prefabs;
+                        auto &prefabs = GetScriptDefinitions().prefabs;
                         for (auto &[prefabName, definition] : prefabs) {
                             const bool isSelected = state.definition.name == prefabName;
                             if (ImGui::Selectable(prefabName.c_str(), isSelected)) {
@@ -344,7 +361,7 @@ namespace sp {
                                     ImGui::TableSetColumnIndex(0);
                                     ImGui::Text("%s", field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
-                                    ecs::GetFieldType(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
+                                    GetFieldType(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
                                         auto parentFieldName = fieldName;
                                         fieldName = "";
                                         ImGui::SetNextItemWidth(-FLT_MIN);
@@ -359,14 +376,14 @@ namespace sp {
                         ImGui::EndTable();
                     }
                 }
-                if (ecs::IsLive(target) && isPrefab) {
+                if (IsLive(target) && isPrefab) {
                     ImGui::EndDisabled();
                 }
 
                 ImGui::TreePop();
             }
         }
-        if (ecs::IsStaging(target)) {
+        if (IsStaging(target)) {
             for (auto &instanceId : removeList) {
                 sp::erase_if(value, [&](auto &&instance) {
                     return instance.GetInstanceId() == instanceId;
@@ -374,26 +391,30 @@ namespace sp {
                 changed = true;
             }
             if (ImGui::Button("Add Prefab")) {
-                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
-                ecs::ScriptDefinition definition;
-                definition.callback = ecs::PrefabFunc();
-                value.emplace_back(scope, definition);
+                EntityScope scope = Name(scene.data->name, "");
+                value.emplace_back(scope,
+                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, PrefabFunc()});
                 changed = true;
             }
             ImGui::SameLine();
-            if (ImGui::Button("Add OnTick")) {
-                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
-                ecs::ScriptDefinition definition;
-                definition.callback = ecs::OnTickFunc();
-                value.emplace_back(scope, definition);
+            if (ImGui::Button("Add LogicScript")) {
+                EntityScope scope = Name(scene.data->name, "");
+                value.emplace_back(scope,
+                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, OnTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
-            if (ImGui::Button("Add OnPhysicsUpdate")) {
-                ecs::EntityScope scope = ecs::Name(scene.data->name, "");
-                ecs::ScriptDefinition definition;
-                definition.callback = ecs::OnPhysicsUpdateFunc();
-                value.emplace_back(scope, definition);
+            if (ImGui::Button("Add Physics Script")) {
+                EntityScope scope = Name(scene.data->name, "");
+                value.emplace_back(scope,
+                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, OnTickFunc()});
+                changed = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Add Event Script")) {
+                EntityScope scope = Name(scene.data->name, "");
+                value.emplace_back(scope,
+                    ScriptDefinition{"", ScriptType::EventScript, {}, true, nullptr, {}, OnEventFunc()});
                 changed = true;
             }
         }
@@ -401,9 +422,7 @@ namespace sp {
     }
 
     template<typename T>
-    void EditorContext::AddFieldControls(const ecs::StructField &field,
-        const ecs::ComponentBase &comp,
-        const void *component) {
+    void EditorContext::AddFieldControls(const StructField &field, const ComponentBase &comp, const void *component) {
         auto value = field.Access<T>(component);
         fieldName = field.name;
         fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
@@ -412,7 +431,7 @@ namespace sp {
         bool valueChanged = false;
         bool isDefined = true;
         if constexpr (std::equality_comparable<T>) {
-            if (ecs::IsStaging(target)) {
+            if (IsStaging(target)) {
                 auto defaultLiveComponent = comp.GetLiveDefault();
                 auto defaultStagingComponent = comp.GetStagingDefault();
                 auto &defaultValue = field.Access<T>(defaultLiveComponent);
@@ -437,13 +456,13 @@ namespace sp {
         }
 
         if (valueChanged) {
-            if (ecs::IsLive(target)) {
-                ecs::QueueTransaction<ecs::Write<T>>([target = this->target, value, &comp, &field](auto &lock) {
+            if (IsLive(target)) {
+                QueueTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
                 });
             } else if (scene) {
-                ecs::QueueStagingTransaction<ecs::Write<T>>([target = this->target, value, &comp, &field](auto &lock) {
+                QueueStagingTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
                 });
@@ -454,19 +473,17 @@ namespace sp {
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void CopyToStaging(Tecs::Lock<ECSType<AllComponentTypes...>, ecs::AddRemove> staging,
-        ecs::Lock<ecs::ReadAll> live,
-        ecs::Entity target) {
+    void CopyToStaging(Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> staging,
+        Lock<ReadAll> live,
+        Entity target) {
 
-        Assertf(target.Has<ecs::SceneInfo>(live),
-            "CopyToStaging target has no SceneInfo: %s",
-            ecs::ToString(live, target));
+        Assertf(target.Has<SceneInfo>(live), "CopyToStaging target has no SceneInfo: %s", ToString(live, target));
 
-        auto &liveSceneInfo = target.Get<ecs::SceneInfo>(live);
+        auto &liveSceneInfo = target.Get<SceneInfo>(live);
         auto stagingId = liveSceneInfo.rootStagingId;
         SceneRef targetScene;
-        while (stagingId.Has<ecs::SceneInfo>(staging)) {
-            auto &sceneInfo = stagingId.Get<ecs::SceneInfo>(staging);
+        while (stagingId.Has<SceneInfo>(staging)) {
+            auto &sceneInfo = stagingId.Get<SceneInfo>(staging);
             if (sceneInfo.priority == ScenePriority::Scene) {
                 targetScene = sceneInfo.scene;
                 break;
@@ -475,30 +492,30 @@ namespace sp {
         }
 
         Assertf(targetScene, "CopyToStaging can't find suitable target scene: %s", liveSceneInfo.scene.data->name);
-        Assertf(stagingId.Has<ecs::SceneInfo>(staging),
+        Assertf(stagingId.Has<SceneInfo>(staging),
             "CopyToStaging can't find suitable target: %s / %s",
-            ecs::ToString(live, target),
+            ToString(live, target),
             liveSceneInfo.scene.data->name);
-        auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
+        auto &stagingInfo = stagingId.Get<SceneInfo>(staging);
 
-        auto flatParentEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
-        ecs::FlatEntity flatStagingEntity;
+        auto flatParentEntity = scene_util::BuildEntity(Lock<ReadAll>(staging), stagingInfo.nextStagingId);
+        FlatEntity flatStagingEntity;
 
         ( // For each component:
             [&] {
                 using T = AllComponentTypes;
-                if constexpr (std::is_same_v<T, ecs::Name>) {
+                if constexpr (std::is_same_v<T, Name>) {
                     // Skip
-                } else if constexpr (std::is_same_v<T, ecs::SceneInfo>) {
+                } else if constexpr (std::is_same_v<T, SceneInfo>) {
                     // Skip, this is handled by the scene
-                } else if constexpr (std::is_same_v<T, ecs::SceneProperties>) {
+                } else if constexpr (std::is_same_v<T, SceneProperties>) {
                     // Skip, this is handled by scene
-                } else if constexpr (std::is_same_v<T, ecs::TransformSnapshot>) {
+                } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                     // Skip, this is handled by TransformTree
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     if (!target.Has<T>(live)) return;
                     auto &liveComp = target.Get<T>(live);
-                    auto &comp = ecs::LookupComponent<T>();
+                    auto &comp = LookupComponent<T>();
 
                     T compareComp = {};
                     auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);
@@ -507,13 +524,13 @@ namespace sp {
                     }
 
                     picojson::value tmp;
-                    ecs::EntityScope scope(targetScene.data->name, "");
+                    EntityScope scope(targetScene.data->name, "");
                     auto changed = json::SaveIfChanged(scope, tmp, "", liveComp, &compareComp);
                     if (changed) {
                         if (!comp.LoadEntity(flatStagingEntity, tmp)) {
                             Errorf("Failed to save %s component on entity: %s",
                                 comp.name,
-                                ecs::ToString(staging, stagingId));
+                                ToString(staging, stagingId));
                         } else {
                             comp.SetComponent(staging, scope, stagingId, flatStagingEntity);
                         }

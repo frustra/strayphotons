@@ -10,6 +10,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 namespace sp::scripts {
@@ -22,7 +23,10 @@ namespace sp::scripts {
         EntityRef alignmentEntity, followEntity;
         std::optional<glm::vec3> alignment;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<TransformTree>, Read<TransformSnapshot, VoxelArea>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -63,13 +67,13 @@ namespace sp::scripts {
         StructField::New("voxel_offset", &VoxelController::voxelOffset),
         StructField::New("alignment_target", &VoxelController::alignmentEntity),
         StructField::New("follow_target", &VoxelController::followEntity));
-    InternalPhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
+    PhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 
     struct RotatePhysics {
         glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<Write<TransformTree>> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -85,7 +89,7 @@ namespace sp::scripts {
         "",
         StructField::New("axis", &RotatePhysics::rotationAxis),
         StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
-    InternalPhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
+    PhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
 
     struct PhysicsJointFromEvent {
         robin_hood::unordered_map<std::string, ecs::PhysicsJoint> definedJoints;
@@ -103,7 +107,10 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
         }
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<PhysicsJoints>, Read<TransformSnapshot, EventInput>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) return;
 
             Event event;
@@ -206,6 +213,6 @@ namespace sp::scripts {
         "PhysicsJointFromEvent",
         "",
         StructField::New(&PhysicsJointFromEvent::definedJoints));
-    InternalPhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
+    PhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
         MetadataPhysicsJointFromEvent);
 } // namespace sp::scripts
