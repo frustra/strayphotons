@@ -330,7 +330,7 @@ namespace ecs {
 
         const void *Access(const DynamicLock<> &lock, Entity) const override {
             if (auto tryLock = lock.TryLock<Read<CompType>>()) {
-                return &tryLock->Get<const CompType>();
+                return &tryLock->template Get<const CompType>();
             } else {
                 return nullptr;
             }
@@ -338,7 +338,7 @@ namespace ecs {
 
         void *AccessMut(const DynamicLock<> &lock, Entity) const override {
             if (auto tryLock = lock.TryLock<Write<CompType>>()) {
-                return &tryLock->Get<CompType>();
+                return &tryLock->template Get<CompType>();
             } else {
                 return nullptr;
             }

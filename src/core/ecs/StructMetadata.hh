@@ -203,7 +203,7 @@ namespace ecs {
         bool isReference;
 
         template<typename T>
-        static inline constexpr TypeInfo Lookup() {
+        static inline TypeInfo Lookup() {
             return TypeInfo{
                 .type = typeid(T),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
