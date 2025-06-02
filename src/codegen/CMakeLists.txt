@@ -33,8 +33,13 @@ add_custom_command(
     DEPENDS ${PROJECT_CODEGEN_LIB}-generator
 )
 
+add_custom_target(${PROJECT_CODEGEN_LIB}-output
+    DEPENDS
+        ${CMAKE_CURRENT_BINARY_DIR}/include/strayphotons/components.h
+        ${CMAKE_CURRENT_BINARY_DIR}/components_gen.cc
+)
+
 add_library(${PROJECT_CODEGEN_LIB} OBJECT
-    ${CMAKE_CURRENT_BINARY_DIR}/include/strayphotons/components.h
     ${CMAKE_CURRENT_BINARY_DIR}/components_gen.cc
 )
 
@@ -49,6 +54,7 @@ target_include_directories(${PROJECT_CODEGEN_LIB}
     PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/include
 )
+add_dependencies(${PROJECT_CODEGEN_LIB} ${PROJECT_CODEGEN_LIB}-output)
 
 target_compile_definitions(${PROJECT_CODEGEN_LIB} PRIVATE SP_SHARED_INTERNAL TECS_SHARED_INTERNAL)
 
@@ -70,3 +76,5 @@ TecsGenerateCHeaders(
         VULKAN_HPP_STORAGE_SHARED
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
 )
+
+add_dependencies(${PROJECT_ECS_C_ABI_LIB} ${PROJECT_CODEGEN_LIB}-output)
