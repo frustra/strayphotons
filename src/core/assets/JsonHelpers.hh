@@ -257,7 +257,7 @@ namespace sp::json {
             }
         } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
-        } else {
+        } else if constexpr (std::is_default_constructible<T>()) {
             auto &metadata = ecs::StructMetadata::Get<T>();
             static const T defaultValue = {};
             for (auto &field : metadata.fields) {
@@ -568,7 +568,8 @@ namespace sp::json {
             typeSchema["type"] = picojson::value("object");
             static_assert(std::is_same_v<typename T::key_type, std::string>, "Only string map keys are supported!");
             SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);
-        } else if (rootType) {
+        } else if constexpr (std::is_default_constructible<T>()) {
+            if (!rootType) return;
             Assertf(metadata, "Unsupported type: %s", typeid(T).name());
 
             static const T defaultStruct = {};

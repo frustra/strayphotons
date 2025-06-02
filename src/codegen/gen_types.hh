@@ -91,6 +91,12 @@ std::string LookupCTypeName(std::type_index type) {
             return "sp_color_t"s;
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             return "sp_color_alpha_t"s;
+        } else if constexpr (std::is_same<T, ecs::EventData>()) {
+            return "sp_event_data_t"s;
+        } else if constexpr (std::is_same<T, Tecs::Entity>()) {
+            return "tecs_entity_t"s;
+        } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
+            return "tecs_lock_t"s;
         } else if constexpr (sp::is_optional<T>()) {
             return "const " + LookupCTypeName(typeid(typename T::value_type)) + " *";
         } else if constexpr (sp::is_vector<T>()) {
@@ -263,6 +269,27 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
         out << "    return str->data();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
+    } else if constexpr (sp::is_vector<T>()) {
+        std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
+        std::string subtype = StripTypeDecorators(fullSubtype);
+        out << "SP_EXPORT size_t sp_" << subtype << "_vector_get_size(const sp_" << subtype << "_vector_t *v) {"
+            << std::endl;
+        out << "    return v->size();" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_vector_get_const_data(const sp_" << subtype
+            << "_vector_t *v) {" << std::endl;
+        out << "    return v->data();" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_get_data(sp_" << subtype
+            << "_vector_t *v) {" << std::endl;
+        out << "    return v->data();" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_resize(sp_" << subtype
+            << "_vector_t *v, size_t new_size) {" << std::endl;
+        out << "    v->resize(new_size);" << std::endl;
+        out << "    return v->data();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
     } else {
         auto *metadata = ecs::StructMetadata::Get(typeid(T));
         if (!metadata) return;
@@ -295,6 +322,20 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 out << "    " << (func.isConst ? "const " : "") << TypeToString<T>() << " &self = *reinterpret_cast<"
                     << (func.isConst ? "const " : "") << TypeToString<T>() << " *>(selfPtr);" << std::endl;
             }
+            argI = 0;
+            for (auto &arg : func.argTypes) {
+                if (!arg.isTecsLock) continue;
+                out << "    auto tryLock" << argI << " = static_cast<const ecs::DynamicLock<> *>(";
+                if (argI < func.argDescs.size()) {
+                    out << func.argDescs[argI].name;
+                } else {
+                    out << "arg" << argI;
+                }
+                out << ")->TryLock<" << TypeToString(arg.type) << ">();" << std::endl;
+                out << "    Assertf(tryLock" << argI << ", \"" << func.name << " failed to lock "
+                    << TypeToString(arg.type) << "\");" << std::endl;
+                argI++;
+            }
             if (func.returnType.type == typeid(void)) {
                 out << "    ";
             } else if (func.returnType.isTrivial) {
@@ -310,18 +351,16 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
             }
             for (size_t i = 0; i < func.argTypes.size(); i++) {
                 if (i > 0) out << ", ";
-                std::string argTypeName = ecs::GetFieldType(func.argTypes[i].type, [&](auto *typePtr) {
-                    using ArgT = std::remove_pointer_t<decltype(typePtr)>;
-                    return TypeToString<ArgT>();
-                });
-                // out << "reinterpret_cast<" << argTypeName << " &>(";
-                if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
-                if (i < func.argDescs.size()) {
-                    out << func.argDescs[i].name;
+                if (func.argTypes[i].isTecsLock) {
+                    out << "(const " << TypeToString(func.argTypes[i].type) << " &)*tryLock" << i;
                 } else {
-                    out << "arg" << i;
+                    if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
+                    if (i < func.argDescs.size()) {
+                        out << func.argDescs[i].name;
+                    } else {
+                        out << "arg" << i;
+                    }
                 }
-                // out << ")";
             }
             out << ");" << std::endl;
             out << "}" << std::endl;
@@ -373,6 +412,10 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, double>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, Tecs::Entity>()) {
+            // Tecs built-in
+        } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
+            // Tecs built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -406,17 +449,35 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_color_t { float rgb[3]; } sp_color_t;" << std::endl;
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef struct sp_color_alpha_t { float rgba[4]; } sp_color_alpha_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventData>()) {
+            out << "typedef struct sp_event_data_t {" << std::endl;
+            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "} sp_event_data_t;" << std::endl;
         } else if constexpr (sp::is_optional<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             out << "typedef struct sp_optional_" << subtype << "_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_optional_" << subtype << "_t;" << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
-            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
+            GenerateCTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subtype = StripTypeDecorators(fullSubtype);
             out << "typedef struct sp_" << subtype << "_vector_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_vector_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subtype << "_vector_get_size(const sp_" << subtype << "_vector_t *v);"
+                << std::endl;
+            out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_vector_get_const_data(const sp_"
+                << subtype << "_vector_t *v);" << std::endl;
+            out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_get_data(sp_" << subtype
+                << "_vector_t *v);" << std::endl;
+            out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_resize(sp_" << subtype
+                << "_vector_t *v, size_t new_size);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::first_type));
+            GenerateCTypeDefinition(out, typeid(typename T::second_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
                 subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
@@ -425,12 +486,16 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_pair_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_flatmap_t {" << std::endl;
             out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_flatmap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_map_t {" << std::endl;
@@ -538,6 +603,10 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, double>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, Tecs::Entity>()) {
+            // Tecs built-in
+        } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
+            // Tecs built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -571,15 +640,31 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef sp::color_t sp_color_t;" << std::endl;
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef sp::color_alpha_t sp_color_alpha_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventData>()) {
+            out << "typedef ecs::EventData sp_event_data_t;" << std::endl;
         } else if constexpr (sp::is_optional<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             std::string subCppType = TypeToString<typename T::value_type>();
             out << "typedef std::optional<" << subCppType << "> sp_optional_" << subCType << "_t;" << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
-            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
+            GenerateCppTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subCType = StripTypeDecorators(fullCSubtype);
             std::string subCppType = TypeToString<typename T::value_type>();
             out << "typedef std::vector<" << subCppType << "> sp_" << subCType << "_vector_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subCType << "_vector_get_size(const sp_" << subCType << "_vector_t *v);"
+                << std::endl;
+            out << "SP_EXPORT const " << fullCSubtype << " *sp_" << subCType << "_vector_get_const_data(const sp_"
+                << subCType << "_vector_t *v);" << std::endl;
+            out << "SP_EXPORT " << fullCSubtype << " *sp_" << subCType << "_vector_get_data(sp_" << subCType
+                << "_vector_t *v);" << std::endl;
+            out << "SP_EXPORT " << fullCSubtype << " *sp_" << subCType << "_vector_resize(sp_" << subCType
+                << "_vector_t *v, size_t new_size);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::first_type));
+            GenerateCppTypeDefinition(out, typeid(typename T::second_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
                 subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
@@ -588,6 +673,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                                      TypeToString<typename T::second_type>();
             out << "typedef std::pair<" << subCppType << "> sp_" << subCType << "_pair_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             std::string subCppType = TypeToString<typename T::key_type>() + ", " +
@@ -595,6 +682,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef robin_hood::unordered_flat_map<" << subCppType << "> sp_" << subCType << "_flatmap_t;"
                 << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             std::string subCppType = TypeToString<typename T::key_type>() + ", " +

@@ -123,6 +123,8 @@ namespace ecs {
             }
         }
 
+        bool PollEvent(const Lock<Read<EventInput>> &lock, Event &eventOut) const;
+
         explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(definition.callback);
         }
@@ -150,6 +152,16 @@ namespace ecs {
         friend class ScriptInstance;
         friend class ScriptManager;
     };
+
+    static StructMetadata MetadataScriptState(typeid(ScriptState),
+        sizeof(ScriptState),
+        "ScriptState",
+        "Stores the definition and state of a script instance",
+        StructFunction::New("PollEvent",
+            "Read the next available script event if there is one",
+            &ScriptState::PollEvent,
+            ArgDesc("lock", ""),
+            ArgDesc("event_out", "")));
 
     struct ScriptSet {
         std::deque<std::pair<Entity, ScriptState>> scripts;

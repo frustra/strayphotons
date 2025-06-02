@@ -2,6 +2,7 @@
 
 #include <Tecs.hh>
 #include <ecs/EcsImpl.hh>
+#include <ecs/StructFieldTypes.hh>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -30,21 +31,55 @@ std::string TypeToString() {
         return "glm::mat4";
     } else if constexpr (std::is_same<T, glm::quat>()) {
         return "glm::quat";
-    } else {
-        auto dummyInt = EmbedTypeIntoSignature<int>();
-        auto intStart = dummyInt.find("int");
-        auto tailLength = dummyInt.size() - intStart - "int"s.size();
+    } else if constexpr (std::is_same<T, ecs::EventData>()) {
+        return "ecs::EventData";
+    } else if constexpr (Tecs::is_lock<T>()) {
+        auto dummyLong = EmbedTypeIntoSignature<ecs::Lock<long>>();
+        auto longStart = dummyLong.find("long");
+        auto tailLength = dummyLong.size() - longStart - "long"s.size();
 
-        auto typeStart = intStart;
+        auto typeStart = longStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-        auto enumStart = embeddingSignature.find("enum ", intStart);
-        if (enumStart == intStart) typeStart += "enum "s.size();
-        auto classStart = embeddingSignature.find("class ", intStart);
-        if (classStart == intStart) typeStart += "class "s.size();
-        auto structStart = embeddingSignature.find("struct ", intStart);
-        if (structStart == intStart) typeStart += "struct "s.size();
+        auto structStart = embeddingSignature.find("struct ", longStart);
+        if (structStart == longStart) typeStart += "struct "s.size();
+
+        auto typeLength = embeddingSignature.size() - typeStart - tailLength;
+        return "ecs::Lock<" + std::string(embeddingSignature.substr(typeStart, typeLength)) + ">";
+    } else if constexpr (Tecs::is_dynamic_lock<T>()) {
+        auto dummyLong = EmbedTypeIntoSignature<ecs::DynamicLock<long>>();
+        auto longStart = dummyLong.find("long");
+        auto tailLength = dummyLong.size() - longStart - "long"s.size();
+
+        auto typeStart = longStart;
+        auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        auto structStart = embeddingSignature.find("struct ", longStart);
+        if (structStart == longStart) typeStart += "struct "s.size();
+
+        auto typeLength = embeddingSignature.size() - typeStart - tailLength;
+        return "ecs::DynamicLock<" + std::string(embeddingSignature.substr(typeStart, typeLength)) + ">";
+    } else {
+        auto dummyLong = EmbedTypeIntoSignature<long>();
+        auto longStart = dummyLong.find("long");
+        auto tailLength = dummyLong.size() - longStart - "long"s.size();
+
+        auto typeStart = longStart;
+        auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        auto enumStart = embeddingSignature.find("enum ", longStart);
+        if (enumStart == longStart) typeStart += "enum "s.size();
+        auto classStart = embeddingSignature.find("class ", longStart);
+        if (classStart == longStart) typeStart += "class "s.size();
+        auto structStart = embeddingSignature.find("struct ", longStart);
+        if (structStart == longStart) typeStart += "struct "s.size();
 
         auto typeLength = embeddingSignature.size() - typeStart - tailLength;
         return std::string(embeddingSignature.substr(typeStart, typeLength));
     }
+}
+
+std::string TypeToString(std::type_index type) {
+    if (type == typeid(void)) return "void";
+    return ecs::GetFieldType(type, [&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        return TypeToString<T>();
+    });
 }

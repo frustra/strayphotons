@@ -48,6 +48,10 @@ namespace ecs {
 
         void SetScope(const EntityScope &scope);
 
+        ScriptState &GetState() const {
+            return *state;
+        }
+
         std::shared_ptr<ScriptState> state;
     };
     static StructMetadata MetadataScriptInstance(typeid(ScriptInstance),
@@ -77,7 +81,8 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
     }
 }
 ```
-)");
+)",
+        StructFunction::New("GetState", "Return the script's current state object", &ScriptInstance::GetState));
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &dst, const picojson::value &src);
     template<>

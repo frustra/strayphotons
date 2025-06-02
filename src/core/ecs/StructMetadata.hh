@@ -201,6 +201,7 @@ namespace ecs {
         bool isConst;
         bool isPointer;
         bool isReference;
+        bool isTecsLock;
 
         template<typename T>
         static inline TypeInfo Lookup() {
@@ -212,6 +213,7 @@ namespace ecs {
                            std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
                 .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
                 .isReference = std::is_reference<T>(),
+                .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
             };
         }
 

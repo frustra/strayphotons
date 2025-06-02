@@ -47,6 +47,10 @@ namespace ecs {
     ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
+    bool ScriptState::PollEvent(const Lock<Read<EventInput>> &lock, Event &eventOut) const {
+        return EventInput::Poll(lock, eventQueue, eventOut);
+    }
+
     ScriptManager::~ScriptManager() {
         // Remove any ScriptStates and EventQueues that are still in use
         {

@@ -383,7 +383,9 @@ namespace sp {
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
-                        AddFieldControls<T>(field, comp, component);
+                        if constexpr (std::is_default_constructible<T>()) {
+                            AddFieldControls<T>(field, comp, component);
+                        }
                     });
                 }
             }

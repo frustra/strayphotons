@@ -99,30 +99,32 @@ public:
         ecs::GetFieldType(field.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
-            static const T defaultStruct = {};
-            auto &defaultValue = defaultPtr ? *reinterpret_cast<const T *>(defaultPtr) : defaultStruct;
+            if constexpr (std::is_default_constructible<T>()) {
+                static const T defaultStruct = {};
+                auto &defaultValue = defaultPtr ? *reinterpret_cast<const T *>(defaultPtr) : defaultStruct;
 
-            picojson::value defaultJson;
-            if constexpr (!sp::is_optional<T>()) {
-                defaultJson = picojson::value(picojson::object());
-                sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
-            }
-
-            if (field.name.empty()) {
-                if constexpr (std::is_enum<T>()) {
-                    fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
-                } else {
-                    auto *metadata = ecs::StructMetadata::Get(typeid(T));
-                    if (metadata) {
-                        for (auto &field : metadata->fields) {
-                            AddField(field, field.Access(&defaultValue));
-                        }
-                    } else {
-                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
-                    }
+                picojson::value defaultJson;
+                if constexpr (!sp::is_optional<T>()) {
+                    defaultJson = picojson::value(picojson::object());
+                    sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
                 }
-            } else {
-                fields.emplace_back(DocField{field.name, fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+
+                if (field.name.empty()) {
+                    if constexpr (std::is_enum<T>()) {
+                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                    } else {
+                        auto *metadata = ecs::StructMetadata::Get(typeid(T));
+                        if (metadata) {
+                            for (auto &field : metadata->fields) {
+                                AddField(field, field.Access(&defaultValue));
+                            }
+                        } else {
+                            fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                        }
+                    }
+                } else {
+                    fields.emplace_back(DocField{field.name, fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                }
             }
         });
     }
@@ -190,7 +192,7 @@ struct MarkdownContext {
                     }
                     refDocs.fields.emplace_back(DocField{std::string(enumName), "", description, typeid(T), {}});
                 }
-            } else {
+            } else if constexpr (std::is_default_constructible<T>()) {
                 static const T defaultComp = {};
                 Assertf(metadata, "Unknown StructMetadata type %s", typeid(T).name());
                 for (auto &field : metadata->fields) {

@@ -46,6 +46,7 @@ namespace ecs {
         int32_t,
         uint32_t,
         sp::angle_t,
+        Entity,
 
         // Vector types
         glm::vec4,
@@ -64,6 +65,7 @@ namespace ecs {
 
         // Structs
         SignalExpression,
+        Event,
         EventBinding,
         EventBindingActions,
         EventDest,
@@ -72,6 +74,7 @@ namespace ecs {
         PhysicsMaterial,
         PhysicsShape,
         ScriptInstance,
+        ScriptState,
         Sound,
         sp::SceneRef,
         std::vector<float>,
@@ -110,7 +113,10 @@ namespace ecs {
         SoundType,
         // TriggerGroup, // Also a Component type
         TriggerShape,
-        XrEye>;
+        XrEye,
+
+        // Locks
+        Lock<Read<EventInput>>>;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>

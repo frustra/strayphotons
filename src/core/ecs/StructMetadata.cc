@@ -70,8 +70,10 @@ namespace ecs {
 
             if constexpr (has_type<T, UndefinedValuesTuple>()) {
                 value = std::get<T>(getUndefinedFieldValues());
-            } else {
+            } else if constexpr (std::is_default_constructible<T>()) {
                 value = defaultValue;
+            } else {
+                Abortf("StructField::InitUndefined called on uninitializable type: %s", typeid(T).name());
             }
         });
     }
@@ -79,7 +81,11 @@ namespace ecs {
     void StructField::DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const {
         GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
-            sp::json::SaveSchema<T>(dst, references, false);
+            if constexpr (std::is_default_constructible<T>()) {
+                sp::json::SaveSchema<T>(dst, references, false);
+            } else {
+                Abortf("StructField::DefineSchema called on uninitializable type: %s", typeid(T).name());
+            }
         });
     }
 
@@ -89,7 +95,11 @@ namespace ecs {
         GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
-            sp::json::SaveIfChanged<T>(scope, result, "", value, nullptr);
+            if constexpr (std::is_default_constructible<T>()) {
+                sp::json::SaveIfChanged<T>(scope, result, "", value, nullptr);
+            } else {
+                Abortf("StructField::SaveDefault called on uninitializable type: %s", typeid(T).name());
+            }
         });
         return result;
     }
@@ -159,8 +169,12 @@ namespace ecs {
         GetFieldType(type, field, [&](auto &value) {
             using T = std::decay_t<decltype(value)>;
 
-            auto *defaultValue = reinterpret_cast<const T *>(defaultField);
-            sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
+            if constexpr (std::is_default_constructible<T>()) {
+                auto *defaultValue = reinterpret_cast<const T *>(defaultField);
+                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
+            } else {
+                Abortf("StructField::Save called on uninitializable type: %s", typeid(T).name());
+            }
         });
     }
 

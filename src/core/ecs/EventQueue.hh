@@ -61,6 +61,14 @@ namespace ecs {
         std::string ToString() const;
     };
 
+    static StructMetadata MetadataEvent(typeid(Event),
+        sizeof(Event),
+        "Event",
+        "A named event with data originating from a source entity.",
+        StructField::New("name", "The event name", &Event::name),
+        StructField::New("source", "The entity the event originated from", &Event::source),
+        StructField::New("data", "The event payload", &Event::data));
+
     struct AsyncEvent {
         std::string name;
         Entity source;
