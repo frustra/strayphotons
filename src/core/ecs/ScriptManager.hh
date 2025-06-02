@@ -51,6 +51,7 @@ namespace ecs {
 
     struct ScriptBase {
         const StructMetadata &metadata;
+
         ScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
         virtual const void *GetDefault() const = 0;
         virtual void *Access(ScriptState &state) const = 0;
