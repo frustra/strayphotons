@@ -34,6 +34,7 @@ add_custom_command(
 )
 
 add_library(${PROJECT_CODEGEN_LIB} OBJECT
+    ${CMAKE_CURRENT_BINARY_DIR}/include/strayphotons/components.h
     ${CMAKE_CURRENT_BINARY_DIR}/components_gen.cc
 )
 
