@@ -11,6 +11,7 @@
 #include "game/SceneRef.hh"
 
 #include <dynalo/dynalo.hpp>
+#include <memory>
 
 namespace ecs {
     struct DynamicScript final : public ScriptDefinitionBase, sp::NonMoveable {
@@ -30,21 +31,31 @@ namespace ecs {
 
         void *AccessMut(ScriptState &state) const override {
             if (metadata.size == 0) return nullptr;
-            void *ptr = std::any_cast<void *>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<void *>(std::malloc(metadata.size));
-            return ptr;
+            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            if (!ptr) {
+                std::shared_ptr<void> buffer(std::malloc(metadata.size), [](auto *ptr) {
+                    std::free(ptr);
+                });
+                ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
+            }
+            return ptr->get();
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<void *>(&state.scriptData);
-            return ptr ? ptr : GetDefault();
+            const auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            return ptr ? ptr->get() : GetDefault();
         }
 
         static void Init(ScriptState &state) {
-            void *ptr = std::any_cast<void *>(&state.scriptData);
+            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) ptr = &state.scriptData.emplace<void *>(std::malloc(dynamicScript->metadata.size));
-                if (dynamicScript->initFunc) dynamicScript->initFunc(ptr, &state);
+                if (!ptr) {
+                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
+                        std::free(ptr);
+                    });
+                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
+                }
+                if (dynamicScript->initFunc) dynamicScript->initFunc(ptr->get(), &state);
             }
         }
 
@@ -52,12 +63,17 @@ namespace ecs {
             const DynamicLock<ReadSignalsLock> &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            void *ptr = std::any_cast<void *>(&state.scriptData);
+            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) ptr = &state.scriptData.emplace<void *>(std::malloc(dynamicScript->metadata.size));
+                if (!ptr) {
+                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
+                        std::free(ptr);
+                    });
+                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
+                }
                 if (dynamicScript->onTickFunc) {
                     ecs::DynamicLock<> dynLock = lock;
-                    dynamicScript->onTickFunc(ptr,
+                    dynamicScript->onTickFunc(ptr->get(),
                         &state,
                         &dynLock,
                         (uint64_t)ent,
@@ -67,12 +83,17 @@ namespace ecs {
         }
 
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event) {
-            void *ptr = std::any_cast<void *>(&state.scriptData);
+            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) ptr = &state.scriptData.emplace<void *>(std::malloc(dynamicScript->metadata.size));
+                if (!ptr) {
+                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
+                        std::free(ptr);
+                    });
+                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
+                }
                 if (dynamicScript->onEventFunc) {
                     ecs::DynamicLock<> dynLock = lock;
-                    dynamicScript->onEventFunc(ptr, &state, &dynLock, (uint64_t)ent, &event);
+                    dynamicScript->onEventFunc(ptr->get(), &state, &dynLock, (uint64_t)ent, &event);
                 }
             }
         }
@@ -157,7 +178,7 @@ namespace ecs {
 
         static std::shared_ptr<DynamicScript> Load(const std::string &name) {
             auto nativeName = dynalo::to_native_name(name);
-            dynalo::library dynamicLib(nativeName);
+            dynalo::library dynamicLib("./" + nativeName);
             ScriptDefinition definition{};
 
             auto definitionFunc = dynamicLib.get_function<size_t(ScriptDefinition *)>("sp_script_get_definition");
