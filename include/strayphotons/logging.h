@@ -17,6 +17,11 @@ namespace sp::logging {
 extern "C" {
 typedef sp::logging::Level sp_log_level_t;
 #else
+const uint8_t SP_LOG_LEVEL_ERROR = 0;
+const uint8_t SP_LOG_LEVEL_WARN = 1;
+const uint8_t SP_LOG_LEVEL_LOG = 2;
+const uint8_t SP_LOG_LEVEL_DEBUG = 3;
+const uint8_t SP_LOG_LEVEL_TRACE = 4;
 typedef uint8_t sp_log_level_t;
 #endif
 

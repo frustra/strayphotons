@@ -60,7 +60,7 @@
 					}
 				},
 				{
-					"onTick": "physics_camera_view"
+					"onTick": "camera_view2"
 				}
 			]
 		},

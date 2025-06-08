@@ -344,7 +344,7 @@ namespace sp {
                 }
 
                 if (state.definition.context) {
-                    void *dataPtr = state.definition.context->Access(state);
+                    void *dataPtr = state.definition.context->AccessMut(state);
                     Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                     auto &fields = state.definition.context->metadata.fields;
                     if (!fields.empty()) {
@@ -361,7 +361,7 @@ namespace sp {
                                     ImGui::TableSetColumnIndex(0);
                                     ImGui::Text("%s", field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
-                                    GetFieldType(field.type, field.Access(dataPtr), [&](auto &fieldValue) {
+                                    GetFieldType(field.type, field.AccessMut(dataPtr), [&](auto &fieldValue) {
                                         auto parentFieldName = fieldName;
                                         fieldName = "";
                                         ImGui::SetNextItemWidth(-FLT_MIN);

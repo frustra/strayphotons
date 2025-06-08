@@ -73,6 +73,9 @@ namespace ecs {
         PhysicsJoint,
         PhysicsMaterial,
         PhysicsShape,
+        ScriptDefinitionBase,
+        /*const*/ ScriptDefinitionBase *,
+        ScriptDefinition,
         ScriptInstance,
         ScriptState,
         Sound,
@@ -110,6 +113,7 @@ namespace ecs {
         PhysicsActorType,
         PhysicsJointType,
         sp::ScenePriority,
+        ScriptType,
         SoundType,
         // TriggerGroup, // Also a Component type
         TriggerShape,

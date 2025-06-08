@@ -64,27 +64,27 @@ namespace ecs {
     };
 
     template<typename T>
-    struct LogicScript final : public ScriptBase {
+    struct LogicScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
 
         const void *GetDefault() const override {
             return &defaultValue;
         }
 
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+        void *AccessMut(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
+            const void *ptr = std::any_cast<T>(&state.scriptData);
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
@@ -92,22 +92,22 @@ namespace ecs {
             const DynamicLock<ReadSignalsLock> &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
             auto tryLock = lock.TryLock<LockType>();
             Assertf(tryLock, "Failed to lock ontick script lock: %s", typeid(LockType).name());
             ptr->OnTick(state, *tryLock, ent, interval);
         }
 
-        LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptBase(metadata) {
+        LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
                 {name, ScriptType::LogicScript, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
         LogicScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
-            : ScriptBase(metadata) {
+            : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::LogicScript,
                 {events...},
@@ -119,27 +119,27 @@ namespace ecs {
     };
 
     template<typename T>
-    struct PhysicsScript final : public ScriptBase {
+    struct PhysicsScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
 
         const void *GetDefault() const override {
             return &defaultValue;
         }
 
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+        void *AccessMut(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
+            const void *ptr = std::any_cast<T>(&state.scriptData);
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
@@ -147,22 +147,22 @@ namespace ecs {
             const DynamicLock<ReadSignalsLock> &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
             auto tryLock = lock.TryLock<LockType>();
             Assertf(tryLock, "Failed to lock ontick physics script lock: %s", typeid(LockType).name());
             ptr->OnTick(state, *tryLock, ent, interval);
         }
 
-        PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptBase(metadata) {
+        PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
                 {name, ScriptType::PhysicsScript, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
         PhysicsScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
-            : ScriptBase(metadata) {
+            : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::PhysicsScript,
                 {events...},
@@ -174,76 +174,76 @@ namespace ecs {
     };
 
     template<typename T>
-    struct OnEventScript final : public ScriptBase {
+    struct OnEventScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
 
         const void *GetDefault() const override {
             return &defaultValue;
         }
 
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+        void *AccessMut(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
+            const void *ptr = std::any_cast<T>(&state.scriptData);
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
-            T *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+            T *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             ptr->OnEvent(state, lock, ent, event);
         }
 
-        OnEventScript(const std::string &name, const StructMetadata &metadata) : ScriptBase(metadata) {
+        OnEventScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
                 {name, ScriptType::EventScript, {}, true, this, ScriptInitFunc(&Init), OnEventFunc(&OnEvent)});
         }
 
         template<typename... Events>
         OnEventScript(const std::string &name, const StructMetadata &metadata, Events... events)
-            : ScriptBase(metadata) {
+            : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
                 {name, ScriptType::EventScript, {events...}, true, this, ScriptInitFunc(&Init), OnEventFunc(&OnEvent)});
         }
     };
 
     template<typename T>
-    struct PrefabScript final : public ScriptBase {
+    struct PrefabScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
 
         const void *GetDefault() const override {
             return &defaultValue;
         }
 
-        void *Access(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.userData);
-            if (!ptr) ptr = &state.userData.emplace<T>();
+        void *AccessMut(ScriptState &state) const override {
+            void *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.userData);
+            const void *ptr = std::any_cast<T>(&state.scriptData);
             return ptr ? ptr : &defaultValue;
         }
 
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
-            const T *ptr = std::any_cast<T>(&state.userData);
+            const T *ptr = std::any_cast<T>(&state.scriptData);
             T data;
             if (ptr) data = *ptr;
             data.Prefab(state, scene.Lock(), lock, ent);
         }
 
-        PrefabScript(const std::string &name, const StructMetadata &metadata) : ScriptBase(metadata) {
+        PrefabScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterPrefab(
                 {name, ScriptType::PrefabScript, {}, false, this, {}, PrefabFunc(&Prefab)});
         }

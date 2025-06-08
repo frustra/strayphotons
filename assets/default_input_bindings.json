@@ -89,7 +89,7 @@
             "/keyboard/key/f7": {
                 "outputs": "console:input/action/run_command",
                 "filter": "event",
-                "set_value": "reloadshaders"
+                "set_value": "reloadshaders; reloadscripts"
             },
             "/keyboard/key/backtick": {
                 "outputs": "gui:debug/action/console/toggle",

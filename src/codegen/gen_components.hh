@@ -167,6 +167,8 @@ extern "C" {
     });
     for (auto &type : ReferencedCTypes()) {
         if (type == typeid(void)) continue;
+        if (type == typeid(void *)) continue;
+        if (type == typeid(const void *)) continue;
         ecs::GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             std::string scn = SnakeCaseTypeName(TypeToString<T>());

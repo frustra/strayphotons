@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,6 +9,7 @@
 
 #include "common/Defer.hh"
 #include "console/CVar.hh"
+#include "ecs/DynamicScript.hh"
 #include "ecs/EcsImpl.hh"
 
 #include <shared_mutex>
@@ -42,13 +43,19 @@ namespace ecs {
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const ScriptState &other)
-        : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), userData(other.userData),
+        : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), scriptData(other.scriptData),
           instanceId(other.instanceId), index(other.index) {}
     ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
     bool ScriptState::PollEvent(const Lock<Read<EventInput>> &lock, Event &eventOut) const {
         return EventInput::Poll(lock, eventQueue, eventOut);
+    }
+
+    ScriptManager::ScriptManager() {
+        funcs.Register("reloadscripts", "Reloads all dynamically loaded scripts", [this]() {
+            ReloadDynamicScripts();
+        });
     }
 
     ScriptManager::~ScriptManager() {
@@ -135,6 +142,60 @@ namespace ecs {
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const EntityScope &scope,
         const ScriptDefinition &definition) {
         return NewScriptInstance(ScriptState(definition, scope), false);
+    }
+
+    std::shared_ptr<DynamicScript> ScriptManager::LoadDynamicScript(const std::string &name) {
+        std::lock_guard l(dynamicScriptMutex);
+        auto it = dynamicScripts.find(name);
+        if (it != dynamicScripts.end()) {
+            return it->second;
+        }
+        auto newScript = DynamicScript::Load(name);
+        if (!newScript) {
+            Errorf("Failed to load dynamic script: %s", name);
+            return nullptr;
+        }
+        newScript->Register();
+        dynamicScripts.emplace(name, newScript);
+        return newScript;
+    }
+
+    void ScriptManager::ReloadDynamicScripts() {
+        Logf("Reloading DynamicScripts");
+        std::lock_guard l(dynamicScriptMutex);
+        for (size_t i = 0; i < scripts.size(); i++) {
+            scripts.at(i).mutex.lock();
+        }
+        std::vector<std::pair<ScriptDefinition, ScriptDefinition>> updateList;
+        for (auto &[name, dynamicScript] : dynamicScripts) {
+            auto oldDefinition = dynamicScript->definition;
+            dynamicScript->Reload();
+            if (dynamicScript->definition.name != oldDefinition.name) {
+                Logf("DynamicScript %s renamed to %s", oldDefinition.name, dynamicScript->definition.name);
+            } else if (dynamicScript->definition.type != oldDefinition.type) {
+                Logf("DynamicScript %s changed type to %s", oldDefinition.type, dynamicScript->definition.type);
+            }
+            updateList.emplace_back(oldDefinition, dynamicScript->definition);
+            Logf("Script %s = %s type: %s",
+                dynamicScript->definition.name,
+                dynamicScript->name,
+                dynamicScript->definition.type);
+        }
+        for (auto &[oldDef, _] : updateList) {
+            auto &scriptList = oldDef.type == ScriptType::PrefabScript ? GetScriptDefinitions().prefabs
+                                                                       : GetScriptDefinitions().scripts;
+            scriptList.erase(oldDef.name);
+        }
+        for (auto &[_, newDef] : updateList) {
+            if (newDef.type == ScriptType::PrefabScript) {
+                GetScriptDefinitions().RegisterPrefab(std::move(newDef));
+            } else {
+                GetScriptDefinitions().RegisterScript(std::move(newDef));
+            }
+        }
+        for (size_t i = 0; i < scripts.size(); i++) {
+            scripts.at(scripts.size() - i - 1).mutex.unlock();
+        }
     }
 
     void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,

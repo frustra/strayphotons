@@ -70,7 +70,7 @@ namespace ecs {
         auto state = ScriptState(*definition);
         if (definition->context) {
             // Access will initialize default parameters
-            void *dataPtr = state.definition.context->Access(state);
+            void *dataPtr = state.definition.context->AccessMut(state);
             Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
 
             auto it = srcObj.find("parameters");
@@ -138,8 +138,8 @@ namespace ecs {
 
             if (oldState.definition.context) {
                 const void *defaultPtr = oldState.definition.context->GetDefault();
-                void *oldPtr = oldState.definition.context->Access(oldState);
-                void *newPtr = newState->definition.context->Access(*newState);
+                const void *oldPtr = oldState.definition.context->Access(oldState);
+                void *newPtr = newState->definition.context->AccessMut(*newState);
                 Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
                 Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
                 for (auto &field : oldState.definition.context->metadata.fields) {

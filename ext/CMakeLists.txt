@@ -14,6 +14,8 @@ add_subdirectory(physx)
 
 # These projects require more configuration that is encapsulated their own CMake files
 include(cxxopts.cmake)
+include(cglm.cmake)
+include(dynalo.cmake)
 include(fpng.cmake)
 include(glfw.cmake)
 include(glfw-egl.cmake)

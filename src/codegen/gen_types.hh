@@ -20,9 +20,21 @@ std::string SnakeCaseTypeName(std::string_view name) {
     if (sp::starts_with(name, "sp::")) {
         name = name.substr("sp::"s.size());
     }
-    if (sp::starts_with(name, "ecs::")) {
-        name = name.substr("ecs::"s.size());
-        snakeCaseName.append("ecs_");
+    if (sp::starts_with(name, "glm::")) {
+        name = name.substr("glm::"s.size());
+    }
+    if (sp::starts_with(name, "std::")) {
+        name = name.substr("std::"s.size());
+    }
+    if (auto sep = name.find("::"); sep != std::string_view::npos) {
+        snakeCaseName.append(name.substr(0, sep));
+        snakeCaseName.append("_");
+        name = name.substr(sep + 2);
+    }
+    if (auto sep = name.find(" "); sep != std::string_view::npos) {
+        snakeCaseName.append(name.substr(0, sep));
+        snakeCaseName.append("_");
+        name = name.substr(sep + 1);
     }
     bool wasCaps = true;
     for (const char &ch : name) {
@@ -51,7 +63,7 @@ std::string StripTypeDecorators(std::string_view name) {
 }
 
 std::string LookupCTypeName(std::type_index type) {
-    if (type == typeid(void)) {
+    if (type == typeid(void) || type == typeid(void *) || type == typeid(const void *)) {
         return "void";
     }
     return ecs::GetFieldType(type, [&](auto *typePtr) {
@@ -59,6 +71,8 @@ std::string LookupCTypeName(std::type_index type) {
 
         if constexpr (std::is_same<T, bool>()) {
             return "bool"s;
+        } else if constexpr (std::is_same<T, int32_t>()) {
+            return "int32_t"s;
         } else if constexpr (std::is_same<T, uint32_t>()) {
             return "uint32_t"s;
         } else if constexpr (std::is_same<T, uint64_t>()) {
@@ -97,25 +111,27 @@ std::string LookupCTypeName(std::type_index type) {
             return "tecs_entity_t"s;
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             return "tecs_lock_t"s;
+        } else if constexpr (std::is_pointer<T>()) {
+            return LookupCTypeName(typeid(std::remove_pointer_t<T>));
         } else if constexpr (sp::is_optional<T>()) {
-            return "const " + LookupCTypeName(typeid(typename T::value_type)) + " *";
+            return LookupCTypeName(typeid(typename T::value_type));
         } else if constexpr (sp::is_vector<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
-            return "sp_" + subtype + "_vector_t *";
+            return "sp_" + subtype + "_vector_t";
         } else if constexpr (sp::is_pair<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
                 subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
-            return "sp_" + subtype + "_pair_t *";
+            return "sp_" + subtype + "_pair_t";
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            return "sp_" + subtype + "_flatmap_t *";
+            return "sp_" + subtype + "_flatmap_t";
         } else if constexpr (sp::is_unordered_node_map<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            return "sp_" + subtype + "_map_t *";
+            return "sp_" + subtype + "_map_t";
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
             if (ecs::LookupComponent(type)) {
@@ -161,15 +177,20 @@ std::vector<ecs::StructField> GetTypeFieldList(const ecs::StructMetadata &metada
 }
 
 namespace detail {
-    template<typename Fn, typename... AllComponentTypes, template<typename...> typename ECSType>
-    void forEachComponentType(ECSType<AllComponentTypes...> *, Fn &&callback) {
-        (std::invoke(callback, (AllComponentTypes *)nullptr), ...);
+    template<typename Fn, typename... Tn, template<typename...> typename TemplateType>
+    void forEachTemplateType(TemplateType<Tn...> *, Fn &&callback) {
+        (std::invoke(callback, (Tn *)nullptr), ...);
     }
 } // namespace detail
 
 template<typename Fn>
 void ForEachComponentType(Fn &&callback) {
-    detail::forEachComponentType((ecs::ECS *)nullptr, std::forward<Fn>(callback));
+    detail::forEachTemplateType((ecs::ECS *)nullptr, std::forward<Fn>(callback));
+}
+
+template<typename Fn>
+auto ForEachEventDataType(Fn &&callback) {
+    return detail::forEachTemplateType((ecs::EventData *)nullptr, std::forward<Fn>(callback));
 }
 
 template<typename S>
@@ -199,7 +220,7 @@ void GenerateStructWithFields(S &out,
                 out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // "
                     << lastField->size << " bytes" << std::endl;
             } else if (i > fieldStart) {
-                out << "    uint8_t _unknown" << fieldStart << "[" << (i - fieldStart) << "];" << std::endl;
+                out << "    const uint8_t _unknown" << fieldStart << "[" << (i - fieldStart) << "];" << std::endl;
             }
             lastField = byteMap[i];
             fieldStart = i;
@@ -209,7 +230,7 @@ void GenerateStructWithFields(S &out,
         out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // " << lastField->size
             << " bytes" << std::endl;
     } else {
-        out << "    uint8_t _unknown" << fieldStart << "[" << (metadata.size - fieldStart) << "];" << std::endl;
+        out << "    const uint8_t _unknown" << fieldStart << "[" << (metadata.size - fieldStart) << "];" << std::endl;
     }
     out << "} " << name << "; // " << metadata.size << " bytes" << std::endl;
 }
@@ -264,11 +285,39 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
         out << "    return str->data();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
+        out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str) {" << std::endl;
+        out << "    *str = new_str;" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str) {" << std::endl;
+        out << "    return str->compare(other_str);" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
         out << "SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char) {" << std::endl;
         out << "    str->resize(new_size, fill_char);" << std::endl;
         out << "    return str->data();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
+    } else if constexpr (std::is_same<T, ecs::EventData>()) {
+        out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type" << "(const sp_event_data_t *event_data) {"
+            << std::endl;
+        out << "    return (sp_event_data_type_t)event_data->index();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        ForEachEventDataType([&](auto *eventTypePtr) {
+            using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+            auto scn = SnakeCaseTypeName(TypeToString<EventT>());
+            out << "SP_EXPORT const " << TypeToString<EventT>() << " *sp_event_data_get_const_" << scn
+                << "(const sp_event_data_t *event_data) {" << std::endl;
+            out << "    return &std::get<" << TypeToString<EventT>() << ">(*event_data);" << std::endl;
+            out << "}" << std::endl;
+            out << std::endl;
+            out << "SP_EXPORT " << TypeToString<EventT>() << " *sp_event_data_get_" << scn
+                << "(sp_event_data_t *event_data) {" << std::endl;
+            out << "    return &std::get<" << TypeToString<EventT>() << ">(*event_data);" << std::endl;
+            out << "}" << std::endl;
+            out << std::endl;
+        });
     } else if constexpr (sp::is_vector<T>()) {
         std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
         std::string subtype = StripTypeDecorators(fullSubtype);
@@ -397,12 +446,15 @@ void GenerateCEnumDefinition(S &out, const std::string &full) {
 template<typename S>
 void GenerateCTypeDefinition(S &out, std::type_index type) {
     if (ReferencedCTypes().contains(type)) return;
-    ReferencedCTypes().emplace(type);
     if (type == typeid(void)) return;
+    if (type == typeid(void *)) return;
+    if (type == typeid(const void *)) return;
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         if constexpr (std::is_same<T, bool>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
             // Built-in
@@ -419,7 +471,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
-            out << "typedef struct string_t { uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
+            out << "typedef struct string_t { const uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
+            out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
+            out << "SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);" << std::endl;
             out << "SP_EXPORT size_t sp_string_get_size(const string_t *str);" << std::endl;
             out << "SP_EXPORT const char *sp_string_get_c_str(const string_t *str);" << std::endl;
             out << "SP_EXPORT char *sp_string_get_data(string_t *str);" << std::endl;
@@ -450,21 +504,44 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef struct sp_color_alpha_t { float rgba[4]; } sp_color_alpha_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventData>()) {
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                GenerateCTypeDefinition(out, typeid(EventT));
+            });
             out << "typedef struct sp_event_data_t {" << std::endl;
-            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_event_data_t;" << std::endl;
+            out << "typedef enum sp_event_data_type_t {" << std::endl;
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
+                out << "    SP_EVENT_DATA_TYPE_" << sp::to_upper(scn) << "," << std::endl;
+            });
+            out << "} sp_event_data_type_t;" << std::endl;
+            out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type(const sp_event_data_t *event_data);"
+                << std::endl;
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
+                out << "SP_EXPORT const " << LookupCTypeName(typeid(EventT)) << " *sp_event_data_get_const_" << scn
+                    << "(const sp_event_data_t *event_data);" << std::endl;
+                out << "SP_EXPORT " << LookupCTypeName(typeid(EventT)) << " *sp_event_data_get_" << scn
+                    << "(sp_event_data_t *event_data);" << std::endl;
+            });
+        } else if constexpr (std::is_pointer<T>()) {
+            GenerateCTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
         } else if constexpr (sp::is_optional<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             out << "typedef struct sp_optional_" << subtype << "_t {" << std::endl;
-            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_optional_" << subtype << "_t;" << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
             std::string subtype = StripTypeDecorators(fullSubtype);
             out << "typedef struct sp_" << subtype << "_vector_t {" << std::endl;
-            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_vector_t;" << std::endl;
             out << "SP_EXPORT size_t sp_" << subtype << "_vector_get_size(const sp_" << subtype << "_vector_t *v);"
                 << std::endl;
@@ -491,7 +568,7 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_flatmap_t {" << std::endl;
-            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_flatmap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::key_type));
@@ -499,7 +576,7 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             out << "typedef struct sp_" << subtype << "_map_t {" << std::endl;
-            out << "    uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_map_t;" << std::endl;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
@@ -518,24 +595,20 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                 for (auto &field : GetTypeFieldList(comp->metadata)) {
                     GenerateCTypeDefinition(out, field.type);
                 }
-                for (auto &func : comp->metadata.functions) {
-                    GenerateCTypeDefinition(out, func.returnType.type);
-                    for (auto &arg : func.argTypes) {
-                        GenerateCTypeDefinition(out, arg.type);
-                    }
-                }
 
+                if (ReferencedCTypes().contains(type)) return;
                 if constexpr (std::is_enum<T>()) {
                     out << "// Component: " << comp->metadata.name << std::endl;
                     GenerateCEnumDefinition<T>(out, full);
                 } else {
                     GenerateStructWithFields(out, "Component: " + comp->metadata.name, full, comp->metadata);
                 }
+                ReferencedCTypes().emplace(type);
                 std::string flagName = sp::to_upper_copy(scn);
                 out << "const uint64_t SP_" << flagName << "_INDEX = " << ecs::GetComponentIndex(comp->name) << ";"
                     << std::endl;
-                out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull << SP_" << flagName << "_INDEX;"
-                    << std::endl;
+                out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull << " << ecs::GetComponentIndex(comp->name)
+                    << ";" << std::endl;
                 if (comp->IsGlobal()) {
                     out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
                     out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
@@ -552,6 +625,13 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                     out << "SP_EXPORT void sp_entity_unset_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);"
                         << std::endl;
                 }
+
+                for (auto &func : comp->metadata.functions) {
+                    GenerateCTypeDefinition(out, func.returnType.type);
+                    for (auto &arg : func.argTypes) {
+                        GenerateCTypeDefinition(out, arg.type);
+                    }
+                }
                 GenerateCTypeFunctionDefinitions<T>(out, full);
                 out << std::endl;
             } else {
@@ -566,15 +646,17 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                     for (auto &field : GetTypeFieldList(*metadata)) {
                         GenerateCTypeDefinition(out, field.type);
                     }
+                    if (ReferencedCTypes().contains(type)) return;
+                    std::string full = "sp_" + SnakeCaseTypeName(metadata->name) + "_t";
+                    GenerateStructWithFields(out, "Type: " + TypeToString<T>(), full, *metadata);
+                    ReferencedCTypes().emplace(type);
+
                     for (auto &func : metadata->functions) {
                         GenerateCTypeDefinition(out, func.returnType.type);
                         for (auto &arg : func.argTypes) {
                             GenerateCTypeDefinition(out, arg.type);
                         }
                     }
-
-                    std::string full = "sp_" + SnakeCaseTypeName(metadata->name) + "_t";
-                    GenerateStructWithFields(out, "Type: " + TypeToString<T>(), full, *metadata);
                     GenerateCTypeFunctionDefinitions<T>(out, full);
                     out << std::endl;
                 } else {
@@ -582,18 +664,22 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                 }
             }
         }
+        ReferencedCTypes().emplace(type);
     });
 }
 
 template<typename S>
 void GenerateCppTypeDefinition(S &out, std::type_index type) {
     if (ReferencedCppTypes().contains(type)) return;
-    ReferencedCppTypes().emplace(type);
     if (type == typeid(void)) return;
+    if (type == typeid(void *)) return;
+    if (type == typeid(const void *)) return;
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         if constexpr (std::is_same<T, bool>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
             // Built-in
@@ -611,6 +697,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef std::string string_t;" << std::endl;
+            out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
+            out << "SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);" << std::endl;
             out << "SP_EXPORT size_t sp_string_get_size(const string_t *str);" << std::endl;
             out << "SP_EXPORT const char *sp_string_get_c_str(const string_t *str);" << std::endl;
             out << "SP_EXPORT char *sp_string_get_data(string_t *str);" << std::endl;
@@ -641,7 +729,30 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef sp::color_alpha_t sp_color_alpha_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventData>()) {
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                GenerateCppTypeDefinition(out, typeid(EventT));
+            });
             out << "typedef ecs::EventData sp_event_data_t;" << std::endl;
+            out << "typedef enum sp_event_data_type_t {" << std::endl;
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
+                out << "    SP_EVENT_DATA_TYPE_" << sp::to_upper(scn) << "," << std::endl;
+            });
+            out << "} sp_event_data_type_t;" << std::endl;
+            out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type(const sp_event_data_t *event_data);"
+                << std::endl;
+            ForEachEventDataType([&](auto *eventTypePtr) {
+                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
+                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
+                out << "SP_EXPORT const " << TypeToString<EventT>() << " *sp_event_data_get_const_" << scn
+                    << "(const sp_event_data_t *event_data);" << std::endl;
+                out << "SP_EXPORT " << TypeToString<EventT>() << " *sp_event_data_get_" << scn
+                    << "(sp_event_data_t *event_data);" << std::endl;
+            });
+        } else if constexpr (std::is_pointer<T>()) {
+            GenerateCppTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
         } else if constexpr (sp::is_optional<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
@@ -707,20 +818,17 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                 for (auto &field : GetTypeFieldList(comp->metadata)) {
                     GenerateCppTypeDefinition(out, field.type);
                 }
-                for (auto &func : comp->metadata.functions) {
-                    GenerateCppTypeDefinition(out, func.returnType.type);
-                    for (auto &arg : func.argTypes) {
-                        GenerateCppTypeDefinition(out, arg.type);
-                    }
-                }
 
-                out << "// Component: " << comp->metadata.name << std::endl;
-                out << "typedef " << TypeToString<T>() << " " << full << ";" << std::endl;
+                if (!ReferencedCppTypes().contains(type)) {
+                    out << "// Component: " << comp->metadata.name << std::endl;
+                    out << "typedef " << TypeToString<T>() << " " << full << ";" << std::endl;
+                    ReferencedCppTypes().emplace(type);
+                }
                 std::string flagName = sp::to_upper_copy(scn);
                 out << "const uint64_t SP_" << flagName << "_INDEX = " << ecs::GetComponentIndex(comp->name) << ";"
                     << std::endl;
-                out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull << SP_" << flagName << "_INDEX;"
-                    << std::endl;
+                out << "const uint64_t SP_ACCESS_" << flagName << " = 2ull <<" << ecs::GetComponentIndex(comp->name)
+                    << ";" << std::endl;
                 if (comp->IsGlobal()) {
                     out << "SP_EXPORT " << full << " *sp_ecs_set_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
                     out << "SP_EXPORT " << full << " *sp_ecs_get_" << scn << "(tecs_lock_t *dynLockPtr);" << std::endl;
@@ -737,6 +845,13 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                     out << "SP_EXPORT void sp_entity_unset_" << scn << "(tecs_lock_t *dynLockPtr, sp_entity_t ent);"
                         << std::endl;
                 }
+
+                for (auto &func : comp->metadata.functions) {
+                    GenerateCppTypeDefinition(out, func.returnType.type);
+                    for (auto &arg : func.argTypes) {
+                        GenerateCppTypeDefinition(out, arg.type);
+                    }
+                }
                 GenerateCTypeFunctionDefinitions<T>(out, full);
                 out << std::endl;
             } else {
@@ -751,16 +866,18 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                     for (auto &field : GetTypeFieldList(*metadata)) {
                         GenerateCppTypeDefinition(out, field.type);
                     }
+                    std::string full = "sp_" + SnakeCaseTypeName(metadata->name) + "_t";
+                    if (ReferencedCppTypes().contains(type)) return;
+                    out << "// Type: " << TypeToString<T>() << std::endl;
+                    out << "typedef " << TypeToString<T>() << " " << full << ";" << std::endl;
+                    ReferencedCppTypes().emplace(type);
+
                     for (auto &func : metadata->functions) {
                         GenerateCppTypeDefinition(out, func.returnType.type);
                         for (auto &arg : func.argTypes) {
                             GenerateCppTypeDefinition(out, arg.type);
                         }
                     }
-
-                    std::string full = "sp_" + SnakeCaseTypeName(metadata->name) + "_t";
-                    out << "// Type: " << TypeToString<T>() << std::endl;
-                    out << "typedef " << TypeToString<T>() << " " << full << ";" << std::endl;
                     GenerateCTypeFunctionDefinitions<T>(out, full);
                     out << std::endl;
                 } else {
@@ -768,5 +885,6 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                 }
             }
         }
+        ReferencedCppTypes().emplace(type);
     });
 }

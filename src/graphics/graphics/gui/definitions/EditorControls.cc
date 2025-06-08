@@ -472,7 +472,7 @@ namespace sp {
                     fieldName = field.name;
                     fieldId = "##scene_properties" + std::to_string(field.fieldIndex);
                     std::string elementName = fieldName + fieldId;
-                    ecs::GetFieldType(field.type, field.Access(&properties), [&](auto &value) {
+                    ecs::GetFieldType(field.type, field.AccessMut(&properties), [&](auto &value) {
                         if (AddImGuiElement(elementName, value)) changed = true;
                     });
                 }

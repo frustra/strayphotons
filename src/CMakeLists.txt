@@ -64,6 +64,14 @@ else()
     target_compile_definitions(${PROJECT_LIB_NAME} PUBLIC NDEBUG)
 endif()
 
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_LIB_NAME} PRE_LINK
+        COMMAND
+            ./extra/remove_in_use.py ${PROJECT_LIB_NAME} dll pdb
+        WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
+    )
+endif()
+
 # Shared library components
 add_subdirectory(common)
 add_subdirectory(core)

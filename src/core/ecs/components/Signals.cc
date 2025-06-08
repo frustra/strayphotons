@@ -151,7 +151,6 @@ namespace ecs {
         ZoneScoped;
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
-            DebugAssertf(signal.subscribers.empty(), "Signals::FreeSignal index has subscribers");
             if (signal.ref && signal.ref.GetEntity() == entity) {
                 MarkStorageDirty(lock, i);
                 signal.value = -std::numeric_limits<double>::infinity();

@@ -148,6 +148,8 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    sp_ecs_load_dynamic_script("camera_view.dll");
+
     if (!sp_game_get_cli_flag(GameInstance, "headless")) {
         GameGraphics = sp_game_get_graphics_context(GameInstance);
 
@@ -445,8 +447,8 @@ int main(int argc, char **argv) {
                 const tecs_entity_t *entities = Tecs_entity_view_begin(&view);
                 for (size_t i = 0; i < count; i++) {
                     const sp_ecs_name_t *name = Tecs_entity_const_get_name(lock, entities[i]);
-                    if (sp_string_get_c_str(&name->scene) == "cabi"s &&
-                        sp_string_get_c_str(&name->entity) == "ABI_TEST"s) {
+                    if (sp_string_compare(&name->scene, "cabi") == 0 &&
+                        sp_string_compare(&name->entity, "ABI_TEST") == 0) {
                         testEnt = entities[i];
                         break;
                     }

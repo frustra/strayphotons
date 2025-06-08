@@ -3,7 +3,7 @@ Script Example Definition
 
 ```c++
     // Registered script objects are instantiated for the lifetime of the entity it is attached to.
-    // Each instance is stored in the ScriptState::userData field.
+    // Each instance is stored in the ScriptState::scriptData field.
     struct Example {
         // Input parameters
         std::string a = "default value";

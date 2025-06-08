@@ -33,6 +33,8 @@ std::string TypeToString() {
         return "glm::quat";
     } else if constexpr (std::is_same<T, ecs::EventData>()) {
         return "ecs::EventData";
+    } else if constexpr (std::is_same<T, std::string>()) {
+        return "std::string";
     } else if constexpr (Tecs::is_lock<T>()) {
         auto dummyLong = EmbedTypeIntoSignature<ecs::Lock<long>>();
         auto longStart = dummyLong.find("long");

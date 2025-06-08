@@ -26,6 +26,14 @@ target_link_libraries(sp-vk PRIVATE
 )
 set_target_properties(sp-vk PROPERTIES EXPORT_COMPILE_COMMANDS 1)
 
+if(WIN32)
+    add_custom_command(TARGET sp-vk PRE_LINK
+        COMMAND
+            ./extra/remove_in_use.py sp-vk exe pdb
+        WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
+    )
+endif()
+
 # Headless executable used for CI testing purposes
 if(SP_PACKAGE_RELEASE AND WIN32)
     add_executable(sp-test WIN32

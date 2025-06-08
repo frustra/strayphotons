@@ -147,7 +147,7 @@ namespace ecs {
                 actions);
         }
 
-        void *Access(void *structPtr) const {
+        void *AccessMut(void *structPtr) const {
             return static_cast<char *>(structPtr) + offset;
         }
 
@@ -161,7 +161,7 @@ namespace ecs {
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            return *reinterpret_cast<T *>(Access(structPtr));
+            return *reinterpret_cast<T *>(AccessMut(structPtr));
         }
 
         template<typename T>

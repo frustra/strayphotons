@@ -25,5 +25,11 @@ if(SP_BUILD_RUST)
 
     if(WIN32)
         target_link_libraries(sp-winit PUBLIC Imm32)
+
+        add_custom_command(TARGET sp-winit PRE_LINK
+            COMMAND
+                ./extra/remove_in_use.py sp-winit exe pdb
+            WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
+        )
     endif()
 endif()
