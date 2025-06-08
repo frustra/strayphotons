@@ -45,7 +45,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .generator("Ninja")
         .pic(true)
         .static_crt(true)
-        .uses_cxx11()
         .always_configure(false)
         .build_target("sp")
         .build();

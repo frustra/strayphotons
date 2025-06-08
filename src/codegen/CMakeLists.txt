@@ -21,6 +21,10 @@ target_compile_definitions(${PROJECT_CODEGEN_LIB}-generator PRIVATE
     SP_EXECUTING_CODEGEN
 )
 
+set_target_properties(${PROJECT_CODEGEN_LIB}-generator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 ## Invoke code generator
 add_custom_command(
     OUTPUT

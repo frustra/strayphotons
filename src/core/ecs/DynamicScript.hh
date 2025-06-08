@@ -16,6 +16,7 @@ namespace ecs {
     struct DynamicScript final : public ScriptDefinitionBase, sp::NonMoveable {
         std::string name;
         std::optional<dynalo::library> dynamicLib;
+        StructMetadata metadata;
         ScriptDefinition definition;
         const void *defaultContext = nullptr;
         void (*initFunc)(void *, ScriptState *) = nullptr;
@@ -85,7 +86,6 @@ namespace ecs {
             }
         }
 
-        // TODO: Stop leaking StructMetadata!
         DynamicScript(const std::string &name,
             dynalo::library &&lib,
             const ScriptDefinition &definition,
@@ -93,16 +93,14 @@ namespace ecs {
             size_t contextSize,
             decltype(initFunc) initFunc,
             decltype(onTickFunc) onTickFunc)
-            : ScriptDefinitionBase(
-                  *new StructMetadata(typeid(void), contextSize, definition.name.c_str(), "DynamicScript")),
-              name(name), dynamicLib(std::move(lib)), definition(definition), defaultContext(defaultContext),
-              initFunc(initFunc), onTickFunc(onTickFunc) {
+            : ScriptDefinitionBase(this->metadata), name(name), dynamicLib(std::move(lib)),
+              metadata(typeid(void), contextSize, definition.name.c_str(), "DynamicScript"), definition(definition),
+              defaultContext(defaultContext), initFunc(initFunc), onTickFunc(onTickFunc) {
             this->definition.context = this;
             this->definition.initFunc = ScriptInitFunc(&Init);
             this->definition.callback = OnTickFunc(&OnTick);
         }
 
-        // TODO: Stop leaking StructMetadata!
         DynamicScript(const std::string &name,
             dynalo::library &&lib,
             const ScriptDefinition &definition,
@@ -110,24 +108,23 @@ namespace ecs {
             size_t contextSize,
             decltype(initFunc) initFunc,
             decltype(onEventFunc) onEventFunc)
-            : ScriptDefinitionBase(*new StructMetadata(typeid(void), contextSize, name.c_str(), "DynamicScript")),
-              name(name), dynamicLib(std::move(lib)), definition(definition), defaultContext(defaultContext),
-              initFunc(initFunc), onEventFunc(onEventFunc) {
+            : ScriptDefinitionBase(this->metadata), name(name), dynamicLib(std::move(lib)),
+              metadata(typeid(void), contextSize, name.c_str(), "DynamicScript"), definition(definition),
+              defaultContext(defaultContext), initFunc(initFunc), onEventFunc(onEventFunc) {
             this->definition.context = this;
             this->definition.initFunc = ScriptInitFunc(&Init);
             this->definition.callback = OnEventFunc(&OnEvent);
         }
 
-        // TODO: Stop leaking StructMetadata!
         DynamicScript(const std::string &name,
             dynalo::library &&lib,
             const ScriptDefinition &definition,
             const void *defaultContext,
             size_t contextSize,
             decltype(prefabFunc) prefabFunc)
-            : ScriptDefinitionBase(*new StructMetadata(typeid(void), contextSize, name.c_str(), "DynamicPrefab")),
-              name(name), dynamicLib(std::move(lib)), definition(definition), defaultContext(defaultContext),
-              prefabFunc(prefabFunc) {
+            : ScriptDefinitionBase(this->metadata), name(name), dynamicLib(std::move(lib)),
+              metadata(typeid(void), contextSize, name.c_str(), "DynamicPrefab"), definition(definition),
+              defaultContext(defaultContext), prefabFunc(prefabFunc) {
             this->definition.context = this;
             this->definition.callback = PrefabFunc(&Prefab);
         }

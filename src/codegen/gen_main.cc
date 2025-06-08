@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        std::cerr << "Usage: codegen out/components.h out/components.cc";
+        std::cerr << "Usage: codegen out/components.h out/components.cc" << std::endl;
         return -1;
     }
     {
