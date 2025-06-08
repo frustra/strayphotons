@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    sp_ecs_load_dynamic_script("camera_view.dll");
+    sp_ecs_load_dynamic_script("camera_view");
 
     if (!sp_game_get_cli_flag(GameInstance, "headless")) {
         GameGraphics = sp_game_get_graphics_context(GameInstance);

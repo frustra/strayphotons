@@ -74,7 +74,7 @@ namespace ecs {
         PhysicsMaterial,
         PhysicsShape,
         ScriptDefinitionBase,
-        /*const*/ ScriptDefinitionBase *,
+        ScriptDefinitionBase *,
         ScriptDefinition,
         ScriptInstance,
         ScriptState,

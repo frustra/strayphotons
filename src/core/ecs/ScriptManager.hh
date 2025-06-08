@@ -79,7 +79,7 @@ namespace ecs {
         ScriptType type;
         std::vector<std::string> events;
         bool filterOnEvent = false;
-        /*const*/ ScriptDefinitionBase *context = nullptr;
+        ScriptDefinitionBase *context = nullptr;
         std::optional<ScriptInitFunc> initFunc;
         ScriptCallback callback;
     };

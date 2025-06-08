@@ -145,7 +145,7 @@ namespace ecs {
             dynamicLib.reset();
             auto newScript = Load(name);
             if (!newScript) {
-                Errorf("Failed to reload %s(%s)", name, definition.name);
+                Errorf("Failed to reload %s(%s)", dynalo::to_native_name(name), definition.name);
                 return;
             }
             dynamicLib = std::move(newScript->dynamicLib);
@@ -159,12 +159,13 @@ namespace ecs {
         }
 
         static std::shared_ptr<DynamicScript> Load(const std::string &name) {
-            dynalo::library dynamicLib(name);
+            auto nativeName = dynalo::to_native_name(name);
+            dynalo::library dynamicLib(nativeName);
             ScriptDefinition definition{};
 
             auto definitionFunc = dynamicLib.get_function<size_t(ScriptDefinition *)>("sp_script_get_definition");
             if (!definitionFunc) {
-                Errorf("Failed to load %s, sp_script_get_definition() is missing", name);
+                Errorf("Failed to load %s, sp_script_get_definition() is missing", nativeName);
                 return nullptr;
             }
             auto getDefaultContextFunc = dynamicLib.get_function<const void *()>("sp_script_get_default_context");
@@ -187,7 +188,7 @@ namespace ecs {
             case ScriptType::LogicScript:
             case ScriptType::PhysicsScript:
                 if (!onTickFunc) {
-                    Errorf("Failed to load %s(%s), sp_script_on_tick() is missing", name, definition.name);
+                    Errorf("Failed to load %s(%s), sp_script_on_tick() is missing", nativeName, definition.name);
                     return nullptr;
                 }
                 return std::make_shared<DynamicScript>(name,
@@ -199,7 +200,7 @@ namespace ecs {
                     onTickFunc);
             case ScriptType::EventScript:
                 if (!onEventFunc) {
-                    Errorf("Failed to load %s(%s), sp_script_on_event() is missing", name, definition.name);
+                    Errorf("Failed to load %s(%s), sp_script_on_event() is missing", nativeName, definition.name);
                     return nullptr;
                 }
                 return std::make_shared<DynamicScript>(name,
@@ -211,10 +212,10 @@ namespace ecs {
                     onEventFunc);
             case ScriptType::PrefabScript:
                 if (!prefabFunc) {
-                    Errorf("Failed to load %s(%s), sp_script_prefab() is missing", name, definition.name);
+                    Errorf("Failed to load %s(%s), sp_script_prefab() is missing", nativeName, definition.name);
                     return nullptr;
                 }
-                if (initFunc) Warnf("%s(%s) defines unsupported sp_script_init()", name, definition.name);
+                if (initFunc) Warnf("%s(%s) defines unsupported sp_script_init()", nativeName, definition.name);
                 return std::make_shared<DynamicScript>(name,
                     std::move(dynamicLib),
                     definition,
@@ -222,7 +223,7 @@ namespace ecs {
                     contextSize,
                     prefabFunc);
             default:
-                Errorf("DynamicScript %s(%s) unexpected script type: %s", name, definition.name, definition.type);
+                Errorf("DynamicScript %s(%s) unexpected script type: %s", nativeName, definition.name, definition.type);
                 return nullptr;
             }
         }
