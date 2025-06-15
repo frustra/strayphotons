@@ -105,7 +105,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -125,7 +125,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -145,7 +145,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -170,7 +170,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -195,7 +195,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -220,7 +220,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -245,7 +245,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -270,7 +270,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -295,7 +295,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},

@@ -201,22 +201,21 @@ The `script` component has type: vector&lt;[ScriptInstance](#ScriptInstance-type
 
 Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
 Scripts can have 2 types: 
-- "prefab": Prefab scripts such as "template" will run during scene load.
-- "onTick": OnTick scripts (or Runtime scripts) will run during in GameLogic thread during its frame.  
-            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.  
-            Some OnTick scripts may also internally define event filters to only run when events are received.
+- **Prefab scripts** such as "template" will run during scene load.
+- **Runtime scripts** (or OnTick scripts) will run during in GameLogic thread during its frame.  
+    Runtime scripts starting with "physics_" will run in the Physics thread just before simulation.  
+    Some OnTick scripts may also internally define event filters to only run when events are received.
 
 Script instances are defined using the following fields:
 | Instance Field | Type    | Description |
 |----------------|---------|-------------|
-| **prefab**     | string  | The name of a [Prefab Script](Prefab_Scripts.md) |
-| **onTick**     | string  | The name of a [Runtime Script](Runtime_Scripts.md) |
+| **name**     | string  | The name of a [Default Built-in Script](Default_Scripts.md) |
 | **parameters** | *any*   | A set of parameters to be given to the script. See individiaul script documentation for info. |
 
-Here is an example of an instance definition for a "spotlight" [`template` Prefab](Prefab_Scripts.md#template-prefab):
+Here is an example of an instance definition for a "spotlight" [`template` Prefab](#template-prefab):
 ```json
 {
-    "prefab": "template",
+    "name": "prefab_template",
     "parameters": {
         "source": "spotlight"
     }

@@ -59,7 +59,9 @@ namespace sp {
     ecs::EntityRef EditorContext::ShowAllEntities(std::string listLabel, float listWidth, float listHeight) {
         ecs::EntityRef selected;
         ImGui::SetNextItemWidth(listWidth);
-        ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
+        std::string entryLabel = "##entity_search" + listLabel;
+        ImGui::InputTextWithHint(entryLabel.c_str(), "Entity Search", &entitySearch);
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere(-1);
         if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
             auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
             for (auto &entName : entityNames) {

@@ -12,5 +12,4 @@
 
 - Script Definitions
 
-  - [Prefab Scripts](/generated/Prefab_Scripts.md)
-  - [Runtime Scripts](/generated/Runtime_Scripts.md)
+  - [Default Built-in Scripts](/generated/Default_Scripts.md)

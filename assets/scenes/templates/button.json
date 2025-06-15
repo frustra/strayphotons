@@ -152,20 +152,20 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"renderable.emissive": "scoperoot/light",
 						"physics.constant_force.x": "-0.2 + (!!button_actuator/input_pressed) * 0.4"
 					}
 				},
 				{
-					"onTick": "signal_from_event",
+					"name": "signal_from_event",
 					"parameters": {
 						"outputs": "input_pressed"
 					}
 				},
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}

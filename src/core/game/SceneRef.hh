@@ -9,6 +9,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <memory>
 #include <string>

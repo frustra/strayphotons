@@ -107,7 +107,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "button"
 				}
@@ -210,7 +210,7 @@
 				"shadow_map_size": 11
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "spotlight" }
 			}
 		}

@@ -50,12 +50,18 @@ SP_EXPORT void sp_script_init(void *context, sp_script_state_t *state) {
     ctx->started = false;
 }
 
-SP_EXPORT void sp_script_on_tick(void *context, sp_script_state_t *state, tecs_lock_t *lock, tecs_entity_t ent, uint64_t intervalNs) {
+SP_EXPORT void sp_script_on_tick(void *context,
+    sp_script_state_t *state,
+    tecs_lock_t *lock,
+    tecs_entity_t ent,
+    uint64_t intervalNs) {
     if (!Tecs_entity_has_transform_tree(lock, ent)) return;
 
     script_camera_view_t *ctx = context;
     if (!ctx->started) {
-        printf("Script: %s = %d\n", sp_string_get_c_str(&state->definition.name), ctx->foobar);
+        char buffer[256] = {0};
+        snprintf(buffer, 255, "Script: %s = %d\n", sp_string_get_c_str(&state->definition.name), ctx->foobar);
+        sp_log_message(SP_LOG_LEVEL_LOG, buffer);
         ctx->started = true;
     }
 

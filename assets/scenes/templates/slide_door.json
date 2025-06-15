@@ -3,7 +3,7 @@
 		"signal_output": {},
 		"event_input": {},
 		"script": {
-			"onTick": "signal_from_event",
+			"name": "signal_from_event",
 			"parameters": {
 				"outputs": "door_open"
 			}
@@ -17,7 +17,7 @@
 			},
 			"script": [
 				{
-					"prefab": "gltf",
+					"name": "prefab_gltf",
 					"parameters": {
 						"model": "door-frame",
 						"render": true,
@@ -25,7 +25,7 @@
 					}
 				},
 				{
-					"onTick": "edge_trigger",
+					"name": "edge_trigger",
 					"parameters": {
 						"input_expr": "scoperoot/door_open && left-panel/animation_state != 0",
 						"output_event": "/sound/play"

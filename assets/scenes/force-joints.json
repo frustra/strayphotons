@@ -329,7 +329,7 @@
 				"shadow_map_size": 9
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "spotlight" }
 			}
 		}

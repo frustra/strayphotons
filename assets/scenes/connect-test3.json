@@ -86,7 +86,7 @@
 				"out_signal": "loaded/value"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -148,7 +148,7 @@
 				"in_signal": "loaded/value"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},

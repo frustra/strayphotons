@@ -2,7 +2,7 @@
 	"components": {
 		"transform": {},
 		"script": {
-			"prefab": "tile",
+			"name": "prefab_tile",
 			"parameters": {
 				"surface": "table/life/life_cell",
 				"edge": "table/life/wrap_edge",

@@ -36,7 +36,7 @@ Prefabs scripts can load in templates, expand GLTF models into individual entiti
 As an example, we can look at the `template` prefab script:
 ```json
 "script": {
-    "prefab": "template",
+    "name": "prefab_template",
     "parameters": {
         "source": "interactive"
     }
@@ -64,7 +64,7 @@ Our cardboard box from earlier can be updated to replace the interactive_object 
         }
     },
     "script": {
-        "prefab": "template",
+        "name": "prefab_template",
         "parameters": {
             "source": "interactive"
         }

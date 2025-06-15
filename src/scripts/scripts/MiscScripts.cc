@@ -117,7 +117,7 @@ namespace sp::scripts {
                         }
                         for (auto &templateName : templates) {
                             auto &scripts = newEntity.Get<Scripts>(lock);
-                            auto &prefab = scripts.AddPrefab(scope, "template");
+                            auto &prefab = scripts.AddScript(scope, "template");
                             prefab.SetParam("source", templateName);
                         }
                         if (!templates.empty()) {

@@ -22,7 +22,7 @@ namespace ecs {
             Assertf(tryLock, "LogicScript invoked without lock permissions: %s", typeid(LockType).name());
             return callback(state, *tryLock, ent, interval);
         };
-        return ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, std::move(wrapperFn)};
+        return ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, {}, std::move(wrapperFn)};
     }
     template<typename LockType>
     static inline ScriptDefinition CreatePhysicsScript(
@@ -35,14 +35,14 @@ namespace ecs {
             Assertf(tryLock, "PhysicsScript invoked without lock permissions: %s", typeid(LockType).name());
             return callback(state, *tryLock, ent, interval);
         };
-        return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, std::move(wrapperFn)};
+        return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, {}, std::move(wrapperFn)};
     }
     template<typename... Events>
     static inline ScriptDefinition CreateEventScript(OnEventFunc &&callback, Events... events) {
-        return ScriptDefinition{"", ScriptType::EventScript, {events...}, true, nullptr, {}, callback};
+        return ScriptDefinition{"", ScriptType::EventScript, {events...}, true, nullptr, {}, {}, callback};
     }
     static inline ScriptDefinition CreatePrefabScript(PrefabFunc &&callback) {
-        return ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, callback};
+        return ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, {}, callback};
     }
 
     // Checks if the script has an Init(ScriptState &state) function
@@ -102,7 +102,7 @@ namespace ecs {
 
         LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::LogicScript, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
+                {name, ScriptType::LogicScript, {}, false, this, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -114,6 +114,7 @@ namespace ecs {
                 filterOnEvent,
                 this,
                 ScriptInitFunc(&Init),
+                {},
                 OnTickFunc(&OnTick)});
         }
     };
@@ -157,7 +158,7 @@ namespace ecs {
 
         PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::PhysicsScript, {}, false, this, ScriptInitFunc(&Init), OnTickFunc(&OnTick)});
+                {name, ScriptType::PhysicsScript, {}, false, this, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -169,6 +170,7 @@ namespace ecs {
                 filterOnEvent,
                 this,
                 ScriptInitFunc(&Init),
+                {},
                 OnTickFunc(&OnTick)});
         }
     };
@@ -206,14 +208,20 @@ namespace ecs {
 
         OnEventScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::EventScript, {}, true, this, ScriptInitFunc(&Init), OnEventFunc(&OnEvent)});
+                {name, ScriptType::EventScript, {}, true, this, ScriptInitFunc(&Init), {}, OnEventFunc(&OnEvent)});
         }
 
         template<typename... Events>
         OnEventScript(const std::string &name, const StructMetadata &metadata, Events... events)
             : ScriptDefinitionBase(metadata) {
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::EventScript, {events...}, true, this, ScriptInitFunc(&Init), OnEventFunc(&OnEvent)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::EventScript,
+                {events...},
+                true,
+                this,
+                ScriptInitFunc(&Init),
+                {},
+                OnEventFunc(&OnEvent)});
         }
     };
 
@@ -244,8 +252,8 @@ namespace ecs {
         }
 
         PrefabScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            GetScriptDefinitions().RegisterPrefab(
-                {name, ScriptType::PrefabScript, {}, false, this, {}, PrefabFunc(&Prefab)});
+            GetScriptDefinitions().RegisterScript(
+                {name, ScriptType::PrefabScript, {}, false, this, {}, {}, PrefabFunc(&Prefab)});
         }
     };
 } // namespace ecs

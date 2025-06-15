@@ -52,13 +52,13 @@ namespace sp {
                 if (ImGui::BeginCombo(name.c_str(), enumName.c_str())) {
                     for (auto &item : items) {
                         if (item.second.empty()) continue;
-                        const bool is_selected = item.first == value;
-                        if (ImGui::Selectable(item.second.data(), is_selected)) {
+                        bool isSelected = item.first == value;
+                        if (ImGui::Selectable(item.second.data(), isSelected)) {
                             value = item.first;
                             changed = true;
                         }
 
-                        if (is_selected) ImGui::SetItemDefaultFocus();
+                        if (isSelected) ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
                 }
@@ -197,8 +197,16 @@ namespace sp {
             ImGui::Text("%s:", fieldName.c_str());
             ImGui::SameLine();
         }
+        if (value) {
+            std::string buttonLabel = "-##" + name;
+            if (ImGui::Button(buttonLabel.c_str(), ImVec2(20, 0))) {
+                value = {};
+                changed = true;
+            }
+            ImGui::SameLine();
+        }
         ImGui::Button(value ? value.Name().String().c_str() : "None");
-        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
+        if (ImGui::BeginPopupContextItem(name.c_str(), ImGuiPopupFlags_MouseButtonLeft)) {
             auto selected = ShowAllEntities(fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
             if (selected) {
                 value = selected;
@@ -253,12 +261,11 @@ namespace sp {
     bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
+        robin_hood::unordered_map<size_t, std::string> changeList;
         for (auto &instance : value) {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            bool isOnTick = std::holds_alternative<OnTickFunc>(state.definition.callback);
-            bool isOnEvent = std::holds_alternative<OnEventFunc>(state.definition.callback);
             bool isPrefab = std::holds_alternative<PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
             switch (state.definition.type) {
@@ -309,38 +316,23 @@ namespace sp {
                     }
                     ImGui::SameLine();
                 }
-                if (isOnTick || isOnEvent) {
-                    ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                        auto &scripts = GetScriptDefinitions().scripts;
-                        for (auto &[scriptName, definition] : scripts) {
-                            // Don't allow changing the script type, it will break ScriptManager's index
-                            if (definition.type != state.definition.type) continue;
-                            const bool isSelected = state.definition.name == scriptName;
-                            if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
-                                state.definition = definition;
-                                changed = true;
-                            }
-                            if (isSelected) ImGui::SetItemDefaultFocus();
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
+                    auto &scripts = GetScriptDefinitions().scripts;
+                    for (auto &[scriptName, definition] : scripts) {
+                        if (IsLive(target) && definition.type == ScriptType::PrefabScript &&
+                            definition.type != state.definition.type) {
+                            // Don't allow editing prefab scripts in the live ECS
+                            continue;
                         }
-                        ImGui::EndCombo();
-                    }
-                } else if (isPrefab) {
-                    ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                        auto &prefabs = GetScriptDefinitions().prefabs;
-                        for (auto &[prefabName, definition] : prefabs) {
-                            const bool isSelected = state.definition.name == prefabName;
-                            if (ImGui::Selectable(prefabName.c_str(), isSelected)) {
-                                state.definition = definition;
-                                changed = true;
-                            }
-                            if (isSelected) ImGui::SetItemDefaultFocus();
+                        bool isSelected = state.definition.name == scriptName;
+                        if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
+                            if (!isSelected) changeList.emplace(state.GetInstanceId(), scriptName);
+                            changed = true;
                         }
-                        ImGui::EndCombo();
+                        if (isSelected) ImGui::SetItemDefaultFocus();
                     }
-                } else {
-                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "NULL Script");
+                    ImGui::EndCombo();
                 }
 
                 if (state.definition.context) {
@@ -383,6 +375,17 @@ namespace sp {
                 ImGui::TreePop();
             }
         }
+        for (auto &[instanceId, scriptName] : changeList) {
+            const auto &definition = GetScriptDefinitions().scripts.at(scriptName);
+            for (auto &instance : value) {
+                if (instance.GetInstanceId() == instanceId) {
+                    instance = GetScriptManager().NewScriptInstance(instance.GetState().scope,
+                        definition,
+                        IsLive(target));
+                    break;
+                }
+            }
+        }
         if (IsStaging(target)) {
             for (auto &instanceId : removeList) {
                 sp::erase_if(value, [&](auto &&instance) {
@@ -393,28 +396,28 @@ namespace sp {
             if (ImGui::Button("Add Prefab")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, PrefabFunc()});
+                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, {}, PrefabFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add LogicScript")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, {}, OnTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Physics Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, {}, OnTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Event Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::EventScript, {}, true, nullptr, {}, OnEventFunc()});
+                    ScriptDefinition{"", ScriptType::EventScript, {}, true, nullptr, {}, {}, OnEventFunc()});
                 changed = true;
             }
         }
@@ -460,6 +463,9 @@ namespace sp {
                 QueueTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
+                    if constexpr (std::is_same<T, std::vector<ScriptInstance>>()) {
+                        GetScriptManager().RegisterEvents(lock);
+                    }
                 });
             } else if (scene) {
                 QueueStagingTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {

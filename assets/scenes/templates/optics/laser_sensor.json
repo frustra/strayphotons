@@ -16,7 +16,7 @@
 				"translate": [0, 0.025, -0.0165]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -31,7 +31,7 @@
 				"scale": 0.1
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
@@ -46,7 +46,7 @@
 				"rotate": [-90, 0, 0, 1]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-3mm-flat-one-side",
 					"render": true

@@ -200,7 +200,12 @@ behavior is undefined if the combinations introduce skew. (The scale should be a
                 "Specifies a parent entity that this transform is relative to. "
                 "If empty, the transform is relative to the scene root.",
                 &TransformTree::parent,
-                ~FieldAction::AutoApply)},
+                ~FieldAction::AutoApply),
+            StructFunction::New("MoveViaRoot", &TransformTree::MoveViaRoot),
+            StructFunction::New("GetRoot", &TransformTree::GetRoot),
+            StructFunction::New("GetGlobalTransform", &TransformTree::GetGlobalTransform),
+            StructFunction::New("GetGlobalRotation", &TransformTree::GetGlobalRotation),
+            StructFunction::New("GetRelativeTransform", &TransformTree::GetRelativeTransform)},
         "transform");
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);

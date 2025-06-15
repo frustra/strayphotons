@@ -14,14 +14,14 @@
 		"event_input": {},
 		"script": [
 			{
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "mcube",
 					"render": true
 				}
 			},
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		]
@@ -33,7 +33,7 @@
 				"parent": "scoperoot"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		}

@@ -35,7 +35,7 @@
 				"parameters": {
 					"source": "station_segment_cutout"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -184,7 +184,7 @@
 				"floor": 3
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "elevator_doors" }
 			}
 		},
@@ -219,7 +219,7 @@
 				"parameters": {
 					"source": "spotlight"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -237,7 +237,7 @@
 				"parameters": {
 					"source": "spotlight"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -255,7 +255,7 @@
 				"parameters": {
 					"source": "spotlight"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -268,7 +268,7 @@
 				"model": "box"
 			},
 			"script": {
-				"onTick": "rotate",
+				"name": "rotate",
 				"parameters": {
 					"axis": [0, 0, 1],
 					"speed": 1.5

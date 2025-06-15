@@ -8,7 +8,7 @@
 			},
 			"scene_connection": { "03-dark": "0" },
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -51,7 +51,7 @@
 				]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -61,7 +61,7 @@
 				"translate": [-1.5, 0, -1.5]
 			},
 			"script": {
-				"prefab": "tile",
+				"name": "prefab_tile",
 				"parameters": {
 					"surface": "floor_3x3",
 					"axes": "xz",
@@ -76,7 +76,7 @@
 				"translate": [-1.5, 4, -1.5]
 			},
 			"script": {
-				"prefab": "tile",
+				"name": "prefab_tile",
 				"parameters": {
 					"surface": "ceiling_3x3",
 					"axes": "xz",
@@ -88,7 +88,7 @@
 
 		{
 			"script": {
-				"prefab": "wall",
+				"name": "prefab_wall",
 				"parameters": {
 					"stride": 3,
 					"segments": [[0, 9], [0, 6], [0, 0], [3, 0], [6, 0], [12, 0], [12, 3], [6, 3], [6, 6], [12, 6], [12, 9], [6, 9], [3, 9], [0, 9]],
@@ -107,7 +107,7 @@
 				"sensitivity": 0.1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "light_sensor" }
 			}
 		},
@@ -121,7 +121,7 @@
 				"sensitivity": 0.1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "light_sensor" }
 			}
 		},
@@ -132,7 +132,7 @@
 				"rotate": [-46, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -143,7 +143,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		},
@@ -154,7 +154,7 @@
 				"rotate": [-70, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -165,7 +165,7 @@
 				"rotate": [-53, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -197,7 +197,7 @@
 				"spot_angle": 12
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "spotlight" }
 			}
 		}

@@ -235,7 +235,7 @@ namespace ecs {
         "TemplatePrefab",
         "",
         StructField::New("source", &TemplatePrefab::source));
-    PrefabScript<TemplatePrefab> templatePrefab("template", MetadataTemplatePrefab);
+    PrefabScript<TemplatePrefab> templatePrefab("prefab_template", MetadataTemplatePrefab);
 
     struct TilePrefab {
         glm::ivec2 count = {1, 1};
@@ -351,5 +351,5 @@ namespace ecs {
         StructField::New("surface", &TilePrefab::surfaceTemplate),
         StructField::New("edge", &TilePrefab::edgeTemplate),
         StructField::New("corner", &TilePrefab::cornerTemplate));
-    PrefabScript<TilePrefab> tilePrefab("tile", MetadataTilePrefab);
+    PrefabScript<TilePrefab> tilePrefab("prefab_tile", MetadataTilePrefab);
 } // namespace ecs

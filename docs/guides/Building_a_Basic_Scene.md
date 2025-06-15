@@ -114,7 +114,7 @@ Now for a slightly more complex example, let's add a cardboard box that can be p
     "physics_query": {},
     "event_input": {},
     "script": {
-        "onTick": "interactive_object"
+        "name": "interactive_object"
     }
 }
 ```

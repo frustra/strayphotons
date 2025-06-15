@@ -64,7 +64,6 @@ static const CommonTypes physicsCommonTypes = {
     typeid(ecs::Transform),
 };
 
-static const CommonTypes prefabCommonTypes = {};
 static const CommonTypes scriptsCommonTypes = {
     typeid(ecs::EntityRef),
     typeid(ecs::SignalExpression),
@@ -110,9 +109,7 @@ int main(int argc, char **argv) {
             .SavePage(physicsComponents, &physicsCommonTypes, &otherGroup);
         MarkdownContext(outputDir / "Other_Components.md", PageType::Component).SavePage(otherGroup);
 
-        MarkdownContext(outputDir / "Prefab_Scripts.md", PageType::Prefab)
-            .SavePage(ecs::GetScriptDefinitions().prefabs, &prefabCommonTypes);
-        MarkdownContext(outputDir / "Runtime_Scripts.md", PageType::Script)
+        MarkdownContext(outputDir / "Default_Scripts.md", PageType::Script)
             .SavePage(ecs::GetScriptDefinitions().scripts, &scriptsCommonTypes);
 
         SchemaContext(outputDir / "scene.schema.json").SaveSchema();

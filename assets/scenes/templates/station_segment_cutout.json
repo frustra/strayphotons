@@ -4,7 +4,7 @@
 			"name": "segment",
 			"transform": {},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "station-segment",
 					"render": true,

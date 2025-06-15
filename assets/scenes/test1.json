@@ -90,7 +90,7 @@
 				"color": [1, 0, 0]
 			},
 			"script": {
-				"onTick": "rotate",
+				"name": "rotate",
 				"parameters": {
 					"axis": [0, 1, 0],
 					"speed": 0.2
@@ -235,7 +235,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "duck" }
 			}
 		},
@@ -245,7 +245,7 @@
 				"translate": [-1.5, 0, -2.5]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -266,7 +266,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -276,7 +276,7 @@
 				"translate": [0, -0.5, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "mcube",
 					"render": true
@@ -312,7 +312,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -330,7 +330,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -348,7 +348,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},

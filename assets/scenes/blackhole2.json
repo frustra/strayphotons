@@ -35,7 +35,7 @@
 				"parameters": {
 					"source": "station_segment"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -72,7 +72,7 @@
 				"model": "box"
 			},
 			"script": {
-				"onTick": "rotate",
+				"name": "rotate",
 				"parameters": {
 					"axis": [0, 0, 1],
 					"speed": 1.5
@@ -86,7 +86,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -98,7 +98,7 @@
 				"parameters": {
 					"source": "blocks/mirror"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -110,7 +110,7 @@
 				"parameters": {
 					"source": "blocks/splitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -126,7 +126,7 @@
 				"parameters": {
 					"source": "blocks/laser_emitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -139,7 +139,7 @@
 				"parameters": {
 					"source": "blocks/laser_sensor"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -157,7 +157,7 @@
 				"parameters": {
 					"source": "blocks/laser_emitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -169,7 +169,7 @@
 				"parameters": {
 					"source": "blocks/laser_gate"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -185,7 +185,7 @@
 				"parameters": {
 					"source": "blocks/laser_emitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -197,7 +197,7 @@
 				"parameters": {
 					"source": "blocks/laser_sensor"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -212,7 +212,7 @@
 				"parameters": {
 					"source": "slide_door"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		}
 	]

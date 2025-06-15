@@ -5,14 +5,21 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-add_library(camera_view SHARED camera_view.c)
+set(SCRIPT_LIST
+    hello_world
+    camera_view
+)
 
-target_link_libraries(camera_view PRIVATE ${PROJECT_LIB_NAME} cglm)
+foreach(SCRIPT_NAME ${SCRIPT_LIST})
+    add_library(${SCRIPT_NAME} SHARED ${SCRIPT_NAME}.c)
 
-if(WIN32)
-    add_custom_command(TARGET camera_view PRE_LINK
-        COMMAND
-            ./extra/remove_in_use.py camera_view dll pdb
-        WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
-    )
-endif()
+    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} cglm)
+
+    if(WIN32)
+        add_custom_command(TARGET ${SCRIPT_NAME} PRE_LINK
+            COMMAND
+                ./extra/remove_in_use.py ${SCRIPT_NAME} dll pdb
+            WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
+        )
+    endif()
+endforeach()

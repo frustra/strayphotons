@@ -8,7 +8,7 @@
 				"scale": [4, 4.2, 4]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},
 			"signal_output": {},
@@ -23,7 +23,7 @@
 				"scale": [1, 1.5, 2.3]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "slide_door" }
 			}
 		},
@@ -36,7 +36,7 @@
 				"floor": 0
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "elevator_doors" }
 			}
 		},
@@ -155,7 +155,7 @@
 				"spot_angle": 50
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "spotlight" }
 			}
 		}

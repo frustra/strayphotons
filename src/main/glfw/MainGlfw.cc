@@ -148,8 +148,6 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    sp_ecs_load_dynamic_script("camera_view");
-
     if (!sp_game_get_cli_flag(GameInstance, "headless")) {
         GameGraphics = sp_game_get_graphics_context(GameInstance);
 
@@ -412,10 +410,6 @@ int main(int argc, char **argv) {
 
         sp_cvar_t *cvarMaxFps = sp_get_cvar("r.maxfps");
 
-        tecs_ecs_t *liveEcs = sp_get_live_ecs();
-        sp_entity_t testEnt = 0;
-        uint64_t frameCount = 0;
-
         auto frameEnd = chrono_clock::now();
         while (!sp_game_is_exit_triggered(GameInstance)) {
             static const char *frameName = "WindowInput";
@@ -435,56 +429,6 @@ int main(int argc, char **argv) {
                     break;
                 }
             }
-            struct Name {
-                std::string scene, entity;
-            };
-
-            if (!testEnt) {
-                // auto lock = world.StartTransaction<ecs::Read<ecs::Name>>();
-                tecs_lock_t *lock = Tecs_ecs_start_transaction(liveEcs, 1 + SP_ACCESS_NAME, 0);
-                tecs_entity_view_t view;
-                size_t count = Tecs_entities_with(lock, SP_NAME_INDEX, &view);
-                const tecs_entity_t *entities = Tecs_entity_view_begin(&view);
-                for (size_t i = 0; i < count; i++) {
-                    const sp_ecs_name_t *name = Tecs_entity_const_get_name(lock, entities[i]);
-                    if (sp_string_compare(&name->scene, "cabi") == 0 &&
-                        sp_string_compare(&name->entity, "ABI_TEST") == 0) {
-                        testEnt = entities[i];
-                        break;
-                    }
-                }
-                Tecs_lock_release(lock);
-            } else {
-                // auto lock = world.StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot,
-                // ecs::Renderable>>();
-                tecs_lock_t *lock = Tecs_ecs_start_transaction(liveEcs,
-                    1 + SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE,
-                    SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE);
-                // if (testEnt.Has<ecs::TransformTree, ecs::TransformSnapshot, ecs::Renderable>(lock)) {
-                if (Tecs_entity_has_bitset(lock,
-                        testEnt,
-                        SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE)) {
-                    sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, testEnt);
-                    sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, testEnt);
-                    vec3_t newPos{
-                        std::sin(frameCount / 100.0f),
-                        1,
-                        std::cos(frameCount / 100.0f),
-                    };
-                    sp_transform_set_position(&transformTree->transform, &newPos);
-                    transformSnapshot->transform = transformTree->transform;
-
-                    sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, testEnt);
-                    renderable->color_override.rgba[0] = std::sin(frameCount / 100.0f) * 0.5 + 0.5;
-                    renderable->color_override.rgba[1] = std::sin(frameCount / 100.0f + 1) * 0.5 + 0.5;
-                    renderable->color_override.rgba[2] = std::cos(frameCount / 100.0f) * 0.5 + 0.5;
-                    renderable->color_override.rgba[3] = 1;
-                } else {
-                    testEnt = {};
-                }
-                Tecs_lock_release(lock);
-            }
-            frameCount++;
 
             auto realFrameEnd = chrono_clock::now();
             chrono_clock::duration interval(0);

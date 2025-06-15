@@ -169,6 +169,7 @@ extern "C" {
         if (type == typeid(void)) continue;
         if (type == typeid(void *)) continue;
         if (type == typeid(const void *)) continue;
+        if (ecs::LookupComponent(type)) continue; // Skip types that are also components as they are defined above
         ecs::GetFieldType(type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
             std::string scn = SnakeCaseTypeName(TypeToString<T>());

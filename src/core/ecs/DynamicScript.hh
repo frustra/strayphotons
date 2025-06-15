@@ -21,41 +21,54 @@ namespace ecs {
         ScriptDefinition definition;
         const void *defaultContext = nullptr;
         void (*initFunc)(void *, ScriptState *) = nullptr;
+        void (*destroyFunc)(void *, ScriptState *) = nullptr;
         void (*onTickFunc)(void *, ScriptState *, void *, uint64_t, uint64_t) = nullptr;
         void (*onEventFunc)(void *, ScriptState *, void *, uint64_t, Event *) = nullptr;
         void (*prefabFunc)(const ScriptState *, void *, uint64_t, const sp::SceneRef *) = nullptr;
+
+        std::shared_ptr<void> &MaybeAllocAccess(ScriptState &state) const {
+            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            if (!ptr) {
+                std::shared_ptr<void> buffer(std::malloc(metadata.size), [](auto *ptr) {
+                    std::free(ptr);
+                });
+                return state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
+            }
+            return *ptr;
+        }
 
         const void *GetDefault() const override {
             return defaultContext;
         }
 
         void *AccessMut(ScriptState &state) const override {
+            // TODO: Script shared_ptr state is not locked by Tecs
             if (metadata.size == 0) return nullptr;
-            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
-            if (!ptr) {
-                std::shared_ptr<void> buffer(std::malloc(metadata.size), [](auto *ptr) {
-                    std::free(ptr);
-                });
-                ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
-            }
-            return ptr->get();
+            auto &ptr = MaybeAllocAccess(state);
+            return ptr.get();
         }
 
         const void *Access(const ScriptState &state) const override {
+            // TODO: Script shared_ptr state is not locked by Tecs
             const auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
             return ptr ? ptr->get() : GetDefault();
         }
 
         static void Init(ScriptState &state) {
-            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            ZoneScoped;
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) {
-                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
-                        std::free(ptr);
-                    });
-                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
-                }
-                if (dynamicScript->initFunc) dynamicScript->initFunc(ptr->get(), &state);
+                ZoneStr(dynamicScript->name);
+                auto &ptr = dynamicScript->MaybeAllocAccess(state);
+                if (dynamicScript->initFunc) dynamicScript->initFunc(ptr.get(), &state);
+            }
+        }
+
+        static void Destroy(ScriptState &state) {
+            ZoneScoped;
+            if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+                ZoneStr(dynamicScript->name);
+                auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+                if (ptr && dynamicScript->destroyFunc) dynamicScript->destroyFunc(ptr->get(), &state);
             }
         }
 
@@ -63,17 +76,13 @@ namespace ecs {
             const DynamicLock<ReadSignalsLock> &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            ZoneScoped;
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) {
-                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
-                        std::free(ptr);
-                    });
-                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
-                }
+                ZoneStr(dynamicScript->name);
+                auto &ptr = dynamicScript->MaybeAllocAccess(state);
                 if (dynamicScript->onTickFunc) {
                     ecs::DynamicLock<> dynLock = lock;
-                    dynamicScript->onTickFunc(ptr->get(),
+                    dynamicScript->onTickFunc(ptr.get(),
                         &state,
                         &dynLock,
                         (uint64_t)ent,
@@ -83,23 +92,21 @@ namespace ecs {
         }
 
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event) {
-            auto *ptr = std::any_cast<std::shared_ptr<void>>(&state.scriptData);
+            ZoneScoped;
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
-                if (!ptr) {
-                    std::shared_ptr<void> buffer(std::malloc(dynamicScript->metadata.size), [](auto *ptr) {
-                        std::free(ptr);
-                    });
-                    ptr = &state.scriptData.emplace<std::shared_ptr<void>>(std::move(buffer));
-                }
+                ZoneStr(dynamicScript->name);
+                auto &ptr = dynamicScript->MaybeAllocAccess(state);
                 if (dynamicScript->onEventFunc) {
                     ecs::DynamicLock<> dynLock = lock;
-                    dynamicScript->onEventFunc(ptr->get(), &state, &dynLock, (uint64_t)ent, &event);
+                    dynamicScript->onEventFunc(ptr.get(), &state, &dynLock, (uint64_t)ent, &event);
                 }
             }
         }
 
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
+            ZoneScoped;
             if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+                ZoneStr(dynamicScript->name);
                 if (dynamicScript->prefabFunc) {
                     ecs::DynamicLock<> dynLock = lock;
                     dynamicScript->prefabFunc(&state, &dynLock, (uint64_t)ent, &scene);
@@ -113,12 +120,14 @@ namespace ecs {
             const void *defaultContext,
             size_t contextSize,
             decltype(initFunc) initFunc,
+            decltype(destroyFunc) destroyFunc,
             decltype(onTickFunc) onTickFunc)
             : ScriptDefinitionBase(this->metadata), name(name), dynamicLib(std::move(lib)),
               metadata(typeid(void), contextSize, definition.name.c_str(), "DynamicScript"), definition(definition),
-              defaultContext(defaultContext), initFunc(initFunc), onTickFunc(onTickFunc) {
+              defaultContext(defaultContext), initFunc(initFunc), destroyFunc(destroyFunc), onTickFunc(onTickFunc) {
             this->definition.context = this;
             this->definition.initFunc = ScriptInitFunc(&Init);
+            this->definition.destroyFunc = ScriptDestroyFunc(&Destroy);
             this->definition.callback = OnTickFunc(&OnTick);
         }
 
@@ -128,12 +137,14 @@ namespace ecs {
             const void *defaultContext,
             size_t contextSize,
             decltype(initFunc) initFunc,
+            decltype(destroyFunc) destroyFunc,
             decltype(onEventFunc) onEventFunc)
             : ScriptDefinitionBase(this->metadata), name(name), dynamicLib(std::move(lib)),
               metadata(typeid(void), contextSize, name.c_str(), "DynamicScript"), definition(definition),
-              defaultContext(defaultContext), initFunc(initFunc), onEventFunc(onEventFunc) {
+              defaultContext(defaultContext), initFunc(initFunc), destroyFunc(destroyFunc), onEventFunc(onEventFunc) {
             this->definition.context = this;
             this->definition.initFunc = ScriptInitFunc(&Init);
+            this->definition.destroyFunc = ScriptDestroyFunc(&Destroy);
             this->definition.callback = OnEventFunc(&OnEvent);
         }
 
@@ -151,15 +162,12 @@ namespace ecs {
         }
 
         void Register() const {
-            if (onTickFunc || onEventFunc) {
-                GetScriptDefinitions().RegisterScript(ScriptDefinition(this->definition));
-            }
-            if (prefabFunc) {
-                GetScriptDefinitions().RegisterPrefab(ScriptDefinition(this->definition));
-            }
+            GetScriptDefinitions().RegisterScript(ScriptDefinition(this->definition));
         }
 
         void Reload() {
+            ZoneScoped;
+            ZoneStr(name);
             dynamicLib.reset();
             auto newScript = Load(name);
             if (!newScript) {
@@ -171,12 +179,15 @@ namespace ecs {
             definition.context = this;
             defaultContext = newScript->defaultContext;
             initFunc = newScript->initFunc;
+            destroyFunc = newScript->destroyFunc;
             onTickFunc = newScript->onTickFunc;
             onEventFunc = newScript->onEventFunc;
             prefabFunc = newScript->prefabFunc;
         }
 
         static std::shared_ptr<DynamicScript> Load(const std::string &name) {
+            ZoneScoped;
+            ZoneStr(name);
             auto nativeName = dynalo::to_native_name(name);
             dynalo::library dynamicLib("./" + nativeName);
             ScriptDefinition definition{};
@@ -195,6 +206,8 @@ namespace ecs {
 
             auto initFunc = dynamicLib.get_function<std::remove_pointer_t<decltype(DynamicScript::initFunc)>>(
                 "sp_script_init");
+            auto destroyFunc = dynamicLib.get_function<std::remove_pointer_t<decltype(DynamicScript::destroyFunc)>>(
+                "sp_script_destroy");
             auto onTickFunc = dynamicLib.get_function<std::remove_pointer_t<decltype(DynamicScript::onTickFunc)>>(
                 "sp_script_on_tick");
             auto onEventFunc = dynamicLib.get_function<std::remove_pointer_t<decltype(DynamicScript::onEventFunc)>>(
@@ -215,6 +228,7 @@ namespace ecs {
                     defaultContext,
                     contextSize,
                     initFunc,
+                    destroyFunc,
                     onTickFunc);
             case ScriptType::EventScript:
                 if (!onEventFunc) {
@@ -227,13 +241,17 @@ namespace ecs {
                     defaultContext,
                     contextSize,
                     initFunc,
+                    destroyFunc,
                     onEventFunc);
             case ScriptType::PrefabScript:
                 if (!prefabFunc) {
                     Errorf("Failed to load %s(%s), sp_script_prefab() is missing", nativeName, definition.name);
                     return nullptr;
                 }
-                if (initFunc) Warnf("%s(%s) defines unsupported sp_script_init()", nativeName, definition.name);
+                if (initFunc)
+                    Warnf("%s(%s) PrefabScript defines unsupported sp_script_init()", nativeName, definition.name);
+                if (destroyFunc)
+                    Warnf("%s(%s) PrefabScript defines unsupported destroyFunc()", nativeName, definition.name);
                 return std::make_shared<DynamicScript>(name,
                     std::move(dynamicLib),
                     definition,

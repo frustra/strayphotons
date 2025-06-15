@@ -24,7 +24,7 @@
 				"parameters": {
 					"source": "interactive"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -63,7 +63,7 @@
 				"volume": 0.5
 			},
 			"script": {
-				"onTick": "sound_occlusion"
+				"name": "sound_occlusion"
 			}
 		},
 		{
@@ -84,7 +84,7 @@
 				"parameters": {
 					"source": "world_gui"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -94,6 +94,16 @@
 			},
 			"renderable": {
 				"model": "box"
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.5, 0.5, 0.5]
+				},
+				"type": "Kinematic"
+			},
+			"script": {
+				"load": "hello_world",
+				"name": "hello_world"
 			}
 		},
 		{
@@ -114,7 +124,7 @@
 				"parameters": {
 					"source": "interactive"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -258,7 +268,7 @@
 				"parameters": {
 					"source": "ship_airlock"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -275,10 +285,10 @@
 					"parameters": {
 						"source": "button"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "event_gate_by_signal",
+					"name": "event_gate_by_signal",
 					"parameters": {
 						"gate_expr": "airlock_in_button_sensor.Icosphere/value",
 						"input_event": "/button/press",
@@ -299,7 +309,7 @@
 					"model": "sensor",
 					"physics": "Static"
 				},
-				"prefab": "gltf"
+				"name": "prefab_gltf"
 			}
 		},
 		{
@@ -332,7 +342,7 @@
 				"parameters": {
 					"source": "world_gui"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -346,7 +356,7 @@
 				"model": "red_led"
 			},
 			"script": {
-				"onTick": "component_from_signal",
+				"name": "component_from_signal",
 				"parameters": {
 					"renderable.emissive": "airlock_in_button_sensor.Icosphere/value"
 				}
@@ -375,7 +385,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -390,7 +400,7 @@
 				"parameters": {
 					"source": "articulating_arm"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -403,7 +413,7 @@
 				"parameters": {
 					"model": "laser-plug-mount"
 				},
-				"prefab": "gltf"
+				"name": "prefab_gltf"
 			}
 		},
 		{
@@ -414,7 +424,7 @@
 				"parameters": {
 					"model": "laser-plug"
 				},
-				"prefab": "gltf"
+				"name": "prefab_gltf"
 			}
 		},
 		{
@@ -438,7 +448,7 @@
 				"parameters": {
 					"source": "articulating_arm"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -451,7 +461,7 @@
 				"parameters": {
 					"model": "round-mirror-mounted"
 				},
-				"prefab": "gltf"
+				"name": "prefab_gltf"
 			}
 		},
 		{
@@ -476,7 +486,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -491,7 +501,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -506,7 +516,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -521,7 +531,7 @@
 				"parameters": {
 					"source": "duck"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -548,10 +558,10 @@
 					"parameters": {
 						"source": "interactive"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug"
+					"name": "magnetic_plug"
 				}
 			]
 		},
@@ -565,7 +575,7 @@
 				"extents": [128, 64, 180]
 			},
 			"script": {
-				"onTick": "voxel_controller",
+				"name": "voxel_controller",
 				"parameters": {
 					"alignment_target": "station-center:elevator1",
 					"follow_target": "player:player",

@@ -488,6 +488,7 @@ namespace sp {
 
                 glm::vec3 velocityRelativePlayer, displacement;
                 if (userData->onGround || inGround) {
+                    // TODO: Account for friction and mass when applying state.deltaXP velocity
                     velocityRelativePlayer = glm::inverse(transform.GetRotation()) * PxVec3ToGlmVec3(state.deltaXP);
                     velocityRelativePlayer += glm::vec3(movementInput.x, 0, movementInput.z);
                     auto relative = velocityRelativePlayer * dt;
@@ -552,6 +553,7 @@ namespace sp {
                 }
 
                 if (moveResult & PxControllerCollisionFlag::eCOLLISION_DOWN || onGround) {
+                    // TODO: Account for friction and mass when applying state.deltaXP velocity
                     userData->actorData.velocity = PxVec3ToGlmVec3(state.deltaXP);
                     userData->onGround = true;
                     // Logf("OnGround, Vel: %s", glm::to_string(userData->actorData.velocity));

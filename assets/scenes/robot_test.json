@@ -271,7 +271,7 @@
 				"translate": [0, 0.2, -0.25]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "button"
 				}
@@ -296,7 +296,7 @@
 				"parameters": {
 					"source": "interactive"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -318,7 +318,7 @@
 				"parameters": {
 					"source": "interactive"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -340,7 +340,7 @@
 				"parameters": {
 					"source": "interactive"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{

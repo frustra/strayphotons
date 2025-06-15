@@ -13,7 +13,7 @@
 		{
 			"name": "housing",
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "spotlight-01",
 					"render": true

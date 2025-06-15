@@ -13,18 +13,18 @@
 		},
 		"script": [
 			{
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "mcube",
 					"render": true
 				}
 			},
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			},
 			{
-				"onTick": "magnetic_plug"
+				"name": "magnetic_plug"
 			}
 		],
 		"physics_joints": [],
@@ -38,7 +38,7 @@
 				"parent": "scoperoot"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		}

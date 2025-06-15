@@ -34,11 +34,6 @@ namespace ecs {
         scripts.emplace(definition.name, definition);
     }
 
-    void ScriptDefinitions::RegisterPrefab(ScriptDefinition &&definition) {
-        Assertf(!prefabs.contains(definition.name), "Prefab definition already exists: %s", definition.name);
-        prefabs.emplace(definition.name, definition);
-    }
-
     static std::atomic_size_t nextInstanceId;
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
@@ -53,6 +48,11 @@ namespace ecs {
     }
 
     ScriptManager::ScriptManager() {
+        funcs.Register<std::string>("loadscript",
+            "Loads a new dynamic library script by name",
+            [this](const std::string &name) {
+                LoadDynamicScript(name);
+            });
         funcs.Register("reloadscripts", "Reloads all dynamically loaded scripts", [this]() {
             ReloadDynamicScripts();
         });
@@ -128,20 +128,25 @@ namespace ecs {
             if (runInit) {
                 newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
                 if (newState.definition.initFunc) (*newState.definition.initFunc)(newState);
+                newState.initialized = true;
             }
 
             scriptStatePtr = &newState;
         }
         return std::shared_ptr<ScriptState>(scriptStatePtr, [&scriptSet](ScriptState *state) {
             std::lock_guard l(scriptSet.mutex);
-            scriptSet.freeScriptList.push(state->index);
-            scriptSet.scripts[state->index] = {};
+            if (state->index < scriptSet.scripts.size()) {
+                if (state->initialized && state->definition.destroyFunc) (*state->definition.destroyFunc)(*state);
+                scriptSet.freeScriptList.push(state->index);
+                scriptSet.scripts[state->index] = {};
+            }
         });
     }
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const EntityScope &scope,
-        const ScriptDefinition &definition) {
-        return NewScriptInstance(ScriptState(definition, scope), false);
+        const ScriptDefinition &definition,
+        bool runInit) {
+        return NewScriptInstance(ScriptState(definition, scope), runInit);
     }
 
     std::shared_ptr<DynamicScript> ScriptManager::LoadDynamicScript(const std::string &name) {
@@ -182,16 +187,10 @@ namespace ecs {
                 dynamicScript->definition.type);
         }
         for (auto &[oldDef, _] : updateList) {
-            auto &scriptList = oldDef.type == ScriptType::PrefabScript ? GetScriptDefinitions().prefabs
-                                                                       : GetScriptDefinitions().scripts;
-            scriptList.erase(oldDef.name);
+            GetScriptDefinitions().scripts.erase(oldDef.name);
         }
         for (auto &[_, newDef] : updateList) {
-            if (newDef.type == ScriptType::PrefabScript) {
-                GetScriptDefinitions().RegisterPrefab(std::move(newDef));
-            } else {
-                GetScriptDefinitions().RegisterScript(std::move(newDef));
-            }
+            GetScriptDefinitions().RegisterScript(std::move(newDef));
         }
         for (size_t i = 0; i < scripts.size(); i++) {
             scripts.at(scripts.size() - i - 1).mutex.unlock();

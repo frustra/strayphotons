@@ -11,7 +11,7 @@
 			"type": "Static"
 		},
 		"script": {
-			"prefab": "tile",
+			"name": "prefab_tile",
 			"parameters": {
 				"surface": "table/breadboard/surface",
 				"edge": "table/breadboard/edge",

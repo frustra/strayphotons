@@ -6,7 +6,7 @@
 				"parent": "scoperoot"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "airlock",
 					"render": true,
@@ -37,7 +37,7 @@
 				"door_open": "scoperoot/out_signal"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "slide_door" }
 			}
 		},
@@ -51,7 +51,7 @@
 				"door_open": "scoperoot/in_signal"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "slide_door" }
 			}
 		},

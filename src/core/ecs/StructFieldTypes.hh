@@ -120,7 +120,9 @@ namespace ecs {
         XrEye,
 
         // Locks
-        Lock<Read<EventInput>>>;
+        Lock<Read<EventInput>>,
+        Lock<Read<TransformTree>>,
+        Lock<Write<TransformTree>>>;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>

@@ -2,13 +2,13 @@
 	"components": {
 		"script": [
 			{
-				"onTick": "interactive_object",
+				"name": "interactive_object",
 				"parameters": {
 					"disabled": true
 				}
 			},
 			{
-				"onTick": "magnetic_plug",
+				"name": "magnetic_plug",
 				"parameters": {
 					"disabled": true
 				}

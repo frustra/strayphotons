@@ -54,16 +54,16 @@
 		},
 		"script": [
 			{
-				"onTick": "speed_controlled_sound"
+				"name": "speed_controlled_sound"
 			},
 			{
-				"onTick": "signal_from_event",
+				"name": "signal_from_event",
 				"parameters": {
 					"outputs": ["animation_target"]
 				}
 			},
 			{
-				"onTick": "physics_debounce",
+				"name": "physics_debounce",
 				"parameters": {
 					"delay_frames": 1,
 					"input": "scoperoot/at_floor",
@@ -71,7 +71,7 @@
 				}
 			},
 			{
-				"onTick": "edge_trigger",
+				"name": "edge_trigger",
 				"parameters": {
 					"input_expr": "scoperoot/animation_complete && scoperoot/animation_target != scoperoot/requested_floor && door.lock/animation_state == 0",
 					"output_event": "/signal/set/animation_target",
@@ -298,7 +298,7 @@
 				"spot_angle": 50
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "spotlight" }
 			}
 		},
@@ -319,11 +319,11 @@
 			},
 			"script": [
 				{
-					"prefab": "template",
+					"name": "prefab_template",
 					"parameters": { "source": "slide_door" }
 				},
 				{
-					"onTick": "timer",
+					"name": "timer",
 					"parameters": {
 						"names": ["open_timer_up", "open_timer_down"]
 					}
@@ -347,7 +347,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "button"
 				}
@@ -370,7 +370,7 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "button"
 				}

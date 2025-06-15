@@ -236,7 +236,8 @@ void GenerateStructWithFields(S &out,
 }
 
 std::string ArgTypeToString(const ecs::TypeInfo &info) {
-    return (info.isConst ? "const " : "") + LookupCTypeName(info.type) + (info.isPointer ? " *" : "");
+    return (info.isConst ? "const " : "") + LookupCTypeName(info.type) +
+           (info.isPointer || info.isTecsLock ? " *" : "");
 }
 
 template<typename T, typename S>
@@ -391,7 +392,8 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 out << "    return ";
                 if (func.returnType.isReference) out << "&";
             } else {
-                out << "    *result = ";
+                out << "    *result = static_cast<";
+                out << LookupCTypeName(func.returnType.type) << ">(";
             }
             if (func.isStatic) {
                 out << TypeToString<T>() << "::" << func.name << "(";
@@ -403,7 +405,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 if (func.argTypes[i].isTecsLock) {
                     out << "(const " << TypeToString(func.argTypes[i].type) << " &)*tryLock" << i;
                 } else {
-                    if (!func.argTypes[i].isTrivial || func.argTypes[i].isReference) out << "*";
+                    if (func.argTypes[i].isReference) out << "*";
                     if (i < func.argDescs.size()) {
                         out << func.argDescs[i].name;
                     } else {
@@ -411,6 +413,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                     }
                 }
             }
+            if (!func.returnType.isTrivial) out << ")";
             out << ");" << std::endl;
             out << "}" << std::endl;
             out << std::endl;

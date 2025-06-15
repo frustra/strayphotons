@@ -7,7 +7,7 @@
 			"snap_angle": 45
 		},
 		"script": {
-			"onTick": "magnetic_socket"
+			"name": "magnetic_socket"
 		}
 	},
 	"entities": [

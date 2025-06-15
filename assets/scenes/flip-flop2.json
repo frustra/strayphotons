@@ -34,7 +34,7 @@
 				"parameters": {
 					"source": "station_segment"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -48,7 +48,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -64,10 +64,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.4_3.socket"
 					}
@@ -91,10 +91,10 @@
 					"parameters": {
 						"source": "blocks/splitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_4.socket"
 					}
@@ -121,10 +121,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.9_0.socket"
 					}
@@ -148,10 +148,10 @@
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.0_6.socket"
 					}
@@ -180,10 +180,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.8_4.socket"
 					}
@@ -207,10 +207,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_3.socket"
 					}
@@ -238,10 +238,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.10_6.socket"
 					}
@@ -261,10 +261,10 @@
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.4_10.socket"
 					}
@@ -283,7 +283,7 @@
 				"parameters": {
 					"source": "slide_door"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -306,10 +306,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.1_1.socket"
 					}
@@ -333,10 +333,10 @@
 					"parameters": {
 						"source": "blocks/splitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_2.socket"
 					}
@@ -360,10 +360,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_6.socket"
 					}
@@ -387,16 +387,16 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.5_6.socket"
 					}
 				},
 				{
-					"onTick": "charge_cell",
+					"name": "charge_cell",
 					"parameters": {
 						"charge_signal_b": "flip-flop2:charge_cell_0.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "flip-flop2:charge_cell_0.input-sensor.Icosphere/light_value_g",
@@ -425,10 +425,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_1.socket"
 					}
@@ -452,10 +452,10 @@
 					"parameters": {
 						"source": "blocks/splitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.4_6.socket"
 					}
@@ -479,10 +479,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.4_2.socket"
 					}
@@ -506,16 +506,16 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.2_6.socket"
 					}
 				},
 				{
-					"onTick": "charge_cell",
+					"name": "charge_cell",
 					"parameters": {
 						"charge_signal_b": "flip-flop2:charge_cell_1.input-sensor.Icosphere/light_value_b",
 						"charge_signal_g": "flip-flop2:charge_cell_1.input-sensor.Icosphere/light_value_g",
@@ -544,10 +544,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.3_6.socket"
 					}
@@ -571,10 +571,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.3_4.socket"
 					}
@@ -598,10 +598,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.6_0.socket"
 					}
@@ -625,10 +625,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.7_0.socket"
 					}
@@ -655,10 +655,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.7_1.socket"
 					}

@@ -5,7 +5,7 @@
 			"transform": {},
 			"script": [
 				{
-					"prefab": "gltf",
+					"name": "prefab_gltf",
 					"parameters": {
 						"model": "articulating-arm",
 						"render": true
@@ -62,14 +62,14 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -78,7 +78,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -118,14 +118,14 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -134,7 +134,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -175,18 +175,18 @@
 			},
 			"script": [
 				{
-					"prefab": "template",
+					"name": "prefab_template",
 					"parameters": { "source": "interactive" }
 				},
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -195,7 +195,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -242,14 +242,14 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -258,7 +258,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -296,14 +296,14 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -312,7 +312,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -352,14 +352,14 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -368,7 +368,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
@@ -411,18 +411,18 @@
 			},
 			"script": [
 				{
-					"prefab": "template",
+					"name": "prefab_template",
 					"parameters": { "source": "interactive" }
 				},
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"physics.angular_damping": "arm/locked_ratio * 100",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
 				{
-					"onTick": "physics_joint_from_event",
+					"name": "physics_joint_from_event",
 					"parameters": {
 						"lock": {
 							"target": "arm",
@@ -431,7 +431,7 @@
 					}
 				},
 				{
-					"onTick": "physics_edge_trigger",
+					"name": "physics_edge_trigger",
 					"parameters": {
 						"init_value": 0,
 						"input_expr": "arm/fix_joints",
