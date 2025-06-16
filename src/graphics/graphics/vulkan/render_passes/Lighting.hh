@@ -31,6 +31,7 @@ namespace sp::vulkan::renderer {
         void AddShadowPasses(RenderGraph &graph);
         void AddGelTextures(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
+        void AddVolumetricShadows(RenderGraph &graph);
 
         bool PreloadGelTextures(ecs::Lock<ecs::Read<ecs::Light>> lock);
 

@@ -595,6 +595,7 @@ namespace sp::vulkan {
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
+        lighting.AddVolumetricShadows(graph);
         transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
