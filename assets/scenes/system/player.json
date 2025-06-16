@@ -1,5 +1,6 @@
 {
 	"priority": "Player",
+	"libraries": "camera_view",
 	"entities": [
 		{
 			"name": "player",
@@ -60,8 +61,7 @@
 					}
 				},
 				{
-					"name": "camera_view2",
-					"library": "camera_view"
+					"name": "camera_view2"
 				}
 			]
 		},

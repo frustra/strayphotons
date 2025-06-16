@@ -19,6 +19,7 @@ namespace SceneManagerTests {
         static sp::SceneManager scenes;
         scenes.DisableGraphicsPreload();
         scenes.DisablePhysicsPreload();
+        scenes.DisableDynamicLibraries();
         return scenes;
     }
 

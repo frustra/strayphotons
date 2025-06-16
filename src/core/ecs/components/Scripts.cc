@@ -23,12 +23,6 @@ namespace ecs {
             return false;
         }
         const auto &srcObj = src.get<picojson::object>();
-        auto libraryIt = srcObj.find("library");
-        if (libraryIt != srcObj.end()) {
-            const auto &loadName = libraryIt->second.get<std::string>();
-            GetScriptManager().LoadDynamicLibrary(loadName);
-        }
-
         auto nameIt = srcObj.find("name");
         if (nameIt == srcObj.end()) {
             Errorf("Script is missing name");

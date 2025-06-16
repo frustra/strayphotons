@@ -49,8 +49,9 @@ namespace sp {
             const std::string &path,
             SceneType type,
             ScenePriority priority,
-            const ecs::SceneProperties &properties,
-            std::shared_ptr<const Asset> asset = nullptr);
+            std::shared_ptr<const Asset> asset = nullptr,
+            const ecs::SceneProperties &properties = {},
+            const std::vector<std::string> &libraries = {});
 
         // Should only be called from SceneManager thread
         ecs::Entity NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,

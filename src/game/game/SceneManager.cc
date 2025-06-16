@@ -162,8 +162,7 @@ namespace sp {
                                 sceneName,
                                 item.scenePath,
                                 SceneType::System,
-                                ScenePriority::System,
-                                ecs::SceneProperties{});
+                                ScenePriority::System);
                         }
                         stagedScenes.Register(sceneName, scene);
                         scenes[SceneType::System].emplace_back(scene);
@@ -701,6 +700,21 @@ namespace sp {
             }
         }
 
+        std::vector<std::string> libraries;
+        if (sceneObj.count("libraries")) {
+            if (json::Load(libraries, sceneObj["libraries"])) {
+                for (auto &libName : libraries) {
+                    if (enableDynamicLibraries) {
+                        ecs::GetScriptManager().LoadDynamicLibrary(libName);
+                    } else {
+                        Warnf("Skipping loading dynamic library: %s", libName);
+                    }
+                }
+            } else {
+                Errorf("Scene contains invalid libraries: %s", scenePath);
+            }
+        }
+
         std::vector<ecs::FlatEntity> entities;
         if (sceneObj.count("entities")) {
             auto &entityList = sceneObj["entities"];
@@ -729,7 +743,7 @@ namespace sp {
         }
 
         auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
-        auto scene = Scene::New(lock, sceneName, scenePath, sceneType, priority, sceneProperties, asset);
+        auto scene = Scene::New(lock, sceneName, scenePath, sceneType, priority, asset, sceneProperties, libraries);
 
         std::vector<ecs::Entity> scriptEntities;
         for (auto &flatEnt : entities) {
@@ -826,7 +840,6 @@ namespace sp {
             bindingConfig->path.string(),
             SceneType::System,
             ScenePriority::Bindings,
-            {},
             bindingConfig);
 
         for (auto &flatEnt : entities) {

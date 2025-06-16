@@ -80,6 +80,10 @@ namespace sp {
             enablePhysicsPreload = false;
         }
 
+        void DisableDynamicLibraries() {
+            enableDynamicLibraries = false;
+        }
+
         static std::string_view GetSceneName(std::string_view scenePath);
 
     private:
@@ -135,6 +139,7 @@ namespace sp {
         std::atomic_flag graphicsPreload, physicsPreload;
         bool enableGraphicsPreload = true;
         bool enablePhysicsPreload = true;
+        bool enableDynamicLibraries = true;
 
         LockFreeMutex activeSceneMutex;
         std::vector<SceneRef> activeSceneCache;

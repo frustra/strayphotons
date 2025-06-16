@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     sp::SceneManager scenes;
     scenes.DisableGraphicsPreload();
     scenes.DisablePhysicsPreload();
+    scenes.DisableDynamicLibraries();
     scenes.QueueActionAndBlock(sp::SceneAction::LoadScene, sceneName);
     scenes.QueueActionAndBlock(sp::SceneAction::SaveStagingScene, sceneName);
     return 0;

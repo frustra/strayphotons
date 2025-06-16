@@ -271,8 +271,10 @@ namespace sp {
             picojson::object sceneObj(sceneOrderFunc);
             static const SceneProperties defaultProperties = {};
             static const ScenePriority defaultPriority = ScenePriority::Scene;
+            static const std::vector<std::string> defaultLibraries = {};
             json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
             json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
+            json::SaveIfChanged(scope, sceneObj, "libraries", scene->data->libraries, &defaultLibraries);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
             auto scenePath = scene->asset->path;
@@ -363,6 +365,7 @@ namespace sp {
         };
         picojson::object sceneObj(sceneOrderFunc);
         json::Save(scope, sceneObj["priority"], ScenePriority::SaveGame);
+        // TODO: Save currently loaded libraries
         sceneObj["entities"] = picojson::value(entities);
         auto val = picojson::value(sceneObj);
         std::filesystem::path scenePath;
