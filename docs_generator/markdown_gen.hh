@@ -289,13 +289,14 @@ struct MarkdownContext {
                     magic_enum::enum_name(pageType),
                     typeid(ListType).name());
 
-                const void *defaultScript = entry.second.context->GetDefault();
-                for (auto &field : entry.second.context->metadata.fields) {
+                auto ctx = entry.second.context.lock();
+                const void *defaultScript = ctx->GetDefault();
+                for (auto &field : ctx->metadata.fields) {
                     docs.AddField(field, field.Access(defaultScript));
                 }
 
                 name = &entry.first;
-                metadata = &entry.second.context->metadata;
+                metadata = &ctx->metadata;
             }
 
             file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;

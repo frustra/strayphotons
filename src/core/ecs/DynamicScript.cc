@@ -8,23 +8,21 @@
 #include "DynamicScript.hh"
 
 namespace ecs {
-    DynamicScriptContext::DynamicScriptContext(const DynamicScript &script) : script(&script) {
-        if (script.newContextFunc) {
-            Assertf(script.freeContextFunc,
+    DynamicScriptContext::DynamicScriptContext(const std::shared_ptr<DynamicScript> &script)
+        : context(nullptr), script(script) {
+        if (script && script->newContextFunc) {
+            Assertf(script->freeContextFunc,
                 "Cannot construct context for %s(%s) without sp_script_free_context()",
-                script.name,
-                script.definition.name);
-            context = script.newContextFunc(nullptr);
-        } else {
-            context = nullptr;
+                script->name,
+                script->definition.name);
+            context = script->newContextFunc(nullptr);
         }
     }
 
-    DynamicScriptContext::DynamicScriptContext(const DynamicScriptContext &other) : script(other.script) {
+    DynamicScriptContext::DynamicScriptContext(const DynamicScriptContext &other)
+        : context(nullptr), script(other.script) {
         if (other.script && other.context) {
             context = other.script->newContextFunc(other.context);
-        } else {
-            context = nullptr;
         }
     }
 
@@ -52,7 +50,10 @@ namespace ecs {
 
     DynamicScriptContext &DynamicScript::MaybeAllocContext(ScriptState &state) const {
         auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
-        if (!ptr) return state.scriptData.emplace<DynamicScriptContext>(*this);
+        if (!ptr) {
+            return state.scriptData.emplace<DynamicScriptContext>(
+                std::dynamic_pointer_cast<DynamicScript>(state.definition.context.lock()));
+        }
         return *ptr;
     }
 
@@ -72,7 +73,8 @@ namespace ecs {
 
     void DynamicScript::Init(ScriptState &state) {
         ZoneScoped;
-        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->initFunc) dynamicScript->initFunc(ptr.context, &state);
@@ -81,7 +83,8 @@ namespace ecs {
 
     void DynamicScript::Destroy(ScriptState &state) {
         ZoneScoped;
-        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->name);
             auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
             if (ptr && dynamicScript->destroyFunc) dynamicScript->destroyFunc(ptr->context, &state);
@@ -93,7 +96,8 @@ namespace ecs {
         Entity ent,
         chrono_clock::duration interval) {
         ZoneScoped;
-        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->onTickFunc) {
@@ -109,7 +113,8 @@ namespace ecs {
 
     void DynamicScript::OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event) {
         ZoneScoped;
-        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->onEventFunc) {
@@ -121,7 +126,8 @@ namespace ecs {
 
     void DynamicScript::Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
         ZoneScoped;
-        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(state.definition.context)) {
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->name);
             if (dynamicScript->prefabFunc) {
                 ecs::DynamicLock<> dynLock = lock;
@@ -134,7 +140,6 @@ namespace ecs {
         : ScriptDefinitionBase(this->metadata), name(name),
           metadata(typeid(void), 0, definition.name.c_str(), "DynamicScript"), definition(definition),
           dynamicLib(std::move(lib)) {
-        this->definition.context = this;
         switch (definition.type) {
         case ScriptType::LogicScript:
         case ScriptType::PhysicsScript:
@@ -162,16 +167,19 @@ namespace ecs {
     void DynamicScript::Reload() {
         ZoneScoped;
         ZoneStr(name);
+        defaultContext = {}; // Free context with old library version
         dynamicLib.reset();
         auto newScript = Load(name);
         if (!newScript) {
             Errorf("Failed to reload %s(%s)", dynalo::to_native_name(name), definition.name);
+            // Replace the default context if the script failed to load
+            defaultContext = DynamicScriptContext(newScript);
             return;
         }
         dynamicLib = std::move(newScript->dynamicLib);
         definition = newScript->definition;
-        definition.context = this;
-        defaultContext = std::move(DynamicScriptContext(*newScript));
+        definition.context = newScript;
+        defaultContext = DynamicScriptContext(newScript);
         newContextFunc = newScript->newContextFunc;
         freeContextFunc = newScript->freeContextFunc;
         initFunc = newScript->initFunc;
@@ -199,6 +207,7 @@ namespace ecs {
             new DynamicScript(name, std::move(dynamicLib), definition));
 
         DynamicScript &script = *scriptPtr;
+        script.definition.context = scriptPtr;
         script.LoadFunc(script.newContextFunc, "sp_script_new_context");
         script.LoadFunc(script.freeContextFunc, "sp_script_free_context");
         script.LoadFunc(script.initFunc, "sp_script_init");
@@ -243,7 +252,7 @@ namespace ecs {
             return nullptr;
         }
 
-        script.defaultContext = std::move(DynamicScriptContext(script));
+        script.defaultContext = DynamicScriptContext(scriptPtr);
         return scriptPtr;
     }
 } // namespace ecs

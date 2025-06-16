@@ -43,14 +43,15 @@ namespace ecs {
 
         auto newState = std::make_shared<ScriptState>(definitionIt->second);
         ScriptState &state = *newState;
-        if (state.definition.context) {
+        auto ctx = state.definition.context.lock();
+        if (ctx) {
             // Access will initialize default parameters
-            void *dataPtr = state.definition.context->AccessMut(state);
+            void *dataPtr = ctx->AccessMut(state);
             Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
 
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
-                for (auto &field : state.definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (!field.Load(dataPtr, it->second)) {
                         Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
                         return false;
@@ -76,21 +77,22 @@ namespace ecs {
             auto &obj = dst.get<picojson::object>();
             obj["name"] = picojson::value(state.definition.name);
 
-            if (state.definition.context) {
+            auto ctx = state.definition.context.lock();
+            if (ctx) {
                 std::lock_guard l(GetScriptManager().scripts[state.definition.type].mutex);
 
-                const void *dataPtr = state.definition.context->Access(state);
-                const void *defaultPtr = state.definition.context->GetDefault();
+                const void *dataPtr = ctx->Access(state);
+                const void *defaultPtr = ctx->GetDefault();
                 Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                 bool changed = false;
-                for (auto &field : state.definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (!field.Compare(dataPtr, defaultPtr)) {
                         changed = true;
                         break;
                     }
                 }
                 if (changed) {
-                    for (auto &field : state.definition.context->metadata.fields) {
+                    for (auto &field : ctx->metadata.fields) {
                         field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
@@ -106,13 +108,15 @@ namespace ecs {
             // Create a new script instance so references to the old scope remain valid.
             auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
 
-            if (oldState.definition.context) {
-                const void *defaultPtr = oldState.definition.context->GetDefault();
-                const void *oldPtr = oldState.definition.context->Access(oldState);
-                void *newPtr = newState->definition.context->AccessMut(*newState);
+            auto oldCtx = oldState.definition.context.lock();
+            auto newCtx = newState->definition.context.lock();
+            if (oldCtx) {
+                const void *defaultPtr = oldCtx->GetDefault();
+                const void *oldPtr = oldCtx->Access(oldState);
+                void *newPtr = newCtx->AccessMut(*newState);
                 Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
                 Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
-                for (auto &field : oldState.definition.context->metadata.fields) {
+                for (auto &field : oldCtx->metadata.fields) {
                     field.Apply(newPtr, oldPtr, defaultPtr);
                     field.SetScope(newPtr, scope);
                 }
@@ -131,14 +135,20 @@ namespace ecs {
     }
 
     bool ScriptState::operator==(const ScriptState &other) const {
-        if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
+        if (definition.name.empty()) return instanceId == other.instanceId;
         if (definition.name != other.definition.name) return false;
-        if (definition.context != other.definition.context) return false;
+        // Compare (definition.context != other.definition.context) without locking both pointers
+        if (definition.context.owner_before(other.definition.context) ||
+            other.definition.context.owner_before(definition.context)) {
+            return false;
+        }
 
-        const void *aPtr = definition.context->Access(*this);
-        const void *bPtr = definition.context->Access(other);
+        auto ctx = definition.context.lock();
+        if (!ctx) return instanceId == other.instanceId;
+        const void *aPtr = ctx->Access(*this);
+        const void *bPtr = ctx->Access(other);
         Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
-        for (auto &field : definition.context->metadata.fields) {
+        for (auto &field : ctx->metadata.fields) {
             if (!field.Compare(aPtr, bPtr)) return false;
         }
         return true;

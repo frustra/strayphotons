@@ -16,21 +16,19 @@
 namespace ecs {
     class DynamicScript;
 
-    class DynamicScriptContext {
+    class DynamicScriptContext : public sp::NonMoveable {
     public:
         DynamicScriptContext() : context(nullptr), script(nullptr) {}
-        DynamicScriptContext(const DynamicScript &script);
+        DynamicScriptContext(const std::shared_ptr<DynamicScript> &script);
         DynamicScriptContext(const DynamicScriptContext &other);
-        // DynamicScriptContext(DynamicScriptContext &&other) = default;
         ~DynamicScriptContext();
 
         DynamicScriptContext &operator=(const DynamicScriptContext &other);
-        // DynamicScriptContext &operator=(DynamicScriptContext &&other) = default;
 
-        void *context;
+        void *context = nullptr;
 
     private:
-        const DynamicScript *script;
+        std::shared_ptr<DynamicScript> script = nullptr;
     };
 
     class DynamicScript final : public ScriptDefinitionBase, sp::NonMoveable {

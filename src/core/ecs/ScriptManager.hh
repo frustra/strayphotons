@@ -43,10 +43,11 @@ namespace ecs {
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
-            if (definition.context) {
-                void *dataPtr = definition.context->AccessMut(*this);
+            auto ctx = definition.context.lock();
+            if (ctx) {
+                void *dataPtr = ctx->AccessMut(*this);
                 Assertf(dataPtr, "ScriptState::SetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (field.name == name) {
                         field.Access<T>(dataPtr) = value;
                         break;
@@ -59,10 +60,11 @@ namespace ecs {
 
         template<typename T>
         T GetParam(std::string name) const {
-            if (definition.context) {
-                const void *dataPtr = definition.context->Access(*this);
+            auto ctx = definition.context.lock();
+            if (ctx) {
+                const void *dataPtr = ctx->Access(*this);
                 Assertf(dataPtr, "ScriptState::GetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (field.name == name) {
                         return field.Access<T>(dataPtr);
                     }

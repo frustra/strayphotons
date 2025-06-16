@@ -49,10 +49,6 @@ namespace ecs {
         virtual const void *GetDefault() const = 0;
         virtual void *AccessMut(ScriptState &state) const = 0;
         virtual const void *Access(const ScriptState &state) const = 0;
-
-        size_t GetSize() const {
-            return metadata.size;
-        }
     };
 
     static StructMetadata MetadataScriptDefinitionBase(typeid(ScriptDefinitionBase),
@@ -60,17 +56,16 @@ namespace ecs {
         "ScriptDefinitionBase",
         "A generic script context object base class",
         StructFunction::New("AccessMut", "Return a pointer to the script state data", &ScriptDefinitionBase::AccessMut),
-        StructFunction::New("Access", "Return a const pointer to the script state data", &ScriptDefinitionBase::Access),
-        StructFunction::New("GetSize",
-            "Return the size of the script state data in bytes",
-            &ScriptDefinitionBase::GetSize));
+        StructFunction::New("Access",
+            "Return a const pointer to the script state data",
+            &ScriptDefinitionBase::Access));
 
     struct ScriptDefinition {
         std::string name;
         ScriptType type;
         std::vector<std::string> events;
         bool filterOnEvent = false;
-        ScriptDefinitionBase *context = nullptr;
+        std::weak_ptr<ScriptDefinitionBase> context;
         std::optional<ScriptInitFunc> initFunc;
         std::optional<ScriptDestroyFunc> destroyFunc;
         ScriptCallback callback;
@@ -85,10 +80,7 @@ namespace ecs {
         StructField::New("events", "A list of the names of events this script can receive", &ScriptDefinition::events),
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",
-            &ScriptDefinition::filterOnEvent),
-        StructField::New("context",
-            "A pointer to the script context object defining this script",
-            &ScriptDefinition::context));
+            &ScriptDefinition::filterOnEvent));
 
     struct ScriptDefinitions {
         std::map<std::string, ScriptDefinition> scripts;

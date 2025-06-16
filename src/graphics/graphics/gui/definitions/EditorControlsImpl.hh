@@ -335,10 +335,11 @@ namespace sp {
                     ImGui::EndCombo();
                 }
 
-                if (state.definition.context) {
-                    void *dataPtr = state.definition.context->AccessMut(state);
+                auto ctx = state.definition.context.lock();
+                if (ctx) {
+                    void *dataPtr = ctx->AccessMut(state);
                     Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
-                    auto &fields = state.definition.context->metadata.fields;
+                    auto &fields = ctx->metadata.fields;
                     if (!fields.empty()) {
                         ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
                                                 ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
@@ -396,28 +397,28 @@ namespace sp {
             if (ImGui::Button("Add Prefab")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, nullptr, {}, {}, PrefabFunc()});
+                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, {}, {}, {}, PrefabFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add LogicScript")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, nullptr, {}, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, OnTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Physics Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, nullptr, {}, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, OnTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Event Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::EventScript, {}, true, nullptr, {}, {}, OnEventFunc()});
+                    ScriptDefinition{"", ScriptType::EventScript, {}, true, {}, {}, {}, OnEventFunc()});
                 changed = true;
             }
         }
