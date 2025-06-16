@@ -7,6 +7,7 @@
 
 target_sources(${PROJECT_CORE_LIB} PRIVATE
     Components.cc
+    DynamicScript.cc
     Ecs.cc
     EntityRef.cc
     EntityReferenceManager.cc

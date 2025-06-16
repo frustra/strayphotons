@@ -287,9 +287,9 @@ namespace sp {
                 scriptLabel = "OnEvent: " + state.definition.name;
                 break;
             case ScriptType::PrefabScript:
-                if (state.definition.name == "template") {
+                if (state.definition.name == "prefab_template") {
                     scriptLabel = "Template: " + state.GetParam<std::string>("source");
-                } else if (state.definition.name == "gltf") {
+                } else if (state.definition.name == "prefab_gltf") {
                     scriptLabel = "Gltf: " + state.GetParam<std::string>("model");
                 } else {
                     scriptLabel = "Prefab: " + state.definition.name;

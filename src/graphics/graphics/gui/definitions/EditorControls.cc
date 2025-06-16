@@ -344,9 +344,9 @@ namespace sp {
                                     scriptInstance = prefabScripts.FindScript(sceneInfo.prefabScriptId);
                                 }
                                 if (scriptInstance) {
-                                    if (scriptInstance->definition.name == "gltf") {
+                                    if (scriptInstance->definition.name == "prefab_gltf") {
                                         sourceName = scriptInstance->GetParam<std::string>("model") + " - Gltf Model";
-                                    } else if (scriptInstance->definition.name == "template") {
+                                    } else if (scriptInstance->definition.name == "prefab_template") {
                                         sourceName = scriptInstance->GetParam<std::string>("source") + " - Template";
                                     } else {
                                         sourceName = scriptInstance->definition.name + " - Prefab";

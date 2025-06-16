@@ -38,8 +38,8 @@ namespace ecs {
     enum class ScriptType {
         LogicScript = 0,
         PhysicsScript,
-        PrefabScript,
         EventScript,
+        PrefabScript,
     };
 
     struct ScriptDefinitionBase {

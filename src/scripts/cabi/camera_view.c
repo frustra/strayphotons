@@ -39,9 +39,15 @@ SP_EXPORT size_t sp_script_get_definition(sp_script_definition_t *output) {
     return sizeof(script_camera_view_t);
 }
 
-SP_EXPORT const void *sp_script_get_default_context() {
-    static script_camera_view_t defaultContext;
-    return &defaultContext;
+SP_EXPORT script_camera_view_t *sp_script_new_context(const script_camera_view_t *existing) {
+    script_camera_view_t *ctx = malloc(sizeof(script_camera_view_t));
+    ctx->foobar = existing ? existing->foobar : 0;
+    ctx->started = existing ? existing->started : false;
+    return ctx;
+}
+
+SP_EXPORT void sp_script_free_context(script_camera_view_t *ctx) {
+    free(ctx);
 }
 
 SP_EXPORT void sp_script_init(void *context, sp_script_state_t *state) {

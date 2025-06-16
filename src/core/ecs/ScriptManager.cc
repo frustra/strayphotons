@@ -51,7 +51,7 @@ namespace ecs {
         funcs.Register<std::string>("loadscript",
             "Loads a new dynamic library script by name",
             [this](const std::string &name) {
-                LoadDynamicScript(name);
+                LoadDynamicLibrary(name);
             });
         funcs.Register("reloadscripts", "Reloads all dynamically loaded scripts", [this]() {
             ReloadDynamicScripts();
@@ -149,7 +149,7 @@ namespace ecs {
         return NewScriptInstance(ScriptState(definition, scope), runInit);
     }
 
-    std::shared_ptr<DynamicScript> ScriptManager::LoadDynamicScript(const std::string &name) {
+    std::shared_ptr<DynamicScript> ScriptManager::LoadDynamicLibrary(const std::string &name) {
         std::lock_guard l(dynamicScriptMutex);
         auto it = dynamicScripts.find(name);
         if (it != dynamicScripts.end()) {

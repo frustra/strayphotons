@@ -23,10 +23,10 @@ namespace ecs {
             return false;
         }
         const auto &srcObj = src.get<picojson::object>();
-        auto loadIt = srcObj.find("load");
-        if (loadIt != srcObj.end()) {
-            const auto &loadName = loadIt->second.get<std::string>();
-            GetScriptManager().LoadDynamicScript(loadName);
+        auto libraryIt = srcObj.find("library");
+        if (libraryIt != srcObj.end()) {
+            const auto &loadName = libraryIt->second.get<std::string>();
+            GetScriptManager().LoadDynamicLibrary(loadName);
         }
 
         auto nameIt = srcObj.find("name");
@@ -149,9 +149,9 @@ namespace ecs {
         if (definition.name != other.definition.name) return false;
         if (definition.callback.index() != other.definition.callback.index()) return false;
         if (std::get_if<PrefabFunc>(&definition.callback)) {
-            if (definition.name == "gltf") {
+            if (definition.name == "prefab_gltf") {
                 return GetParam<string>("model") == other.GetParam<string>("model");
-            } else if (definition.name == "template") {
+            } else if (definition.name == "prefab_template") {
                 return GetParam<string>("source") == other.GetParam<string>("source");
             }
         }

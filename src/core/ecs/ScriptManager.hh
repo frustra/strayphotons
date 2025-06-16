@@ -25,7 +25,7 @@ namespace sp {
 
 namespace ecs {
     class ScriptInstance;
-    struct DynamicScript;
+    class DynamicScript;
 
     class ScriptState {
     public:
@@ -138,7 +138,7 @@ namespace ecs {
             const ScriptDefinition &definition,
             bool runInit = false);
 
-        std::shared_ptr<DynamicScript> LoadDynamicScript(const std::string &name);
+        std::shared_ptr<DynamicScript> LoadDynamicLibrary(const std::string &name);
         void ReloadDynamicScripts();
 
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);

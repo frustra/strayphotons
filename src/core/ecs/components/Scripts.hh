@@ -58,7 +58,7 @@ namespace ecs {
         R"(
 Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
 Scripts can have 2 types: 
-- **Prefab scripts** such as "template" will run during scene load.
+- **Prefab scripts** prefixed with "prefab_" will run during scene load.
 - **Runtime scripts** (or OnTick scripts) will run during in GameLogic thread during its frame.  
     Runtime scripts starting with "physics_" will run in the Physics thread just before simulation.  
     Some OnTick scripts may also internally define event filters to only run when events are received.

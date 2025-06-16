@@ -61,7 +61,7 @@
 				},
 				{
 					"name": "camera_view2",
-					"load": "camera_view"
+					"library": "camera_view"
 				}
 			]
 		},

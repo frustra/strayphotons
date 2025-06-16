@@ -102,7 +102,7 @@
 				"type": "Kinematic"
 			},
 			"script": {
-				"load": "hello_world",
+				"library": "hello_world",
 				"name": "hello_world"
 			}
 		},

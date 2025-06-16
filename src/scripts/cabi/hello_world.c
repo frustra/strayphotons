@@ -24,7 +24,10 @@
     #define SP_EXPORT __attribute__((__visibility__("default")))
 #endif
 
+static size_t instanceCount = 0;
+
 typedef struct script_hello_world_t {
+    char name[16];
     uint64_t frameCount;
 } script_hello_world_t;
 
@@ -37,40 +40,46 @@ SP_EXPORT size_t sp_script_get_definition(sp_script_definition_t *output) {
     return sizeof(script_hello_world_t);
 }
 
-SP_EXPORT const void *sp_script_get_default_context() {
-    static script_hello_world_t defaultContext = {0};
-    return &defaultContext;
+SP_EXPORT script_hello_world_t *sp_script_new_context(const script_hello_world_t *existing) {
+    script_hello_world_t *ctx = malloc(sizeof(script_hello_world_t));
+    memset(ctx->name, 0, sizeof(ctx->name));
+    snprintf(ctx->name, sizeof(ctx->name)-1, "hello%llu", ++instanceCount);
+    ctx->frameCount = existing ? existing->frameCount : 0;
+    return ctx;
 }
 
-SP_EXPORT void sp_script_init(void *context, sp_script_state_t *state) {
-    script_hello_world_t *ctx = context;
+SP_EXPORT void sp_script_free_context(script_hello_world_t *ctx) {
+    free(ctx);
+}
+
+SP_EXPORT void sp_script_init(script_hello_world_t *ctx, sp_script_state_t *state) {
     char buffer[256] = {0};
     snprintf(buffer,
         255,
-        "Script %s init (old frame: %llu)\n",
+        "Script %s init %s (old frame: %llu)\n",
         sp_string_get_c_str(&state->definition.name),
+        ctx->name,
         ctx->frameCount);
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
     ctx->frameCount = 0;
 }
 
-SP_EXPORT void sp_script_destroy(void *context, sp_script_state_t *state) {
-    script_hello_world_t *ctx = context;
+SP_EXPORT void sp_script_destroy(script_hello_world_t *ctx, sp_script_state_t *state) {
     char buffer[256] = {0};
     snprintf(buffer,
         255,
-        "Script %s destroyed at frame %llu\n",
+        "Script %s destroyed %s at frame %llu\n",
         sp_string_get_c_str(&state->definition.name),
+        ctx->name,
         ctx->frameCount);
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 }
 
-SP_EXPORT void sp_script_on_tick(void *context,
+SP_EXPORT void sp_script_on_tick(script_hello_world_t *ctx,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     uint64_t intervalNs) {
-    script_hello_world_t *ctx = context;
     // if (ent.Has<ecs::TransformTree, ecs::TransformSnapshot, ecs::Renderable>(lock)) {
     if (!Tecs_entity_has_bitset(lock,
             ent,

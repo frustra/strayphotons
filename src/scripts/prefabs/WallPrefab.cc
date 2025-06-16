@@ -59,7 +59,7 @@ namespace sp::scripts {
                     if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
                     auto &scripts = newEnt.Set<Scripts>(lock);
-                    auto &gltfState = scripts.AddScript(state.scope, "gltf");
+                    auto &gltfState = scripts.AddScript(state.scope, "prefab_gltf");
                     gltfState.SetParam<std::string>("model", "wall-4-corner");
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
@@ -84,7 +84,7 @@ namespace sp::scripts {
                     if (ent.Has<TransformTree>(lock)) transform.parent = ent;
 
                     auto &scripts = newEnt.Set<Scripts>(lock);
-                    auto &gltfState = scripts.AddScript(state.scope, "gltf");
+                    auto &gltfState = scripts.AddScript(state.scope, "prefab_gltf");
                     gltfState.SetParam<std::string>("model", model);
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);

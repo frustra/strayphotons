@@ -115,7 +115,7 @@ namespace sp::scripts {
                             newEntity.Set<SignalBindings>(lock, *signalBindings);
                         }
                         auto &scripts = newEntity.Set<Scripts>(lock);
-                        auto &prefab = scripts.AddScript(scope, "template");
+                        auto &prefab = scripts.AddScript(scope, "prefab_template");
                         prefab.SetParam("source", source);
                         ecs::GetScriptManager().RunPrefabs(lock, newEntity);
 

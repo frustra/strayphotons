@@ -19,6 +19,6 @@ SP_EXPORT tecs_ecs_t *sp_get_staging_ecs() {
     return &ecs::StagingWorld();
 }
 
-SP_EXPORT void sp_ecs_load_dynamic_script(const char *name) {
-    ecs::GetScriptManager().LoadDynamicScript(name);
+SP_EXPORT void sp_load_dynamic_library(const char *name) {
+    ecs::GetScriptManager().LoadDynamicLibrary(name);
 }
