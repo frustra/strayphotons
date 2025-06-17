@@ -365,7 +365,10 @@ namespace sp {
         };
         picojson::object sceneObj(sceneOrderFunc);
         json::Save(scope, sceneObj["priority"], ScenePriority::SaveGame);
-        // TODO: Save currently loaded libraries
+        auto libraries = GetScriptManager().GetDynamicLibraries();
+        if (!libraries.empty()) {
+            json::Save(scope, sceneObj["libraries"], libraries);
+        }
         sceneObj["entities"] = picojson::value(entities);
         auto val = picojson::value(sceneObj);
         std::filesystem::path scenePath;

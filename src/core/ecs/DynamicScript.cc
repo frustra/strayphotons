@@ -9,20 +9,21 @@
 
 namespace ecs {
     DynamicScriptContext::DynamicScriptContext(const std::shared_ptr<DynamicScript> &script)
-        : context(nullptr), script(script) {
+        : context(nullptr), script(nullptr) {
         if (script && script->newContextFunc) {
             Assertf(script->freeContextFunc,
                 "Cannot construct context for %s(%s) without sp_script_free_context()",
                 script->name,
                 script->definition.name);
             context = script->newContextFunc(nullptr);
+            this->script = script;
         }
     }
 
-    DynamicScriptContext::DynamicScriptContext(const DynamicScriptContext &other)
-        : context(nullptr), script(other.script) {
+    DynamicScriptContext::DynamicScriptContext(const DynamicScriptContext &other) : context(nullptr), script(nullptr) {
         if (other.script && other.context) {
             context = other.script->newContextFunc(other.context);
+            script = other.script;
         }
     }
 
@@ -31,6 +32,7 @@ namespace ecs {
             script->freeContextFunc(context);
             context = nullptr;
         }
+        script.reset();
     }
 
     DynamicScriptContext &DynamicScriptContext::operator=(const DynamicScriptContext &other) {
@@ -172,8 +174,14 @@ namespace ecs {
         auto newScript = Load(name);
         if (!newScript) {
             Errorf("Failed to reload %s(%s)", dynalo::to_native_name(name), definition.name);
-            // Replace the default context if the script failed to load
-            defaultContext = DynamicScriptContext(newScript);
+            definition.context.reset();
+            newContextFunc = nullptr;
+            freeContextFunc = nullptr;
+            initFunc = nullptr;
+            destroyFunc = nullptr;
+            onTickFunc = nullptr;
+            onEventFunc = nullptr;
+            prefabFunc = nullptr;
             return;
         }
         dynamicLib = std::move(newScript->dynamicLib);

@@ -54,7 +54,7 @@ namespace ecs {
                 LoadDynamicLibrary(name);
             });
         funcs.Register("reloadscripts", "Reloads all dynamically loaded scripts", [this]() {
-            ReloadDynamicScripts();
+            ReloadDynamicLibraries();
         });
     }
 
@@ -165,7 +165,7 @@ namespace ecs {
         return newScript;
     }
 
-    void ScriptManager::ReloadDynamicScripts() {
+    void ScriptManager::ReloadDynamicLibraries() {
         Logf("Reloading DynamicScripts");
         std::lock_guard l(dynamicScriptMutex);
         for (size_t i = 0; i < scripts.size(); i++) {
@@ -174,6 +174,16 @@ namespace ecs {
         std::vector<std::pair<ScriptDefinition, ScriptDefinition>> updateList;
         for (auto &[name, dynamicScript] : dynamicScripts) {
             auto oldDefinition = dynamicScript->definition;
+            // Destroy existing script contexts
+            for (auto &scriptSet : scripts) {
+                for (auto &script : scriptSet.scripts) {
+                    auto &scriptCtx = script.second.definition.context;
+                    if (!oldDefinition.context.owner_before(scriptCtx) &&
+                        !scriptCtx.owner_before(oldDefinition.context)) {
+                        script.second.scriptData.reset();
+                    }
+                }
+            }
             dynamicScript->Reload();
             if (dynamicScript->definition.name != oldDefinition.name) {
                 Logf("DynamicScript %s renamed to %s", oldDefinition.name, dynamicScript->definition.name);
@@ -189,12 +199,32 @@ namespace ecs {
         for (auto &[oldDef, _] : updateList) {
             GetScriptDefinitions().scripts.erase(oldDef.name);
         }
-        for (auto &[_, newDef] : updateList) {
+        for (auto &[oldDef, newDef] : updateList) {
+            // Replace instance definitions and reinit
+            for (auto &scriptSet : scripts) {
+                for (auto &script : scriptSet.scripts) {
+                    auto &scriptCtx = script.second.definition.context;
+                    if (!oldDef.context.owner_before(scriptCtx) && !scriptCtx.owner_before(oldDef.context)) {
+                        script.second.definition = newDef;
+                        if (script.second.initialized && newDef.initFunc) (*newDef.initFunc)(script.second);
+                    }
+                }
+            }
             GetScriptDefinitions().RegisterScript(std::move(newDef));
         }
         for (size_t i = 0; i < scripts.size(); i++) {
             scripts.at(scripts.size() - i - 1).mutex.unlock();
         }
+    }
+
+    std::vector<std::string> ScriptManager::GetDynamicLibraries() const {
+        std::vector<std::string> result;
+        std::shared_lock l(dynamicScriptMutex);
+        result.reserve(dynamicScripts.size());
+        for (auto &[name, _] : dynamicScripts) {
+            result.emplace_back(name);
+        }
+        return result;
     }
 
     void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,

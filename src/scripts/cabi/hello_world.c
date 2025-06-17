@@ -43,7 +43,7 @@ SP_EXPORT size_t sp_script_get_definition(sp_script_definition_t *output) {
 SP_EXPORT script_hello_world_t *sp_script_new_context(const script_hello_world_t *existing) {
     script_hello_world_t *ctx = malloc(sizeof(script_hello_world_t));
     memset(ctx->name, 0, sizeof(ctx->name));
-    snprintf(ctx->name, sizeof(ctx->name)-1, "hello%llu", ++instanceCount);
+    snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%llu", ++instanceCount);
     ctx->frameCount = existing ? existing->frameCount : 0;
     return ctx;
 }

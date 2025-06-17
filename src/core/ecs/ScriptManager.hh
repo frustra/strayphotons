@@ -125,7 +125,7 @@ namespace ecs {
     struct ScriptSet {
         std::deque<std::pair<Entity, ScriptState>> scripts;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
-        sp::LockFreeMutex mutex;
+        mutable sp::LockFreeMutex mutex;
     };
 
     class ScriptManager {
@@ -141,7 +141,8 @@ namespace ecs {
             bool runInit = false);
 
         std::shared_ptr<DynamicScript> LoadDynamicLibrary(const std::string &name);
-        void ReloadDynamicScripts();
+        void ReloadDynamicLibraries();
+        std::vector<std::string> GetDynamicLibraries() const;
 
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
@@ -159,7 +160,7 @@ namespace ecs {
         sp::CFuncCollection funcs;
         sp::EnumArray<ScriptSet, ScriptType> scripts = {};
 
-        sp::LockFreeMutex dynamicScriptMutex;
+        mutable sp::LockFreeMutex dynamicScriptMutex;
         robin_hood::unordered_map<std::string, std::shared_ptr<DynamicScript>> dynamicScripts;
 
         friend class StructMetadata;
