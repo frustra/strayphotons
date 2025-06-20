@@ -7,7 +7,6 @@
 
 #include "game/Game.hh"
 
-#include "ecs/DynamicScript.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
 

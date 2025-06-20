@@ -64,20 +64,21 @@ namespace ecs {
         glm::mat4,
 
         // Structs
-        SignalExpression,
+        AnimationState,
+        DynamicScriptDefinition,
         Event,
         EventBinding,
         EventBindingActions,
         EventDest,
-        AnimationState,
         PhysicsJoint,
         PhysicsMaterial,
         PhysicsShape,
+        ScriptDefinition,
         ScriptDefinitionBase,
         ScriptDefinitionBase *,
-        ScriptDefinition,
         ScriptInstance,
         ScriptState,
+        SignalExpression,
         Sound,
         sp::SceneRef,
         std::vector<float>,
@@ -120,9 +121,20 @@ namespace ecs {
         XrEye,
 
         // Locks
+        DynamicLock<>,
         Lock<Read<EventInput>>,
         Lock<Read<TransformTree>>,
-        Lock<Write<TransformTree>>>;
+        Lock<Write<TransformTree>>,
+
+        // Function pointers
+
+        void *(*)(const void *),
+        void (*)(void *),
+        void (*)(void *, ScriptState *),
+        void (*)(void *, ScriptState *),
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t),
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *),
+        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *)>;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>

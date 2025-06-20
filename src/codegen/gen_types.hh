@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ecs/StructFieldTypes.hh"
+#include "ecs/StructMetadata.hh"
 #include "gen_common.hh"
 
 #include <functional>
@@ -112,7 +113,18 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             return "tecs_lock_t"s;
         } else if constexpr (std::is_pointer<T>()) {
-            return LookupCTypeName(typeid(std::remove_pointer_t<T>));
+            if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
+                T funcPtr = nullptr;
+                ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
+                std::string typeName = LookupCTypeName(funcInfo.returnType.type) + "(*)(";
+                for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
+                    if (i > 0) typeName += ", ";
+                    typeName += LookupCTypeName(funcInfo.argTypes[i].type);
+                }
+                return typeName + ")";
+            } else {
+                return LookupCTypeName(typeid(std::remove_pointer_t<T>));
+            }
         } else if constexpr (sp::is_optional<T>()) {
             return LookupCTypeName(typeid(typename T::value_type));
         } else if constexpr (sp::is_vector<T>()) {
@@ -168,7 +180,13 @@ std::vector<ecs::StructField> GetTypeFieldList(const ecs::StructMetadata &metada
             if (i != std::string::npos) {
                 scn = scn.substr(0, i) + "s" + scn.substr(i + "_vector"s.size());
             }
-            result.emplace_back(scn, field.desc, field.type, field.size, field.offset, field.actions);
+            result.emplace_back(scn,
+                field.desc,
+                field.type,
+                field.size,
+                field.offset,
+                field.actions,
+                field.functionPointer);
         } else {
             result.emplace_back(field);
         }
@@ -189,12 +207,22 @@ void ForEachComponentType(Fn &&callback) {
 }
 
 template<typename Fn>
+void ForEachExportedType(Fn &&callback) {
+    detail::forEachTemplateType((ecs::FieldTypes *)nullptr, std::forward<Fn>(callback));
+}
+
+template<typename Fn>
 auto ForEachEventDataType(Fn &&callback) {
     return detail::forEachTemplateType((ecs::EventData *)nullptr, std::forward<Fn>(callback));
 }
 
 template<typename S>
 void GenerateCTypeDefinition(S &out, std::type_index type);
+
+std::string ArgTypeToString(const ecs::TypeInfo &info) {
+    return (info.isConst ? "const " : "") + LookupCTypeName(info.type) +
+           (info.isPointer || info.isTecsLock ? " *" : "");
+}
 
 template<typename S>
 void GenerateStructWithFields(S &out,
@@ -217,8 +245,18 @@ void GenerateStructWithFields(S &out,
     for (size_t i = 0; i < byteMap.size(); i++) {
         if (byteMap[i] != lastField) {
             if (lastField) {
-                out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // "
-                    << lastField->size << " bytes" << std::endl;
+                if (lastField->functionPointer) {
+                    auto &funcInfo = lastField->functionPointer.value();
+                    out << "    " << ArgTypeToString(funcInfo.returnType) << "(*" << lastField->name << ")(";
+                    for (size_t j = 0; j < funcInfo.argTypes.size(); j++) {
+                        if (j > 0) out << ", ";
+                        out << ArgTypeToString(funcInfo.argTypes[j]);
+                    }
+                    out << "); // " << lastField->size << " bytes" << std::endl;
+                } else {
+                    out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // "
+                        << lastField->size << " bytes" << std::endl;
+                }
             } else if (i > fieldStart) {
                 out << "    const uint8_t _unknown" << fieldStart << "[" << (i - fieldStart) << "];" << std::endl;
             }
@@ -227,17 +265,22 @@ void GenerateStructWithFields(S &out,
         }
     }
     if (lastField) {
-        out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // " << lastField->size
-            << " bytes" << std::endl;
+        if (lastField->functionPointer) {
+            auto &funcInfo = lastField->functionPointer.value();
+            out << "    " << ArgTypeToString(funcInfo.returnType) << "(*" << lastField->name << ")(";
+            for (size_t j = 0; j < funcInfo.argTypes.size(); j++) {
+                if (j > 0) out << ", ";
+                out << ArgTypeToString(funcInfo.argTypes[j]);
+            }
+            out << "); // " << lastField->size << " bytes" << std::endl;
+        } else {
+            out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // " << lastField->size
+                << " bytes" << std::endl;
+        }
     } else {
         out << "    const uint8_t _unknown" << fieldStart << "[" << (metadata.size - fieldStart) << "];" << std::endl;
     }
     out << "} " << name << "; // " << metadata.size << " bytes" << std::endl;
-}
-
-std::string ArgTypeToString(const ecs::TypeInfo &info) {
-    return (info.isConst ? "const " : "") + LookupCTypeName(info.type) +
-           (info.isPointer || info.isTecsLock ? " *" : "");
 }
 
 template<typename T, typename S>
@@ -386,7 +429,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                     << TypeToString(arg.type) << "\");" << std::endl;
                 argI++;
             }
-            if (func.returnType.type == typeid(void)) {
+            if (func.returnType.type == typeid(void) && !func.returnType.isPointer) {
                 out << "    ";
             } else if (func.returnType.isTrivial) {
                 out << "    return ";
@@ -532,7 +575,16 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                     << "(sp_event_data_t *event_data);" << std::endl;
             });
         } else if constexpr (std::is_pointer<T>()) {
-            GenerateCTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
+            if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
+                T funcPtr = nullptr;
+                ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
+                GenerateCTypeDefinition(out, funcInfo.returnType.type);
+                for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
+                    GenerateCTypeDefinition(out, funcInfo.argTypes[i].type);
+                }
+            } else {
+                GenerateCTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
+            }
         } else if constexpr (sp::is_optional<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
@@ -755,7 +807,16 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                     << "(sp_event_data_t *event_data);" << std::endl;
             });
         } else if constexpr (std::is_pointer<T>()) {
-            GenerateCppTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
+            if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
+                T funcPtr = nullptr;
+                ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
+                GenerateCppTypeDefinition(out, funcInfo.returnType.type);
+                for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
+                    GenerateCppTypeDefinition(out, funcInfo.argTypes[i].type);
+                }
+            } else {
+                GenerateCppTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
+            }
         } else if constexpr (sp::is_optional<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));

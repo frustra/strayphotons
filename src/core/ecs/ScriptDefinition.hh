@@ -7,10 +7,6 @@
 
 #pragma once
 
-// #include "common/Common.hh"
-// #include "common/LockFreeMutex.hh"
-// #include "common/Logging.hh"
-// #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"

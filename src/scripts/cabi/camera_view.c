@@ -127,3 +127,20 @@ SP_EXPORT void sp_script_on_tick(void *context,
         }
     }
 }
+
+SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+    if (output_size >= 1 && output != NULL) {
+        sp_string_set(&output[0].name, "camera_view2");
+
+        output[0].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
+        output[0].filter_on_event = true;
+        string_t *events = sp_string_vector_resize(&output[0].events, 1);
+        sp_string_set(&events[0], "/script/camera_rotate");
+
+        output[0].new_context_func = &sp_script_new_context;
+        output[0].free_context_func = &sp_script_free_context;
+        output[0].init_func = &sp_script_init;
+        output[0].on_tick_func = &sp_script_on_tick;
+    }
+    return 1;
+}

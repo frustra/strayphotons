@@ -75,26 +75,59 @@ SP_EXPORT void sp_script_destroy(script_hello_world_t *ctx, sp_script_state_t *s
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 }
 
-SP_EXPORT void sp_script_on_tick(script_hello_world_t *ctx,
+SP_EXPORT void sp_script_on_tick_logic(script_hello_world_t *ctx,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     uint64_t intervalNs) {
-    // if (ent.Has<ecs::TransformTree, ecs::TransformSnapshot, ecs::Renderable>(lock)) {
-    if (!Tecs_entity_has_bitset(lock,
-            ent,
-            SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT | SP_ACCESS_RENDERABLE))
-        return;
-    sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, ent);
-    sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, ent);
-    vec3_t newPos = (vec3_t){sin(ctx->frameCount / 100.0f), 1, cos(ctx->frameCount / 100.0f)};
-    sp_transform_set_position(&transformTree->transform, &newPos);
-    sp_ecs_transform_tree_get_global_transform(transformTree, lock, &transformSnapshot->transform);
-
+    // if (ent.Has<ecs::Renderable>(lock)) {
+    if (!Tecs_entity_has_renderable(lock, ent)) return;
     sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, ent);
     renderable->color_override.rgba[0] = sin(ctx->frameCount / 100.0f) * 0.5 + 0.5;
     renderable->color_override.rgba[1] = sin(ctx->frameCount / 100.0f + 1) * 0.5 + 0.5;
     renderable->color_override.rgba[2] = cos(ctx->frameCount / 100.0f) * 0.5 + 0.5;
     renderable->color_override.rgba[3] = 1;
     ctx->frameCount++;
+}
+
+SP_EXPORT void sp_script_on_tick_physics(script_hello_world_t *ctx,
+    sp_script_state_t *state,
+    tecs_lock_t *lock,
+    tecs_entity_t ent,
+    uint64_t intervalNs) {
+    // if (ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+    if (!Tecs_entity_has_bitset(lock, ent, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT)) return;
+    sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, ent);
+    sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, ent);
+    vec3_t newPos = (vec3_t){sin(ctx->frameCount / 100.0f), 1, cos(ctx->frameCount / 100.0f)};
+    sp_transform_set_position(&transformTree->transform, &newPos);
+    sp_ecs_transform_tree_get_global_transform(transformTree, lock, &transformSnapshot->transform);
+    ctx->frameCount++;
+}
+
+SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+    if (output_size >= 2 && output != NULL) {
+        sp_string_set(&output[0].name, "hello_world");
+
+        output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
+        output[0].filter_on_event = false;
+
+        output[0].new_context_func = &sp_script_new_context;
+        output[0].free_context_func = &sp_script_free_context;
+        output[0].init_func = &sp_script_init;
+        output[0].destroy_func = &sp_script_destroy;
+        output[0].on_tick_func = &sp_script_on_tick_logic;
+
+        sp_string_set(&output[1].name, "hello_world2");
+
+        output[1].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
+        output[1].filter_on_event = false;
+
+        output[1].new_context_func = &sp_script_new_context;
+        output[1].free_context_func = &sp_script_free_context;
+        output[1].init_func = &sp_script_init;
+        output[1].destroy_func = &sp_script_destroy;
+        output[1].on_tick_func = &sp_script_on_tick_physics;
+    }
+    return 2;
 }

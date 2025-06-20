@@ -300,7 +300,8 @@ namespace sp {
                 scriptLabel += "(inline C++ lambda)";
             }
 
-            std::lock_guard l(GetScriptManager().scripts[state.definition.type].mutex);
+            std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
+            std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
             auto scriptType = std::string(magic_enum::enum_name(state.definition.type));
 
             if (ImGui::TreeNodeEx(rowId.c_str(),

@@ -23,7 +23,13 @@ namespace ecs {
 
             auto delimiter = fieldName.find('.', fieldNameOffset);
             if (delimiter == std::string_view::npos) {
-                return StructField(std::string(fieldName), "", baseType, sizeof(T), 0, FieldAction::None);
+                return StructField(std::string(fieldName),
+                    "",
+                    baseType,
+                    sizeof(T),
+                    0,
+                    FieldAction::None,
+                    StructField::AsFunctionPointer<T>());
             }
 
             auto subField = fieldName.substr(delimiter + 1);
@@ -41,7 +47,7 @@ namespace ecs {
                 return {};
             } else if constexpr (std::is_same_v<T, EventData>) {
                 // EventData variants can't be processed without knowing the value
-                return StructField(std::string(fieldName), "", baseType, sizeof(T), 0, FieldAction::None);
+                return StructField(std::string(fieldName), "", baseType, sizeof(T), 0, FieldAction::None, {});
             } else if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||
                                  std::is_same_v<T, sp::color_alpha_t>) {
                 return detail::GetVectorSubfield<T>(subField);

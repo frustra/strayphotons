@@ -25,7 +25,7 @@ namespace sp {
 
 namespace ecs {
     class ScriptInstance;
-    class DynamicScript;
+    class DynamicLibrary;
 
     class ScriptState {
     public:
@@ -140,7 +140,7 @@ namespace ecs {
             const ScriptDefinition &definition,
             bool runInit = false);
 
-        std::shared_ptr<DynamicScript> LoadDynamicLibrary(const std::string &name);
+        std::shared_ptr<DynamicLibrary> LoadDynamicLibrary(const std::string &name);
         void ReloadDynamicLibraries();
         std::vector<std::string> GetDynamicLibraries() const;
 
@@ -160,8 +160,8 @@ namespace ecs {
         sp::CFuncCollection funcs;
         sp::EnumArray<ScriptSet, ScriptType> scripts = {};
 
-        mutable sp::LockFreeMutex dynamicScriptMutex;
-        robin_hood::unordered_map<std::string, std::shared_ptr<DynamicScript>> dynamicScripts;
+        mutable sp::LockFreeMutex dynamicLibraryMutex;
+        robin_hood::unordered_map<std::string, std::shared_ptr<DynamicLibrary>> dynamicLibraries;
 
         friend class StructMetadata;
         friend class ScriptInstance;

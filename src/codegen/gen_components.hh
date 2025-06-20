@@ -24,6 +24,10 @@ extern "C" {
         auto &comp = ecs::LookupComponent<T>();
         GenerateCTypeDefinition(out, comp.metadata.type);
     });
+    ForEachExportedType([&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        GenerateCTypeDefinition(out, typeid(T));
+    });
     out << R"RAWSTR(
 #pragma pack(pop)
 #ifdef __cplusplus
@@ -46,6 +50,10 @@ extern "C" {
         using T = std::remove_pointer_t<decltype(typePtr)>;
         auto &comp = ecs::LookupComponent<T>();
         GenerateCppTypeDefinition(out, comp.metadata.type);
+    });
+    ForEachExportedType([&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        GenerateCppTypeDefinition(out, typeid(T));
     });
     out << R"RAWSTR(
 #pragma pack(pop)

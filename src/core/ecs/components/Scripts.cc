@@ -73,7 +73,8 @@ namespace ecs {
 
             auto ctx = state.definition.context.lock();
             if (ctx) {
-                std::lock_guard l(GetScriptManager().scripts[state.definition.type].mutex);
+                std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
+                std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
 
                 const void *dataPtr = ctx->Access(state);
                 const void *defaultPtr = ctx->GetDefault();

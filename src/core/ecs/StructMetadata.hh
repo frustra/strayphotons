@@ -47,152 +47,12 @@ struct magic_enum::customize::enum_range<ecs::FieldAction> {
 };
 
 namespace ecs {
-    enum class FieldAction {
-        None = 0,
-        AutoLoad = 1 << 0,
-        AutoSave = 1 << 1,
-        AutoApply = 1 << 2,
-    };
-
-    struct StructField {
-        std::string name, desc;
-        std::type_index type;
-        size_t size;
-        size_t offset = 0;
-        int fieldIndex = -1;
-        FieldAction actions = ~FieldAction::None;
-
-        StructField(const std::string &name,
-            const std::string &desc,
-            std::type_index type,
-            size_t size,
-            size_t offset,
-            FieldAction actions)
-            : name(name), desc(sp::trim(desc)), type(type), size(size), offset(offset), actions(actions) {}
-
-        template<typename T, typename F>
-        static size_t OffsetOf(const F T::*M) {
-            // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
-            return reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
-        }
-
-        /**
-         * Registers a struct's field for serialization as a named field. For example:
-         * StructField::New("model", &Renderable::modelName)
-         *
-         * Result:
-         * {
-         *   "renderable": {
-         *     "model": "box"
-         *   }
-         * }
-         */
-        template<typename T, typename F>
-        static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField(name,
-                "No description",
-                std::type_index(typeid(std::remove_cv_t<F>)),
-                sizeof(F),
-                OffsetOf(M),
-                actions);
-        }
-
-        template<typename T, typename F>
-        static const StructField New(const std::string &name,
-            const std::string &desc,
-            const F T::*M,
-            FieldAction actions = ~FieldAction::None) {
-            return StructField(name,
-                desc,
-                std::type_index(typeid(std::remove_cv_t<F>)),
-                sizeof(F),
-                OffsetOf(M),
-                actions);
-        }
-
-        /**
-         * Registers a struct's field for serialization directly. For example:
-         * StructField::New(&TransformTree::pose)
-         *
-         * Result:
-         * {
-         *   "transform": {
-         *     "translate": [1, 2, 3]
-         *   }
-         * }
-         */
-        template<typename T, typename F>
-        static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
-            return StructField::New("", "No description", M, actions);
-        }
-
-        /**
-         * Registers a type for serialization directly. For example:
-         * StructField::New<TriggerGroup>()
-         *
-         * Result:
-         * {
-         *   "trigger_group": "Player"
-         * }
-         *
-         * This field variant may also be used to define custom serialization functions for a type.
-         */
-        template<typename T>
-        static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("",
-                "No description",
-                std::type_index(typeid(std::remove_cv_t<T>)),
-                sizeof(T),
-                0,
-                actions);
-        }
-
-        void *AccessMut(void *structPtr) const {
-            return static_cast<char *>(structPtr) + offset;
-        }
-
-        const void *Access(const void *structPtr) const {
-            return static_cast<const char *>(structPtr) + offset;
-        }
-
-        template<typename T>
-        T &Access(void *structPtr) const {
-            Assertf(type == typeid(T),
-                "StructMetadata::Access called with wrong type: %s, expected %s",
-                typeid(T).name(),
-                type.name());
-            return *reinterpret_cast<T *>(AccessMut(structPtr));
-        }
-
-        template<typename T>
-        const T &Access(const void *structPtr) const {
-            Assertf(type == typeid(T),
-                "StructMetadata::Access called with wrong type: %s, expected %s",
-                typeid(T).name(),
-                type.name());
-            return *reinterpret_cast<const T *>(Access(structPtr));
-        }
-
-        bool operator==(const StructField &) const = default;
-
-        void InitUndefined(void *dstStruct, const void *defaultStruct) const;
-        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
-        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
-        void SetScope(void *dstStruct, const EntityScope &scope) const;
-        bool Compare(const void *a, const void *b) const;
-        bool Load(void *dstStruct, const picojson::value &src) const;
-        // If defaultStruct is nullptr, the field value is always saved
-        void Save(const EntityScope &scope,
-            picojson::value &dst,
-            const void *srcStruct,
-            const void *defaultStruct) const;
-        void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
-    };
-
     struct ArgDesc {
         std::string name, desc;
 
         ArgDesc(const std::string_view &name, const std::string_view &desc) : name(name), desc(desc) {}
+
+        bool operator==(const ArgDesc &other) const = default;
     };
 
     struct TypeInfo {
@@ -202,11 +62,12 @@ namespace ecs {
         bool isPointer;
         bool isReference;
         bool isTecsLock;
+        bool isFunctionPointer;
 
         template<typename T>
         static inline TypeInfo Lookup() {
             return TypeInfo{
-                .type = typeid(T),
+                .type = typeid(std::remove_pointer_t<std::decay_t<T>>),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
                              std::is_reference<T>(),
                 .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
@@ -214,6 +75,7 @@ namespace ecs {
                 .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
                 .isReference = std::is_reference<T>(),
                 .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
+                .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
             };
         }
 
@@ -322,6 +184,164 @@ namespace ecs {
         }
 
         bool operator==(const StructFunction &) const = default;
+    };
+
+    enum class FieldAction {
+        None = 0,
+        AutoLoad = 1 << 0,
+        AutoSave = 1 << 1,
+        AutoApply = 1 << 2,
+    };
+
+    struct StructField {
+        std::string name, desc;
+        std::type_index type;
+        size_t size;
+        size_t offset = 0;
+        int fieldIndex = -1;
+        FieldAction actions = ~FieldAction::None;
+        std::optional<StructFunction> functionPointer;
+
+        StructField(const std::string &name,
+            const std::string &desc,
+            std::type_index type,
+            size_t size,
+            size_t offset,
+            FieldAction actions,
+            const std::optional<StructFunction> &functionPointer)
+            : name(name), desc(sp::trim(desc)), type(type), size(size), offset(offset), actions(actions),
+              functionPointer(functionPointer) {}
+
+        template<typename T, typename F>
+        static size_t OffsetOf(const F T::*M) {
+            // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
+            return reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
+        }
+
+        template<typename T>
+        static std::optional<StructFunction> AsFunctionPointer() {
+            if constexpr (std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>()) {
+                T funcPtr = nullptr;
+                return StructFunction::New("", funcPtr);
+            } else {
+                return {};
+            }
+        }
+
+        /**
+         * Registers a struct's field for serialization as a named field. For example:
+         * StructField::New("model", &Renderable::modelName)
+         *
+         * Result:
+         * {
+         *   "renderable": {
+         *     "model": "box"
+         *   }
+         * }
+         */
+        template<typename T, typename F>
+        static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+            return StructField(name,
+                "No description",
+                typeid(std::remove_cv_t<F>),
+                sizeof(F),
+                OffsetOf(M),
+                actions,
+                AsFunctionPointer<F>());
+        }
+
+        template<typename T, typename F>
+        static const StructField New(const std::string &name,
+            const std::string &desc,
+            const F T::*M,
+            FieldAction actions = ~FieldAction::None) {
+            return StructField(name,
+                desc,
+                typeid(std::remove_cv_t<F>),
+                sizeof(F),
+                OffsetOf(M),
+                actions,
+                AsFunctionPointer<F>());
+        }
+
+        /**
+         * Registers a struct's field for serialization directly. For example:
+         * StructField::New(&TransformTree::pose)
+         *
+         * Result:
+         * {
+         *   "transform": {
+         *     "translate": [1, 2, 3]
+         *   }
+         * }
+         */
+        template<typename T, typename F>
+        static const StructField New(const F T::*M, FieldAction actions = ~FieldAction::None) {
+            return StructField::New("", "No description", M, actions);
+        }
+
+        /**
+         * Registers a type for serialization directly. For example:
+         * StructField::New<TriggerGroup>()
+         *
+         * Result:
+         * {
+         *   "trigger_group": "Player"
+         * }
+         *
+         * This field variant may also be used to define custom serialization functions for a type.
+         */
+        template<typename T>
+        static const StructField New(FieldAction actions = ~FieldAction::None) {
+            return StructField("",
+                "No description",
+                std::type_index(typeid(std::remove_cv_t<T>)),
+                sizeof(T),
+                0,
+                actions,
+                AsFunctionPointer<T>());
+        }
+
+        void *AccessMut(void *structPtr) const {
+            return static_cast<char *>(structPtr) + offset;
+        }
+
+        const void *Access(const void *structPtr) const {
+            return static_cast<const char *>(structPtr) + offset;
+        }
+
+        template<typename T>
+        T &Access(void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
+            return *reinterpret_cast<T *>(AccessMut(structPtr));
+        }
+
+        template<typename T>
+        const T &Access(const void *structPtr) const {
+            Assertf(type == typeid(T),
+                "StructMetadata::Access called with wrong type: %s, expected %s",
+                typeid(T).name(),
+                type.name());
+            return *reinterpret_cast<const T *>(Access(structPtr));
+        }
+
+        bool operator==(const StructField &) const = default;
+
+        void InitUndefined(void *dstStruct, const void *defaultStruct) const;
+        void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
+        picojson::value SaveDefault(const EntityScope &scope, const void *defaultStruct) const;
+        void SetScope(void *dstStruct, const EntityScope &scope) const;
+        bool Compare(const void *a, const void *b) const;
+        bool Load(void *dstStruct, const picojson::value &src) const;
+        // If defaultStruct is nullptr, the field value is always saved
+        void Save(const EntityScope &scope,
+            picojson::value &dst,
+            const void *srcStruct,
+            const void *defaultStruct) const;
+        void Apply(void *dstStruct, const void *srcStruct, const void *defaultPtr) const;
     };
 
     class StructMetadata : public sp::NonCopyable {

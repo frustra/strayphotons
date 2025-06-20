@@ -206,7 +206,7 @@
             "name": "StrayPhotons Components Codegen (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/strayphotons-codegen-generator.exe",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator.exe",
             "args": ["include/strayphotons/components.h", "components_gen.cc"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/src/codegen",
