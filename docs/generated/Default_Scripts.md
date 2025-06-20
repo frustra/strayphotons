@@ -138,20 +138,6 @@ The `event_from_signal` script has parameter type: map&lt;string, [SignalExpress
 
 <div class="component_definition">
 
-## `flashlight` Script
-
-| Parameter Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **parent** | [EntityRef](#EntityRef-type) | "" | No description |
-
-**See Also:**
-[EntityRef](#EntityRef-type)
-
-</div>
-
-
-<div class="component_definition">
-
 ## `init_event` Script
 
 The `init_event` script has parameter type: vector&lt;string&gt;
@@ -619,15 +605,6 @@ The `sound_occlusion` script has no configurable parameters
 ## `speed_controlled_sound` Script
 
 The `speed_controlled_sound` script has no configurable parameters
-
-</div>
-
-
-<div class="component_definition">
-
-## `sun` Script
-
-The `sun` script has no configurable parameters
 
 </div>
 

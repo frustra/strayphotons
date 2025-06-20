@@ -69,7 +69,7 @@ namespace ecs {
             return TypeInfo{
                 .type = typeid(std::remove_pointer_t<std::decay_t<T>>),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
-                             std::is_reference<T>(),
+                             std::is_reference<T>() || std::is_same<T, Entity>(),
                 .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
                            std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
                 .isPointer = std::is_pointer<T>() || std::is_reference<T>(),

@@ -67,27 +67,31 @@ namespace ecs {
         : name(name), dynamicLib(std::make_shared<dynalo::library>(std::move(lib))) {}
 
     DynamicScriptContext::DynamicScriptContext(const std::shared_ptr<DynamicScript> &script)
-        : context(nullptr), script(nullptr) {
-        if (script && script->dynamicDefinition.newContextFunc) {
-            Assertf(script->dynamicDefinition.freeContextFunc,
-                "Cannot construct context for %s(%s) without sp_script_free_context()",
-                script->library->name,
-                script->definition.name);
-            context = script->dynamicDefinition.newContextFunc(nullptr);
-            this->script = script;
+        : context(nullptr), script(script) {
+        if (script && script->dynamicDefinition.contextSize > 0) {
+            context = std::malloc(script->dynamicDefinition.contextSize);
+            std::memset(context, 0, script->dynamicDefinition.contextSize);
+            if (script->dynamicDefinition.defaultInitFunc) {
+                script->dynamicDefinition.defaultInitFunc(context);
+            }
         }
     }
 
     DynamicScriptContext::DynamicScriptContext(const DynamicScriptContext &other) : context(nullptr), script(nullptr) {
         if (other.script && other.context) {
-            context = other.script->dynamicDefinition.newContextFunc(other.context);
+            Assertf(!other.script->dynamicDefinition.defaultFreeFunc,
+                "Cannot copy script context due to defined free func: %s",
+                other.script->definition.name);
+            context = std::malloc(other.script->dynamicDefinition.contextSize);
+            std::memcpy(context, other.context, other.script->dynamicDefinition.contextSize);
             script = other.script;
         }
     }
 
     DynamicScriptContext::~DynamicScriptContext() {
         if (script && context) {
-            script->dynamicDefinition.freeContextFunc(context);
+            if (script->dynamicDefinition.defaultFreeFunc) script->dynamicDefinition.defaultFreeFunc(context);
+            std::free(context);
             context = nullptr;
         }
         script.reset();
@@ -96,11 +100,16 @@ namespace ecs {
     DynamicScriptContext &DynamicScriptContext::operator=(const DynamicScriptContext &other) {
         if (context == other.context) return *this;
         if (script && context) {
-            script->dynamicDefinition.freeContextFunc(context);
+            if (script->dynamicDefinition.defaultFreeFunc) script->dynamicDefinition.defaultFreeFunc(context);
+            std::free(context);
             context = nullptr;
         }
         if (other.script && other.context) {
-            context = other.script->dynamicDefinition.newContextFunc(other.context);
+            Assertf(!other.script->dynamicDefinition.defaultFreeFunc,
+                "Cannot copy script context due to defined free func: %s",
+                other.script->definition.name);
+            context = std::malloc(other.script->dynamicDefinition.contextSize);
+            std::memcpy(context, other.context, other.script->dynamicDefinition.contextSize);
         } else {
             context = nullptr;
         }

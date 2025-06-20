@@ -62,8 +62,9 @@ namespace ecs {
         std::vector<std::string> events;
         bool filterOnEvent = false;
 
-        void *(*newContextFunc)(const void *) = nullptr;
-        void (*freeContextFunc)(void *) = nullptr;
+        size_t contextSize = 0;
+        void (*defaultInitFunc)(void *) = nullptr;
+        void (*defaultFreeFunc)(void *) = nullptr;
         void (*initFunc)(void *, ScriptState *) = nullptr;
         void (*destroyFunc)(void *, ScriptState *) = nullptr;
         void (*onTickFunc)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t) = nullptr;
@@ -83,8 +84,9 @@ namespace ecs {
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",
             &DynamicScriptDefinition::filterOnEvent),
-        StructField::New("new_context_func", &DynamicScriptDefinition::newContextFunc),
-        StructField::New("free_context_func", &DynamicScriptDefinition::freeContextFunc),
+        StructField::New("context_size", &DynamicScriptDefinition::contextSize),
+        StructField::New("default_init_func", &DynamicScriptDefinition::defaultInitFunc),
+        StructField::New("default_free_func", &DynamicScriptDefinition::defaultFreeFunc),
         StructField::New("init_func", &DynamicScriptDefinition::initFunc),
         StructField::New("destroy_func", &DynamicScriptDefinition::destroyFunc),
         StructField::New("on_tick_func", &DynamicScriptDefinition::onTickFunc),

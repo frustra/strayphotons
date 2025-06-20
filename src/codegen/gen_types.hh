@@ -72,6 +72,8 @@ std::string LookupCTypeName(std::type_index type) {
 
         if constexpr (std::is_same<T, bool>()) {
             return "bool"s;
+        } else if constexpr (std::is_same<T, char>()) {
+            return "char"s;
         } else if constexpr (std::is_same<T, int32_t>()) {
             return "int32_t"s;
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -297,18 +299,32 @@ void GenerateCTypeFunctionDefinitions(S &out, const std::string &full) {
             out << "void";
         }
         out << " " << functionName << "(";
-        out << (func.isConst ? "const " : "") << full << " *self";
+        bool first = true;
+        if (!func.isStatic) {
+            out << (func.isConst ? "const " : "") << full << " *self";
+            first = false;
+        }
         size_t argI = 0;
         for (auto &arg : func.argTypes) {
-            if (argI < func.argDescs.size()) {
-                out << ", " << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
+            if (first) {
+                first = false;
             } else {
-                out << ", " << ArgTypeToString(arg) << " arg" << argI;
+                out << ", ";
+            }
+            if (argI < func.argDescs.size()) {
+                out << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
+            } else {
+                out << ArgTypeToString(arg) << " arg" << argI;
             }
             argI++;
         }
         if (!func.returnType.isTrivial) {
-            out << ", " << LookupCTypeName(func.returnType.type) << " *result";
+            if (first) {
+                first = false;
+            } else {
+                out << ", ";
+            }
+            out << LookupCTypeName(func.returnType.type) << " *result";
         }
         out << ");" << std::endl;
     }
@@ -397,18 +413,32 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 out << "void";
             }
             out << " " << functionName << "(";
-            out << (func.isConst ? "const " : "") << full << " *selfPtr";
+            bool first = true;
+            if (!func.isStatic) {
+                out << (func.isConst ? "const " : "") << full << " *selfPtr";
+                first = false;
+            }
             size_t argI = 0;
             for (auto &arg : func.argTypes) {
-                if (argI < func.argDescs.size()) {
-                    out << ", " << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
+                if (first) {
+                    first = false;
                 } else {
-                    out << ", " << ArgTypeToString(arg) << " arg" << argI;
+                    out << ", ";
+                }
+                if (argI < func.argDescs.size()) {
+                    out << ArgTypeToString(arg) << " " << func.argDescs[argI].name;
+                } else {
+                    out << ArgTypeToString(arg) << " arg" << argI;
                 }
                 argI++;
             }
             if (!func.returnType.isTrivial) {
-                out << ", " << LookupCTypeName(func.returnType.type) << " *result";
+                if (first) {
+                    first = false;
+                } else {
+                    out << ", ";
+                }
+                out << LookupCTypeName(func.returnType.type) << " *result";
             }
             out << ") {" << std::endl;
             if (!func.isStatic) {
@@ -432,11 +462,10 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
             if (func.returnType.type == typeid(void) && !func.returnType.isPointer) {
                 out << "    ";
             } else if (func.returnType.isTrivial) {
-                out << "    return ";
+                out << "    return static_cast<" << ArgTypeToString(func.returnType) << ">(";
                 if (func.returnType.isReference) out << "&";
             } else {
-                out << "    *result = static_cast<";
-                out << LookupCTypeName(func.returnType.type) << ">(";
+                out << "    *result = static_cast<" << ArgTypeToString(func.returnType) << ">(";
             }
             if (func.isStatic) {
                 out << TypeToString<T>() << "::" << func.name << "(";
@@ -456,7 +485,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                     }
                 }
             }
-            if (!func.returnType.isTrivial) out << ")";
+            if (func.returnType.type != typeid(void) || func.returnType.isPointer) out << ")";
             out << ");" << std::endl;
             out << "}" << std::endl;
             out << std::endl;
@@ -499,6 +528,8 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         if constexpr (std::is_same<T, bool>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, char>()) {
             // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
@@ -733,6 +764,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
         if constexpr (std::is_same<T, bool>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, char>()) {
             // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in

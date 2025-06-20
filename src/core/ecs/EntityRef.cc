@@ -50,6 +50,10 @@ namespace ecs {
         return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
+    bool EntityRef::IsValid() const {
+        return !!ptr;
+    }
+
     void EntityRef::SetScope(const EntityScope &scope) {
         if (!ptr) return;
         ecs::Name newName(ptr->name, scope);
@@ -58,6 +62,26 @@ namespace ecs {
         } else if (newName != ptr->name) {
             ptr = GetEntityRefs().Get(newName).ptr;
         }
+    }
+
+    void EntityRef::Clear() {
+        ptr.reset();
+    }
+
+    EntityRef EntityRef::Empty() {
+        return EntityRef();
+    }
+
+    EntityRef EntityRef::New(Entity ent) {
+        return EntityRef(ent);
+    }
+
+    EntityRef EntityRef::Copy(const EntityRef &ref) {
+        return EntityRef(ref);
+    }
+
+    EntityRef EntityRef::Lookup(const char *name, const EntityScope *scope) {
+        return EntityRef(ecs::Name(name, scope ? *scope : EntityScope{}));
     }
 
     bool EntityRef::operator==(const EntityRef &other) const {

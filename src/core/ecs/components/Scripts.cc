@@ -39,16 +39,18 @@ namespace ecs {
         ScriptState &state = *newState;
         auto ctx = state.definition.context.lock();
         if (ctx) {
-            // Access will initialize default parameters
-            void *dataPtr = ctx->AccessMut(state);
-            Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
-
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
-                for (auto &field : ctx->metadata.fields) {
-                    if (!field.Load(dataPtr, it->second)) {
-                        Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
-                        return false;
+                // Access will initialize default parameters
+                void *dataPtr = ctx->AccessMut(state);
+                if (!dataPtr) {
+                    Warnf("Can't set parameters on context-free script: %s", state.definition.name);
+                } else {
+                    for (auto &field : ctx->metadata.fields) {
+                        if (!field.Load(dataPtr, it->second)) {
+                            Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
+                            return false;
+                        }
                     }
                 }
             }
@@ -77,8 +79,8 @@ namespace ecs {
                 std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
 
                 const void *dataPtr = ctx->Access(state);
+                if (!dataPtr) return;
                 const void *defaultPtr = ctx->GetDefault();
-                Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                 bool changed = false;
                 for (auto &field : ctx->metadata.fields) {
                     if (!field.Compare(dataPtr, defaultPtr)) {
@@ -108,12 +110,13 @@ namespace ecs {
             if (oldCtx) {
                 const void *defaultPtr = oldCtx->GetDefault();
                 const void *oldPtr = oldCtx->Access(oldState);
-                void *newPtr = newCtx->AccessMut(*newState);
-                Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
-                Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
-                for (auto &field : oldCtx->metadata.fields) {
-                    field.Apply(newPtr, oldPtr, defaultPtr);
-                    field.SetScope(newPtr, scope);
+                if (oldPtr) {
+                    void *newPtr = newCtx->AccessMut(*newState);
+                    Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
+                    for (auto &field : oldCtx->metadata.fields) {
+                        field.Apply(newPtr, oldPtr, defaultPtr);
+                        field.SetScope(newPtr, scope);
+                    }
                 }
             }
             dst.state = std::move(newState);
@@ -142,7 +145,8 @@ namespace ecs {
         if (!ctx) return instanceId == other.instanceId;
         const void *aPtr = ctx->Access(*this);
         const void *bPtr = ctx->Access(other);
-        Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
+        if (aPtr == bPtr) return true;
+        if (!aPtr || !bPtr) return false;
         for (auto &field : ctx->metadata.fields) {
             if (!field.Compare(aPtr, bPtr)) return false;
         }

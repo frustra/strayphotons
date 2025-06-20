@@ -43,6 +43,7 @@ namespace ecs {
 
         // Basic types
         bool,
+        char,
         int32_t,
         uint32_t,
         sp::angle_t,
@@ -75,10 +76,10 @@ namespace ecs {
         PhysicsShape,
         ScriptDefinition,
         ScriptDefinitionBase,
-        ScriptDefinitionBase *,
         ScriptInstance,
         ScriptState,
         SignalExpression,
+        SignalRef,
         Sound,
         sp::SceneRef,
         std::vector<float>,
@@ -122,12 +123,16 @@ namespace ecs {
 
         // Locks
         DynamicLock<>,
+        DynamicLock<ReadSignalsLock>,
+        Lock<>,
         Lock<Read<EventInput>>,
+        Lock<Read<Signals>>,
         Lock<Read<TransformTree>>,
+        Lock<Write<Signals>>,
+        Lock<Write<Signals>, ReadSignalsLock>,
         Lock<Write<TransformTree>>,
 
         // Function pointers
-
         void *(*)(const void *),
         void (*)(void *),
         void (*)(void *, ScriptState *),

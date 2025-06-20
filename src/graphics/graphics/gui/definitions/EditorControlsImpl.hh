@@ -339,9 +339,8 @@ namespace sp {
                 auto ctx = state.definition.context.lock();
                 if (ctx) {
                     void *dataPtr = ctx->AccessMut(state);
-                    Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
                     auto &fields = ctx->metadata.fields;
-                    if (!fields.empty()) {
+                    if (dataPtr && !fields.empty()) {
                         ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
                                                 ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
                         if (ImGui::BeginTable(rowId.c_str(), 2, flags)) {

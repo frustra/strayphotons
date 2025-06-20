@@ -102,9 +102,10 @@
 				},
 				"type": "Kinematic"
 			},
-			"script": {
-				"name": "hello_world"
-			}
+			"script": [
+				{"name": "hello_world"},
+				{"name": "hello_world2"}
+			]
 		},
 		{
 			"transform": {

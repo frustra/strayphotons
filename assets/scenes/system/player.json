@@ -1,6 +1,6 @@
 {
 	"priority": "Player",
-	"libraries": "camera_view",
+	"libraries": ["camera_view", "game_scripts"],
 	"entities": [
 		{
 			"name": "player",
@@ -84,10 +84,7 @@
 				"on": 0
 			},
 			"script": {
-				"name": "flashlight",
-				"parameters": {
-					"parent": "pointer"
-				}
+				"name": "flashlight"
 			}
 		},
 		{
