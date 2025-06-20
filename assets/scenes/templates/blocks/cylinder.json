@@ -1,0 +1,20 @@
+{
+	"components": {
+		"transform": {},
+		"physics": {
+			"shapes": {
+				"model": "cylinder"
+			},
+			"mass": 1
+		},
+		"renderable": {
+			"model": "cylinder"
+		},
+		"physics_joints": [],
+		"event_input": {},
+		"script": {
+			"name": "prefab_template",
+			"parameters": { "source": "interactive" }
+		}
+	}
+}

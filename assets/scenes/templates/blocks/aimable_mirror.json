@@ -1,0 +1,80 @@
+{
+	"components": {
+		"transform": {
+		},
+		"physics": {
+			"shapes": [
+				{
+					"box": [0.065, 0.01, 0.065],
+					"transform": {
+						"translate": [0, 0.005, 0]
+					}
+				}
+			],
+			"type": "Dynamic"
+		},
+		"physics_joints": [],
+		"trigger_group": "Magnetic",
+		"event_input": {},
+		"script": [
+			{
+				"name": "prefab_template",
+				"parameters": { "source": "interactive" }
+			},
+			{
+				"name": "magnetic_plug"
+			}
+		]
+	},
+	"entities": [
+		{
+			"name": "mount",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.005, 0],
+				"scale": [0.07, 0.01, 0.07]
+			},
+			"script": {
+				"name": "prefab_gltf",
+				"parameters": {
+					"model": "octagon",
+					"render": true
+				}
+			}
+		},
+		{
+			"name": "block-gizmo",
+			"transform": {
+				"parent": "scoperoot",
+				"translate": [0, 0.01, 0],
+				"scale": [0.0215, 0.005, 0.0215]
+			},
+			"renderable": {
+				"model": "box"
+			}
+		},
+		{
+			"name": "optic",
+			"optic": {
+				"reflect_tint": [0.95, 0.95, 0.95]
+			},
+			"renderable": {
+				"model": "colorfilter",
+				"color_override": [0.95, 0.95, 0.95, 1.0],
+				"metallic_roughness_override": [0.0, 0.0]
+			},
+			"physics": {
+				"shapes": {
+					"box": [0.99, 0.99, 0.02]
+				},
+				"type": "SubActor"
+			},
+			"transform": {
+				"parent": "scoperoot",
+				"rotate": [-45, 0, 1, 0],
+				"translate": [0.0002, 0.025, -0.0002],
+				"scale": 0.04
+			}
+		}
+	]
+}

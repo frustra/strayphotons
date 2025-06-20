@@ -11,5 +11,5 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
-    void AddOutlines(RenderGraph &graph, GPUScene &scene);
+    void AddOutlines(RenderGraph &graph, GPUScene &scene, chrono_clock::duration elapsedTime);
 } // namespace sp::vulkan::renderer

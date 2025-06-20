@@ -599,7 +599,7 @@ namespace sp::vulkan {
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
-        renderer::AddOutlines(graph, scene);
+        renderer::AddOutlines(graph, scene, elapsedTime);
         renderer::AddBloom(graph);
         renderer::AddTonemap(graph);
 

@@ -9,6 +9,7 @@ set(GLTF_MODELS
     breadboard_surface
     cardboard-box
     ceiling-3x3
+    cylinder
     colorfilter
     cornell-box-1
     cornell-box-2
