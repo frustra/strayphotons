@@ -23,6 +23,7 @@ f21bde11360ab292ff22009f71171eaa    https://assets.strayphotons.net/models/dodec
 73cbf684d5fd1256c08d7b4c9ecd87ca    https://assets.strayphotons.net/models/door-frame/door-frame.glb    models/door-frame/door-frame.glb
 4d1efeb91d26d61e200e9718f5ad36b9    https://assets.strayphotons.net/models/door-panel/door-panel.glb    models/door-panel/door-panel.glb
 42511b1bb45d2b26aafb26c94daaf003    https://assets.strayphotons.net/models/duck/duck.glb    models/duck/duck.glb
+4fb63243d55fda946418abf68c786199    https://assets.strayphotons.net/models/cylinder.glb    models/cylinder.glb
 b9efa01538a25b9cc219bb8359c42406    https://assets.strayphotons.net/models/extrusion.glb    models/extrusion.glb
 b05ba4eebd1c5a39f2c5e9a7ec88de4b    https://assets.strayphotons.net/models/ground-3x3/ground-3x3.glb    models/ground-3x3/ground-3x3.glb
 b950bca1f3708d53494a4dff80b9f118    https://assets.strayphotons.net/models/laser-plug.glb    models/laser-plug.glb

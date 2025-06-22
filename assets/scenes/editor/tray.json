@@ -296,7 +296,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"name": "interactive_object",
+					"onTick": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -305,10 +305,10 @@
 					"parameters": {
 						"source": "blocks/cylinder"
 					},
-					"name": "prefab_template"
+					"prefab": "template"
 				},
 				{
-					"name": "tray_spawner",
+					"onTick": "tray_spawner",
 					"parameters": {
 						"source": "blocks/cylinder",
 						"reset_scale": true

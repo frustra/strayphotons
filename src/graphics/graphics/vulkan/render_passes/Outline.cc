@@ -12,6 +12,11 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 
 namespace sp::vulkan::renderer {
+    static CVar<float> CVarOutlineWidth("r.OutlineWidth", 4.0f, "The line width to draw around highlighted objects");
+    static CVar<float> CVarOutlineProjectionWidth("r.OutlineProjectionWidth",
+        8.0f,
+        "The line width to draw around projected around highlighted objects");
+
     void AddOutlines(RenderGraph &graph, GPUScene &scene, chrono_clock::duration elapsedTime) {
         auto drawIDs = scene.GenerateDrawsForView(graph, ecs::VisibilityMask::OutlineSelection);
 
@@ -45,70 +50,73 @@ namespace sp::vulkan::renderer {
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
             });
 
-        graph.AddPass("Outlines")
-            .Build([&](PassBuilder &builder) {
-                builder.ReadUniform("ViewState");
-                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
-                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
-                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+        if (CVarOutlineWidth.Get() > 0) {
+            graph.AddPass("Outlines")
+                .Build([&](PassBuilder &builder) {
+                    builder.ReadUniform("ViewState");
+                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                    builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                    builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 
-                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
-            })
-            .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("scene.vert", "solid_color.frag");
-                cmd.PushConstants(glm::vec4(glm::vec3(4, 10, 0.5), 1));
-                cmd.SetUniformBuffer("ViewStates", "ViewState");
-                cmd.SetDepthTest(false, false);
-                cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
+                    builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
+                })
+                .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene.vert", "solid_color.frag");
+                    cmd.PushConstants(glm::vec4(glm::vec3(4, 10, 0.5), 1));
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                    cmd.SetDepthTest(false, false);
+                    cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
 
-                cmd.SetStencilTest(true);
-                cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
-                cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 3);
-                cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 0);
-                cmd.SetBlending(true);
-                cmd.SetPolygonMode(vk::PolygonMode::eLine);
-                cmd.SetLineWidth(4.0f);
+                    cmd.SetStencilTest(true);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
+                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 3);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 0);
+                    cmd.SetBlending(true);
+                    cmd.SetPolygonMode(vk::PolygonMode::eLine);
+                    cmd.SetLineWidth(CVarOutlineWidth.Get());
 
-                scene->DrawSceneIndirect(cmd,
-                    resources.GetBuffer("WarpedVertexBuffer"),
-                    resources.GetBuffer(drawIDs.drawCommandsBuffer),
-                    resources.GetBuffer(drawIDs.drawParamsBuffer));
-            });
+                    scene->DrawSceneIndirect(cmd,
+                        resources.GetBuffer("WarpedVertexBuffer"),
+                        resources.GetBuffer(drawIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawIDs.drawParamsBuffer));
+                });
+        }
 
-        graph.AddPass("OutlinesProjection")
-            .Build([&](PassBuilder &builder) {
-                builder.ReadUniform("ViewState");
-                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
-                builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
-                builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
-                builder.Write(builder.LastOutputID(), Access::FragmentShaderWrite);
+        if (CVarOutlineProjectionWidth.Get() > 0) {
+            graph.AddPass("OutlinesProjection")
+                .Build([&](PassBuilder &builder) {
+                    builder.ReadUniform("ViewState");
+                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                    builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                    builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+                    builder.Write(builder.LastOutputID(), Access::FragmentShaderWrite);
 
-                builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
-            })
-            .Execute([drawIDs, scene = &scene, elapsedTime](Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("scene.vert", "outline_effect.frag");
-                float time = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count() / 1000.0f;
-                cmd.PushConstants(glm::vec4(glm::vec3(4, 10, 0.5), time));
-                cmd.SetUniformBuffer("ViewStates", "ViewState");
-                cmd.SetDepthTest(false, false);
-                cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
+                })
+                .Execute([drawIDs, scene = &scene, elapsedTime](Resources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("scene.vert", "outline_effect.frag");
+                    float time = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count() / 1000.0f;
+                    cmd.PushConstants(glm::vec4(glm::vec3(4, 10, 0.5), time));
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                    cmd.SetDepthTest(false, false);
+                    cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
 
-                cmd.SetStencilTest(true);
-                cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
-                cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 3);
-                cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 0);
-                cmd.SetBlending(true);
-                cmd.SetPolygonMode(vk::PolygonMode::eLine);
-                cmd.SetLineWidth(8.0f);
+                    cmd.SetStencilTest(true);
+                    cmd.SetStencilCompareOp(vk::CompareOp::eEqual);
+                    cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 3);
+                    cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 0);
+                    cmd.SetPolygonMode(vk::PolygonMode::eLine);
+                    cmd.SetLineWidth(CVarOutlineProjectionWidth.Get());
 
-                cmd.SetImageView("imageOut", resources.LastOutputID());
-                cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
+                    cmd.SetImageView("imageOut", resources.LastOutputID());
+                    cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
 
-                scene->DrawSceneIndirect(cmd,
-                    resources.GetBuffer("WarpedVertexBuffer"),
-                    resources.GetBuffer(drawIDs.drawCommandsBuffer),
-                    resources.GetBuffer(drawIDs.drawParamsBuffer));
-            });
+                    scene->DrawSceneIndirect(cmd,
+                        resources.GetBuffer("WarpedVertexBuffer"),
+                        resources.GetBuffer(drawIDs.drawCommandsBuffer),
+                        resources.GetBuffer(drawIDs.drawParamsBuffer));
+                });
+        }
     }
 } // namespace sp::vulkan::renderer
