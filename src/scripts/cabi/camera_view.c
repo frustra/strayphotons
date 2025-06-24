@@ -49,12 +49,12 @@ SP_EXPORT void camera_view_on_tick(void *context,
         ctx->started = true;
     }
 
-    sp_event_t event = {0};
-    while (sp_script_state_poll_event(state, lock, &event)) {
-        if (sp_string_compare(&event.name, "/script/camera_rotate") != 0) continue;
-        if (sp_event_data_get_type(&event.data) != SP_EVENT_DATA_TYPE_VEC2) continue;
+    sp_event_t *event;
+    while ((event = sp_script_state_poll_event(state, lock))) {
+        if (sp_string_compare(&event->name, "/script/camera_rotate") != 0) continue;
+        if (sp_event_data_get_type(&event->data) != SP_EVENT_DATA_TYPE_VEC2) continue;
 
-        const vec2_t *angleDiff = sp_event_data_get_const_vec2(&event.data);
+        const vec2_t *angleDiff = sp_event_data_get_const_vec2(&event->data);
         // Apply pitch/yaw rotations
         sp_ecs_transform_tree_t *transform = Tecs_entity_get_transform_tree(lock, ent);
 

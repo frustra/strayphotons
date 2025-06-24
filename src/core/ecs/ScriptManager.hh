@@ -77,7 +77,8 @@ namespace ecs {
             }
         }
 
-        bool PollEvent(const Lock<Read<EventInput>> &lock, Event &eventOut) const;
+        // The returned pointer remains valid until the next event is polled, or until the end of the script's onTick.
+        Event *PollEvent(const Lock<Read<EventInput>> &lock);
 
         explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(definition.callback);
@@ -103,6 +104,7 @@ namespace ecs {
         size_t instanceId;
         size_t index = std::numeric_limits<size_t>::max();
         bool initialized = false;
+        Event lastEvent;
 
         friend class ScriptInstance;
         friend class ScriptManager;

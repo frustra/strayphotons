@@ -9,6 +9,7 @@
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
 #include <cglm/cglm.h>
+#include <math.h>
 #include <stdbool.h>
 #include <strayphotons/components.h>
 #include <strayphotons/logging.h>
@@ -50,12 +51,12 @@ SP_EXPORT void flashlight_on_tick(void *context,
     light->intensity = sp_signal_ref_get_signal(&intensityRef, lock, 0);
     light->spot_angle.radians = glm_rad(sp_signal_ref_get_signal(&angleRef, lock, 0));
 
-    sp_event_t event = {0};
-    while (sp_script_state_poll_event(state, lock, &event)) {
-        if (sp_string_compare(&event.name, "/action/flashlight/toggle") == 0) {
+    sp_event_t *event;
+    while ((event = sp_script_state_poll_event(state, lock))) {
+        if (sp_string_compare(&event->name, "/action/flashlight/toggle") == 0) {
             sp_signal_ref_set_value(&onRef, lock, light->on ? 0.0 : 1.0);
             light->on = !light->on;
-        } else if (sp_string_compare(&event.name, "/action/flashlight/grab") == 0) {
+        } else if (sp_string_compare(&event->name, "/action/flashlight/grab") == 0) {
             sp_ecs_transform_tree_t *tree = Tecs_entity_get_transform_tree(lock, ent);
             if (sp_entity_ref_is_valid(&tree->parent)) {
                 sp_ecs_transform_tree_get_global_transform(tree, lock, &tree->transform);
@@ -105,7 +106,7 @@ SP_EXPORT void sun_on_tick(void *context,
     double sunPos = sp_signal_ref_get_signal(&positionRef, lock, 0);
     if (sp_signal_ref_get_signal(&fixPositionRef, lock, 0) == 0.0) {
         double intervalSeconds = (double)intervalNs / 1e9;
-        sunPos += intervalSeconds * (0.05 + abs(sin(sunPos) * 0.1));
+        sunPos += intervalSeconds * (0.05 + fabs(sin(sunPos) * 0.1));
         if (sunPos > M_PI_2) sunPos = -M_PI_2;
         sp_signal_ref_set_value(&positionRef, lock, sunPos);
     }

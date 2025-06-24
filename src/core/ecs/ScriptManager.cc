@@ -43,8 +43,9 @@ namespace ecs {
     ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
 
-    bool ScriptState::PollEvent(const Lock<Read<EventInput>> &lock, Event &eventOut) const {
-        return EventInput::Poll(lock, eventQueue, eventOut);
+    Event *ScriptState::PollEvent(const Lock<Read<EventInput>> &lock) {
+        if (EventInput::Poll(lock, eventQueue, lastEvent)) return &lastEvent;
+        return nullptr;
     }
 
     ScriptManager::ScriptManager() {
@@ -303,6 +304,7 @@ namespace ecs {
             // ZoneScopedN("OnTick");
             // ZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
+            state.lastEvent = {};
         }
     }
 
@@ -318,6 +320,7 @@ namespace ecs {
             // ZoneScopedN("OnPhysicsUpdate");
             // ZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
+            state.lastEvent = {};
         }
     }
 

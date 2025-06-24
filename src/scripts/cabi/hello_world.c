@@ -24,16 +24,16 @@
     #define SP_EXPORT __attribute__((__visibility__("default")))
 #endif
 
-static size_t instanceCount = 0;
+static uint32_t instanceCount = 0;
 
 typedef struct script_hello_world_t {
     char name[16];
-    uint64_t frameCount;
+    uint32_t frameCount;
 } script_hello_world_t;
 
 SP_EXPORT void hello_world_default_init(void *context) {
     script_hello_world_t *ctx = context;
-    snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%llu", ++instanceCount);
+    snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%u", ++instanceCount);
 }
 
 SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
@@ -41,7 +41,7 @@ SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
     char buffer[256] = {0};
     snprintf(buffer,
         255,
-        "Script %s init %s (old frame: %llu)\n",
+        "Script %s init %s (old frame: %u)\n",
         sp_string_get_c_str(&state->definition.name),
         ctx->name,
         ctx->frameCount);
@@ -54,7 +54,7 @@ SP_EXPORT void hello_world_destroy(void *context, sp_script_state_t *state) {
     char buffer[256] = {0};
     snprintf(buffer,
         255,
-        "Script %s destroyed %s at frame %llu\n",
+        "Script %s destroyed %s at frame %u\n",
         sp_string_get_c_str(&state->definition.name),
         ctx->name,
         ctx->frameCount);
