@@ -22,5 +22,6 @@ namespace sp {
 
     private:
         ecs::EntityRef signalEntity;
+        std::vector<float> valueHistory;
     };
 } // namespace sp

@@ -26,7 +26,7 @@ namespace sp::vulkan {
         virtual ~ProfilerGui() {}
 
         static float GetHistogramValue(void *data, int index) {
-            auto self = static_cast<ProfilerGui *>(data);
+            auto *self = static_cast<ProfilerGui *>(data);
             return (float)self->drawHistogram.buckets[index];
         }
 
