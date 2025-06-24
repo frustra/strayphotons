@@ -31,11 +31,13 @@ typedef struct script_hello_world_t {
     uint64_t frameCount;
 } script_hello_world_t;
 
-SP_EXPORT void hello_world_default_init(script_hello_world_t *ctx) {
+SP_EXPORT void hello_world_default_init(void *context) {
+    script_hello_world_t *ctx = context;
     snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%llu", ++instanceCount);
 }
 
-SP_EXPORT void hello_world_init(script_hello_world_t *ctx, sp_script_state_t *state) {
+SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
+    script_hello_world_t *ctx = context;
     char buffer[256] = {0};
     snprintf(buffer,
         255,
@@ -47,7 +49,8 @@ SP_EXPORT void hello_world_init(script_hello_world_t *ctx, sp_script_state_t *st
     ctx->frameCount = 0;
 }
 
-SP_EXPORT void hello_world_destroy(script_hello_world_t *ctx, sp_script_state_t *state) {
+SP_EXPORT void hello_world_destroy(void *context, sp_script_state_t *state) {
+    script_hello_world_t *ctx = context;
     char buffer[256] = {0};
     snprintf(buffer,
         255,
@@ -58,11 +61,12 @@ SP_EXPORT void hello_world_destroy(script_hello_world_t *ctx, sp_script_state_t 
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 }
 
-SP_EXPORT void hello_world_on_tick_logic(script_hello_world_t *ctx,
+SP_EXPORT void hello_world_on_tick_logic(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     uint64_t intervalNs) {
+    script_hello_world_t *ctx = context;
     if (!Tecs_entity_has_renderable(lock, ent)) return;
     sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, ent);
     renderable->color_override.rgba[0] = sin(ctx->frameCount / 100.0f) * 0.5 + 0.5;
@@ -72,11 +76,12 @@ SP_EXPORT void hello_world_on_tick_logic(script_hello_world_t *ctx,
     ctx->frameCount++;
 }
 
-SP_EXPORT void hello_world_on_tick_physics(script_hello_world_t *ctx,
+SP_EXPORT void hello_world_on_tick_physics(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     uint64_t intervalNs) {
+    script_hello_world_t *ctx = context;
     if (!Tecs_entity_has_bitset(lock, ent, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT)) return;
     sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, ent);
     sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, ent);

@@ -28,16 +28,18 @@ typedef struct script_camera_view_t {
     bool started;
 } script_camera_view_t;
 
-SP_EXPORT void camera_view_init(script_camera_view_t *ctx, sp_script_state_t *state) {
+SP_EXPORT void camera_view_init(void *context, sp_script_state_t *state) {
+    script_camera_view_t *ctx = context;
     ctx->foobar = 42;
     ctx->started = false;
 }
 
-SP_EXPORT void camera_view_on_tick(script_camera_view_t *ctx,
+SP_EXPORT void camera_view_on_tick(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     uint64_t intervalNs) {
+    script_camera_view_t *ctx = context;
     if (!Tecs_entity_has_transform_tree(lock, ent)) return;
 
     if (!ctx->started) {
