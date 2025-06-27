@@ -16,12 +16,28 @@ layout(num_views = 2) in;
 INCLUDE_LAYOUT(binding = 1)
 #include "lib/view_states_uniform.glsl"
 
-layout(location = 0) in float inFrontFace;
+INCLUDE_LAYOUT(binding = 2)
+#include "lib/light_data_uniform.glsl"
+
+layout(location = 0) in vec3 inWorldPos;
+layout(location = 1) in float inFrontFace;
 layout(location = 0) out vec4 outFragColor;
+
+layout(push_constant) uniform PushConstants {
+    uint lightIndex;
+	float transmittance;
+};
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
-    float viewDist = length(view.invViewMat[3].xyz);
+	vec3 viewWorldPosition = view.invViewMat[3].xyz;
 
-    outFragColor = vec4(vec3(max(0, inFrontFace * viewDist * 0.01)), 1.0);
+    vec3 viewDir = normalize(inWorldPos - viewWorldPosition);
+
+	vec3 lightWorldPosition = lights[lightIndex].invView[3].xyz;
+	vec3 lightDir = normalize(lightWorldPosition - viewWorldPosition);
+
+    float viewDist = length(inWorldPos - viewWorldPosition) * transmittance;
+
+    outFragColor = vec4(-inFrontFace * viewDist);
 }
