@@ -82,7 +82,11 @@ namespace ecs {
 
         template<typename T>
         AsyncEvent(const std::string &name, const Entity &source, T data)
-            : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {}
+            : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {
+            if constexpr (std::is_same<T, EventData>()) {
+                Assertf(!data.valueless_by_exception(), "Creating event with valueless data: %s", name);
+            }
+        }
     };
 
     std::ostream &operator<<(std::ostream &out, const EventData &v);

@@ -84,7 +84,7 @@ namespace sp::vulkan {
             }
             if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
                 gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(
-                    glm::vec4(renderable.metallicRoughnessOverride, 0, 1));
+                    glm::vec4(0, renderable.metallicRoughnessOverride.g, renderable.metallicRoughnessOverride.r, 1));
             }
             if (ent.Has<ecs::OpticalElement>(lock)) {
                 auto &optic = ent.Get<ecs::OpticalElement>(lock);

@@ -107,7 +107,6 @@ namespace ecs {
                             newEntity.Set<EventInput>(lock);
                             auto &scripts = newEntity.Set<Scripts>(lock);
                             scripts.AddScript(prefixName, "interactive_object");
-                            GetScriptManager().RegisterEvents(lock, newEntity);
                         }
                     }
                 }
