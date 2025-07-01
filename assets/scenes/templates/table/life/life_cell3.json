@@ -32,7 +32,7 @@
 		},
 		"script": [
 			{
-				"name": "life_cell",
+				"name": "prefab_life_cell",
 				"parameters": {
 					"board_size": [32, 32]
 				}

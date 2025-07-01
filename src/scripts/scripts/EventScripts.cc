@@ -68,7 +68,7 @@ namespace sp::scripts {
     LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
-        robin_hood::unordered_map<std::string, std::string> mapping;
+        robin_hood::unordered_map<InlineString<127>, std::string, StringHash, StringEqual> mapping;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -80,7 +80,7 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
-            robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
+            robin_hood::unordered_map<InlineString<127>, std::optional<Event>, StringHash, StringEqual> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 auto it = mapping.find(event.name);

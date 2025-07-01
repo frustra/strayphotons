@@ -32,38 +32,40 @@ struct DocsStruct {
 private:
     template<typename T>
     std::string fieldTypeName() {
-        if constexpr (std::is_same_v<T, bool>) {
+        if constexpr (std::is_same<T, bool>()) {
             return "bool";
-        } else if constexpr (std::is_same_v<T, int32_t>) {
+        } else if constexpr (std::is_same<T, int32_t>()) {
             return "int32";
-        } else if constexpr (std::is_same_v<T, uint32_t>) {
+        } else if constexpr (std::is_same<T, uint32_t>()) {
             return "uint32";
-        } else if constexpr (std::is_same_v<T, size_t>) {
+        } else if constexpr (std::is_same<T, size_t>()) {
             return "size_t";
-        } else if constexpr (std::is_same_v<T, sp::angle_t>) {
+        } else if constexpr (std::is_same<T, sp::angle_t>()) {
             return "float (degrees)";
-        } else if constexpr (std::is_same_v<T, float>) {
+        } else if constexpr (std::is_same<T, float>()) {
             return "float";
-        } else if constexpr (std::is_same_v<T, double>) {
+        } else if constexpr (std::is_same<T, double>()) {
             return "double";
-        } else if constexpr (std::is_same_v<T, std::string>) {
+        } else if constexpr (std::is_same<T, std::string>()) {
             return "string";
-        } else if constexpr (std::is_same_v<T, sp::color_t>) {
+        } else if constexpr (sp::is_inline_string<T>()) {
+            return "string (max " + std::to_string(T::max_size()) + " chars)";
+        } else if constexpr (std::is_same<T, sp::color_t>()) {
             return "vec3 (red, green, blue)";
-        } else if constexpr (std::is_same_v<T, sp::color_alpha_t>) {
+        } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             return "vec4 (red, green, blue, alpha)";
-        } else if constexpr (std::is_same_v<T, glm::quat> || std::is_same_v<T, glm::mat3>) {
+        } else if constexpr (std::is_same<T, glm::quat>() || std::is_same<T, glm::mat3>()) {
             return "vec4 (angle_degrees, axis_x, axis_y, axis_z)";
         } else if constexpr (sp::is_glm_vec<T>()) {
             using U = typename T::value_type;
 
-            if constexpr (std::is_same_v<U, float>) {
+            if constexpr (std::is_same<U, float>()) {
                 return "vec" + std::to_string(T::length());
-            } else if constexpr (std::is_same_v<U, double>) {
+            } else if constexpr (std::is_same<U, double>()) {
                 return "dvec" + std::to_string(T::length());
-            } else if constexpr (std::is_same_v<U, int>) {
+            } else if constexpr (std::is_same<U, int>()) {
                 return "ivec" + std::to_string(T::length());
-            } else if constexpr (std::is_same_v<U, unsigned int>) {
+            } else if constexpr (std::is_same<U, unsigned int>()) {
                 return "uvec" + std::to_string(T::length());
             } else {
                 return typeid(T).name();
@@ -265,7 +267,7 @@ struct MarkdownContext {
 
             const ecs::StructMetadata *metadata = nullptr;
             const std::string *name = nullptr;
-            if constexpr (std::is_same_v<std::decay_t<decltype(entry)>, std::string>) {
+            if constexpr (std::is_same<std::decay_t<decltype(entry)>, std::string>()) {
                 Assertf(pageType == PageType::Component,
                     "Unexpected page type: %s for %s",
                     magic_enum::enum_name(pageType),

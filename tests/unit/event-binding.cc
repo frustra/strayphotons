@@ -57,15 +57,21 @@ namespace EventBindingTests {
             AssertEqual(targets.size(), 1u, "Unexpected binding count");
             AssertEqual(targets[0].outputs.size(), 1u, "Unexpected binding output count");
             AssertEqual(targets[0].outputs[0].target.GetLive(), hand, "Expected button to be bound on hand");
-            AssertEqual(targets[0].outputs[0].queueName, TEST_EVENT_ACTION1, "Expected button to be bound to action1");
+            AssertEqual(targets[0].outputs[0].queueName.str(),
+                TEST_EVENT_ACTION1,
+                "Expected button to be bound to action1");
 
             targets = bindings.sourceToDest.at(TEST_SOURCE_KEY);
             AssertEqual(targets.size(), 1u, "Unexpected binding count");
             AssertEqual(targets[0].outputs.size(), 2u, "Unexpected binding output count");
             AssertEqual(targets[0].outputs[0].target.GetLive(), hand, "Expected key to be bound on hand");
-            AssertEqual(targets[0].outputs[0].queueName, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
+            AssertEqual(targets[0].outputs[0].queueName.str(),
+                TEST_EVENT_ACTION2,
+                "Expected key to be bound to action2");
             AssertEqual(targets[0].outputs[1].target.GetLive(), player, "Expected key to be bound on player");
-            AssertEqual(targets[0].outputs[1].queueName, TEST_EVENT_ACTION2, "Expected key to be bound to action2");
+            AssertEqual(targets[0].outputs[1].queueName.str(),
+                TEST_EVENT_ACTION2,
+                "Expected key to be bound to action2");
         }
         {
             Timer t("Send some test events");
@@ -84,50 +90,50 @@ namespace EventBindingTests {
 
             ecs::Event event;
             AssertTrue(!ecs::EventInput::Poll(lock, ecs::EventQueueRef(), event), "Unexpected null event queue");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             AssertTrue(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             AssertTrue(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive a second event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             AssertTrue(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected third event");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             AssertTrue(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION1, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION1, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData(42), "Unexpected event data");
             AssertTrue(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             AssertTrue(ecs::EventInput::Poll(lock, handQueue1, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             AssertTrue(!ecs::EventInput::Poll(lock, handQueue1, event), "Unexpected second event");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 
             AssertTrue(ecs::EventInput::Poll(lock, handQueue2, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('a'), "Unexpected event data");
             AssertTrue(ecs::EventInput::Poll(lock, handQueue2, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION2, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION2, "Unexpected event name");
             AssertEqual(event.source, player, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData('b'), "Unexpected event data");
             AssertTrue(!ecs::EventInput::Poll(lock, handQueue2, event), "Unexpected second event");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
         }

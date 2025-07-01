@@ -9,6 +9,7 @@ set(SCRIPT_LIST
     camera_view
     game_scripts
     hello_world
+    life
 )
 
 foreach(SCRIPT_NAME ${SCRIPT_LIST})

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "common/InlineString.hh"
+
 #include <functional>
 #include <iostream>
 #include <string>
@@ -43,7 +45,7 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 )";
 
     struct Name {
-        std::string scene, entity;
+        sp::InlineString<63> scene, entity;
 
         Name() {}
         Name(const std::string_view &scene, const std::string_view &entity);
@@ -53,7 +55,7 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
         bool Parse(const std::string_view &relativeName, const EntityScope &scope);
 
         std::string String() const {
-            if (scene.empty()) return entity;
+            if (scene.empty()) return entity.str();
             return scene + ":" + entity;
         }
 

@@ -467,15 +467,15 @@ namespace ecs {
             if (dst) SetScope(*dst, scope);
         }
 
-        template<typename T>
-        inline void SetScope(robin_hood::unordered_flat_map<std::string, T> &dst, const EntityScope &scope) {
+        template<typename K, typename T, typename H, typename E>
+        inline void SetScope(robin_hood::unordered_flat_map<K, T, H, E> &dst, const EntityScope &scope) {
             for (auto &item : dst) {
                 SetScope(item.second, scope);
             }
         }
 
-        template<typename T>
-        inline void SetScope(robin_hood::unordered_node_map<std::string, T> &dst, const EntityScope &scope) {
+        template<typename K, typename T, typename H, typename E>
+        inline void SetScope(robin_hood::unordered_node_map<K, T, H, E> &dst, const EntityScope &scope) {
             for (auto &item : dst) {
                 SetScope(item.second, scope);
             }

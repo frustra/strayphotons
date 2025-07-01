@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/Common.hh"
+#include "common/Hashing.hh"
 #include "common/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
@@ -22,14 +23,11 @@
 namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
-    using SendEventsLock = Lock<
-        Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
-
     struct EventInput {
         EventInput() {}
 
-        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
-        void Unregister(const EventQueueRef &queue, const std::string &binding);
+        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const sp::InlineString<127> &binding);
+        void Unregister(const EventQueueRef &queue, const sp::InlineString<127> &binding);
 
         /**
          * Adds an event to any matching event input queues.
@@ -41,7 +39,9 @@ namespace ecs {
         size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<std::string, std::vector<EventQueueWeakRef>> events;
+        robin_hood::
+            unordered_map<sp::InlineString<127>, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual>
+                events;
     };
 
     static EntityComponent<EventInput> ComponentEventInput("event_input", R"(
@@ -54,7 +54,7 @@ their own event queues as needed.
 
     struct EventDest {
         EntityRef target;
-        std::string queueName;
+        sp::InlineString<127> queueName;
 
         bool operator==(const EventDest &) const = default;
     };
@@ -142,21 +142,21 @@ their own event queues as needed.
     public:
         EventBindings() {}
 
-        EventBinding &Bind(std::string source, const EventBinding &binding);
-        EventBinding &Bind(std::string source, EntityRef target, std::string dest);
-        void Unbind(std::string source, EntityRef target, std::string dest);
+        EventBinding &Bind(std::string_view source, const EventBinding &binding);
+        EventBinding &Bind(std::string_view source, EntityRef target, std::string_view dest);
+        void Unbind(std::string_view source, EntityRef target, std::string_view dest);
 
         static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const Event &event,
             size_t depth = 0);
-        static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
+        static size_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const AsyncEvent &event,
             size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
-        robin_hood::unordered_map<std::string, BindingList> sourceToDest;
+        robin_hood::unordered_map<sp::InlineString<127>, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
     };
 
     static EntityComponent<EventBindings> ComponentEventBindings("event_bindings",
@@ -208,5 +208,5 @@ as the `/action/run_command` event. Upon receiving this event, the `console:inpu
     template<>
     void EntityComponent<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str);
+    std::pair<ecs::Name, sp::InlineString<127>> ParseEventString(const std::string &str);
 } // namespace ecs

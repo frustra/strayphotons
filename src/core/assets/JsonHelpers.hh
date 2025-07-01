@@ -136,6 +136,12 @@ namespace sp::json {
         dst = glm::mat3_cast(q);
         return true;
     }
+    template<size_t MaxSize, typename CharT>
+    inline bool Load(sp::InlineString<MaxSize, CharT> &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        dst = src.get<std::string>();
+        return true;
+    }
     template<>
     inline bool Load(std::string &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
@@ -223,8 +229,8 @@ namespace sp::json {
             return true;
         }
     }
-    template<typename T>
-    inline bool Load(robin_hood::unordered_flat_map<std::string, T> &dst, const picojson::value &src) {
+    template<typename K, typename T, typename H, typename E>
+    inline bool Load(robin_hood::unordered_flat_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
@@ -234,8 +240,8 @@ namespace sp::json {
         }
         return true;
     }
-    template<typename T>
-    inline bool Load(robin_hood::unordered_node_map<std::string, T> &dst, const picojson::value &src) {
+    template<typename K, typename T, typename H, typename E>
+    inline bool Load(robin_hood::unordered_node_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
@@ -301,6 +307,10 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::mat3 &src) {
         Save(s, dst, glm::quat_cast(src));
     }
+    template<size_t MaxSize, typename CharT>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::InlineString<MaxSize, CharT> &src) {
+        dst = picojson::value(src.str());
+    }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::string &src) {
         dst = picojson::value(src);
@@ -365,23 +375,43 @@ namespace sp::json {
             dst = picojson::value(vec);
         }
     }
-    template<typename T>
+    template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,
         picojson::value &dst,
-        const robin_hood::unordered_flat_map<std::string, T> &src) {
+        const robin_hood::unordered_flat_map<std::string, T, H, E> &src) {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
         }
         dst = picojson::value(obj);
     }
-    template<typename T>
+    template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,
         picojson::value &dst,
-        const robin_hood::unordered_node_map<std::string, T> &src) {
+        const robin_hood::unordered_node_map<std::string, T, H, E> &src) {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<size_t MaxSize, typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_flat_map<InlineString<MaxSize>, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<size_t MaxSize, typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_node_map<InlineString<MaxSize>, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
         }
         dst = picojson::value(obj);
     }
@@ -527,6 +557,9 @@ namespace sp::json {
             }
         } else if constexpr (std::is_floating_point_v<T>) {
             typeSchema["type"] = picojson::value("number");
+        } else if constexpr (sp::is_inline_string<T>()) {
+            typeSchema["type"] = picojson::value("string");
+            typeSchema["maxLength"] = picojson::value((double)T::max_size());
         } else if constexpr (sp::is_glm_vec<T>()) {
             typeSchema["type"] = picojson::value("array");
             typeSchema["minItems"] = picojson::value((double)T::length());
@@ -566,7 +599,9 @@ namespace sp::json {
             typeSchema["anyOf"] = picojson::value(anyOfArray);
         } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
             typeSchema["type"] = picojson::value("object");
-            static_assert(std::is_same_v<typename T::key_type, std::string>, "Only string map keys are supported!");
+            static_assert(
+                std::is_same<typename T::key_type, std::string>() || sp::is_inline_string<typename T::key_type>(),
+                "Only string map keys are supported!");
             SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);
         } else if constexpr (std::is_default_constructible<T>()) {
             if (!rootType) return;

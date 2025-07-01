@@ -140,7 +140,7 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str) {
+    std::pair<ecs::Name, sp::InlineString<127>> ParseEventString(const std::string &str) {
         size_t delimiter = str.find('/');
         ecs::Name entityName(str.substr(0, delimiter), ecs::Name());
         if (entityName && delimiter != std::string::npos) {
@@ -150,7 +150,9 @@ namespace ecs {
         }
     }
 
-    void EventInput::Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding) {
+    void EventInput::Register(Lock<Write<EventInput>> lock,
+        const EventQueueRef &queue,
+        const sp::InlineString<127> &binding) {
         Assertf(IsLive(lock), "Attempting to register event on non-live entity: %s", binding);
         Assertf(queue, "EventInput::Register called with null queue: %s", binding);
 
@@ -159,7 +161,7 @@ namespace ecs {
         queueList.emplace_back(queue);
     }
 
-    void EventInput::Unregister(const std::shared_ptr<EventQueue> &queue, const std::string &binding) {
+    void EventInput::Unregister(const std::shared_ptr<EventQueue> &queue, const sp::InlineString<127> &binding) {
         if (!queue) return;
 
         auto it = events.find(binding);
@@ -192,7 +194,7 @@ namespace ecs {
         return queue->Poll(eventOut, lock.GetTransactionId());
     }
 
-    EventBinding &EventBindings::Bind(std::string source, const EventBinding &binding) {
+    EventBinding &EventBindings::Bind(std::string_view source, const EventBinding &binding) {
         auto &list = sourceToDest.emplace(source, BindingList{}).first->second;
         auto it = std::find_if(list.begin(), list.end(), [&](auto &arg) {
             return arg.actions == binding.actions;
@@ -209,13 +211,13 @@ namespace ecs {
         }
     }
 
-    EventBinding &EventBindings::Bind(std::string source, EntityRef target, std::string dest) {
+    EventBinding &EventBindings::Bind(std::string_view source, EntityRef target, std::string_view dest) {
         EventBinding binding;
         binding.outputs = {EventDest{target, dest}};
         return Bind(source, binding);
     }
 
-    void EventBindings::Unbind(std::string source, EntityRef target, std::string dest) {
+    void EventBindings::Unbind(std::string_view source, EntityRef target, std::string_view dest) {
         auto list = sourceToDest.find(source);
         if (list != sourceToDest.end()) {
             EventDest searchDest = {target, dest};
@@ -351,10 +353,10 @@ namespace ecs {
         size_t depth) {
         AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
         asyncEvent.transactionId = lock.GetTransactionId();
-        return SendEvent(lock, target, asyncEvent, depth);
+        return SendAsyncEvent(lock, target, asyncEvent, depth);
     }
 
-    size_t EventBindings::SendEvent(const DynamicLock<SendEventsLock> &lock,
+    size_t EventBindings::SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
         const EntityRef &target,
         const AsyncEvent &event,
         size_t depth) {
@@ -385,7 +387,7 @@ namespace ecs {
 
                     for (auto &dest : binding.outputs) {
                         outputEvent.name = dest.queueName;
-                        eventsSent += SendEvent(lock, dest.target, outputEvent, depth + 1);
+                        eventsSent += SendAsyncEvent(lock, dest.target, outputEvent, depth + 1);
                     }
                 }
             }

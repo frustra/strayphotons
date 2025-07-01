@@ -99,8 +99,8 @@ namespace ecs {
 
 namespace std {
     std::size_t hash<ecs::Name>::operator()(const ecs::Name &n) const {
-        auto val = hash<string>()(n.scene);
-        sp::hash_combine(val, n.entity);
+        auto val = hash<string_view>()(n.scene);
+        sp::hash_combine<size_t, string_view>(val, n.entity);
         return val;
     }
 } // namespace std

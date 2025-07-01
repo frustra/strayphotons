@@ -85,9 +85,17 @@ namespace ecs {
         }
     }
 
+    size_t Event::Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event) {
+        return ecs::EventBindings::SendEvent(lock, target, event);
+    }
+
+    size_t Event::SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event) {
+        return ecs::EventBindings::SendEvent(lock, target, event);
+    }
+
     std::string Event::ToString() const {
         std::stringstream ss;
-        ss << this->name << ":" << this->data;
+        ss << std::string_view(this->name) << ":" << this->data;
         return ss.str();
     }
 

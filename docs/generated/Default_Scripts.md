@@ -34,7 +34,7 @@ The `camera_view` script has no configurable parameters
 
 ## `collapse_events` Script
 
-The `collapse_events` script has parameter type: map&lt;string, string&gt;
+The `collapse_events` script has parameter type: map&lt;string (max 127 chars), string&gt;
 
 </div>
 
@@ -248,7 +248,7 @@ The `physics_camera_view` script has no configurable parameters
 
 ## `physics_collapse_events` Script
 
-The `physics_collapse_events` script has parameter type: map&lt;string, string&gt;
+The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string&gt;
 
 </div>
 

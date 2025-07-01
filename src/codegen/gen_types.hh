@@ -86,6 +86,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "double"s;
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             return "sp_angle_t"s;
+        } else if constexpr (sp::is_inline_string<T>()) {
+            return "string_" + std::to_string(T::max_size()) + "_t";
         } else if constexpr (std::is_same<T, std::string>()) {
             return "string_t"s;
         } else if constexpr (sp::is_glm_vec<T>()) {
@@ -332,7 +334,39 @@ void GenerateCTypeFunctionDefinitions(S &out, const std::string &full) {
 
 template<typename T, typename S>
 void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
-    if constexpr (std::is_same<T, std::string>()) {
+    if constexpr (sp::is_inline_string<T>()) {
+        out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
+            << "_t *str, const char *new_str) {" << std::endl;
+        out << "    *str = new_str;" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
+            << "_t *str, const char *other_str) {" << std::endl;
+        out << "    return str->compare(other_str);" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
+            << "_t *str) {" << std::endl;
+        out << "    return str->size();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
+            << "_t *str) {" << std::endl;
+        out << "    return str->c_str();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str) {"
+            << std::endl;
+        out << "    return str->data();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+        out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
+            << "_t *str, size_t new_size, char fill_char) {" << std::endl;
+        out << "    str->resize(new_size, fill_char);" << std::endl;
+        out << "    return str->data();" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
+    } else if constexpr (std::is_same<T, std::string>()) {
         out << "SP_EXPORT size_t sp_string_get_size(const string_t *str) {" << std::endl;
         out << "    return str->size();" << std::endl;
         out << "}" << std::endl;
@@ -547,6 +581,27 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
+        } else if constexpr (sp::is_inline_string<T>()) {
+            out << "typedef struct string_" << T::max_size() << "_t {" << std::endl;
+            out << "    char data[" << (T::max_size() + 1) << "];" << std::endl;
+            size_t extra = sizeof(T) - sizeof(T::value_type) * (T::max_size() + 1);
+            if (extra > 0) {
+                out << "    const uint8_t _unknown[" << extra << "];" << std::endl;
+            }
+            out << "} string_" << T::max_size() << "_t;" << std::endl;
+            out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
+                << "_t *str, const char *new_str);" << std::endl;
+            out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
+                << "_t *str, const char *other_str);" << std::endl;
+            out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
+                << "_t *str);" << std::endl;
+            out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
+                << "_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str);"
+                << std::endl;
+            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
+                << "_t *str, size_t new_size, char fill_char);" << std::endl;
+            out << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef struct string_t { const uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
@@ -783,6 +838,21 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
+        } else if constexpr (sp::is_inline_string<T>()) {
+            out << "typedef sp::InlineString<" << T::max_size() << "> string_" << T::max_size() << "_t;" << std::endl;
+            out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
+                << "_t *str, const char *new_str);" << std::endl;
+            out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
+                << "_t *str, const char *other_str);" << std::endl;
+            out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
+                << "_t *str);" << std::endl;
+            out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
+                << "_t *str);" << std::endl;
+            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str);"
+                << std::endl;
+            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
+                << "_t *str, size_t new_size, char fill_char);" << std::endl;
+            out << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef std::string string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;

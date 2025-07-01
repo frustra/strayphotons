@@ -346,7 +346,7 @@ namespace sp {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
             connections[scene->data->path] = picojson::value("1");
         }
-        connections[scope.scene] = picojson::value("1");
+        connections[scope.scene.str()] = picojson::value("1");
         if (!connections.empty()) {
             picojson::object ent;
             ent["scene_connection"] = picojson::value(connections);

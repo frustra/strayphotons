@@ -509,13 +509,13 @@ namespace sp {
         ecs::GetSignalManager().Tick(this->interval);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditSceneCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, std::string_view sceneName, EditSceneCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string sceneName, EditCallback callback) {
+    void SceneManager::QueueAction(SceneAction action, std::string_view sceneName, EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
         actionQueue.emplace_back(action, sceneName, callback);
@@ -533,7 +533,7 @@ namespace sp {
         actionQueue.emplace_back(SceneAction::RunCallback, callback);
     }
 
-    void SceneManager::QueueActionAndBlock(SceneAction action, std::string sceneName, EditSceneCallback callback) {
+    void SceneManager::QueueActionAndBlock(SceneAction action, std::string_view sceneName, EditSceneCallback callback) {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);

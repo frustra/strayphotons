@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/Common.hh"
+#include "common/InlineString.hh"
 
 #include <cstring>
 #include <robin_hood.h>
@@ -68,6 +69,10 @@ namespace sp {
         std::size_t operator()(std::string_view key) const {
             return robin_hood::hash_bytes(key.data(), key.size());
         }
+        template<size_t MaxSize>
+        std::size_t operator()(const sp::InlineString<MaxSize> &key) const {
+            return robin_hood::hash_bytes(key.data(), key.size());
+        }
         std::size_t operator()(const char *key) const {
             return robin_hood::hash_bytes(key, std::strlen(key));
         }
@@ -83,6 +88,20 @@ namespace sp {
         bool operator()(const std::string &lhs, const std::string_view &rhs) const {
             const std::string_view view = lhs;
             return view == rhs;
+        }
+        template<size_t MaxSize>
+        std::size_t operator()(const std::string_view &lhs, const sp::InlineString<MaxSize> &rhs) const {
+            const std::string_view view = rhs;
+            return lhs == view;
+        }
+        template<size_t MaxSize>
+        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const std::string_view &rhs) const {
+            const std::string_view view = lhs;
+            return view == rhs;
+        }
+        template<size_t MaxSize>
+        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const sp::InlineString<MaxSize> &rhs) const {
+            return lhs == rhs;
         }
         bool operator()(const char *lhs, const std::string &rhs) const {
             return std::strcmp(lhs, rhs.c_str()) == 0;

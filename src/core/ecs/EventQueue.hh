@@ -21,6 +21,9 @@
 #include <variant>
 
 namespace ecs {
+    using SendEventsLock = Lock<
+        Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
+
     using EventData = std::variant<bool,
         int,
         unsigned int,
@@ -50,13 +53,16 @@ namespace ecs {
     void StructMetadata::SetScope<EventData>(EventData &dst, const EntityScope &scope);
 
     struct Event {
-        std::string name;
+        sp::InlineString<127> name;
         Entity source;
         EventData data;
 
         Event() {}
         template<typename T>
-        Event(const std::string &name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
+        Event(std::string_view name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
+
+        static size_t Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event);
+        static size_t SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event);
 
         std::string ToString() const;
     };
@@ -67,21 +73,28 @@ namespace ecs {
         "A named event with data originating from a source entity.",
         StructField::New("name", "The event name", &Event::name),
         StructField::New("source", "The entity the event originated from", &Event::source),
-        StructField::New("data", "The event payload", &Event::data));
+        StructField::New("data", "The event payload", &Event::data),
+        StructFunction::New("Send", "", &Event::Send, ArgDesc("lock", ""), ArgDesc("target", ""), ArgDesc("event", "")),
+        StructFunction::New("SendRef",
+            "",
+            &Event::SendRef,
+            ArgDesc("lock", ""),
+            ArgDesc("target", ""),
+            ArgDesc("event", "")));
 
     struct AsyncEvent {
-        std::string name;
+        sp::InlineString<127> name;
         Entity source;
         sp::AsyncPtr<EventData> data;
 
         size_t transactionId = 0;
 
         AsyncEvent() {}
-        AsyncEvent(const std::string &name, const Entity &source, const sp::AsyncPtr<EventData> &data)
+        AsyncEvent(std::string_view name, const Entity &source, const sp::AsyncPtr<EventData> &data)
             : name(name), source(source), data(data) {}
 
         template<typename T>
-        AsyncEvent(const std::string &name, const Entity &source, T data)
+        AsyncEvent(std::string_view name, const Entity &source, T data)
             : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {
             if constexpr (std::is_same<T, EventData>()) {
                 Assertf(!data.valueless_by_exception(), "Creating event with valueless data: %s", name);

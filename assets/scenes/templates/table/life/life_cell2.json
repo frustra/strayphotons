@@ -10,7 +10,7 @@
 		},
 		"script": [
 			{
-				"name": "life_cell",
+				"name": "prefab_life_cell",
 				"parameters": {
 					"board_size": [128, 128]
 				}

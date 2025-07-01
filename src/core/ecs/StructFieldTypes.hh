@@ -34,6 +34,8 @@ namespace ecs {
         Transform,
         EventData,
         std::string,
+        sp::InlineString<63>,
+        sp::InlineString<127>,
         size_t,
         VisibilityMask,
         sp::color_alpha_t,
@@ -101,11 +103,11 @@ namespace ecs {
         std::optional<SignalExpression>,
         std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,
-        robin_hood::unordered_map<std::string, std::string>,
+        robin_hood::unordered_map<sp::InlineString<127>, std::string, sp::StringHash, sp::StringEqual>,
         robin_hood::unordered_map<std::string, SignalExpression>,
         robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
-        robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
+        robin_hood::unordered_map<sp::InlineString<127>, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
 
         // Enums
         FocusLayer,
@@ -124,6 +126,7 @@ namespace ecs {
         // Locks
         DynamicLock<>,
         DynamicLock<ReadSignalsLock>,
+        DynamicLock<SendEventsLock>,
         Lock<>,
         Lock<Read<EventInput>>,
         Lock<Read<Signals>>,

@@ -53,10 +53,10 @@ SP_EXPORT void flashlight_on_tick(void *context,
 
     sp_event_t *event;
     while ((event = sp_script_state_poll_event(state, lock))) {
-        if (sp_string_compare(&event->name, "/action/flashlight/toggle") == 0) {
+        if (sp_string_127_compare(&event->name, "/action/flashlight/toggle") == 0) {
             sp_signal_ref_set_value(&onRef, lock, light->on ? 0.0 : 1.0);
             light->on = !light->on;
-        } else if (sp_string_compare(&event->name, "/action/flashlight/grab") == 0) {
+        } else if (sp_string_127_compare(&event->name, "/action/flashlight/grab") == 0) {
             sp_ecs_transform_tree_t *tree = Tecs_entity_get_transform_tree(lock, ent);
             if (sp_entity_ref_is_valid(&tree->parent)) {
                 sp_ecs_transform_tree_get_global_transform(tree, lock, &tree->transform);
@@ -74,14 +74,14 @@ SP_EXPORT void flashlight_on_tick(void *context,
                 } else {
                     sp_ecs_name_t name = {0};
                     sp_entity_ref_name(&ctx->parentEntity, &name);
-                    const char *sceneName = sp_string_get_c_str(&name.scene);
+                    const char *sceneName = sp_string_63_get_c_str(&name.scene);
                     char buffer[256] = {0};
                     snprintf(buffer,
                         255,
                         "Flashlight parent entity is invalid: %s%s%s\n",
                         sceneName,
                         sceneName[0] == '\0' ? "" : ":",
-                        sp_string_get_c_str(&name.entity));
+                        sp_string_63_get_c_str(&name.entity));
                     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
                 }
             }

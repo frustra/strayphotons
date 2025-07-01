@@ -22,8 +22,8 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **scene** | string | "" | No description |
-| **entity** | string | "" | No description |
+| **scene** | string (max 63 chars) | "" | No description |
+| **entity** | string (max 63 chars) | "" | No description |
 
 </div>
 
@@ -121,7 +121,7 @@ and will only forward key down events (true data values).
 The event data is then replaced with the string `"togglesignal player:player/move_noclip"`, and forwarded to the `console:input` entity
 as the `/action/run_command` event. Upon receiving this event, the `console:input` entity will execute the provided string in the console.
 
-The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
+The `event_bindings` component has type: map&lt;string (max 127 chars), vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
 
 <div class="type_definition">
 

@@ -125,6 +125,8 @@ namespace sp::logging {
 
         if constexpr (std::is_same<BaseType, std::string>()) {
             return std::forward<T>(t).c_str();
+        } else if constexpr (sp::is_inline_string<BaseType>()) {
+            return std::forward<T>(t).c_str();
         } else if constexpr (std::is_same<BaseType, std::string_view>()) {
             if (t.empty()) return "";
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
