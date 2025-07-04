@@ -38,9 +38,8 @@ SP_EXPORT void life_cell_on_tick(void *context,
     script_life_cell_t *ctx = context;
     if (!ctx->initialized) {
         if (ctx->alive) {
-            // TODO
-            // sp_event_t event = {"/life/notify_neighbors", ent, ctx->alive};
-            // sp_event_send(lock, ent, &event);
+            sp_event_t event = {"/life/notify_neighbors", ent, {SP_EVENT_DATA_TYPE_BOOL, .b = ctx->alive}};
+            sp_event_send(lock, ent, &event);
         }
         ctx->initialized = true;
         return;
@@ -49,13 +48,11 @@ SP_EXPORT void life_cell_on_tick(void *context,
     bool forceToggle = false;
     sp_event_t *event;
     while ((event = sp_script_state_poll_event(state, lock))) {
-        if (sp_string_127_compare(&event->name, "/life/neighbor_alive") == 0) {
-            if (sp_event_data_get_type(&event->data) != SP_EVENT_DATA_TYPE_BOOL) continue;
-            // auto *neighborAlive = std::get_if<bool>(&event.data);
-            bool *neighborAlive = sp_event_data_get_bool(&event->data);
-            if (neighborAlive == NULL) continue;
-            ctx->neighborCount += *neighborAlive ? 1 : -1;
-        } else if (sp_string_127_compare(&event->name, "/life/toggle_alive") == 0) {
+        if (strcmp(event->name, "/life/neighbor_alive") == 0) {
+            if (event->data.type != SP_EVENT_DATA_TYPE_BOOL) continue;
+            bool neighborAlive = event->data.b;
+            ctx->neighborCount += neighborAlive ? 1 : -1;
+        } else if (strcmp(event->name, "/life/toggle_alive") == 0) {
             forceToggle = true;
         }
     }
@@ -63,9 +60,8 @@ SP_EXPORT void life_cell_on_tick(void *context,
     bool nextAlive = ctx->neighborCount == 3 || (ctx->neighborCount == 2 && ctx->alive);
     if (forceToggle || nextAlive != ctx->alive) {
         ctx->alive = !ctx->alive;
-        // TODO
-        // sp_event_t event = {"/life/notify_neighbors", ent, ctx->alive};
-        // sp_event_send(lock, ent, &event);
+        sp_event_t event = {"/life/notify_neighbors", ent, {SP_EVENT_DATA_TYPE_BOOL, .b = ctx->alive}};
+        sp_event_send(lock, ent, &event);
     }
 }
 
@@ -87,6 +83,7 @@ SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_
     return 1;
 }
 
+// TODO: Implement StructMetadata across DLL boundary
 // StructMetadata MetadataLifeCell(typeid(LifeCell),
 //     sizeof(LifeCell),
 //     "LifeCell",

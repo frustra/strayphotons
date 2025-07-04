@@ -33,15 +33,18 @@ namespace ecs {
         glm::vec3,
         Transform,
         EventData,
+        EventDataType,
         std::string,
         sp::InlineString<63>,
-        sp::InlineString<127>,
+        EventName,
+        EventString,
         size_t,
         VisibilityMask,
         sp::color_alpha_t,
         double,
         glm::mat3,
         EntityRef,
+        NamedEntity,
 
         // Basic types
         bool,
@@ -103,11 +106,11 @@ namespace ecs {
         std::optional<SignalExpression>,
         std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,
-        robin_hood::unordered_map<sp::InlineString<127>, std::string, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<EventName, std::string, sp::StringHash, sp::StringEqual>,
         robin_hood::unordered_map<std::string, SignalExpression>,
         robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
-        robin_hood::unordered_map<sp::InlineString<127>, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<EventName, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
 
         // Enums
         FocusLayer,

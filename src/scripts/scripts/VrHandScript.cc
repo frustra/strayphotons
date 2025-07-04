@@ -390,7 +390,7 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    if (std::holds_alternative<bool>(event.data)) {
+                    if (event.data.type == EventDataType::Bool) {
                         if (pressEntity) {
                             // Unpress the currently pressed entity
                             EventBindings::SendEvent(lock,
@@ -398,7 +398,7 @@ namespace sp::scripts {
                                 Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
                             pressEntity = {};
                         }
-                        if (std::get<bool>(event.data) && pointEntity) {
+                        if (event.data.b && pointEntity) {
                             // Press the entity being looked at
                             EventBindings::SendEvent(lock,
                                 pointEntity,
@@ -407,8 +407,8 @@ namespace sp::scripts {
                         }
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                    if (!std::holds_alternative<Entity>(event.data)) continue;
-                    grabTarget = std::get<Entity>(event.data);
+                    if (event.data.type != EventDataType::Entity) continue;
+                    grabTarget = event.data.ent;
                 }
             }
 

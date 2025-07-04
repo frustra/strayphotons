@@ -68,7 +68,7 @@ namespace sp::scripts {
     LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
-        robin_hood::unordered_map<InlineString<127>, std::string, StringHash, StringEqual> mapping;
+        robin_hood::unordered_map<EventName, std::string, StringHash, StringEqual> mapping;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -80,7 +80,7 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
-            robin_hood::unordered_map<InlineString<127>, std::optional<Event>, StringHash, StringEqual> outputEvents;
+            robin_hood::unordered_map<EventName, std::optional<Event>, StringHash, StringEqual> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 auto it = mapping.find(event.name);
@@ -120,19 +120,17 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
-                double eventValue = std::visit(
-                    [](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                double eventValue = EventData::Visit(event.data, [](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            return (double)arg;
-                        } else if constexpr (std::is_convertible_v<T, bool>) {
-                            return (double)(bool)arg;
-                        } else {
-                            return 1.0;
-                        }
-                    },
-                    event.data);
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        return (double)data;
+                    } else if constexpr (std::is_convertible_v<T, bool>) {
+                        return (double)(bool)data;
+                    } else {
+                        return 1.0;
+                    }
+                });
 
                 auto eventName = std::string_view(event.name).substr("/signal/"s.size());
                 auto delimiter = eventName.find('/');
@@ -259,41 +257,39 @@ namespace sp::scripts {
                         ecs::ToString(lock, ent));
                     continue;
                 }
-                std::visit(
-                    [&](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                EventData::Visit(event.data, [&](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            ecs::WriteStructField(compPtr, *field, [&arg](double &value) {
-                                value = (double)arg;
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        ecs::WriteStructField(compPtr, *field, [&data](double &value) {
+                            value = (double)data;
+                        });
+                    } else if constexpr (sp::is_glm_vec<T>()) {
+                        if constexpr (T::length() == 2) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec2 &value) {
+                                value = (glm::dvec2)data;
                             });
-                        } else if constexpr (sp::is_glm_vec<T>()) {
-                            if constexpr (T::length() == 2) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec2 &value) {
-                                    value = (glm::dvec2)arg;
-                                });
-                            } else if constexpr (T::length() == 3) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec3 &value) {
-                                    value = (glm::dvec3)arg;
-                                });
-                            } else if constexpr (T::length() == 4) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec4 &value) {
-                                    value = (glm::dvec4)arg;
-                                });
-                            } else {
-                                Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
-                                    event.name,
-                                    typeid(T).name(),
-                                    comp->metadata.type.name());
-                            }
+                        } else if constexpr (T::length() == 3) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec3 &value) {
+                                value = (glm::dvec3)data;
+                            });
+                        } else if constexpr (T::length() == 4) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec4 &value) {
+                                value = (glm::dvec4)data;
+                            });
                         } else {
-                            Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                            Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
                                 event.name,
                                 typeid(T).name(),
                                 comp->metadata.type.name());
                         }
-                    },
-                    event.data);
+                    } else {
+                        Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                            event.name,
+                            typeid(T).name(),
+                            comp->metadata.type.name());
+                    }
+                });
             }
         }
     };

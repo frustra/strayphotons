@@ -430,17 +430,15 @@ namespace sp::scripts {
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
-                double eventValue = std::visit(
-                    [](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                double eventValue = EventData::Visit(event.data, [](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            return (double)arg;
-                        } else {
-                            return 0.0;
-                        }
-                    },
-                    event.data);
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        return (double)data;
+                    } else {
+                        return 0.0;
+                    }
+                });
 
                 if (!sp::starts_with(event.name, "/reset_timer/")) {
                     Errorf("Unexpected event received by timer: %s", event.name);

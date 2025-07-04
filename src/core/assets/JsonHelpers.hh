@@ -156,6 +156,11 @@ namespace sp::json {
         return name.empty() == !dst;
     }
     template<>
+    inline bool Load(ecs::Entity &dst, const picojson::value &src) {
+        Errorf("json::Load unsupported type: ecs::Entity: %s", src.to_str());
+        return false;
+    }
+    template<>
     inline bool Load(ecs::EntityRef &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         auto &name = src.get<std::string>();
@@ -328,6 +333,15 @@ namespace sp::json {
         } else {
             dst = picojson::value(strName.substr(prefixLen));
         }
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::Entity &src) {
+        auto refName = ecs::EntityRef(src).Name();
+        if (!refName && src) {
+            Errorf("Can't serialize unnamed Entity: %s", std::to_string(src));
+            return;
+        }
+        Save(s, dst, refName);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
@@ -743,6 +757,15 @@ namespace sp::json {
         typeSchema["type"] = picojson::value("string");
         typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
         // TODO: Define a regex to validate the name
+    }
+
+    template<>
+    inline void SaveSchema<ecs::Entity>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
+        // TODO: Define a regex to validate the reference
     }
 
     template<>

@@ -384,6 +384,25 @@ namespace ecs {
     static EntityComponent<SceneInfo> ComponentSceneInfo("SceneInfo",
         "This is an internal component storing each entity's source scene and other creation info.");
 
+    static StructMetadata MetadataEntity(typeid(Entity), sizeof(Entity), "Entity", "");
+    static StructMetadata MetadataNamedEntity(typeid(NamedEntity),
+        sizeof(NamedEntity),
+        "NamedEntity",
+        "",
+        StructFunction::New("Name", "Returns the name of the entity being referenced", &NamedEntity::Name),
+        StructFunction::New("Get",
+            "Returns the actual entity being referenced",
+            &NamedEntity::Get,
+            ArgDesc("lock", "")),
+        StructFunction::New("IsValid", "Returns true if this reference is non-empty", &NamedEntity::IsValid),
+        StructFunction::New("Find", "Finds the name of an existing entity", &NamedEntity::Find, ArgDesc("ent", "")),
+        StructFunction::New("Lookup",
+            "Looks up an entity by name",
+            &NamedEntity::Lookup,
+            ArgDesc("name", ""),
+            ArgDesc("scope", "")),
+        StructFunction::New("Clear", "Clears the entity and sets it back to empty", &NamedEntity::Clear));
+
     static StructMetadata MetadataEntityRef(typeid(EntityRef),
         sizeof(EntityRef),
         "EntityRef",

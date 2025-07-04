@@ -91,6 +91,7 @@
 		{
 			"name": "cabi:ABI_TEST",
 			"transform": {
+				"translate": [-10, 0, 0],
 				"scale": 0.1
 			},
 			"renderable": {

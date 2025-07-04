@@ -24,7 +24,143 @@ namespace ecs {
     using SendEventsLock = Lock<
         Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
 
-    using EventData = std::variant<bool,
+    using EventName = sp::InlineString<127>;
+    using EventString = sp::InlineString<255>;
+
+    enum class EventDataType {
+        Bool = 0,
+        Int,
+        Uint,
+        Float,
+        Double,
+        Vec2,
+        Vec3,
+        Vec4,
+        Transform,
+        NamedEntity,
+        Entity,
+        String
+    };
+
+    struct EventData {
+        EventDataType type;
+        union {
+            bool b;
+            int i;
+            unsigned int ui;
+            float f;
+            double d;
+            glm::vec2 vec2;
+            glm::vec3 vec3;
+            glm::vec4 vec4;
+            Transform transform;
+            NamedEntity namedEntity;
+            Entity ent;
+            EventString str;
+        };
+
+        EventData() : type(EventDataType::Bool), b(false) {}
+        EventData(bool b) : type(EventDataType::Bool), b(b) {}
+        EventData(int i) : type(EventDataType::Int), i(i) {}
+        EventData(unsigned int ui) : type(EventDataType::Uint), ui(ui) {}
+        EventData(float f) : type(EventDataType::Float), f(f) {}
+        EventData(double d) : type(EventDataType::Double), d(d) {}
+        EventData(const glm::vec2 &vec2) : type(EventDataType::Vec2), vec2(vec2) {}
+        EventData(const glm::vec3 &vec3) : type(EventDataType::Vec3), vec3(vec3) {}
+        EventData(const glm::vec4 &vec4) : type(EventDataType::Vec4), vec4(vec4) {}
+        EventData(const Transform &transform) : type(EventDataType::Transform), transform(transform) {}
+        EventData(const NamedEntity &namedEntity) : type(EventDataType::NamedEntity), namedEntity(namedEntity) {}
+        EventData(Entity ent) : type(EventDataType::Entity), ent(ent) {}
+        EventData(const EventString &str) : type(EventDataType::String), str(str) {}
+
+        template<typename T, typename EventT>
+        static auto *TryGet(EventT &event) {
+            if constexpr (std::is_same<T, bool>()) {
+                if (event.type == EventDataType::Bool) return &event.b;
+            } else if constexpr (std::is_same<T, int>()) {
+                if (event.type == EventDataType::Int) return &event.i;
+            } else if constexpr (std::is_same<T, unsigned int>()) {
+                if (event.type == EventDataType::Uint) return &event.ui;
+            } else if constexpr (std::is_same<T, float>()) {
+                if (event.type == EventDataType::Float) return &event.f;
+            } else if constexpr (std::is_same<T, double>()) {
+                if (event.type == EventDataType::Double) return &event.d;
+            } else if constexpr (std::is_same<T, glm::vec2>()) {
+                if (event.type == EventDataType::Vec2) return &event.vec2;
+            } else if constexpr (std::is_same<T, glm::vec3>()) {
+                if (event.type == EventDataType::Vec3) return &event.vec3;
+            } else if constexpr (std::is_same<T, glm::vec4>()) {
+                if (event.type == EventDataType::Vec4) return &event.vec4;
+            } else if constexpr (std::is_same<T, Transform>()) {
+                if (event.type == EventDataType::Transform) return &event.transform;
+            } else if constexpr (std::is_same<T, NamedEntity>()) {
+                if (event.type == EventDataType::NamedEntity) return &event.namedEntity;
+            } else if constexpr (std::is_same<T, Entity>()) {
+                if (event.type == EventDataType::Entity) return &event.ent;
+            } else if constexpr (std::is_same<T, EventString>()) {
+                if (event.type == EventDataType::String) return &event.str;
+            } else {
+                static_assert(false, "Unexpected EventData type");
+            }
+            return (std::conditional_t<std::is_const_v<EventT>, const T, T> *)nullptr;
+        }
+
+        template<typename T, typename EventT>
+        static auto &Get(EventT &event) {
+            auto *ptr = TryGet<T, EventT>(event);
+            Assertf(ptr != nullptr, "Unexpected EventData type: %s != %s", typeid(T).name(), event.type);
+            return *ptr;
+        }
+
+        template<typename Fn, typename EventT>
+        static auto Visit(EventT &event, Fn &&callable) {
+            switch (event.type) {
+            case EventDataType::Bool:
+                return callable(event.b);
+            case EventDataType::Int:
+                return callable(event.i);
+            case EventDataType::Uint:
+                return callable(event.ui);
+            case EventDataType::Float:
+                return callable(event.f);
+            case EventDataType::Double:
+                return callable(event.d);
+            case EventDataType::Vec2:
+                return callable(event.vec2);
+            case EventDataType::Vec3:
+                return callable(event.vec3);
+            case EventDataType::Vec4:
+                return callable(event.vec4);
+            case EventDataType::Transform:
+                return callable(event.transform);
+            case EventDataType::NamedEntity:
+                return callable(event.namedEntity);
+            case EventDataType::Entity:
+                return callable(event.ent);
+            case EventDataType::String:
+                return callable(event.str);
+            default:
+                Abortf("Unexpected EventData type: %s", event.type);
+            }
+        }
+
+        const EventData &operator=(bool newBool);
+        const EventData &operator=(int newInt);
+        const EventData &operator=(unsigned int newUint);
+        const EventData &operator=(float newFloat);
+        const EventData &operator=(double newDouble);
+        const EventData &operator=(glm::vec2 newVec2);
+        const EventData &operator=(glm::vec3 newVec3);
+        const EventData &operator=(glm::vec4 newVec4);
+        const EventData &operator=(Transform newTransform);
+        const EventData &operator=(NamedEntity newNamedEntity);
+        const EventData &operator=(Entity newEntity);
+        const EventData &operator=(EventString newString);
+
+        bool operator==(const EventData &other) const;
+    };
+
+    using EventDataVariant = std::variant<bool,
         int,
         unsigned int,
         float,
@@ -33,15 +169,28 @@ namespace ecs {
         glm::vec3,
         glm::vec4,
         Transform,
-        EntityRef,
+        NamedEntity,
         Tecs::Entity,
-        std::string>;
+        EventString>;
 
     static StructMetadata MetadataEventData(typeid(EventData),
         sizeof(EventData),
         "EventData",
         "Stores a variety of possible data types for sending in events "
-        "(JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).");
+        "(JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).",
+        StructField::New("type", &EventData::type, FieldAction::None),
+        StructField::New("b", &EventData::b, FieldAction::None),
+        StructField::New("i", &EventData::i, FieldAction::None),
+        StructField::New("ui", &EventData::ui, FieldAction::None),
+        StructField::New("f", &EventData::f, FieldAction::None),
+        StructField::New("d", &EventData::d, FieldAction::None),
+        StructField::New("vec2", &EventData::vec2, FieldAction::None),
+        StructField::New("vec3", &EventData::vec3, FieldAction::None),
+        StructField::New("vec4", &EventData::vec4, FieldAction::None),
+        StructField::New("transform", &EventData::transform, FieldAction::None),
+        StructField::New("namedEntity", &EventData::namedEntity, FieldAction::None),
+        StructField::New("ent", &EventData::ent, FieldAction::None),
+        StructField::New("str", &EventData::str, FieldAction::None));
     template<>
     bool StructMetadata::Load<EventData>(EventData &dst, const picojson::value &src);
     template<>
@@ -53,7 +202,7 @@ namespace ecs {
     void StructMetadata::SetScope<EventData>(EventData &dst, const EntityScope &scope);
 
     struct Event {
-        sp::InlineString<127> name;
+        EventName name;
         Entity source;
         EventData data;
 
@@ -62,6 +211,7 @@ namespace ecs {
         Event(std::string_view name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
 
         static size_t Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event);
+        static size_t SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event);
         static size_t SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event);
 
         std::string ToString() const;
@@ -83,7 +233,7 @@ namespace ecs {
             ArgDesc("event", "")));
 
     struct AsyncEvent {
-        sp::InlineString<127> name;
+        EventName name;
         Entity source;
         sp::AsyncPtr<EventData> data;
 
@@ -95,11 +245,7 @@ namespace ecs {
 
         template<typename T>
         AsyncEvent(std::string_view name, const Entity &source, T data)
-            : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {
-            if constexpr (std::is_same<T, EventData>()) {
-                Assertf(!data.valueless_by_exception(), "Creating event with valueless data: %s", name);
-            }
-        }
+            : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {}
     };
 
     std::ostream &operator<<(std::ostream &out, const EventData &v);

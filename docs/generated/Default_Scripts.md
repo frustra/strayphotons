@@ -183,19 +183,6 @@ The `init_event` script has parameter type: vector&lt;string&gt;
 
 <div class="component_definition">
 
-## `life_cell` Script
-
-| Parameter Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **alive** | bool | false | No description |
-| **initialized** | bool | false | No description |
-| **neighbor_count** | int32 | 0 | No description |
-
-</div>
-
-
-<div class="component_definition">
-
 ## `magnetic_plug` Script
 
 | Parameter Name | Type | Default Value | Description |

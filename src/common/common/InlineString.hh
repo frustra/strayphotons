@@ -11,6 +11,7 @@
 
 #include <array>
 #include <cstring>
+#include <limits>
 #include <ostream>
 
 namespace sp {
@@ -30,6 +31,9 @@ namespace sp {
         using reverse_iterator = typename ArrayT::reverse_iterator;
         using const_reverse_iterator = typename ArrayT::const_reverse_iterator;
 
+        static_assert(MaxSize <= std::numeric_limits<std::make_unsigned_t<CharT>>::max(),
+            "InlineString size too large");
+
         static constexpr size_type npos = std::basic_string<CharT>::npos;
 
         using ArrayT::at;
@@ -48,26 +52,55 @@ namespace sp {
 
         InlineString(const CharT *init) : ArrayT({}) {
             size_type count = init ? traits_type::length(init) : 0;
-            Assert(count < MaxSize, "InlineString overflow");
+            Assert(count <= MaxSize, "InlineString overflow");
             if (count > 0) traits_type::copy(data(), init, count);
             setSize(count);
         }
 
         InlineString(const std::basic_string<CharT> &init) : ArrayT({}) {
-            Assert(init.size() < MaxSize, "InlineString overflow");
+            Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
         InlineString(const std::basic_string_view<CharT> &init) : ArrayT({}) {
-            Assert(init.size() < MaxSize, "InlineString overflow");
+            Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
-        size_type size() const {
-            size_type unusedCount = (size_type)(ArrayT::back());
+        size_type size() {
+            size_type unusedCount = (size_type)(std::make_unsigned_t<CharT>)(ArrayT::back());
             DebugAssertf(unusedCount <= MaxSize, "Corrupted InlineString size: %llu/%llu", unusedCount, MaxSize);
+            DebugAssertf(at(MaxSize - unusedCount) == CharT(),
+                "Corrupted InlineString null terminator: %llu/%llu, %.*s",
+                unusedCount,
+                MaxSize,
+                MaxSize,
+                data());
+            if (unusedCount < MaxSize && at(MaxSize - unusedCount - 1) == CharT()) {
+                // String has zero padding, recalculate length
+                ArrayT::back() = CharT();
+                size_type len = traits_type::length(data());
+                setSize(len);
+                return len;
+            }
+            return MaxSize - unusedCount;
+        }
+
+        size_type size() const {
+            size_type unusedCount = (size_type)(std::make_unsigned_t<CharT>)(ArrayT::back());
+            DebugAssertf(unusedCount <= MaxSize, "Corrupted InlineString size: %llu/%llu", unusedCount, MaxSize);
+            DebugAssertf(at(MaxSize - unusedCount) == CharT(),
+                "Corrupted InlineString null terminator: %llu/%llu, %.*s",
+                unusedCount,
+                MaxSize,
+                MaxSize,
+                data());
+            if (unusedCount < MaxSize && at(MaxSize - unusedCount - 1) == CharT()) {
+                // String has zero padding, recalculate length
+                return traits_type::length(data());
+            }
             return MaxSize - unusedCount;
         }
 
@@ -80,7 +113,7 @@ namespace sp {
         }
 
         void resize(size_type newSize, CharT ch = CharT()) {
-            Assert(newSize < MaxSize, "InlineString overflow");
+            Assert(newSize <= MaxSize, "InlineString overflow");
             if (newSize < size()) {
                 std::fill(begin() + newSize, end(), ch);
             }
@@ -89,6 +122,7 @@ namespace sp {
 
         void fill(const CharT &value) {
             std::fill(begin(), end(), value);
+            setSize(value == CharT() ? 0 : MaxSize);
         }
 
         bool empty() const {
@@ -109,7 +143,7 @@ namespace sp {
         }
 
         void push_back(const CharT &value) {
-            Assert(size() < MaxSize, "InlineString overflow");
+            Assert(size() <= MaxSize, "InlineString overflow");
             at(size()) = value;
             setSize(size() + 1);
         }
@@ -122,7 +156,7 @@ namespace sp {
 
         template<class... Args>
         CharT &emplace_back(Args &&...args) {
-            Assert(size() + 1 < MaxSize, "InlineString overflow");
+            Assert(size() + 1 <= MaxSize, "InlineString overflow");
             auto &ref = at(size());
             ref = CharT(std::forward<Args>(args)...);
             setSize(size() + 1);
@@ -131,7 +165,6 @@ namespace sp {
 
         void clear() {
             fill(CharT());
-            setSize(0);
         }
 
         using ArrayT::begin;
@@ -226,7 +259,7 @@ namespace sp {
         }
 
         InlineString<MaxSize, CharT> &operator+=(const std::basic_string<CharT> &str) {
-            Assert(size() + str.size() < MaxSize, "InlineString overflow");
+            Assert(size() + str.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data() + size(), str.data(), str.size());
             setSize(size() + str.size());
             return *this;
@@ -234,7 +267,7 @@ namespace sp {
 
         InlineString<MaxSize, CharT> &operator+=(const CharT *str) {
             size_type count = str ? traits_type::length(str) : 0;
-            Assert(size() + count < MaxSize, "InlineString overflow");
+            Assert(size() + count <= MaxSize, "InlineString overflow");
             if (count > 0) {
                 traits_type::copy(data() + size(), str, count);
                 setSize(size() + count);
@@ -250,7 +283,7 @@ namespace sp {
     private:
         void setSize(size_type newSize) {
             DebugAssertf(newSize <= MaxSize, "InlineString overflow: %llu", newSize);
-            ArrayT::back() = (uint8_t)(MaxSize - newSize);
+            ArrayT::back() = (std::make_unsigned_t<CharT>)(MaxSize - newSize);
         }
     };
 } // namespace sp

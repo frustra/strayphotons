@@ -60,10 +60,10 @@ namespace sp {
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
 
-                if (std::holds_alternative<ecs::Entity>(event.data)) {
-                    auto newTarget = std::get<ecs::Entity>(event.data);
-                    targetEntity = newTarget;
-                    if (newTarget && ecs::IsStaging(newTarget)) selectEntityView = true;
+                if (event.data.type == ecs::EventDataType::Entity) {
+                    ecs::Entity ent = event.data.ent;
+                    targetEntity = ent;
+                    if (ent && ecs::IsStaging(ent)) selectEntityView = true;
                 } else {
                     Errorf("Invalid editor event: %s", event.ToString());
                 }

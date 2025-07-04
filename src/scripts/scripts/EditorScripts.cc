@@ -39,7 +39,7 @@ namespace sp::scripts {
                 if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
 
                 // Ignore drop events
-                if (!std::holds_alternative<Transform>(event.data)) continue;
+                if (event.data.type != ecs::EventDataType::Transform) continue;
 
                 if (templateSource.empty()) {
                     Errorf("TraySpawner missing source parameter");
@@ -226,8 +226,8 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    if (std::holds_alternative<bool>(event.data)) {
-                        if (std::get<bool>(event.data) && raycastResult.subTarget.Has<TransformTree>(lock)) {
+                    if (event.data.type == EventDataType::Bool) {
+                        if (event.data.b && raycastResult.subTarget.Has<TransformTree>(lock)) {
                             selectedEntity = raycastResult.subTarget;
                             toolDistance = raycastResult.distance;
                             lastToolPosition = position + forward * toolDistance;

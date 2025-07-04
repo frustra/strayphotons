@@ -101,6 +101,10 @@ namespace ecs::detail {
                     return ConvertAccessor<ArgT>(innerValue, accessor);
                 },
                 value);
+        } else if constexpr (std::is_same_v<T, EventData>) {
+            return EventData::Visit(value, [&](auto &data) {
+                return ConvertAccessor<ArgT>(data, accessor);
+            });
         } else {
             return false;
         }
@@ -141,14 +145,12 @@ namespace ecs::detail {
                 return false;
             } else if constexpr (std::is_same_v<T, EventData>) {
                 auto &value = field.Access<EventData>(basePtr);
-                return std::visit(
-                    [&](auto &&event) {
-                        using EventT = std::decay_t<decltype(event)>;
-                        auto subField = field;
-                        if (field.type == typeid(T)) subField.type = typeid(EventT);
-                        return AccessStructField<ArgT>(&event, subField, accessor);
-                    },
-                    value);
+                return EventData::Visit(value, [&](auto &data) {
+                    using EventT = std::decay_t<decltype(data)>;
+                    auto subField = field;
+                    if (field.type == typeid(T)) subField.type = typeid(EventT);
+                    return AccessStructField<ArgT>(&data, subField, accessor);
+                });
             } else {
                 auto &value = field.Access<T>(basePtr);
                 bool success = ConvertAccessor<ArgT>(value, accessor);

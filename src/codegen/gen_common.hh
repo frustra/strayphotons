@@ -33,6 +33,16 @@ std::string TypeToString() {
         return "glm::quat";
     } else if constexpr (std::is_same<T, ecs::EventData>()) {
         return "ecs::EventData";
+    } else if constexpr (sp::is_inline_string<T>()) {
+        if constexpr (std::is_same<T, ecs::EventName>()) {
+            return "ecs::EventName";
+        } else if constexpr (std::is_same<T, ecs::EventString>()) {
+            return "ecs::EventString";
+        } else if constexpr (std::is_same<typename T::value_type, char>()) {
+            return "sp::InlineString<" + std::to_string(T::max_size()) + ">";
+        } else {
+            Abortf("Unsupported InlineString type: %s", typeid(T::value_type).name());
+        }
     } else if constexpr (std::is_same<T, std::string>()) {
         return "std::string";
     } else if constexpr (Tecs::is_lock<T>()) {

@@ -103,10 +103,14 @@ namespace sp::scripts {
                 while (EventInput::Poll(lock, state.eventQueue, event)) {
                     if (event.name != "/action/snap_rotate") continue;
 
-                    auto angleDiff = std::get<double>(event.data);
-                    if (angleDiff != 0.0f) {
-                        transform.pose.RotateAxis(glm::radians(angleDiff), glm::vec3(0, -1, 0));
-                        changed = true;
+                    auto *angleDiff = EventData::TryGet<double>(event.data);
+                    if (angleDiff) {
+                        if (*angleDiff != 0.0f) {
+                            transform.pose.RotateAxis(glm::radians(*angleDiff), glm::vec3(0, -1, 0));
+                            changed = true;
+                        }
+                    } else {
+                        Errorf("Unsupported /action/snap_rotate event type: %s", event.ToString());
                     }
                 }
             }
@@ -136,11 +140,15 @@ namespace sp::scripts {
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name != "/script/camera_rotate") continue;
 
-                auto angleDiff = std::get<glm::vec2>(event.data);
+                auto *angleDiff = EventData::TryGet<glm::vec2>(event.data);
+                if (!angleDiff) {
+                    Errorf("Unsupported /script/camera_rotate event type: %s", event.ToString());
+                    continue;
+                }
                 // Apply pitch/yaw rotations
                 auto &transform = ent.Get<TransformTree>(lock);
-                auto rotation = glm::quat(glm::vec3(0, -angleDiff.x, 0)) * transform.pose.GetRotation() *
-                                glm::quat(glm::vec3(-angleDiff.y, 0, 0));
+                auto rotation = glm::quat(glm::vec3(0, -angleDiff->x, 0)) * transform.pose.GetRotation() *
+                                glm::quat(glm::vec3(-angleDiff->y, 0, 0));
 
                 auto up = rotation * glm::vec3(0, 1, 0);
                 if (up.y < 0) {

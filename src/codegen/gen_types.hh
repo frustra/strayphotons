@@ -86,6 +86,10 @@ std::string LookupCTypeName(std::type_index type) {
             return "double"s;
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             return "sp_angle_t"s;
+        } else if constexpr (std::is_same<T, ecs::EventName>()) {
+            return "event_name_t"s;
+        } else if constexpr (std::is_same<T, ecs::EventString>()) {
+            return "event_string_t"s;
         } else if constexpr (sp::is_inline_string<T>()) {
             return "string_" + std::to_string(T::max_size()) + "_t";
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -217,7 +221,7 @@ void ForEachExportedType(Fn &&callback) {
 
 template<typename Fn>
 auto ForEachEventDataType(Fn &&callback) {
-    return detail::forEachTemplateType((ecs::EventData *)nullptr, std::forward<Fn>(callback));
+    return detail::forEachTemplateType((ecs::EventDataVariant *)nullptr, std::forward<Fn>(callback));
 }
 
 template<typename S>
@@ -229,58 +233,79 @@ std::string ArgTypeToString(const ecs::TypeInfo &info) {
 }
 
 template<typename S>
+void GenerateStructField(S &out, const ecs::StructField &field, const std::string &prefix) {
+    if (field.functionPointer) {
+        auto &funcInfo = field.functionPointer.value();
+        out << prefix << ArgTypeToString(funcInfo.returnType) << "(*" << field.name << ")(";
+        for (size_t j = 0; j < funcInfo.argTypes.size(); j++) {
+            if (j > 0) out << ", ";
+            out << ArgTypeToString(funcInfo.argTypes[j]);
+        }
+        out << "); // " << field.size << " bytes" << std::endl;
+    } else {
+        out << prefix << LookupCTypeName(field.type) << " " << field.name << "; // " << field.size << " bytes"
+            << std::endl;
+    }
+}
+
+template<typename S>
 void GenerateStructWithFields(S &out,
     const std::string &prefixComment,
     const std::string &name,
     const ecs::StructMetadata &metadata) {
-    std::vector<const ecs::StructField *> byteMap(metadata.size, nullptr);
+    std::vector<std::set<const ecs::StructField *>> byteMap(metadata.size, {});
     auto fieldList = GetTypeFieldList(metadata);
     for (auto &field : fieldList) {
         for (size_t i = 0; i < field.size; i++) {
-            byteMap[field.offset + i] = &field;
+            byteMap[field.offset + i].emplace(&field);
         }
     }
     if (!prefixComment.empty()) {
         out << "// " << prefixComment << std::endl;
     }
     out << "typedef struct " << name << " {" << std::endl;
-    const ecs::StructField *lastField = nullptr;
+    std::set<const ecs::StructField *> lastFields;
     size_t fieldStart = 0;
     for (size_t i = 0; i < byteMap.size(); i++) {
-        if (byteMap[i] != lastField) {
-            if (lastField) {
-                if (lastField->functionPointer) {
-                    auto &funcInfo = lastField->functionPointer.value();
-                    out << "    " << ArgTypeToString(funcInfo.returnType) << "(*" << lastField->name << ")(";
-                    for (size_t j = 0; j < funcInfo.argTypes.size(); j++) {
-                        if (j > 0) out << ", ";
-                        out << ArgTypeToString(funcInfo.argTypes[j]);
-                    }
-                    out << "); // " << lastField->size << " bytes" << std::endl;
-                } else {
-                    out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // "
-                        << lastField->size << " bytes" << std::endl;
+        // Interpret overlapping fields as unions
+        bool overlapsLast = lastFields.empty() && byteMap[i].empty();
+        for (auto *field : byteMap[i]) {
+            if (lastFields.contains(field)) {
+                overlapsLast = true;
+                break;
+            }
+        }
+        if (overlapsLast && byteMap[i].size() > 1) {
+            for (auto *field : byteMap[i]) {
+                Assertf(lastFields.contains(field),
+                    "Overlapping struct field is incompatible with union: %s",
+                    field->name);
+            }
+        }
+        if (!overlapsLast) {
+            if (lastFields.size() > 1) {
+                out << "    union {" << std::endl;
+                for (auto *field : lastFields) {
+                    GenerateStructField(out, *field, "        ");
                 }
+                out << "    }; // " << (i - fieldStart) << " bytes" << std::endl;
+            } else if (lastFields.size() == 1) {
+                GenerateStructField(out, **lastFields.begin(), "    ");
             } else if (i > fieldStart) {
                 out << "    const uint8_t _unknown" << fieldStart << "[" << (i - fieldStart) << "];" << std::endl;
             }
-            lastField = byteMap[i];
+            lastFields = byteMap[i];
             fieldStart = i;
         }
     }
-    if (lastField) {
-        if (lastField->functionPointer) {
-            auto &funcInfo = lastField->functionPointer.value();
-            out << "    " << ArgTypeToString(funcInfo.returnType) << "(*" << lastField->name << ")(";
-            for (size_t j = 0; j < funcInfo.argTypes.size(); j++) {
-                if (j > 0) out << ", ";
-                out << ArgTypeToString(funcInfo.argTypes[j]);
-            }
-            out << "); // " << lastField->size << " bytes" << std::endl;
-        } else {
-            out << "    " << LookupCTypeName(lastField->type) << " " << lastField->name << "; // " << lastField->size
-                << " bytes" << std::endl;
+    if (lastFields.size() > 1) {
+        out << "    union {" << std::endl;
+        for (auto *field : lastFields) {
+            GenerateStructField(out, *field, "        ");
         }
+        out << "    }; // " << (byteMap.size() - fieldStart) << " bytes" << std::endl;
+    } else if (lastFields.size() == 1) {
+        GenerateStructField(out, **lastFields.begin(), "    ");
     } else {
         out << "    const uint8_t _unknown" << fieldStart << "[" << (metadata.size - fieldStart) << "];" << std::endl;
     }
@@ -334,39 +359,7 @@ void GenerateCTypeFunctionDefinitions(S &out, const std::string &full) {
 
 template<typename T, typename S>
 void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
-    if constexpr (sp::is_inline_string<T>()) {
-        out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
-            << "_t *str, const char *new_str) {" << std::endl;
-        out << "    *str = new_str;" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
-            << "_t *str, const char *other_str) {" << std::endl;
-        out << "    return str->compare(other_str);" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
-            << "_t *str) {" << std::endl;
-        out << "    return str->size();" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
-            << "_t *str) {" << std::endl;
-        out << "    return str->c_str();" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str) {"
-            << std::endl;
-        out << "    return str->data();" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
-            << "_t *str, size_t new_size, char fill_char) {" << std::endl;
-        out << "    str->resize(new_size, fill_char);" << std::endl;
-        out << "    return str->data();" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-    } else if constexpr (std::is_same<T, std::string>()) {
+    if constexpr (std::is_same<T, std::string>()) {
         out << "SP_EXPORT size_t sp_string_get_size(const string_t *str) {" << std::endl;
         out << "    return str->size();" << std::endl;
         out << "}" << std::endl;
@@ -392,26 +385,6 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
         out << "    return str->data();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
-    } else if constexpr (std::is_same<T, ecs::EventData>()) {
-        out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type" << "(const sp_event_data_t *event_data) {"
-            << std::endl;
-        out << "    return (sp_event_data_type_t)event_data->index();" << std::endl;
-        out << "}" << std::endl;
-        out << std::endl;
-        ForEachEventDataType([&](auto *eventTypePtr) {
-            using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-            auto scn = SnakeCaseTypeName(TypeToString<EventT>());
-            out << "SP_EXPORT const " << TypeToString<EventT>() << " *sp_event_data_get_const_" << scn
-                << "(const sp_event_data_t *event_data) {" << std::endl;
-            out << "    return &std::get<" << TypeToString<EventT>() << ">(*event_data);" << std::endl;
-            out << "}" << std::endl;
-            out << std::endl;
-            out << "SP_EXPORT " << TypeToString<EventT>() << " *sp_event_data_get_" << scn
-                << "(sp_event_data_t *event_data) {" << std::endl;
-            out << "    return &std::get<" << TypeToString<EventT>() << ">(*event_data);" << std::endl;
-            out << "}" << std::endl;
-            out << std::endl;
-        });
     } else if constexpr (sp::is_vector<T>()) {
         std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
         std::string subtype = StripTypeDecorators(fullSubtype);
@@ -582,26 +555,7 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
-            out << "typedef struct string_" << T::max_size() << "_t {" << std::endl;
-            out << "    char data[" << (T::max_size() + 1) << "];" << std::endl;
-            size_t extra = sizeof(T) - sizeof(T::value_type) * (T::max_size() + 1);
-            if (extra > 0) {
-                out << "    const uint8_t _unknown[" << extra << "];" << std::endl;
-            }
-            out << "} string_" << T::max_size() << "_t;" << std::endl;
-            out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
-                << "_t *str, const char *new_str);" << std::endl;
-            out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
-                << "_t *str, const char *other_str);" << std::endl;
-            out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
-                << "_t *str);" << std::endl;
-            out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
-                << "_t *str);" << std::endl;
-            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str);"
-                << std::endl;
-            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
-                << "_t *str, size_t new_size, char fill_char);" << std::endl;
-            out << std::endl;
+            out << "typedef char " << LookupCTypeName(typeid(T)) << "[" << (T::max_size() + 1) << "];" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef struct string_t { const uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
@@ -635,31 +589,6 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_color_t { float rgb[3]; } sp_color_t;" << std::endl;
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef struct sp_color_alpha_t { float rgba[4]; } sp_color_alpha_t;" << std::endl;
-        } else if constexpr (std::is_same<T, ecs::EventData>()) {
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                GenerateCTypeDefinition(out, typeid(EventT));
-            });
-            out << "typedef struct sp_event_data_t {" << std::endl;
-            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
-            out << "} sp_event_data_t;" << std::endl;
-            out << "typedef enum sp_event_data_type_t {" << std::endl;
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
-                out << "    SP_EVENT_DATA_TYPE_" << sp::to_upper(scn) << "," << std::endl;
-            });
-            out << "} sp_event_data_type_t;" << std::endl;
-            out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type(const sp_event_data_t *event_data);"
-                << std::endl;
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
-                out << "SP_EXPORT const " << LookupCTypeName(typeid(EventT)) << " *sp_event_data_get_const_" << scn
-                    << "(const sp_event_data_t *event_data);" << std::endl;
-                out << "SP_EXPORT " << LookupCTypeName(typeid(EventT)) << " *sp_event_data_get_" << scn
-                    << "(sp_event_data_t *event_data);" << std::endl;
-            });
         } else if constexpr (std::is_pointer<T>()) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
@@ -838,21 +767,12 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventName>()) {
+            out << "typedef ecs::EventName event_name_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventString>()) {
+            out << "typedef ecs::EventString event_string_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
             out << "typedef sp::InlineString<" << T::max_size() << "> string_" << T::max_size() << "_t;" << std::endl;
-            out << "SP_EXPORT void sp_string_" << T::max_size() << "_set(string_" << T::max_size()
-                << "_t *str, const char *new_str);" << std::endl;
-            out << "SP_EXPORT int sp_string_" << T::max_size() << "_compare(const string_" << T::max_size()
-                << "_t *str, const char *other_str);" << std::endl;
-            out << "SP_EXPORT size_t sp_string_" << T::max_size() << "_get_size(const string_" << T::max_size()
-                << "_t *str);" << std::endl;
-            out << "SP_EXPORT const char *sp_string_" << T::max_size() << "_get_c_str(const string_" << T::max_size()
-                << "_t *str);" << std::endl;
-            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_get_data(string_" << T::max_size() << "_t *str);"
-                << std::endl;
-            out << "SP_EXPORT char *sp_string_" << T::max_size() << "_resize(string_" << T::max_size()
-                << "_t *str, size_t new_size, char fill_char);" << std::endl;
-            out << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef std::string string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
@@ -886,29 +806,6 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef sp::color_t sp_color_t;" << std::endl;
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
             out << "typedef sp::color_alpha_t sp_color_alpha_t;" << std::endl;
-        } else if constexpr (std::is_same<T, ecs::EventData>()) {
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                GenerateCppTypeDefinition(out, typeid(EventT));
-            });
-            out << "typedef ecs::EventData sp_event_data_t;" << std::endl;
-            out << "typedef enum sp_event_data_type_t {" << std::endl;
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
-                out << "    SP_EVENT_DATA_TYPE_" << sp::to_upper(scn) << "," << std::endl;
-            });
-            out << "} sp_event_data_type_t;" << std::endl;
-            out << "SP_EXPORT sp_event_data_type_t sp_event_data_get_type(const sp_event_data_t *event_data);"
-                << std::endl;
-            ForEachEventDataType([&](auto *eventTypePtr) {
-                using EventT = std::remove_pointer_t<decltype(eventTypePtr)>;
-                auto scn = SnakeCaseTypeName(TypeToString<EventT>());
-                out << "SP_EXPORT const " << TypeToString<EventT>() << " *sp_event_data_get_const_" << scn
-                    << "(const sp_event_data_t *event_data);" << std::endl;
-                out << "SP_EXPORT " << TypeToString<EventT>() << " *sp_event_data_get_" << scn
-                    << "(sp_event_data_t *event_data);" << std::endl;
-            });
         } else if constexpr (std::is_pointer<T>()) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;

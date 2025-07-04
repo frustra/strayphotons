@@ -26,8 +26,8 @@ namespace ecs {
     struct EventInput {
         EventInput() {}
 
-        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const sp::InlineString<127> &binding);
-        void Unregister(const EventQueueRef &queue, const sp::InlineString<127> &binding);
+        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const EventName &binding);
+        void Unregister(const EventQueueRef &queue, const EventName &binding);
 
         /**
          * Adds an event to any matching event input queues.
@@ -39,9 +39,7 @@ namespace ecs {
         size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::
-            unordered_map<sp::InlineString<127>, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual>
-                events;
+        robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
     };
 
     static EntityComponent<EventInput> ComponentEventInput("event_input", R"(
@@ -54,7 +52,7 @@ their own event queues as needed.
 
     struct EventDest {
         EntityRef target;
-        sp::InlineString<127> queueName;
+        EventName queueName;
 
         bool operator==(const EventDest &) const = default;
     };
@@ -156,7 +154,7 @@ their own event queues as needed.
             size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
-        robin_hood::unordered_map<sp::InlineString<127>, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
+        robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
     };
 
     static EntityComponent<EventBindings> ComponentEventBindings("event_bindings",
@@ -208,5 +206,5 @@ as the `/action/run_command` event. Upon receiving this event, the `console:inpu
     template<>
     void EntityComponent<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
-    std::pair<ecs::Name, sp::InlineString<127>> ParseEventString(const std::string &str);
+    std::pair<ecs::Name, EventName> ParseEventString(const std::string &str);
 } // namespace ecs

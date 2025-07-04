@@ -130,9 +130,9 @@ namespace sp {
         cliInputThread.detach();
     }
 
-    void ConsoleManager::AddLine(logging::Level lvl, const string &line) {
+    void ConsoleManager::AddLine(logging::Level lvl, string_view line) {
         std::lock_guard lock(linesLock);
-        outputLines.push_back({lvl, line});
+        outputLines.push_back({lvl, std::string(line)});
     }
 
     void ConsoleManager::StartThread(const ConsoleScript *startupScript) {
@@ -190,7 +190,7 @@ namespace sp {
         }
     }
 
-    void ConsoleManager::ParseAndExecute(const string line) {
+    void ConsoleManager::ParseAndExecute(string_view line) {
         if (line == "") return;
 
         auto cmd = line.begin();
@@ -209,7 +209,7 @@ namespace sp {
         } while (cmd != line.end());
     }
 
-    void ConsoleManager::Execute(const string cmd, const string &args) {
+    void ConsoleManager::Execute(string_view cmd, string_view args) {
         Debugf("Executing console command: %s%s%s", cmd, args.empty() ? "" : " ", args);
         std::lock_guard execLock(cvarExecLock);
         CVarBase *cvar = nullptr;
@@ -221,7 +221,7 @@ namespace sp {
             }
         }
         if (cvar) {
-            cvar->SetFromString(args);
+            cvar->SetFromString(std::string(args));
 
             if (cvar->IsValueType()) {
                 logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
@@ -235,17 +235,17 @@ namespace sp {
         }
     }
 
-    void ConsoleManager::QueueParseAndExecute(const string line,
+    void ConsoleManager::QueueParseAndExecute(string_view line,
         chrono_clock::time_point wait_util,
         std::condition_variable *handled) {
         std::lock_guard lock(queueLock);
         queuedCommands.emplace(line, wait_util, handled);
     }
 
-    void ConsoleManager::AddHistory(const string &input) {
+    void ConsoleManager::AddHistory(string_view input) {
         std::lock_guard lock(historyLock);
         if (history.size() == 0 || history[history.size() - 1] != input) {
-            history.push_back(input);
+            history.emplace_back(input);
         }
     }
 
@@ -258,7 +258,7 @@ namespace sp {
         return results;
     }
 
-    ConsoleManager::Completions ConsoleManager::AllCompletions(const string &rawInput, bool requestNewCompletions) {
+    ConsoleManager::Completions ConsoleManager::AllCompletions(string_view rawInput, bool requestNewCompletions) {
         std::shared_lock lock(cvarReadLock);
 
         Completions result;

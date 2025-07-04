@@ -27,7 +27,7 @@ namespace sp {
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         ecs::Event event;
                         while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
-                            auto command = std::get_if<std::string>(&event.data);
+                            auto *command = ecs::EventData::TryGet<ecs::EventString>(event.data);
                             if (command && !command->empty()) {
                                 GetConsoleManager().QueueParseAndExecute(*command);
                             } else {

@@ -140,7 +140,7 @@ namespace ecs {
         }
     }
 
-    std::pair<ecs::Name, sp::InlineString<127>> ParseEventString(const std::string &str) {
+    std::pair<ecs::Name, EventName> ParseEventString(const std::string &str) {
         size_t delimiter = str.find('/');
         ecs::Name entityName(str.substr(0, delimiter), ecs::Name());
         if (entityName && delimiter != std::string::npos) {
@@ -150,9 +150,7 @@ namespace ecs {
         }
     }
 
-    void EventInput::Register(Lock<Write<EventInput>> lock,
-        const EventQueueRef &queue,
-        const sp::InlineString<127> &binding) {
+    void EventInput::Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const EventName &binding) {
         Assertf(IsLive(lock), "Attempting to register event on non-live entity: %s", binding);
         Assertf(queue, "EventInput::Register called with null queue: %s", binding);
 
@@ -161,7 +159,7 @@ namespace ecs {
         queueList.emplace_back(queue);
     }
 
-    void EventInput::Unregister(const std::shared_ptr<EventQueue> &queue, const sp::InlineString<127> &binding) {
+    void EventInput::Unregister(const std::shared_ptr<EventQueue> &queue, const EventName &binding) {
         if (!queue) return;
 
         auto it = events.find(binding);
@@ -242,39 +240,37 @@ namespace ecs {
         const EventData &input,
         const EventBinding &binding) {
         auto &actions = binding.actions.modifyExprs;
-        std::visit(
-            [&](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (sp::is_glm_vec<T>()) {
-                    using U = typename T::value_type;
-                    if (actions.size() != (size_t)T::length()) {
-                        Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
-                        return;
-                    }
-                    for (int i = 0; i < T::length(); i++) {
-                        if constexpr (std::is_same_v<U, bool>) {
-                            arg[i] = actions[i].EvaluateEvent(lock, input) >= 0.5;
-                        } else {
-                            arg[i] = (U)actions[i].EvaluateEvent(lock, input);
-                        }
-                    }
-                } else if constexpr (std::is_same_v<T, bool>) {
-                    if (actions.size() != 1) {
-                        Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
-                        return;
-                    }
-                    arg = actions[0].EvaluateEvent(lock, input) >= 0.5;
-                } else if constexpr (std::is_convertible_v<double, T>) {
-                    if (actions.size() != 1) {
-                        Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
-                        return;
-                    }
-                    arg = (T)actions[0].EvaluateEvent(lock, input);
-                } else {
-                    Errorf("Unsupported event binding modify value: type: %s vec%u", typeid(T).name(), actions.size());
+        EventData::Visit(output, [&](auto &data) {
+            using T = std::decay_t<decltype(data)>;
+            if constexpr (sp::is_glm_vec<T>()) {
+                using U = typename T::value_type;
+                if (actions.size() != (size_t)T::length()) {
+                    Errorf("Event binding modify value is wrong size: %u != %u", actions.size(), T::length());
+                    return;
                 }
-            },
-            output);
+                for (int i = 0; i < T::length(); i++) {
+                    if constexpr (std::is_same_v<U, bool>) {
+                        data[i] = actions[i].EvaluateEvent(lock, input) >= 0.5;
+                    } else {
+                        data[i] = (U)actions[i].EvaluateEvent(lock, input);
+                    }
+                }
+            } else if constexpr (std::is_same_v<T, bool>) {
+                if (actions.size() != 1) {
+                    Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
+                    return;
+                }
+                data = actions[0].EvaluateEvent(lock, input) >= 0.5;
+            } else if constexpr (std::is_convertible_v<double, T>) {
+                if (actions.size() != 1) {
+                    Errorf("Event binding modify value is wrong size: %u != 1", actions.size());
+                    return;
+                }
+                data = (T)actions[0].EvaluateEvent(lock, input);
+            } else {
+                Errorf("Unsupported event binding modify value: type: %s vec%u", typeid(T).name(), actions.size());
+            }
+        });
     }
 
     bool filterAndModifyEvent(const DynamicLock<ReadSignalsLock> &lock,

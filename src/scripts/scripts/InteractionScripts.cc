@@ -54,18 +54,18 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_POINT) {
-                    auto pointTransform = std::get_if<Transform>(&event.data);
+                    auto *pointTransform = EventData::TryGet<Transform>(event.data);
                     if (pointTransform) {
                         if (!sp::contains(pointEntities, event.source)) {
                             pointEntities.emplace_back(event.source);
                         }
-                    } else if (std::holds_alternative<bool>(event.data)) {
+                    } else if (event.data.type == EventDataType::Bool) {
                         sp::erase(pointEntities, event.source);
                     } else {
                         Errorf("Unsupported point event type: %s", event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                    if (std::holds_alternative<bool>(event.data)) {
+                    if (event.data.type == EventDataType::Bool) {
                         // Grab(false) = Drop
                         EntityRef secondary;
                         for (auto &[a, b] : grabEntities) {
@@ -83,10 +83,10 @@ namespace sp::scripts {
                                 return joint.target == event.source || (secondary && joint.target == secondary);
                             });
                         }
-                    } else if (std::holds_alternative<Transform>(event.data)) {
+                    } else if (event.data.type == EventDataType::Transform) {
                         if (!enableInteraction) continue;
 
-                        auto &parentTransform = std::get<Transform>(event.data);
+                        auto &parentTransform = event.data.transform;
                         auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
                         auto invParentRotate = glm::inverse(parentTransform.GetRotation());
 
@@ -138,10 +138,10 @@ namespace sp::scripts {
                 } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
                     if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) continue;
 
-                    if (std::holds_alternative<glm::vec2>(event.data)) {
+                    if (event.data.type == EventDataType::Vec2) {
                         if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
-                        auto &input = std::get<glm::vec2>(event.data);
+                        auto &input = event.data.vec2;
                         auto &transform = event.source.Get<const TransformSnapshot>(lock).globalPose;
 
                         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
@@ -272,8 +272,8 @@ namespace sp::scripts {
                                 justDropped = Entity(); // Held entity no longer exists
                             }
                         }
-                        if (std::holds_alternative<bool>(event.data)) {
-                            auto &grabEvent = std::get<bool>(event.data);
+                        if (event.data.type == EventDataType::Bool) {
+                            auto &grabEvent = event.data.b;
                             if (grabEvent && raycastResult.target && !justDropped) {
                                 // Grab the entity being looked at
                                 if (EventBindings::SendEvent(lock,
@@ -282,8 +282,8 @@ namespace sp::scripts {
                                     UpdateGrabTarget(lock, raycastResult.target);
                                 }
                             }
-                        } else if (std::holds_alternative<Entity>(event.data)) {
-                            auto &targetEnt = std::get<Entity>(event.data);
+                        } else if (event.data.type == EventDataType::Entity) {
+                            auto &targetEnt = event.data.ent;
                             if (targetEnt) {
                                 // Grab the entity requested by the event
                                 if (EventBindings::SendEvent(lock,
@@ -296,7 +296,7 @@ namespace sp::scripts {
                             Errorf("Unsupported grab event type: %s", event.ToString());
                         }
                     } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                        if (std::holds_alternative<bool>(event.data)) {
+                        if (event.data.type == EventDataType::Bool) {
                             if (pressEntity) {
                                 // Unpress the currently pressed entity
                                 EventBindings::SendEvent(lock,
@@ -304,7 +304,7 @@ namespace sp::scripts {
                                     Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
                                 pressEntity = {};
                             }
-                            if (std::get<bool>(event.data) && raycastResult.target) {
+                            if (event.data.b && raycastResult.target) {
                                 // Press the entity being looked at
                                 EventBindings::SendEvent(lock,
                                     raycastResult.target,

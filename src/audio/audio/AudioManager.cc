@@ -253,7 +253,7 @@ namespace sp {
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, sources.eventQueue, event)) {
-                int *ptr = std::get_if<int>(&event.data);
+                int *ptr = ecs::EventData::TryGet<int>(event.data);
                 int index = ptr ? *ptr : 0;
                 if (index >= soundIDs->size()) continue;
                 auto soundID = soundIDs->at(index);
