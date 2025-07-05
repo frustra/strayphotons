@@ -44,7 +44,7 @@ SP_EXPORT void camera_view_on_tick(void *context,
 
     if (!ctx->started) {
         char buffer[256] = {0};
-        snprintf(buffer, 255, "Script: %s = %d\n", sp_string_get_c_str(&state->definition.name), ctx->foobar);
+        snprintf(buffer, 255, "Script: %s = %d\n", state->definition.name, ctx->foobar);
         sp_log_message(SP_LOG_LEVEL_LOG, buffer);
         ctx->started = true;
     }
@@ -102,12 +102,11 @@ SP_EXPORT void camera_view_on_tick(void *context,
 
 SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
-        sp_string_set(&output[0].name, "camera_view2");
-
+        strncpy(output[0].name, "camera_view2", sizeof(output[0].name) - 1);
         output[0].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
         output[0].filter_on_event = true;
-        string_t *events = sp_string_vector_resize(&output[0].events, 1);
-        sp_string_set(&events[0], "/script/camera_rotate");
+        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 1);
+        strncpy(events[0], "/script/camera_rotate", sizeof(events[0]) - 1);
 
         output[0].context_size = sizeof(script_camera_view_t);
         output[0].init_func = &camera_view_init;

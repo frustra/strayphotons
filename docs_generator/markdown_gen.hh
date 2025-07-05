@@ -266,7 +266,7 @@ struct MarkdownContext {
             DocsStruct docs;
 
             const ecs::StructMetadata *metadata = nullptr;
-            const std::string *name = nullptr;
+            std::optional<std::string_view> name = {};
             if constexpr (std::is_same<std::decay_t<decltype(entry)>, std::string>()) {
                 Assertf(pageType == PageType::Component,
                     "Unexpected page type: %s for %s",
@@ -283,7 +283,7 @@ struct MarkdownContext {
                     }
                 });
 
-                name = &entry;
+                name = entry;
                 metadata = &comp.metadata;
             } else {
                 Assertf(pageType == PageType::Prefab || pageType == PageType::Script,
@@ -297,7 +297,7 @@ struct MarkdownContext {
                     docs.AddField(field, field.Access(defaultScript));
                 }
 
-                name = &entry.first;
+                name = entry.first;
                 metadata = &ctx->metadata;
             }
 

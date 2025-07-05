@@ -25,3 +25,16 @@ foreach(SCRIPT_NAME ${SCRIPT_LIST})
         )
     endif()
 endforeach()
+
+add_library(hello_cpp SHARED hello_cpp.cpp)
+
+target_link_libraries(hello_cpp PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm)
+
+if(WIN32)
+    target_compile_definitions(hello_cpp PUBLIC _CRT_SECURE_NO_WARNINGS)
+    add_custom_command(TARGET hello_cpp PRE_LINK
+        COMMAND
+            ./extra/remove_in_use.py hello_cpp dll pdb
+        WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
+    )
+endif()

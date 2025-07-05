@@ -15,7 +15,6 @@
 #include <magic_enum.hpp>
 #include <memory>
 #include <string>
-#include <tracy/Tracy.hpp>
 #include <type_traits>
 
 #ifdef SP_SHARED_BUILD
@@ -146,8 +145,6 @@ namespace sp::logging {
         std::string buf(size + 1, '\0');
         std::snprintf(buf.data(), size + 1, fmt.c_str(), std::forward<T>(t)...);
         buf.resize(size); // Remove unnecessary null terminator
-
-        TracyMessage(buf.data(), size);
         GlobalLogOutput(lvl, buf);
     }
 

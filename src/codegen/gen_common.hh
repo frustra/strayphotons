@@ -95,3 +95,10 @@ std::string TypeToString(std::type_index type) {
         return TypeToString<T>();
     });
 }
+
+std::string TypeToString(uint32_t typeIndex) {
+    return ecs::GetFieldType(typeIndex, [&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        return TypeToString<T>();
+    });
+}

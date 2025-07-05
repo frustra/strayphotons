@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "common/InlineString.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/SceneRef.hh"
 
@@ -57,9 +59,9 @@ namespace ecs {
     };
 
     struct DynamicScriptDefinition {
-        std::string name;
+        ScriptName name;
         ScriptType type;
-        std::vector<std::string> events;
+        std::vector<EventName> events;
         bool filterOnEvent = false;
 
         size_t contextSize = 0;

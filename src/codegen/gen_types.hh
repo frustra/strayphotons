@@ -63,10 +63,13 @@ std::string StripTypeDecorators(std::string_view name) {
     return std::string(name);
 }
 
+std::string LookupCTypeName(std::type_index type);
+std::string LookupCTypeName(uint32_t typeIndex) {
+    return LookupCTypeName(ecs::GetFieldTypeIndex(typeIndex));
+}
+
 std::string LookupCTypeName(std::type_index type) {
-    if (type == typeid(void) || type == typeid(void *) || type == typeid(const void *)) {
-        return "void";
-    }
+    if (type == typeid(void)) return "void"s;
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
@@ -124,17 +127,18 @@ std::string LookupCTypeName(std::type_index type) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
                 ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
-                std::string typeName = LookupCTypeName(funcInfo.returnType.type) + "(*)(";
+                std::string typeName = LookupCTypeName(funcInfo.returnType.typeIndex) + "(*)(";
                 for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
                     if (i > 0) typeName += ", ";
-                    typeName += LookupCTypeName(funcInfo.argTypes[i].type);
+                    typeName += LookupCTypeName(funcInfo.argTypes[i].typeIndex);
                 }
                 return typeName + ")";
             } else {
                 return LookupCTypeName(typeid(std::remove_pointer_t<T>));
             }
         } else if constexpr (sp::is_optional<T>()) {
-            return LookupCTypeName(typeid(typename T::value_type));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
+            return "sp_optional_" + subtype + "_t";
         } else if constexpr (sp::is_vector<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_" + subtype + "_vector_t";
@@ -228,7 +232,7 @@ template<typename S>
 void GenerateCTypeDefinition(S &out, std::type_index type);
 
 std::string ArgTypeToString(const ecs::TypeInfo &info) {
-    return (info.isConst ? "const " : "") + LookupCTypeName(info.type) +
+    return (info.isConst ? "const " : "") + LookupCTypeName(info.typeIndex) +
            (info.isPointer || info.isTecsLock ? " *" : "");
 }
 
@@ -351,7 +355,7 @@ void GenerateCTypeFunctionDefinitions(S &out, const std::string &full) {
             } else {
                 out << ", ";
             }
-            out << LookupCTypeName(func.returnType.type) << " *result";
+            out << LookupCTypeName(func.returnType.typeIndex) << " *result";
         }
         out << ");" << std::endl;
     }
@@ -445,7 +449,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 } else {
                     out << ", ";
                 }
-                out << LookupCTypeName(func.returnType.type) << " *result";
+                out << LookupCTypeName(func.returnType.typeIndex) << " *result";
             }
             out << ") {" << std::endl;
             if (!func.isStatic) {
@@ -461,12 +465,12 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                 } else {
                     out << "arg" << argI;
                 }
-                out << ")->TryLock<" << TypeToString(arg.type) << ">();" << std::endl;
+                out << ")->TryLock<" << TypeToString(arg.typeIndex) << ">();" << std::endl;
                 out << "    Assertf(tryLock" << argI << ", \"" << func.name << " failed to lock "
-                    << TypeToString(arg.type) << "\");" << std::endl;
+                    << TypeToString(arg.typeIndex) << "\");" << std::endl;
                 argI++;
             }
-            if (func.returnType.type == typeid(void) && !func.returnType.isPointer) {
+            if (func.returnType.typeIndex == ecs::GetFieldTypeIndex<void>() && !func.returnType.isPointer) {
                 out << "    ";
             } else if (func.returnType.isTrivial) {
                 out << "    return static_cast<" << ArgTypeToString(func.returnType) << ">(";
@@ -482,7 +486,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
             for (size_t i = 0; i < func.argTypes.size(); i++) {
                 if (i > 0) out << ", ";
                 if (func.argTypes[i].isTecsLock) {
-                    out << "(const " << TypeToString(func.argTypes[i].type) << " &)*tryLock" << i;
+                    out << "(const " << TypeToString(func.argTypes[i].typeIndex) << " &)*tryLock" << i;
                 } else {
                     if (func.argTypes[i].isReference) out << "*";
                     if (i < func.argDescs.size()) {
@@ -492,7 +496,7 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
                     }
                 }
             }
-            if (func.returnType.type != typeid(void) || func.returnType.isPointer) out << ")";
+            if (func.returnType.typeIndex != ecs::GetFieldTypeIndex<void>() || func.returnType.isPointer) out << ")";
             out << ");" << std::endl;
             out << "}" << std::endl;
             out << std::endl;
@@ -526,14 +530,40 @@ void GenerateCEnumDefinition(S &out, const std::string &full) {
 }
 
 template<typename S>
+void GenerateCTypeDefinition(S &out, std::type_index type);
+template<typename S>
+void GenerateCTypeDefinition(S &out, uint32_t typeIndex) {
+    return GenerateCTypeDefinition(out, ecs::GetFieldTypeIndex(typeIndex));
+}
+
+template<typename S>
 void GenerateCTypeDefinition(S &out, std::type_index type) {
     if (ReferencedCTypes().contains(type)) return;
-    if (type == typeid(void)) return;
-    if (type == typeid(void *)) return;
-    if (type == typeid(const void *)) return;
+    if (type == typeid(void)) {
+        out << "const uint32_t SP_TYPE_INDEX_VOID = " << ecs::GetFieldTypeIndex<void>() << ";" << std::endl;
+        ReferencedCTypes().emplace(type);
+        return;
+    }
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
+        if constexpr (std::is_same<T, ecs::DynamicLock<>>()) {
+            out << "const uint32_t SP_TYPE_INDEX_TECS_LOCK = " << ecs::GetFieldTypeIndex<T>() << ";" << std::endl;
+        } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
+            // No-op
+        } else if constexpr (std::is_pointer<T>()) {
+            if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
+                // No-op
+            } else {
+                auto typeName = StripTypeDecorators(LookupCTypeName(typeid(std::remove_pointer_t<T>)));
+                out << "const uint32_t SP_TYPE_INDEX_" << sp::to_upper(typeName)
+                    << "_PTR = " << ecs::GetFieldTypeIndex<T>() << ";" << std::endl;
+            }
+        } else {
+            auto typeName = StripTypeDecorators(LookupCTypeName(typeid(T)));
+            out << "const uint32_t SP_TYPE_INDEX_" << sp::to_upper(typeName) << " = " << ecs::GetFieldTypeIndex<T>()
+                << ";" << std::endl;
+        }
         if constexpr (std::is_same<T, bool>()) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
@@ -593,9 +623,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
                 ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
-                GenerateCTypeDefinition(out, funcInfo.returnType.type);
+                GenerateCTypeDefinition(out, funcInfo.returnType.typeIndex);
                 for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
-                    GenerateCTypeDefinition(out, funcInfo.argTypes[i].type);
+                    GenerateCTypeDefinition(out, funcInfo.argTypes[i].typeIndex);
                 }
             } else {
                 GenerateCTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
@@ -606,6 +636,7 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_optional_" << subtype << "_t {" << std::endl;
             out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_optional_" << subtype << "_t;" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_vector<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
@@ -697,9 +728,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                 }
 
                 for (auto &func : comp->metadata.functions) {
-                    GenerateCTypeDefinition(out, func.returnType.type);
+                    GenerateCTypeDefinition(out, func.returnType.typeIndex);
                     for (auto &arg : func.argTypes) {
-                        GenerateCTypeDefinition(out, arg.type);
+                        GenerateCTypeDefinition(out, arg.typeIndex);
                     }
                 }
                 GenerateCTypeFunctionDefinitions<T>(out, full);
@@ -722,9 +753,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
                     ReferencedCTypes().emplace(type);
 
                     for (auto &func : metadata->functions) {
-                        GenerateCTypeDefinition(out, func.returnType.type);
+                        GenerateCTypeDefinition(out, func.returnType.typeIndex);
                         for (auto &arg : func.argTypes) {
-                            GenerateCTypeDefinition(out, arg.type);
+                            GenerateCTypeDefinition(out, arg.typeIndex);
                         }
                     }
                     GenerateCTypeFunctionDefinitions<T>(out, full);
@@ -739,15 +770,22 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
 }
 
 template<typename S>
+void GenerateCppTypeDefinition(S &out, std::type_index type);
+template<typename S>
+void GenerateCppTypeDefinition(S &out, uint32_t typeIndex) {
+    return GenerateCppTypeDefinition(out, ecs::GetFieldTypeIndex(typeIndex));
+}
+
+template<typename S>
 void GenerateCppTypeDefinition(S &out, std::type_index type) {
     if (ReferencedCppTypes().contains(type)) return;
     if (type == typeid(void)) return;
-    if (type == typeid(void *)) return;
-    if (type == typeid(const void *)) return;
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
 
-        if constexpr (std::is_same<T, bool>()) {
+        if constexpr (std::is_same<T, void *>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, bool>()) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
             // Built-in
@@ -810,9 +848,9 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
                 ecs::StructFunction funcInfo = ecs::StructFunction::New("", funcPtr);
-                GenerateCppTypeDefinition(out, funcInfo.returnType.type);
+                GenerateCppTypeDefinition(out, funcInfo.returnType.typeIndex);
                 for (size_t i = 0; i < funcInfo.argTypes.size(); i++) {
-                    GenerateCppTypeDefinition(out, funcInfo.argTypes[i].type);
+                    GenerateCppTypeDefinition(out, funcInfo.argTypes[i].typeIndex);
                 }
             } else {
                 GenerateCppTypeDefinition(out, typeid(std::remove_cv_t<std::remove_pointer_t<T>>));
@@ -911,9 +949,9 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                 }
 
                 for (auto &func : comp->metadata.functions) {
-                    GenerateCppTypeDefinition(out, func.returnType.type);
+                    GenerateCppTypeDefinition(out, func.returnType.typeIndex);
                     for (auto &arg : func.argTypes) {
-                        GenerateCppTypeDefinition(out, arg.type);
+                        GenerateCppTypeDefinition(out, arg.typeIndex);
                     }
                 }
                 GenerateCTypeFunctionDefinitions<T>(out, full);
@@ -937,9 +975,9 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                     ReferencedCppTypes().emplace(type);
 
                     for (auto &func : metadata->functions) {
-                        GenerateCppTypeDefinition(out, func.returnType.type);
+                        GenerateCppTypeDefinition(out, func.returnType.typeIndex);
                         for (auto &arg : func.argTypes) {
-                            GenerateCppTypeDefinition(out, arg.type);
+                            GenerateCppTypeDefinition(out, arg.typeIndex);
                         }
                     }
                     GenerateCTypeFunctionDefinitions<T>(out, full);

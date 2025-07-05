@@ -55,8 +55,11 @@ namespace ecs {
         bool operator==(const ArgDesc &other) const = default;
     };
 
+    uint32_t GetFieldTypeIndex(const std::type_index &idx);
+    std::type_index GetFieldTypeIndex(uint32_t typeIndex);
+
     struct TypeInfo {
-        std::type_index type;
+        uint32_t typeIndex;
         bool isTrivial;
         bool isConst;
         bool isPointer;
@@ -66,8 +69,9 @@ namespace ecs {
 
         template<typename T>
         static inline TypeInfo Lookup() {
+            using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
             return TypeInfo{
-                .type = typeid(std::remove_pointer_t<std::decay_t<T>>),
+                .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
                              std::is_reference<T>() || std::is_same<T, Entity>(),
                 .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
@@ -78,6 +82,18 @@ namespace ecs {
                 .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
             };
         }
+
+        inline operator std::type_index() const {
+            return GetFieldTypeIndex(typeIndex);
+        }
+
+        inline const char *name() const {
+            return GetFieldTypeIndex(typeIndex).name();
+        }
+
+        bool operator==(const std::type_index &other) const {
+            return GetFieldTypeIndex(typeIndex) == other;
+        };
 
         bool operator==(const TypeInfo &other) const = default;
     };
@@ -195,7 +211,7 @@ namespace ecs {
 
     struct StructField {
         std::string name, desc;
-        std::type_index type;
+        TypeInfo type;
         size_t size;
         size_t offset = 0;
         int fieldIndex = -1;
@@ -204,7 +220,7 @@ namespace ecs {
 
         StructField(const std::string &name,
             const std::string &desc,
-            std::type_index type,
+            const TypeInfo &type,
             size_t size,
             size_t offset,
             FieldAction actions,
@@ -243,7 +259,7 @@ namespace ecs {
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             return StructField(name,
                 "No description",
-                typeid(std::remove_cv_t<F>),
+                TypeInfo::Lookup<std::remove_cv_t<F>>(),
                 sizeof(F),
                 OffsetOf(M),
                 actions,
@@ -257,11 +273,26 @@ namespace ecs {
             FieldAction actions = ~FieldAction::None) {
             return StructField(name,
                 desc,
-                typeid(std::remove_cv_t<F>),
+                TypeInfo::Lookup<std::remove_cv_t<F>>(),
                 sizeof(F),
                 OffsetOf(M),
                 actions,
                 AsFunctionPointer<F>());
+        }
+
+        template<typename T>
+        static const StructField New(const std::string &name,
+            const std::string &desc,
+            size_t offset,
+            FieldAction actions = FieldAction::None,
+            const std::optional<StructFunction> &functionPointer = {}) {
+            return StructField(name,
+                desc,
+                TypeInfo::Lookup<std::remove_cv_t<T>>(),
+                sizeof(T),
+                offset,
+                actions,
+                functionPointer);
         }
 
         /**
@@ -295,7 +326,7 @@ namespace ecs {
         static const StructField New(FieldAction actions = ~FieldAction::None) {
             return StructField("",
                 "No description",
-                std::type_index(typeid(std::remove_cv_t<T>)),
+                TypeInfo::Lookup<std::remove_cv_t<T>>(),
                 sizeof(T),
                 0,
                 actions,
@@ -312,7 +343,7 @@ namespace ecs {
 
         template<typename T>
         T &Access(void *structPtr) const {
-            Assertf(type == typeid(T),
+            Assertf(type == TypeInfo::Lookup<T>(),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
@@ -321,7 +352,7 @@ namespace ecs {
 
         template<typename T>
         const T &Access(const void *structPtr) const {
-            Assertf(type == typeid(T),
+            Assertf(type == TypeInfo::Lookup<T>(),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
@@ -347,6 +378,8 @@ namespace ecs {
     class StructMetadata : public sp::NonCopyable {
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
+
+        static constexpr bool foo = std::is_trivially_copy_constructible_v<std::type_index>;
 
         template<typename... Fields>
         StructMetadata(const std::type_index &idx, size_t size, const char *name, const char *desc, Fields &&...fields)

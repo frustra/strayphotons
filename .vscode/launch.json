@@ -214,6 +214,17 @@
             "console": "integratedTerminal",
         },
         {
+            "name": "StrayPhotons Tecs Codegen (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-ecs-c-abi-codegen.exe",
+            "args": ["include/c_abi/strayphotons_ecs_c_abi_lock_gen.h", "include/c_abi/strayphotons_ecs_c_abi_entity_gen.h", "strayphotons_ecs_c_abi_ecs_gen.cc", "strayphotons_ecs_c_abi_entity_gen.cc", "strayphotons_ecs_c_abi_lock_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+        {
             "name": "StrayPhotons Test (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

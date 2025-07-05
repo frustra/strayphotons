@@ -31,6 +31,8 @@ namespace ecs {
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnEventFunc, PrefabFunc>;
 
+    using ScriptName = sp::InlineString<63>;
+
     enum class ScriptType {
         LogicScript = 0,
         PhysicsScript,
@@ -57,9 +59,9 @@ namespace ecs {
             &ScriptDefinitionBase::Access));
 
     struct ScriptDefinition {
-        std::string name;
+        ScriptName name;
         ScriptType type;
-        std::vector<std::string> events;
+        std::vector<EventName> events;
         bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;
         std::optional<ScriptInitFunc> initFunc;
@@ -79,7 +81,7 @@ namespace ecs {
             &ScriptDefinition::filterOnEvent));
 
     struct ScriptDefinitions {
-        std::map<std::string, ScriptDefinition> scripts;
+        std::map<ScriptName, ScriptDefinition> scripts;
 
         void RegisterScript(ScriptDefinition &&definition);
     };

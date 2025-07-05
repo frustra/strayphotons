@@ -124,16 +124,16 @@ SP_EXPORT void sun_on_tick(void *context,
 
 SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
-        sp_string_set(&output[0].name, "flashlight");
+        strncpy(output[0].name, "flashlight", sizeof(output[0].name) - 1);
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
-        string_t *events = sp_string_vector_resize(&output[0].events, 2);
-        sp_string_set(&events[0], "/action/flashlight/toggle");
-        sp_string_set(&events[1], "/action/flashlight/grab");
+        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
+        strncpy(events[0], "/action/flashlight/toggle", sizeof(events[0]) - 1);
+        strncpy(events[1], "/action/flashlight/grab", sizeof(events[1]) - 1);
         output[0].context_size = sizeof(script_flashlight_t);
         output[0].on_tick_func = &flashlight_on_tick;
 
-        sp_string_set(&output[1].name, "sun");
+        strncpy(output[1].name, "sun", sizeof(output[1].name) - 1);
         output[1].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[1].on_tick_func = &sun_on_tick;
     }

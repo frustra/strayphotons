@@ -40,6 +40,7 @@ using namespace std;
 #include <fstream>
 #include <memory>
 #include <strayphotons.h>
+#include <tracy/Tracy.hpp>
 #include <vulkan/vulkan.hpp>
 
 using cxxopts::value;

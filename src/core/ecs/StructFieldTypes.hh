@@ -36,6 +36,7 @@ namespace ecs {
         EventDataType,
         std::string,
         sp::InlineString<63>,
+        // ScriptName, // Duplicate of sp::InlineString<63>
         EventName,
         EventString,
         size_t,
@@ -91,6 +92,7 @@ namespace ecs {
         std::vector<glm::vec2>,
         std::vector<std::string>,
         std::vector<SignalExpression>,
+        std::vector<EventName>,
         std::vector<EventDest>,
         std::vector<EventBinding>,
         std::vector<AnimationState>,
@@ -138,6 +140,8 @@ namespace ecs {
         Lock<Write<Signals>, ReadSignalsLock>,
         Lock<Write<TransformTree>>,
 
+        void *,
+
         // Function pointers
         void *(*)(const void *),
         void (*)(void *),
@@ -158,9 +162,24 @@ namespace ecs {
             }
         }
 
+        template<uint32_t I, typename Func, typename T, typename... Tn>
+        inline static auto GetComponentType(uint32_t typeIndex, Func &&func) {
+            if (typeIndex == I) return std::invoke(func, (T *)nullptr);
+            if constexpr (sizeof...(Tn) > 0) {
+                return GetComponentType<I + 1, Func, Tn...>(typeIndex, std::forward<Func>(func));
+            } else {
+                Abortf("Type missing from FieldTypes definition: %u", typeIndex);
+            }
+        }
+
         template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
         inline static auto GetComponentType(ECSType<AllComponentTypes...> *, std::type_index type, Func &&func) {
             return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
+        }
+
+        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
+        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, uint32_t typeIndex, Func &&func) {
+            return GetComponentType<0, Func, AllComponentTypes...>(typeIndex, std::forward<Func>(func));
         }
     } // namespace detail
 
@@ -191,5 +210,32 @@ namespace ecs {
                 return func(*reinterpret_cast<T *>(ptr));
             }
         });
+    }
+
+    template<typename T, uint32_t I = 0>
+    inline static uint32_t GetFieldTypeIndex() {
+        if constexpr (std::is_same<T, void>()) {
+            return 0;
+        } else if constexpr (std::is_same<T, std::tuple_element_t<I, FieldTypes>>()) {
+            return I + 1;
+        } else if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
+            return GetFieldTypeIndex<T, I + 1>();
+        } else {
+            return I + 2 + ECS::GetComponentIndex<T>();
+        }
+    }
+
+    template<typename Func, uint32_t I = 0>
+    inline static auto GetFieldType(uint32_t typeIndex, Func &&func) {
+        if constexpr (I == 0) {
+            if (typeIndex == 0) return std::invoke(func, (void *)nullptr);
+        } else if (typeIndex == I) {
+            return std::invoke(func, (std::tuple_element_t<I - 1, FieldTypes> *)nullptr);
+        }
+        if constexpr (I + 1 <= std::tuple_size_v<FieldTypes>) {
+            return GetFieldType<Func, I + 1>(typeIndex, std::forward<Func>(func));
+        } else {
+            return detail::GetComponentType((ECS *)nullptr, typeIndex - I - 1, std::forward<Func>(func));
+        }
     }
 } // namespace ecs

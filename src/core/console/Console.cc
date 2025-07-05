@@ -28,6 +28,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <sstream>
+#include <tracy/Tracy.hpp>
 
 namespace sp {
     ConsoleManager &GetConsoleManager() {
@@ -41,6 +42,7 @@ namespace sp {
 
     namespace logging {
         void GlobalLogOutput_static(Level level, const string &message) {
+            TracyMessage(message.data(), message.size());
             if (level < Level::Trace) {
                 auto outputPath = GetLogOutputFile_static();
                 if (outputPath) std::ofstream(outputPath, std::ios::app) << message;

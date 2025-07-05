@@ -39,12 +39,7 @@ SP_EXPORT void hello_world_default_init(void *context) {
 SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
     script_hello_world_t *ctx = context;
     char buffer[256] = {0};
-    snprintf(buffer,
-        255,
-        "Script %s init %s (old frame: %u)\n",
-        sp_string_get_c_str(&state->definition.name),
-        ctx->name,
-        ctx->frameCount);
+    snprintf(buffer, 255, "Script %s init %s (old frame: %u)\n", state->definition.name, ctx->name, ctx->frameCount);
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
     ctx->frameCount = 0;
 }
@@ -52,12 +47,7 @@ SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
 SP_EXPORT void hello_world_destroy(void *context, sp_script_state_t *state) {
     script_hello_world_t *ctx = context;
     char buffer[256] = {0};
-    snprintf(buffer,
-        255,
-        "Script %s destroyed %s at frame %u\n",
-        sp_string_get_c_str(&state->definition.name),
-        ctx->name,
-        ctx->frameCount);
+    snprintf(buffer, 255, "Script %s destroyed %s at frame %u\n", state->definition.name, ctx->name, ctx->frameCount);
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 }
 
@@ -93,7 +83,7 @@ SP_EXPORT void hello_world_on_tick_physics(void *context,
 
 SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
-        sp_string_set(&output[0].name, "hello_world");
+        strncpy(output[0].name, "hello_world", sizeof(output[0].name) - 1);
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         output[0].context_size = sizeof(script_hello_world_t);
@@ -102,7 +92,7 @@ SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_
         output[0].destroy_func = &hello_world_destroy;
         output[0].on_tick_func = &hello_world_on_tick_logic;
 
-        sp_string_set(&output[1].name, "hello_world2");
+        strncpy(output[1].name, "hello_world2", sizeof(output[1].name) - 1);
         output[1].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
         output[1].filter_on_event = false;
         output[1].context_size = sizeof(script_hello_world_t);

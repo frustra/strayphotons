@@ -71,7 +71,7 @@ namespace ecs {
         } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
-            obj["name"] = picojson::value(state.definition.name);
+            obj["name"] = picojson::value(state.definition.name.str());
 
             auto ctx = state.definition.context.lock();
             if (ctx) {

@@ -283,7 +283,12 @@ namespace sp {
     private:
         void setSize(size_type newSize) {
             DebugAssertf(newSize <= MaxSize, "InlineString overflow: %llu", newSize);
-            ArrayT::back() = (std::make_unsigned_t<CharT>)(MaxSize - newSize);
+            if (newSize == 0) {
+                // Leave an emptry string as all-zeros so strcpy doesn't result in invalid strings
+                ArrayT::back() = CharT();
+            } else {
+                ArrayT::back() = (std::make_unsigned_t<CharT>)(MaxSize - newSize);
+            }
         }
     };
 } // namespace sp
@@ -301,4 +306,9 @@ std::basic_string<CharT> operator+(const std::basic_string<CharT> &lhs, const sp
 template<typename CharT, size_t MaxSize>
 std::basic_string<CharT> operator+(const sp::InlineString<MaxSize, CharT> &lhs, const char *rhs) {
     return std::basic_string<CharT>(lhs) + rhs;
+}
+
+template<typename CharT, size_t MaxSize>
+std::basic_string<CharT> operator+(const char *lhs, const sp::InlineString<MaxSize, CharT> &rhs) {
+    return lhs + std::basic_string<CharT>(rhs);
 }

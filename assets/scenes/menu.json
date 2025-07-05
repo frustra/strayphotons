@@ -1,5 +1,5 @@
 {
-	"libraries": "hello_world",
+	"libraries": "hello_cpp",
 	"entities": [
 		{
 			"scene_connection": {

@@ -147,6 +147,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
+                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ecs::ScriptState));
                 dynamicScript->dynamicDefinition.initFunc(ptr.context, &state);
             }
         }
