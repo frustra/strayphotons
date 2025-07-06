@@ -30,7 +30,7 @@ typedef struct script_life_cell_t {
     bool initialized;
 } script_life_cell_t;
 
-SP_EXPORT void life_cell_on_tick(void *context,
+void life_cell_on_tick(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
@@ -68,11 +68,33 @@ SP_EXPORT void life_cell_on_tick(void *context,
 SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         strncpy(output[0].name, "life_cell", sizeof(output[0].name) - 1);
+        output[1].desc = "An event handling script to notify neighboring cells when state changes";
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
         strncpy(events[0], "/life/neighbor_alive", sizeof(events[0]) - 1);
         strncpy(events[1], "/life/toggle_alive", sizeof(events[1]) - 1);
+        sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
+
+        sp_string_set(&fields[0].name, "alive");
+        fields[0].type.type_index = SP_TYPE_INDEX_BOOL;
+        fields[0].type.is_trivial = true;
+        fields[0].size = sizeof(bool);
+        fields[0].offset = offsetof(script_life_cell_t, alive);
+
+        sp_string_set(&fields[1].name, "initialized");
+        fields[1].type.type_index = SP_TYPE_INDEX_BOOL;
+        fields[1].type.is_trivial = true;
+        fields[1].size = sizeof(bool);
+        fields[1].offset = offsetof(script_life_cell_t, initialized);
+        fields[1].actions = 0; // None
+
+        sp_string_set(&fields[2].name, "neighbor_count");
+        fields[2].type.type_index = SP_TYPE_INDEX_INT32;
+        fields[2].type.is_trivial = true;
+        fields[2].size = sizeof(int);
+        fields[2].offset = offsetof(script_life_cell_t, neighborCount);
+
         output[0].context_size = sizeof(script_life_cell_t);
         output[0].on_tick_func = &life_cell_on_tick;
 
@@ -82,13 +104,3 @@ SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_
     }
     return 1;
 }
-
-// TODO: Implement StructMetadata across DLL boundary
-// StructMetadata MetadataLifeCell(typeid(LifeCell),
-//     sizeof(LifeCell),
-//     "LifeCell",
-//     "",
-//     StructField::New("alive", &LifeCell::alive),
-//     StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
-//     StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-// LogicScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive", "/life/toggle_alive");

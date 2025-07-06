@@ -28,13 +28,13 @@ typedef struct script_camera_view_t {
     bool started;
 } script_camera_view_t;
 
-SP_EXPORT void camera_view_init(void *context, sp_script_state_t *state) {
+void camera_view_init(void *context, sp_script_state_t *state) {
     script_camera_view_t *ctx = context;
     ctx->foobar = 42;
     ctx->started = false;
 }
 
-SP_EXPORT void camera_view_on_tick(void *context,
+void camera_view_on_tick(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
@@ -107,6 +107,19 @@ SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_
         output[0].filter_on_event = true;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 1);
         strncpy(events[0], "/script/camera_rotate", sizeof(events[0]) - 1);
+
+        sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 2);
+        sp_string_set(&fields[0].name, "foobar");
+        fields[0].type.type_index = SP_TYPE_INDEX_INT32;
+        fields[0].type.is_trivial = true;
+        fields[0].size = sizeof(int);
+        fields[0].offset = offsetof(script_camera_view_t, foobar);
+
+        sp_string_set(&fields[1].name, "started");
+        fields[1].type.type_index = SP_TYPE_INDEX_BOOL;
+        fields[1].type.is_trivial = true;
+        fields[1].size = sizeof(bool);
+        fields[1].offset = offsetof(script_camera_view_t, started);
 
         output[0].context_size = sizeof(script_camera_view_t);
         output[0].init_func = &camera_view_init;

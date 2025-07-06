@@ -27,12 +27,12 @@ struct ScriptHelloWorld {
     char name[16];
     uint32_t frameCount;
 
-    SP_EXPORT static void DefaultInit(void *context) {
+    static void DefaultInit(void *context) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
         snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%u", ++instanceCount);
     }
 
-    SP_EXPORT static void Init(void *context, sp_script_state_t *state) {
+    static void Init(void *context, sp_script_state_t *state) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
         Logf("Script %s init %s (old frame: %u)", state->definition.name, ctx->name, ctx->frameCount);
         Logf("Hello: %llx, int32: %llx, state: %llx",
@@ -42,12 +42,12 @@ struct ScriptHelloWorld {
         ctx->frameCount = 0;
     }
 
-    SP_EXPORT static void Destroy(void *context, sp_script_state_t *state) {
+    static void Destroy(void *context, sp_script_state_t *state) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
         Logf("Script %s destroyed %s at frame %u", state->definition.name, ctx->name, ctx->frameCount);
     }
 
-    SP_EXPORT static void OnTickLogic(void *context,
+    static void OnTickLogic(void *context,
         sp_script_state_t *state,
         tecs_lock_t *lock,
         tecs_entity_t ent,
@@ -62,7 +62,7 @@ struct ScriptHelloWorld {
         ctx->frameCount++;
     }
 
-    SP_EXPORT static void OnTickPhysics(void *context,
+    static void OnTickPhysics(void *context,
         sp_script_state_t *state,
         tecs_lock_t *lock,
         tecs_entity_t ent,
@@ -99,6 +99,15 @@ SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_
         output[1].init_func = &ScriptHelloWorld::Init;
         output[1].destroy_func = &ScriptHelloWorld::Destroy;
         output[1].on_tick_func = &ScriptHelloWorld::OnTickPhysics;
+
+        for (int i = 0; i < 2; i++) {
+            sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[i].fields, 1);
+            sp_string_set(&fields[0].name, "frame_count");
+            fields[0].type.type_index = SP_TYPE_INDEX_INT32;
+            fields[0].type.is_trivial = true;
+            fields[0].size = sizeof(ScriptHelloWorld::frameCount);
+            fields[0].offset = offsetof(ScriptHelloWorld, frameCount);
+        }
     }
     return 2;
 }

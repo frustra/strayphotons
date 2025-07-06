@@ -31,12 +31,12 @@ typedef struct script_hello_world_t {
     uint32_t frameCount;
 } script_hello_world_t;
 
-SP_EXPORT void hello_world_default_init(void *context) {
+void hello_world_default_init(void *context) {
     script_hello_world_t *ctx = context;
     snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%u", ++instanceCount);
 }
 
-SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
+void hello_world_init(void *context, sp_script_state_t *state) {
     script_hello_world_t *ctx = context;
     char buffer[256] = {0};
     snprintf(buffer, 255, "Script %s init %s (old frame: %u)\n", state->definition.name, ctx->name, ctx->frameCount);
@@ -44,14 +44,14 @@ SP_EXPORT void hello_world_init(void *context, sp_script_state_t *state) {
     ctx->frameCount = 0;
 }
 
-SP_EXPORT void hello_world_destroy(void *context, sp_script_state_t *state) {
+void hello_world_destroy(void *context, sp_script_state_t *state) {
     script_hello_world_t *ctx = context;
     char buffer[256] = {0};
     snprintf(buffer, 255, "Script %s destroyed %s at frame %u\n", state->definition.name, ctx->name, ctx->frameCount);
     sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 }
 
-SP_EXPORT void hello_world_on_tick_logic(void *context,
+void hello_world_on_tick_logic(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
@@ -66,7 +66,7 @@ SP_EXPORT void hello_world_on_tick_logic(void *context,
     ctx->frameCount++;
 }
 
-SP_EXPORT void hello_world_on_tick_physics(void *context,
+void hello_world_on_tick_physics(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,

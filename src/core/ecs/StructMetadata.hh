@@ -218,6 +218,7 @@ namespace ecs {
         FieldAction actions = ~FieldAction::None;
         std::optional<StructFunction> functionPointer;
 
+        StructField() = default;
         StructField(const std::string &name,
             const std::string &desc,
             const TypeInfo &type,
@@ -514,4 +515,31 @@ namespace ecs {
             }
         }
     } // namespace scope
+
+    static StructMetadata MetadataTypeInfo(typeid(TypeInfo),
+        sizeof(TypeInfo),
+        "TypeInfo",
+        "A definition describing the name, type, and memory offset of a struct field",
+        StructField::New("type_index", "The index of this type in the master list", &TypeInfo::typeIndex),
+        StructField::New("is_trivial", "True if this type is C-compatible", &TypeInfo::isTrivial),
+        StructField::New("is_const", "True if this type is const", &TypeInfo::isConst),
+        StructField::New("is_pointer", "True if this type is a pointer", &TypeInfo::isPointer),
+        StructField::New("is_reference", "True if this type is a reference", &TypeInfo::isReference),
+        StructField::New("is_tecs_lock", "True if this type is a Tecs lock", &TypeInfo::isTecsLock),
+        StructField::New("is_function_pointer",
+            "True if this type is a function pointer",
+            &TypeInfo::isFunctionPointer));
+
+    static StructMetadata MetadataStructField(typeid(StructField),
+        sizeof(StructField),
+        "StructField",
+        "A definition describing the name, type, and memory offset of a struct field",
+        StructField::New("name", "The name of the field", &StructField::name),
+        StructField::New("desc", "A description of what the field is for", &StructField::desc),
+        StructField::New("type", "The type of the field", &StructField::type),
+        StructField::New("size", "The size of the field in bytes", &StructField::size),
+        StructField::New("offset", "The byte offset of the field within its containing struct", &StructField::offset),
+        StructField::New("actions",
+            "A set of flags representing actions to take when handling this field",
+            &StructField::actions));
 }; // namespace ecs

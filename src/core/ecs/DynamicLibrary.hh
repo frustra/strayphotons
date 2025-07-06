@@ -60,9 +60,11 @@ namespace ecs {
 
     struct DynamicScriptDefinition {
         ScriptName name;
+        char *desc = nullptr;
         ScriptType type;
-        std::vector<EventName> events;
         bool filterOnEvent = false;
+        std::vector<EventName> events;
+        std::vector<StructField> fields;
 
         size_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;
@@ -79,13 +81,15 @@ namespace ecs {
         "DynamicScriptDefinition",
         "A definition describing the name, type, and functions of a script",
         StructField::New("name", "The name of the script", &DynamicScriptDefinition::name),
+        StructField::New("desc", "A description of how to use the script", &DynamicScriptDefinition::desc),
         StructField::New("type", "The type of the script", &DynamicScriptDefinition::type),
-        StructField::New("events",
-            "A list of the names of events this script can receive",
-            &DynamicScriptDefinition::events),
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",
             &DynamicScriptDefinition::filterOnEvent),
+        StructField::New("events",
+            "A list of the names of events this script can receive",
+            &DynamicScriptDefinition::events),
+        StructField::New("fields", "A list struct fields to expose as script inputs", &DynamicScriptDefinition::fields),
         StructField::New("context_size", &DynamicScriptDefinition::contextSize),
         StructField::New("default_init_func", &DynamicScriptDefinition::defaultInitFunc),
         StructField::New("default_free_func", &DynamicScriptDefinition::defaultFreeFunc),

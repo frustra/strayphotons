@@ -247,7 +247,7 @@ void GenerateStructField(S &out, const ecs::StructField &field, const std::strin
         }
         out << "); // " << field.size << " bytes" << std::endl;
     } else {
-        out << prefix << LookupCTypeName(field.type) << " " << field.name << "; // " << field.size << " bytes"
+        out << prefix << ArgTypeToString(field.type) << " " << field.name << "; // " << field.size << " bytes"
             << std::endl;
     }
 }

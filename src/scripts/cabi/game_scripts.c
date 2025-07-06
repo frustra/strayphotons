@@ -28,7 +28,7 @@ typedef struct script_flashlight_t {
     sp_entity_ref_t parentEntity;
 } script_flashlight_t;
 
-SP_EXPORT void flashlight_on_tick(void *context,
+void flashlight_on_tick(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
     tecs_entity_t ent,
@@ -88,11 +88,7 @@ SP_EXPORT void flashlight_on_tick(void *context,
     }
 }
 
-SP_EXPORT void sun_on_tick(void *context,
-    sp_script_state_t *state,
-    tecs_lock_t *lock,
-    tecs_entity_t ent,
-    uint64_t intervalNs) {
+void sun_on_tick(void *context, sp_script_state_t *state, tecs_lock_t *lock, tecs_entity_t ent, uint64_t intervalNs) {
     if (!Tecs_entity_has_transform_tree(lock, ent)) return;
 
     sp_entity_ref_t ref = {0};

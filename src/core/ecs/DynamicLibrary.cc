@@ -211,13 +211,16 @@ namespace ecs {
     }
 
     DynamicScript::DynamicScript(DynamicLibrary &library, const DynamicScriptDefinition &dynamicDefinition)
-        : ScriptDefinitionBase(this->metadata),
-          metadata(typeid(void), 0, dynamicDefinition.name.c_str(), "DynamicScript"), library(&library),
-          dynamicDefinition(dynamicDefinition) {
+        : ScriptDefinitionBase(this->metadata), metadata(typeid(void),
+                                                    dynamicDefinition.contextSize,
+                                                    dynamicDefinition.name.c_str(),
+                                                    dynamicDefinition.desc ? dynamicDefinition.desc : ""),
+          library(&library), dynamicDefinition(dynamicDefinition) {
         definition.name = dynamicDefinition.name;
         definition.type = dynamicDefinition.type;
         definition.events = dynamicDefinition.events;
         definition.filterOnEvent = dynamicDefinition.filterOnEvent;
+        metadata.fields = dynamicDefinition.fields;
         switch (definition.type) {
         case ScriptType::LogicScript:
         case ScriptType::PhysicsScript:

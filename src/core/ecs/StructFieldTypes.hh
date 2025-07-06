@@ -87,7 +87,9 @@ namespace ecs {
         SignalExpression,
         SignalRef,
         Sound,
+        StructField,
         sp::SceneRef,
+        TypeInfo,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
@@ -100,6 +102,7 @@ namespace ecs {
         std::vector<PhysicsShape>,
         std::vector<ScriptInstance>,
         std::vector<Sound>,
+        std::vector<StructField>,
         std::vector<EntityRef>,
         std::vector<std::pair<EntityRef, EntityRef>>,
         std::pair<EntityRef, EntityRef>,
@@ -115,6 +118,7 @@ namespace ecs {
         robin_hood::unordered_map<EventName, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
 
         // Enums
+        FieldAction,
         FocusLayer,
         GuiTarget,
         InterpolationMode,
