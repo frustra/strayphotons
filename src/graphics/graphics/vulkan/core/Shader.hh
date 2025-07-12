@@ -10,6 +10,7 @@
 #include "SPIRV-Reflect/spirv_reflect.h"
 #include "common/EnumTypes.hh"
 #include "common/Hashing.hh"
+#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {

@@ -51,7 +51,7 @@ Enum flag names:
 This is an **enum** type, and can be one of the following case-sensitive values:
 - "**None**" - No description
 - "**World**" - No description
-- "**Debug**" - No description
+- "**Overlay**" - No description
 
 </div>
 

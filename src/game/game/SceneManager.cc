@@ -736,7 +736,7 @@ namespace sp {
             auto &name_ptr = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
             auto name = name_ptr ? *name_ptr : ecs::Name();
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, name, scope);
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("LoadScene(%s): Failed to create entity, ignoring: '%s'", scenePath, name.String());
@@ -833,7 +833,7 @@ namespace sp {
             auto &name = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
             if (!name || !*name) continue;
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name, ecs::EntityScope("bindings", ""));
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name);
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("Failed to create binding entity, ignoring: '%s'", name->String());

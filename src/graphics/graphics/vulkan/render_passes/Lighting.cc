@@ -313,22 +313,30 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddGelTextures(RenderGraph &graph) {
+        InlineVector<std::pair<std::string, ResourceID>, 64> newGelTextures;
         graph.AddPass("GelTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &gel : gelTextureCache) {
-                    if (gel.second.index != 0) continue;
-                    builder.Read(gel.first.substr(6), Access::FragmentShaderSampleImage);
+                    if (gel.second.index != 0 && !starts_with(gel.first, "graph:")) continue;
+                    newGelTextures.emplace_back(gel.first,
+                        builder.ReadPreviousFrame(gel.first.substr(6), Access::FragmentShaderSampleImage));
                 }
                 builder.Write("LightState", Access::HostWrite);
             })
-            .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                for (auto &gel : gelTextureCache) {
-                    if (gel.second.index != 0) continue;
-                    gel.second = scene.textures.Add(resources.GetImageView(gel.first.substr(6)));
+            .Execute([this, newGelTextures](rg::Resources &resources, DeviceContext &device) {
+                for (auto &gel : newGelTextures) {
+                    auto gelImageView = resources.GetImageView(gel.second);
+                    if (gelImageView) gelTextureCache[gel.first] = scene.textures.Add(gelImageView);
                 }
                 scene.textures.Flush();
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
-                    if (lights[i].gelTexture) gpuData.lights[i].gelId = *lights[i].gelTexture;
+                    if (lights[i].gelTexture.has_value()) {
+                        if (starts_with(lights[i].gelName, "graph:")) {
+                            gpuData.lights[i].gelId = gelTextureCache[lights[i].gelName].index;
+                        } else {
+                            gpuData.lights[i].gelId = lights[i].gelTexture.value();
+                        }
+                    }
                 }
                 resources.GetBuffer("LightState")->CopyFrom(&gpuData);
             });
@@ -641,6 +649,8 @@ namespace sp::vulkan::renderer {
                     auto &handle = it->second;
                     if (!handle.Ready()) complete = false;
                 }
+            } else {
+                Logf("Unknown gel texture: %s", std::to_string(ent), light.gelName);
             }
         }
         return complete;

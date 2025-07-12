@@ -7,15 +7,14 @@
 
 #pragma once
 
-#include "GuiContext.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
+#include "graphics/gui/GuiContext.hh"
 
 namespace sp {
-
-    class WorldGuiManager : public GuiContext {
+    class WorldGuiContext : public GuiContext {
     public:
-        WorldGuiManager(ecs::Entity gui, const std::string &name);
+        WorldGuiContext(ecs::Entity gui, const std::string &name);
 
         void BeforeFrame() override;
         void DefineWindows() override;

@@ -113,6 +113,7 @@ namespace sp::vulkan::render_graph {
     PooledImagePtr Resources::GetPooledImage(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
+        if (res.type == Resource::Type::Future) return nullptr;
         Assertf(res.type == Resource::Type::Image, "resource %s is not a render target", resourceNames[id]);
         Assertf(RefCount(id) > 0, "can't get image %s without accessing it", resourceNames[id]);
         auto &target = images[res.id];
@@ -133,6 +134,7 @@ namespace sp::vulkan::render_graph {
     BufferPtr Resources::GetBuffer(ResourceID id) {
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
+        if (res.type == Resource::Type::Future) return nullptr;
         Assertf(res.type == Resource::Type::Buffer, "resource %s is not a buffer", resourceNames[id]);
         Assertf(RefCount(id) > 0, "can't get buffer %s without accessing it", resourceNames[id]);
         auto &buf = buffers[res.id];
@@ -207,6 +209,8 @@ namespace sp::vulkan::render_graph {
         case Resource::Type::Buffer:
             buffers[id].reset();
             break;
+        case Resource::Type::Future:
+            break;
         default:
             Abortf("resource type is undefined: %s", resourceNames[id]);
         }
@@ -215,19 +219,25 @@ namespace sp::vulkan::render_graph {
     void Resources::AddUsageFromAccess(ResourceID id, Access access) {
         auto &res = GetResourceRef(id);
         auto &acc = GetAccessInfo(access);
-        if (res.type == Resource::Type::Image) {
+        switch (res.type) {
+        case Resource::Type::Image:
             res.imageDesc.usage |= acc.imageUsageMask;
-        } else if (res.type == Resource::Type::Buffer) {
+            break;
+        case Resource::Type::Buffer:
             res.bufferDesc.usage |= acc.bufferUsageMask;
-        } else {
+            break;
+        case Resource::Type::Future:
+            break;
+        default:
             Abortf("resource type is undefined: %s", resourceNames[id]);
         }
     }
 
     ResourceID Resources::ReserveID(string_view name) {
-        if (name.empty()) return InvalidResource;
+        Assert(!name.empty(), "Reserving empty render graph resource id");
 
         Resource futureResource;
+        futureResource.type = Resource::Type::Future;
         Register(name, futureResource);
         return futureResource.id;
     }
@@ -237,11 +247,30 @@ namespace sp::vulkan::render_graph {
             auto existingID = GetID(name, false);
             if (existingID != InvalidResource) {
                 Assert(resourceNames[existingID] == name, "resource defined with a different name");
-                Assert(resources[existingID].type == Resource::Type::Undefined, "resource defined twice");
+                Assert(resources[existingID].type == Resource::Type::Undefined ||
+                           resources[existingID].type == Resource::Type::Future,
+                    "resource defined twice");
                 resource.id = existingID;
                 resources[existingID] = resource;
                 return;
             }
+        }
+
+        Scope *nameScope = nullptr;
+        if (name.find(':') == string_view::npos && name.find('.') != string_view::npos) {
+            for (auto &scope : nameScopes) {
+                if (scope.name.empty()) continue;
+                auto sep = scope.name + ".";
+                auto scopeSep = name.find(sep);
+                if (scopeSep != string_view::npos && (scopeSep == 0 || name[scopeSep - 1] == '.')) {
+                    nameScope = &scope;
+                    name = name.substr(scopeSep + sep.length());
+                    break;
+                }
+            }
+            Assertf(nameScope, "Resources::Register undefined scope: %s", name);
+        } else {
+            nameScope = &nameScopes[scopeStack.back()];
         }
 
         if (freeIDs.empty()) {
@@ -256,7 +285,8 @@ namespace sp::vulkan::render_graph {
         }
 
         if (name.empty()) return;
-        nameScopes[scopeStack.back()].SetID(name, resource.id, frameIndex);
+
+        nameScope->SetID(name, resource.id, frameIndex);
     }
 
     void Resources::BeginScope(string_view name) {

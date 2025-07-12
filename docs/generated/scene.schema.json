@@ -426,7 +426,7 @@
 								"enum": [
 									"None",
 									"World",
-									"Debug"
+									"Overlay"
 								],
 								"type": "string"
 							},

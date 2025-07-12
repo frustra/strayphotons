@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/definitions/ConsoleGui.hh"
+#include "graphics/gui/definitions/EntityPickerGui.hh"
 #include "graphics/gui/definitions/InspectorGui.hh"
 #include "graphics/gui/definitions/LobbyGui.hh"
 #include "graphics/gui/definitions/SignalDisplayGui.hh"
@@ -18,13 +19,13 @@
 
 namespace sp {
     static std::array fontList = {
-        FontDef{Font::Primary, "DroidSans-Regular.ttf", 16.0f},
-        FontDef{Font::Primary, "DroidSans-Regular.ttf", 32.0f},
-        FontDef{Font::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f},
-        FontDef{Font::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
+        GuiFontDef{GuiFont::Primary, "DroidSans-Regular.ttf", 16.0f},
+        GuiFontDef{GuiFont::Primary, "DroidSans-Regular.ttf", 32.0f},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
     };
 
-    std::span<FontDef> GetFontList() {
+    std::span<GuiFontDef> GetGuiFontList() {
         return fontList;
     }
 
@@ -56,10 +57,12 @@ namespace sp {
         if (it != components.end()) components.erase(it);
     }
 
-    shared_ptr<GuiWindow> CreateGuiWindow(const string &windowName, const ecs::Entity &ent) {
-        shared_ptr<GuiWindow> window;
+    shared_ptr<GuiRenderable> CreateGuiWindow(const string &windowName, const ecs::Entity &ent) {
+        shared_ptr<GuiRenderable> window;
         if (windowName == "lobby") {
             window = make_shared<LobbyGui>(windowName);
+        } else if (windowName == "entity_picker") {
+            window = make_shared<EntityPickerGui>(windowName);
         } else if (windowName == "inspector") {
             window = make_shared<InspectorGui>(windowName);
         } else if (windowName == "signal_display") {
@@ -71,7 +74,7 @@ namespace sp {
         return window;
     }
 
-    static void pushFont(Font fontType, float fontSize) {
+    static void pushFont(GuiFont fontType, float fontSize) {
         auto &io = ImGui::GetIO();
         Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
 
@@ -86,11 +89,11 @@ namespace sp {
         Abortf("missing font type %d with size %f", (int)fontType, fontSize);
     }
 
-    void GuiRenderable::PushFont(Font fontType, float fontSize) {
+    void GuiRenderable::PushFont(GuiFont fontType, float fontSize) {
         pushFont(fontType, fontSize);
     }
 
-    void GuiContext::PushFont(Font fontType, float fontSize) {
+    void GuiContext::PushFont(GuiFont fontType, float fontSize) {
         pushFont(fontType, fontSize);
     }
 } // namespace sp

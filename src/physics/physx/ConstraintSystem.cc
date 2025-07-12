@@ -26,6 +26,7 @@ namespace sp {
     static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
     static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
     static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
+    static CVar<float> CVarConstraintOvershootFactor("x.ConstraintOvershootFactor", 1.05f, "A multiplier to the force allowed under decceleration");
     // clang-format on
 
     ConstraintSystem::ConstraintSystem(PhysxManager &manager) : manager(manager) {}
@@ -112,27 +113,22 @@ namespace sp {
 
             auto maxAcceleration = maxForce / dynamic->getMass();
             auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
-            glm::vec3 accel;
             auto targetDist = glm::length(deltaPos);
-            if (targetDist <= std::numeric_limits<float>::epsilon()) {
-                if (glm::length(deltaVelocity) < maxDeltaVelocity) {
-                    accel = deltaVelocity * tickFrequency;
-                } else {
-                    accel = glm::normalize(deltaVelocity) * maxAcceleration;
-                }
-            } else {
-                // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
+            if (targetDist > std::numeric_limits<float>::epsilon()) {
+                // Maximum velocity achievable over deltaPos distance
+                // This is the max velocity we can deccelerate from
                 auto maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
                 if (targetDist < maxVelocity * intervalSeconds) {
                     maxVelocity = targetDist * tickFrequency;
                 }
 
-                auto deltaAccel = deltaVelocity + deltaPos * maxVelocity / targetDist;
-                if (glm::length(deltaAccel) < maxDeltaVelocity) {
-                    accel = deltaAccel * tickFrequency;
-                } else {
-                    accel = glm::normalize(deltaAccel) * maxAcceleration;
-                }
+                deltaVelocity += glm::normalize(deltaPos) * maxVelocity;
+            }
+            glm::vec3 accel;
+            if (glm::length(deltaVelocity) < maxDeltaVelocity) {
+                accel = deltaVelocity * tickFrequency;
+            } else {
+                accel = glm::normalize(deltaVelocity) * maxAcceleration;
             }
             wakeUp |= joint->forceConstraint->setLinearAccel(accel);
         } else {

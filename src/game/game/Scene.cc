@@ -73,11 +73,11 @@ namespace sp {
 
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
-        ecs::Name entityName,
-        const ecs::EntityScope &scope) {
+        ecs::Name entityName) {
         Assertf(scene, "Scene::NewRootEntity called with null scene: %s", entityName.String());
         Assertf(scene->data, "Scene::NewRootEntity called with null scene data: %s", entityName.String());
 
+        ecs::EntityScope scope(scene->data->name, "");
         if (entityName) {
             if (scene->data->priority != ScenePriority::SaveGame && !ValidateEntityName(entityName)) {
                 Errorf("Invalid root entity name: %s", entityName.String());
@@ -89,7 +89,7 @@ namespace sp {
                 return ecs::Entity();
             }
         } else {
-            entityName = GenerateEntityName(ecs::Name(scene->data->name, ""));
+            entityName = GenerateEntityName(scope);
         }
 
         if (!entityName) {

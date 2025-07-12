@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "DebugGuiManager.hh"
+#include "OverlayGuiManager.hh"
 
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/definitions/ConsoleGui.hh"
@@ -14,7 +14,10 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    DebugGuiManager::DebugGuiManager() : SystemGuiManager("debug") {
+    OverlayGuiManager::OverlayGuiManager() : FlatViewGuiContext("debug") {
+        consoleGui = std::make_shared<ConsoleGui>();
+        Attach(consoleGui);
+
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
@@ -30,7 +33,7 @@ namespace sp {
         }
     }
 
-    void DebugGuiManager::DefineWindows() {
+    void OverlayGuiManager::DefineWindows() {
         ZoneScoped;
         SetGuiContext();
         ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
@@ -39,20 +42,64 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-        static ConsoleGui console;
-        if (consoleOpen) console.Add();
+        std::sort(components.begin(), components.end(), [](const Ref &lhs, const Ref &rhs) {
+            if (!lhs || !rhs) return lhs < rhs;
+            return lhs->anchor < rhs->anchor;
+        });
 
+        ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
+        Assertf(imguiViewport, "ImGui::GetMainViewport() returned null");
+        ImVec2 viewportPos = imguiViewport->WorkPos;
+        ImVec2 viewportSize = imguiViewport->WorkSize;
         for (auto &component : components) {
-            auto *window = dynamic_cast<GuiWindow *>(component.get());
+            if (!component) continue;
+            GuiRenderable &renderable = *component;
 
-            if (window) {
-                window->PreDefine();
-                ImGui::Begin(component->name.c_str(), nullptr, window->flags);
-            }
-            component->DefineContents();
-            if (window) {
+            if (renderable.PreDefine()) {
+                ImVec2 windowSize(renderable.preferredSize.x, renderable.preferredSize.y);
+                windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
+                windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
+                if (windowSize.x <= 0) windowSize.x = viewportSize.x;
+                if (windowSize.y <= 0) windowSize.y = viewportSize.y;
+                ImGui::SetNextWindowSize(windowSize);
+
+                switch (renderable.anchor) {
+                case GuiLayoutAnchor::Fullscreen:
+                    ImGui::SetNextWindowPos(viewportPos);
+                    break;
+                case GuiLayoutAnchor::Left:
+                    ImGui::SetNextWindowPos(viewportPos);
+                    viewportPos.x += windowSize.x;
+                    viewportSize.x -= windowSize.x;
+                    break;
+                case GuiLayoutAnchor::Top:
+                    ImGui::SetNextWindowPos(viewportPos);
+                    viewportPos.y += windowSize.y;
+                    viewportSize.y -= windowSize.y;
+                    break;
+                case GuiLayoutAnchor::Right:
+                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x + viewportSize.x, viewportPos.y),
+                        ImGuiCond_None,
+                        ImVec2(1, 0));
+                    viewportSize.x -= windowSize.x;
+                    break;
+                case GuiLayoutAnchor::Bottom:
+                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y),
+                        ImGuiCond_None,
+                        ImVec2(0, 1));
+                    viewportSize.y -= windowSize.y;
+                    break;
+                case GuiLayoutAnchor::Floating:
+                    // Noop
+                    break;
+                default:
+                    Abortf("Unexpected GuiLayoutAnchor: %s", renderable.anchor);
+                }
+
+                ImGui::Begin(component->name.c_str(), nullptr, renderable.windowFlags);
+                component->DefineContents();
                 ImGui::End();
-                window->PostDefine();
+                renderable.PostDefine();
             }
         }
 
@@ -60,8 +107,8 @@ namespace sp {
         ImGui::PopStyleColor(4);
     }
 
-    void DebugGuiManager::BeforeFrame() {
-        SystemGuiManager::BeforeFrame();
+    void OverlayGuiManager::BeforeFrame() {
+        FlatViewGuiContext::BeforeFrame();
 
         ImGui::StyleColorsClassic();
 
@@ -75,11 +122,11 @@ namespace sp {
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
                 if (event.name == INPUT_EVENT_TOGGLE_CONSOLE) {
-                    consoleOpen = !consoleOpen;
+                    consoleGui->consoleOpen = !consoleGui->consoleOpen;
 
                     if (lock.Has<ecs::FocusLock>()) {
                         auto &focusLock = lock.Get<ecs::FocusLock>();
-                        focusChanged = focusLock.HasFocus(ecs::FocusLayer::Overlay) != consoleOpen;
+                        focusChanged = focusLock.HasFocus(ecs::FocusLayer::Overlay) != consoleGui->consoleOpen;
                     }
                 }
             }
@@ -108,7 +155,7 @@ namespace sp {
                 if (!ctx.window && !gui.windowName.empty()) {
                     ctx.window = CreateGuiWindow(gui.windowName, ctx.entity);
                 }
-                if (gui.target == ecs::GuiTarget::Debug) {
+                if (gui.target == ecs::GuiTarget::Overlay) {
                     Attach(ctx.window);
                 } else {
                     Detach(ctx.window);
@@ -118,7 +165,7 @@ namespace sp {
         if (focusChanged) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
             auto &focusLock = lock.Get<ecs::FocusLock>();
-            if (consoleOpen) {
+            if (consoleGui->consoleOpen) {
                 focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
             } else {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);

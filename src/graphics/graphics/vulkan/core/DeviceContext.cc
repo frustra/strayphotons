@@ -15,8 +15,8 @@
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsManager.hh"
-#include "graphics/gui/DebugGuiManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
+#include "graphics/gui/OverlayGuiManager.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -626,11 +626,11 @@ namespace sp::vulkan {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
 
-    void DeviceContext::SetDebugGui(DebugGuiManager *debugGui) {
+    void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
         auto *perfTimer = GetPerfTimer();
-        if (perfTimer) debugGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
+        if (perfTimer) overlayGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
 
-        if (vkRenderer) vkRenderer->SetDebugGui(debugGui);
+        if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
     }
 
     void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {

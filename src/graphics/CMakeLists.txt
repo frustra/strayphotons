@@ -57,7 +57,7 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         VULKAN_HPP_STORAGE_SHARED_EXPORT
 )
 
-target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
-target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(graphics)

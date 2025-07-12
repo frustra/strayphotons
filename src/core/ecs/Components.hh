@@ -10,8 +10,6 @@
 #include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructMetadata.hh"
-#include "ecs/components/Name.hh"
-#include "ecs/components/SceneInfo.hh"
 
 #include <cstring>
 #include <functional>
@@ -39,15 +37,18 @@ namespace ecs {
     public:
         ComponentBase(const char *name, StructMetadata &&metadata) : name(name), metadata(std::move(metadata)) {}
 
+        virtual bool IsGlobal() const = 0;
         virtual bool LoadEntity(FlatEntity &dst, const picojson::value &src) const = 0;
         virtual void SaveEntity(const Lock<ReadAll> &lock,
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
+        virtual void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const = 0;
         virtual void SetComponent(const Lock<AddRemove> &lock,
             const EntityScope &scope,
             const Entity &dst,
             const FlatEntity &src) const = 0;
+        virtual void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const = 0;
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
         virtual bool HasComponent(const FlatEntity &ent) const = 0;
         virtual const void *Access(const Lock<ReadAll> &lock, Entity ent) const = 0;
@@ -123,6 +124,10 @@ namespace ecs {
             return true;
         }
 
+        bool IsGlobal() const override {
+            return Tecs::is_global_component<CompType>();
+        }
+
         bool LoadEntity(FlatEntity &dst, const picojson::value &src) const override {
             CompType comp = defaultStagingComponent;
             if (!LoadFields(comp, src)) return false;
@@ -161,6 +166,11 @@ namespace ecs {
             Apply(dst, src, liveTarget);
         }
 
+        void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const override {
+            auto &comp = dst.Set<CompType>(lock);
+            scope::SetScope(comp, scope);
+        }
+
         void SetComponent(const Lock<AddRemove> &lock,
             const EntityScope &scope,
             const Entity &dst,
@@ -170,6 +180,10 @@ namespace ecs {
                 auto &comp = dst.Set<CompType>(lock, *opt);
                 scope::SetScope(comp, scope);
             }
+        }
+
+        void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override {
+            dst.Unset<CompType>(lock);
         }
 
         bool HasComponent(const Lock<> &lock, Entity ent) const override {
@@ -221,12 +235,4 @@ namespace ecs {
             // Custom field apply is always called, default to no-op.
         }
     };
-
-    // Define these special components here to solve circular includes
-    static Component<Name> ComponentName({typeid(Name), "Name", DocsDescriptionName}, "name");
-    static Component<SceneInfo> ComponentSceneInfo({typeid(SceneInfo),
-        "SceneInfo",
-        "This is an internal component storing each entity's source scene and other creation info."});
-
-    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef", DocsDescriptionEntityRef);
 }; // namespace ecs

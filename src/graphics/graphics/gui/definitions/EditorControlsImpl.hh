@@ -196,10 +196,11 @@ namespace sp {
             ImGui::SameLine();
         }
         ImGui::Button(value ? value.Name().String().c_str() : "None");
-        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-            auto selected = ShowAllEntities(fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
+        if (ImGui::BeginPopupContextItem(name.c_str(), ImGuiPopupFlags_MouseButtonLeft)) {
+            ecs::EntityRef selectedRef;
+            bool selected = ShowAllEntities(selectedRef, fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
             if (selected) {
-                value = selected;
+                value = selectedRef;
                 changed = true;
                 ImGui::CloseCurrentPopup();
             }

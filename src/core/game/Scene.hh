@@ -13,6 +13,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/SceneInfo.hh"
+#include "ecs/components/SceneProperties.hh"
 #include "game/SceneRef.hh"
 
 namespace sp {
@@ -60,8 +61,7 @@ namespace sp {
         // Should only be called from SceneManager thread
         ecs::Entity NewRootEntity(ecs::Lock<ecs::AddRemove> stagingLock,
             const std::shared_ptr<Scene> &scene,
-            ecs::Name name,
-            const ecs::EntityScope &scope);
+            ecs::Name name = {});
 
         // Should only be called from SceneManager thread
         ecs::Entity NewPrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock,

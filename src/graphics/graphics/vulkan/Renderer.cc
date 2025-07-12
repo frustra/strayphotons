@@ -12,7 +12,7 @@
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/WorldGuiManager.hh"
+#include "graphics/gui/WorldGuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -235,12 +235,12 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(source);
                 }
 
-                if (debugGui) {
+                if (overlayGui) {
                     auto windowScale = CVarWindowScale.Get();
                     if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
                     if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
 
-                    guiRenderer->Render(*debugGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()}, windowScale);
+                    guiRenderer->Render(*overlayGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()}, windowScale);
                 }
             });
 
@@ -493,7 +493,7 @@ namespace sp::vulkan {
 
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
         if (!gui.windowName.empty()) {
-            auto context = make_shared<WorldGuiManager>(ent, gui.windowName);
+            auto context = make_shared<WorldGuiContext>(ent, gui.windowName);
             auto window = CreateGuiWindow(gui.windowName, ent);
             if (window) {
                 context->Attach(window);
@@ -681,8 +681,8 @@ namespace sp::vulkan {
         scene.Flush();
     }
 
-    void Renderer::SetDebugGui(GuiContext *gui) {
-        debugGui = gui;
+    void Renderer::SetOverlayGui(GuiContext *gui) {
+        overlayGui = gui;
     }
 
     void Renderer::SetMenuGui(GuiContext *gui) {

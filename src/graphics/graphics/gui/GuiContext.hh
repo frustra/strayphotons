@@ -18,44 +18,57 @@
 struct ImGuiContext;
 
 namespace sp {
-    enum class Font {
+    enum class GuiLayoutAnchor {
+        Fullscreen,
+        Left,
+        Top,
+        Right,
+        Bottom,
+        Floating,
+    };
+
+    enum class GuiFont {
         Primary,
         Accent,
         Monospace,
     };
 
-    struct FontDef {
-        Font type;
+    struct GuiFontDef {
+        GuiFont type;
         const char *name;
         float size;
     };
 
     class GuiRenderable {
     public:
-        GuiRenderable(const std::string &name) : name(name) {}
+        GuiRenderable(const std::string &name,
+            GuiLayoutAnchor anchor,
+            glm::ivec2 preferredSize = {-1, -1},
+            int windowFlags = 0)
+            : name(name), anchor(anchor), preferredSize(preferredSize), windowFlags(windowFlags) {}
 
-        const std::string name;
+        virtual bool PreDefine() {
+            return true;
+        }
         virtual void DefineContents() = 0;
-
-        void PushFont(Font fontType, float fontSize);
-    };
-
-    class GuiWindow : public GuiRenderable {
-    public:
-        GuiWindow(const std::string &name, int flags = 0) : GuiRenderable(name), flags(flags) {}
-
-        virtual void PreDefine() {}
         virtual void PostDefine() {}
 
-        int flags = 0;
+        void PushFont(GuiFont fontType, float fontSize);
+
+        const std::string name;
+        GuiLayoutAnchor anchor;
+        glm::ivec2 preferredSize;
+        int windowFlags = 0;
     };
 
     class GuiContext {
     public:
+        using Ref = std::shared_ptr<GuiRenderable>;
+
         GuiContext(const std::string &name);
         virtual ~GuiContext();
-        void Attach(const std::shared_ptr<GuiRenderable> &component);
-        void Detach(const std::shared_ptr<GuiRenderable> &component);
+        void Attach(const Ref &component);
+        void Detach(const Ref &component);
         void SetGuiContext();
 
         virtual void BeforeFrame();
@@ -65,17 +78,17 @@ namespace sp {
             return name;
         }
 
-        void PushFont(Font fontType, float fontSize);
+        void PushFont(GuiFont fontType, float fontSize);
 
     protected:
-        std::vector<std::shared_ptr<GuiRenderable>> components;
+        std::vector<Ref> components;
 
     private:
         ImGuiContext *imCtx = nullptr;
         std::string name;
     };
 
-    std::shared_ptr<GuiWindow> CreateGuiWindow(const std::string &name, const ecs::Entity &ent);
+    std::shared_ptr<GuiRenderable> CreateGuiWindow(const std::string &name, const ecs::Entity &ent);
 
-    std::span<FontDef> GetFontList();
+    std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp

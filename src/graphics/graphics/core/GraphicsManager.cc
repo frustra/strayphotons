@@ -13,8 +13,8 @@
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
 #include "graphics/core/GraphicsContext.hh"
-#include "graphics/gui/DebugGuiManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
+#include "graphics/gui/OverlayGuiManager.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -63,7 +63,7 @@ namespace sp {
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
 
-        debugGui = std::make_shared<DebugGuiManager>();
+        overlayGui = std::make_shared<OverlayGuiManager>();
         menuGui = std::make_shared<MenuGuiManager>(*this);
     }
 
@@ -87,7 +87,7 @@ namespace sp {
         Assert(context, "Invalid vulkan context on init");
 
         context->InitRenderer(game);
-        context->SetDebugGui(debugGui.get());
+        context->SetOverlayGui(overlayGui.get());
         context->SetMenuGui(menuGui.get());
 
         return true;
@@ -143,7 +143,7 @@ namespace sp {
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;
-        if (debugGui) debugGui->BeforeFrame();
+        if (overlayGui) overlayGui->BeforeFrame();
         if (menuGui) menuGui->BeforeFrame();
 
         return context->BeginFrame();

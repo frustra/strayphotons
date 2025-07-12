@@ -9,15 +9,16 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/components/Events.hh"
-#include "graphics/gui/SystemGuiManager.hh"
+#include "graphics/gui/FlatViewGuiContext.hh"
 
 namespace sp {
     class GraphicsContext;
+    class ConsoleGui;
 
-    class DebugGuiManager : public SystemGuiManager {
+    class OverlayGuiManager : public FlatViewGuiContext {
     public:
-        DebugGuiManager();
-        virtual ~DebugGuiManager() {}
+        OverlayGuiManager();
+        virtual ~OverlayGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;
@@ -25,14 +26,14 @@ namespace sp {
     private:
         void AddGui(ecs::Entity ent, const ecs::Gui &gui);
 
-        bool consoleOpen = false;
+        std::shared_ptr<ConsoleGui> consoleGui;
         ecs::ComponentObserver<ecs::Gui> guiObserver;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();
 
         struct GuiEntityContext {
             ecs::Entity entity;
-            shared_ptr<GuiWindow> window = nullptr;
+            shared_ptr<GuiRenderable> window = nullptr;
         };
         vector<GuiEntityContext> guis;
     };

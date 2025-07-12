@@ -62,4 +62,12 @@ namespace ecs {
         EntityReferenceManager refManager;
         sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue");
     };
+
+    // Define these special components here to solve circular includes
+    static Component<Name> ComponentName({typeid(Name), "Name", DocsDescriptionName}, "name");
+    static Component<SceneInfo> ComponentSceneInfo({typeid(SceneInfo),
+        "SceneInfo",
+        "This is an internal component storing each entity's source scene and other creation info."});
+
+    static StructMetadata MetadataEntityRef(typeid(EntityRef), "EntityRef", DocsDescriptionEntityRef);
 } // namespace ecs
