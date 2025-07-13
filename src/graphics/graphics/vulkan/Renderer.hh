@@ -95,7 +95,9 @@ namespace sp::vulkan {
         GuiContext *overlayGui = nullptr, *menuGui = nullptr;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentObserver<ecs::Gui> guiObserver;
+        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
+        ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
+        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
         bool listImages = false;
 

@@ -27,6 +27,6 @@ namespace sp {
                                       ecs::SendEventsLock> lock,
             ecs::Entity entity);
 
-        ecs::ComponentObserver<ecs::TriggerGroup> triggerGroupObserver;
+        ecs::ComponentAddRemoveObserver<ecs::TriggerGroup> triggerGroupObserver;
     };
 } // namespace sp

@@ -53,6 +53,8 @@ namespace ecs {
         struct Joint {
             EntityRef entity;
             glm::mat4 inverseBindPose;
+
+            bool operator==(const Joint &other) const = default;
         };
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
@@ -65,6 +67,8 @@ namespace ecs {
         bool IsVisible(VisibilityMask viewMask) const {
             return (visibility & viewMask) == viewMask;
         }
+
+        bool operator==(const Renderable &other) const = default;
     };
 
     static Component<Renderable> ComponentRenderable({typeid(Renderable),

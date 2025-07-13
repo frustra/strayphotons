@@ -20,11 +20,15 @@ namespace sp::scripts {
             if (!ent.Has<Light, TransformTree>(lock)) return;
 
             auto &light = ent.Get<Light>(lock);
+            // auto &readLight = ent.Get<const Light>(lock);
 
             SignalRef onRef(ent, "on");
             light.on = onRef.GetSignal(lock) >= 0.5;
             light.intensity = SignalRef(ent, "intensity").GetSignal(lock);
             light.spotAngle = glm::radians(SignalRef(ent, "angle").GetSignal(lock));
+            // bool lightOn = onRef.GetSignal(lock) >= 0.5;
+            // float lightIntensity = SignalRef(ent, "intensity").GetSignal(lock);
+            // angle_t lightSpotAngle = glm::radians(SignalRef(ent, "angle").GetSignal(lock));
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -47,6 +51,14 @@ namespace sp::scripts {
                     }
                 }
             }
+
+            // if (readLight.on != lightOn || readLight.intensity != lightIntensity ||
+            //     readLight.spotAngle != lightSpotAngle) {
+            //     auto &light = ent.Set<Light>(lock);
+            //     light.on = lightOn;
+            //     light.intensity = lightIntensity;
+            //     light.spotAngle = lightSpotAngle;
+            // }
         }
     };
     StructMetadata MetadataFlashlight(typeid(Flashlight),

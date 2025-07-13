@@ -27,7 +27,7 @@ namespace sp {
         void AddGui(ecs::Entity ent, const ecs::Gui &gui);
 
         std::shared_ptr<ConsoleGui> consoleGui;
-        ecs::ComponentObserver<ecs::Gui> guiObserver;
+        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();
 

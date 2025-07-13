@@ -29,6 +29,6 @@ namespace sp {
 
     private:
         PhysxManager &manager;
-        ecs::ComponentObserver<ecs::CharacterController> characterControllerObserver;
+        ecs::ComponentAddRemoveObserver<ecs::CharacterController> characterControllerObserver;
     };
 } // namespace sp

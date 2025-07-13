@@ -32,7 +32,8 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Audio>>();
+            soundObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Audio>>(
+                Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
         }
 
         StartThread();
@@ -143,7 +144,7 @@ namespace sp {
             resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
         }
 
-        ecs::ComponentEvent<ecs::Audio> compEvent;
+        ecs::ComponentAddRemoveEvent<ecs::Audio> compEvent;
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type == Tecs::EventType::ADDED) {
                 if (!compEvent.entity.Has<ecs::EventInput, ecs::Audio>(lock)) continue;

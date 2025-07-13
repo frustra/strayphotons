@@ -317,9 +317,10 @@ namespace sp::vulkan::renderer {
         graph.AddPass("GelTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &gel : gelTextureCache) {
-                    if (gel.second.index != 0 && !starts_with(gel.first, "graph:")) continue;
-                    newGelTextures.emplace_back(gel.first,
-                        builder.ReadPreviousFrame(gel.first.substr(6), Access::FragmentShaderSampleImage));
+                    if (starts_with(gel.first, "graph:")) {
+                        auto id = builder.ReadPreviousFrame(gel.first.substr(6), Access::FragmentShaderSampleImage);
+                        newGelTextures.emplace_back(gel.first, id);
+                    }
                 }
                 builder.Write("LightState", Access::HostWrite);
             })
@@ -636,9 +637,9 @@ namespace sp::vulkan::renderer {
         for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
             auto &light = ent.Get<ecs::Light>(lock);
             if (light.gelName.empty()) continue;
-            if (starts_with(light.gelName, "graph:")) {
+            if (light.gelName.length() > 6 && starts_with(light.gelName, "graph:")) {
                 gelTextureCache[light.gelName] = {};
-            } else if (starts_with(light.gelName, "asset:")) {
+            } else if (light.gelName.length() > 6 && starts_with(light.gelName, "asset:")) {
                 auto it = gelTextureCache.find(light.gelName);
                 if (it == gelTextureCache.end()) {
                     auto handle = scene.textures.LoadAssetImage(light.gelName.substr(6), true);

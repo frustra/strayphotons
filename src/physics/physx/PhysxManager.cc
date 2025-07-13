@@ -312,7 +312,7 @@ namespace sp {
             animationSystem.Frame(lock);
 
             // Delete actors for removed entities
-            ecs::ComponentEvent<ecs::Physics> physicsEvent;
+            ecs::ComponentAddRemoveEvent<ecs::Physics> physicsEvent;
             while (physicsObserver.Poll(lock, physicsEvent)) {
                 if (physicsEvent.type == Tecs::EventType::REMOVED) {
                     if (actors.count(physicsEvent.entity) > 0) {
@@ -430,7 +430,7 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            physicsObserver = lock.Watch<ecs::ComponentEvent<ecs::Physics>>();
+            physicsObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Physics>>(Tecs::EVENT_MASK_REMOVED);
         }
     }
 

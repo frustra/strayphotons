@@ -135,7 +135,8 @@ namespace sp {
             });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        characterControllerObserver = lock.Watch<ecs::ComponentEvent<ecs::CharacterController>>();
+        characterControllerObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::CharacterController>>(
+            Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
     }
 
     glm::vec3 getHeadPosition(const PxCapsuleController *pxController) {
@@ -185,7 +186,7 @@ namespace sp {
         ecs::Read<ecs::EventInput, ecs::SceneProperties>,
         ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
-        ecs::ComponentEvent<ecs::CharacterController> controllerEvent;
+        ecs::ComponentAddRemoveEvent<ecs::CharacterController> controllerEvent;
         while (characterControllerObserver.Poll(lock, controllerEvent)) {
             if (controllerEvent.type == Tecs::EventType::ADDED) {
                 if (controllerEvent.entity.Has<ecs::CharacterController>(lock)) {
