@@ -650,14 +650,14 @@ namespace sp::vulkan {
         ZoneScoped;
         guiRenderer->Tick();
 
-        auto setModel = [](auto &lock, auto ent, AsyncPtr<Gltf> model) {
+        auto setModel = [](auto &lock, ecs::Entity ent, AsyncPtr<Gltf> model) {
             if constexpr (Tecs::is_write_allowed<ecs::Renderable, std::decay_t<decltype(lock)>>()) {
                 auto &renderable = ent.Get<ecs::Renderable>(lock);
                 renderable.model = model;
                 return true;
             } else {
                 ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ref = ecs::EntityRef(ent), model](auto lock) {
-                    auto ent = ref.Get(lock);
+                    ecs::Entity ent = ref.Get(lock);
                     if (!ent.Has<ecs::Renderable>(lock)) return;
                     auto &renderable = ent.Get<ecs::Renderable>(lock);
                     renderable.model = model;
@@ -666,7 +666,7 @@ namespace sp::vulkan {
             }
         };
 
-        auto loadModel = [&](auto lock, auto ent) {
+        auto loadModel = [&](auto lock, ecs::Entity ent) {
             auto &renderable = ent.Get<ecs::Renderable>(lock);
             if (renderable.modelName.empty()) {
                 setModel(lock, ent, nullptr);
