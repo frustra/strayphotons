@@ -15,7 +15,7 @@
 #include <sstream>
 
 namespace sp::vulkan {
-    class ProfilerGui : public GuiRenderable {
+    class ProfilerGui final : public GuiRenderable {
     public:
         enum class Mode {
             CPU,

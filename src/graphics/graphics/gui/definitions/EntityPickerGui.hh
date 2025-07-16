@@ -18,7 +18,7 @@ namespace sp {
     struct EditorContext;
     class Scene;
 
-    class EntityPickerGui : public GuiRenderable {
+    class EntityPickerGui final : public GuiRenderable {
     public:
         EntityPickerGui(const std::string &name);
         virtual ~EntityPickerGui() {}

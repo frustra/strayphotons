@@ -6,6 +6,7 @@
  */
 
 #include "FlatViewGuiContext.hh"
+
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"

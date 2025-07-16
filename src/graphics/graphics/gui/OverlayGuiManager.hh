@@ -15,10 +15,9 @@ namespace sp {
     class GraphicsContext;
     class ConsoleGui;
 
-    class OverlayGuiManager : public FlatViewGuiContext {
+    class OverlayGuiManager final : public FlatViewGuiContext {
     public:
         OverlayGuiManager();
-        virtual ~OverlayGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;

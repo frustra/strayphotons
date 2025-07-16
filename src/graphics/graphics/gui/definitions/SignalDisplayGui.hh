@@ -11,7 +11,7 @@
 #include "graphics/gui/GuiContext.hh"
 
 namespace sp {
-    class SignalDisplayGui : public GuiRenderable {
+    class SignalDisplayGui final : public GuiRenderable {
     public:
         SignalDisplayGui(const std::string &name, const ecs::Entity &ent);
         virtual ~SignalDisplayGui() {}

@@ -20,7 +20,7 @@ namespace sp {
         {0.5f, 0.5f, 0.6f, 1.0f},
     };
 
-    class ConsoleGui : public GuiRenderable {
+    class ConsoleGui final : public GuiRenderable {
     public:
         ConsoleGui();
 

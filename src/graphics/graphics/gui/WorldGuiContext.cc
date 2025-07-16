@@ -6,6 +6,7 @@
  */
 
 #include "WorldGuiContext.hh"
+
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"

@@ -16,10 +16,9 @@ namespace sp {
 
     enum class MenuScreen { Main, Options, SceneSelect, SaveSelect };
 
-    class MenuGuiManager : public FlatViewGuiContext {
+    class MenuGuiManager final : public FlatViewGuiContext {
     public:
         MenuGuiManager(GraphicsManager &graphics);
-        virtual ~MenuGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;

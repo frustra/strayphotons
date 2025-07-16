@@ -18,7 +18,7 @@ namespace sp {
     struct EditorContext;
     class Scene;
 
-    class InspectorGui : public GuiRenderable {
+    class InspectorGui final : public GuiRenderable {
     public:
         InspectorGui(const std::string &name);
         virtual ~InspectorGui() {}

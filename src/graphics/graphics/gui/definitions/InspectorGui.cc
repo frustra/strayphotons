@@ -43,8 +43,8 @@ namespace sp {
                 auto &active = lock.Get<ecs::ActiveScene>();
                 if (context->scene != active.scene) {
                     ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>([scene = context->scene](auto &lock) {
-                        if (lock.Has<ecs::ActiveScene>()) {
-                            lock.Set<ecs::ActiveScene>(scene);
+                        if (lock.template Has<ecs::ActiveScene>()) {
+                            lock.template Set<ecs::ActiveScene>(scene);
                         }
                     });
                 }

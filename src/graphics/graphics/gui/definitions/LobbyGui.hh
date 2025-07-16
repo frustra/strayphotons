@@ -12,7 +12,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    class LobbyGui : public GuiRenderable {
+    class LobbyGui final : public GuiRenderable {
     public:
         LobbyGui(const string &name) : GuiRenderable(name, GuiLayoutAnchor::Fullscreen) {}
         virtual ~LobbyGui() {}
