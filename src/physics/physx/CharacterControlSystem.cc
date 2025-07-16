@@ -135,8 +135,7 @@ namespace sp {
             });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        characterControllerObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::CharacterController>>(
-            Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
+        characterControllerObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::CharacterController>>();
     }
 
     glm::vec3 getHeadPosition(const PxCapsuleController *pxController) {

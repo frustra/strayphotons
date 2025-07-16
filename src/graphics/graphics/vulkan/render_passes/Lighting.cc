@@ -69,7 +69,7 @@ namespace sp::vulkan::renderer {
             auto &light = entity.Get<ecs::Light>(lock);
             auto &gelName = light.gelName;
 
-            if (!gelName.empty() && gelTextureCache.find(gelName) == gelTextureCache.end()) {
+            if (!gelName.empty() && scene.textureCache.find(gelName) == scene.textureCache.end()) {
                 // cull lights that don't have their gel loaded yet
                 continue;
             }
@@ -115,7 +115,7 @@ namespace sp::vulkan::renderer {
                     glm::vec2(1, 0),
                 };
                 vLight.gelName = gelName;
-                vLight.gelTexture = gelTextureCache[gelName].index;
+                vLight.gelTexture = scene.textureCache[gelName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -238,7 +238,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 vLight.gelName = light.gelName;
-                vLight.gelTexture = gelTextureCache[light.gelName].index;
+                vLight.gelTexture = scene.textureCache[light.gelName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -312,28 +312,16 @@ namespace sp::vulkan::renderer {
         }
     }
 
-    void Lighting::AddGelTextures(RenderGraph &graph) {
-        InlineVector<std::pair<std::string, ResourceID>, 64> newGelTextures;
-        graph.AddPass("GelTextures")
-            .Build([&](rg::PassBuilder &builder) {
-                for (auto &gel : gelTextureCache) {
-                    if (starts_with(gel.first, "graph:")) {
-                        auto id = builder.ReadPreviousFrame(gel.first.substr(6), Access::FragmentShaderSampleImage);
-                        newGelTextures.emplace_back(gel.first, id);
-                    }
-                }
+    void Lighting::SetLightTextures(RenderGraph &graph) {
+        graph.AddPass("SetLightTextures")
+            .Build([&](PassBuilder &builder) {
                 builder.Write("LightState", Access::HostWrite);
             })
-            .Execute([this, newGelTextures](rg::Resources &resources, DeviceContext &device) {
-                for (auto &gel : newGelTextures) {
-                    auto gelImageView = resources.GetImageView(gel.second);
-                    if (gelImageView) gelTextureCache[gel.first] = scene.textures.Add(gelImageView);
-                }
-                scene.textures.Flush();
+            .Execute([this](Resources &resources, DeviceContext &device) {
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].gelTexture.has_value()) {
                         if (starts_with(lights[i].gelName, "graph:")) {
-                            gpuData.lights[i].gelId = gelTextureCache[lights[i].gelName].index;
+                            gpuData.lights[i].gelId = scene.textureCache[lights[i].gelName].index;
                         } else {
                             gpuData.lights[i].gelId = lights[i].gelTexture.value();
                         }
@@ -629,32 +617,6 @@ namespace sp::vulkan::renderer {
 
                 cmd.Draw(3);
             });
-    }
-
-    bool Lighting::PreloadGelTextures(ecs::Lock<ecs::Read<ecs::Light>> lock) {
-        bool complete = true;
-        gelTextureCache.clear();
-        for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
-            auto &light = ent.Get<ecs::Light>(lock);
-            if (light.gelName.empty()) continue;
-            if (light.gelName.length() > 6 && starts_with(light.gelName, "graph:")) {
-                gelTextureCache[light.gelName] = {};
-            } else if (light.gelName.length() > 6 && starts_with(light.gelName, "asset:")) {
-                auto it = gelTextureCache.find(light.gelName);
-                if (it == gelTextureCache.end()) {
-                    auto handle = scene.textures.LoadAssetImage(light.gelName.substr(6), true);
-                    gelTextureCache[light.gelName] = handle;
-
-                    if (!handle.Ready()) complete = false;
-                } else {
-                    auto &handle = it->second;
-                    if (!handle.Ready()) complete = false;
-                }
-            } else {
-                Logf("Unknown gel texture: %s", std::to_string(ent), light.gelName);
-            }
-        }
-        return complete;
     }
 
     bool Lighting::VirtualLight::operator==(const VirtualLight &other) const {

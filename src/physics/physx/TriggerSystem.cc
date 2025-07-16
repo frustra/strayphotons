@@ -18,7 +18,7 @@
 namespace sp {
     TriggerSystem::TriggerSystem() {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        triggerGroupObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TriggerGroup>>(Tecs::EVENT_MASK_REMOVED);
+        triggerGroupObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TriggerGroup>>();
     }
 
     TriggerSystem::~TriggerSystem() {

@@ -26,8 +26,7 @@ namespace sp {
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
         eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
 
-        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>(
-            Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
+        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
             guis.emplace_back(GuiEntityContext{ent});

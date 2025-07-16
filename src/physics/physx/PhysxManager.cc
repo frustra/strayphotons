@@ -430,7 +430,7 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            physicsObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Physics>>(Tecs::EVENT_MASK_REMOVED);
+            physicsObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Physics>>();
         }
     }
 

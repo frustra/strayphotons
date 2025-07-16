@@ -9,6 +9,7 @@
 
 namespace sp {
     void EditorContext::RefreshEntityTree() {
+        ZoneScoped;
         entityTree.clear();
 
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
@@ -23,6 +24,7 @@ namespace sp {
     }
 
     bool EditorContext::ShowEntityTree(ecs::EntityRef &selected, ecs::Name root) {
+        ZoneScoped;
         bool selectionChanged = false;
         if (!root) {
             if (ImGui::Button("Refresh List") || entityTree.empty()) {
@@ -60,6 +62,7 @@ namespace sp {
         std::string listLabel,
         float listWidth,
         float listHeight) {
+        ZoneScoped;
         bool selectionChanged = false;
         ImGui::SetNextItemWidth(listWidth);
         ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
@@ -78,6 +81,7 @@ namespace sp {
     }
 
     void EditorContext::AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        ZoneScoped;
         Assertf(ecs::IsLive(lock), "AddLiveSignalControls must be called with a live lock");
         if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
             std::set<ecs::SignalRef> signals = ecs::GetSignalManager().GetSignals(targetEntity);
@@ -245,6 +249,7 @@ namespace sp {
     }
 
     void EditorContext::ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        ZoneScoped;
         if (!targetEntity) {
             this->target = {};
             return;
@@ -382,6 +387,8 @@ namespace sp {
 
         std::vector<const ecs::ComponentBase *> missingComponents;
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
+            ZoneScopedN("ShowEntityControls::ForEachComponent");
+            ZoneStr(name);
             if (!comp.HasComponent(lock, this->target)) {
                 if (!comp.IsGlobal() && name != "scene_properties") {
                     if (ecs::IsLive(lock) && (name == "signal_output" || name == "signal_bindings")) return;

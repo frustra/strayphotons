@@ -59,10 +59,9 @@ namespace sp::vulkan {
         });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>(
-            Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
-        renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>(Tecs::EVENT_MASK_MODIFIED);
-        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>(Tecs::EVENT_MASK_MODIFIED);
+        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>();
+        renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
+        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
             AddGui(ent, ent.Get<const ecs::Gui>(lock));
@@ -153,7 +152,8 @@ namespace sp::vulkan {
         lighting.AddShadowPasses(graph);
         AddWorldGuis(lock);
         AddMenuGui(lock);
-        lighting.AddGelTextures(graph);
+        scene.AddGraphTextures(graph);
+        lighting.SetLightTextures(graph);
         voxels.AddVoxelizationInit(graph, lighting);
         voxels.AddVoxelization(graph, lighting);
         voxels.AddVoxelization2(graph, lighting);
@@ -713,36 +713,31 @@ namespace sp::vulkan {
                 if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
                 if (!loadModel(lock, ent)) complete = false;
             }
-            if (!lighting.PreloadGelTextures(lock)) complete = false;
+            if (!this->scene.PreloadTextures(lock)) complete = false;
             if (!smaa.PreloadTextures()) complete = false;
             return complete;
         });
 
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable>>();
+            bool anyTexturesChanged = false;
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
             while (renderableObserver.Poll(lock, renderableEvent)) {
-                if (renderableEvent.type == Tecs::EventType::MODIFIED) {
-                    // Logf("Renderable entity changed: %s",
-                    //     ecs::ToString(lock, renderableEvent.entity),
-                    //     renderableEvent.component.modelName);
-                    loadModel(lock, renderableEvent.entity);
-                }
+                // Logf("Renderable entity changed: %s",
+                //     ecs::ToString(lock, renderableEvent.entity),
+                //     renderableEvent.component.modelName);
+                loadModel(lock, renderableEvent);
+                anyTexturesChanged = true;
             }
 
-            bool anyGelLightsChanged = false;
             ecs::ComponentModifiedEvent<ecs::Light> lightEvent;
             while (lightObserver.Poll(lock, lightEvent)) {
-                if (lightEvent.type == Tecs::EventType::MODIFIED) {
-                    // Logf("Light entity changed: %s",
-                    //     ecs::ToString(lock, lightEvent.entity),
-                    //     lightEvent.component.gelName);
-                    anyGelLightsChanged = true;
-                }
+                // Logf("Light entity changed: %s",
+                //     ecs::ToString(lock, lightEvent.entity),
+                //     lightEvent.component.gelName);
+                anyTexturesChanged = true;
             }
-            if (anyGelLightsChanged) {
-                lighting.PreloadGelTextures(lock);
-            }
+            if (anyTexturesChanged) scene.PreloadTextures(lock);
         }
 
         scene.Flush();

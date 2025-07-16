@@ -19,6 +19,7 @@ namespace sp {
     }
 
     void ConsoleGui::DefineContents() {
+        ZoneScoped;
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("ScrollingRegion",
             ImVec2(0, -footer_height_to_reserve),
@@ -27,11 +28,24 @@ namespace sp {
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
-        for (auto &line : GetConsoleManager().Lines()) {
-            ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
-            ImGui::TextUnformatted(line.text.c_str());
-            ImGui::PopStyleColor();
-        }
+        float frameHeight = ImGui::GetWindowHeight() - footer_height_to_reserve;
+        float spacing = ImGui::GetTextLineHeightWithSpacing();
+        float scrollY = ImGui::GetScrollY();
+        GetConsoleManager().AccessLines([&](auto &lines) {
+            ImGui::BeginChild("ConsoleLinesArea", ImVec2(0, lines.size() * spacing + 1));
+            size_t minLine = (size_t)(std::max(scrollY - spacing, 0.0f) / spacing);
+            size_t maxLine = (size_t)((scrollY + spacing * 2 + frameHeight) / spacing);
+            if (minLine > 0) ImGui::SetCursorPosY(minLine * spacing);
+
+            for (size_t i = minLine; i <= maxLine; i++) {
+                if (i >= lines.size()) break;
+                auto &line = lines[i];
+                ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
+                ImGui::TextUnformatted(line.text.c_str());
+                ImGui::PopStyleColor();
+            }
+            ImGui::EndChild();
+        });
 
         if (ImGui::GetScrollY() >= lastScrollMaxY - 0.001f) {
             ImGui::SetScrollHereY(1.0f);
@@ -82,6 +96,7 @@ namespace sp {
     }
 
     void ConsoleGui::PostDefine() {
+        ZoneScoped;
         if (completionMode == COMPLETION_INPUT && completionPending) {
             string line(inputBuf);
             auto result = GetConsoleManager().AllCompletions(line, requestNewCompletions);

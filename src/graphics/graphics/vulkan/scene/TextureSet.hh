@@ -27,6 +27,8 @@ namespace sp::vulkan {
         }
     };
 
+    const glm::vec4 ERROR_COLOR = glm::vec4(1, 0, 1, 1);
+
     class TextureSet {
     public:
         TextureSet(DeviceContext &device, DispatchQueue &workQueue);

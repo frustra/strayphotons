@@ -89,6 +89,8 @@ namespace sp::vulkan {
         void Flush();
         void LoadState(rg::RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock);
+        bool PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light>> lock);
+        void AddGraphTextures(rg::RenderGraph &graph);
         shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
@@ -139,6 +141,7 @@ namespace sp::vulkan {
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
         TextureSet textures;
+        robin_hood::unordered_map<string, TextureHandle> textureCache;
 
     private:
         void FlushMeshes();
@@ -182,6 +185,7 @@ namespace sp::vulkan {
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
         vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
         vector<GPURenderableEntity> renderables;
+        vector<std::pair<string, size_t>> renderableTextureOverrides;
         vector<std::weak_ptr<Mesh>> meshes;
     };
 } // namespace sp::vulkan

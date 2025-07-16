@@ -32,8 +32,7 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Audio>>(
-                Tecs::EVENT_MASK_ADDED | Tecs::EVENT_MASK_REMOVED);
+            soundObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Audio>>();
         }
 
         StartThread();
