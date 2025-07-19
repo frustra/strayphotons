@@ -108,6 +108,14 @@ namespace sp {
             }
         }
 
+        bool ends_with(const string_view &str, const string_view &suffix) {
+            if (str.length() >= suffix.length()) {
+                return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
+            } else {
+                return false;
+            }
+        }
+
         string to_lower(string &str) {
             std::transform(str.begin(), str.end(), str.begin(), [](auto &ch) {
                 return std::tolower(ch);

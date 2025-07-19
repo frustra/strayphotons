@@ -247,8 +247,8 @@ namespace sp::scripts {
                 PhysicsQuery::Raycast::Result raycastResult = {};
                 if (!raycastQuery) {
                     raycastQuery = query.NewQuery(PhysicsQuery::Raycast(grabDistance,
-                        PhysicsGroupMask(
-                            PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+                        PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE |
+                                         PHYSICS_GROUP_USER_INTERFACE | PHYSICS_GROUP_HELD_OBJECT)));
                 } else {
                     auto &result = query.Lookup(raycastQuery).result;
                     if (result) raycastResult = result.value();

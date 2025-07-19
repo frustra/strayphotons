@@ -576,14 +576,12 @@ namespace sp::vulkan {
         swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
-        // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
-        if (surfaceCapabilities.currentExtent.width > surfaceCapabilities.maxImageExtent.width ||
-            surfaceCapabilities.currentExtent.height > surfaceCapabilities.maxImageExtent.height) {
-            swapchainInfo.imageExtent.setHeight(CVarWindowSize.Get().y);
-            swapchainInfo.imageExtent.setWidth(CVarWindowSize.Get().x);
-        } else {
-            swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
-        }
+        swapchainInfo.imageExtent.width = glm::clamp(surfaceCapabilities.currentExtent.width,
+            surfaceCapabilities.minImageExtent.width,
+            surfaceCapabilities.maxImageExtent.width);
+        swapchainInfo.imageExtent.height = glm::clamp(surfaceCapabilities.currentExtent.height,
+            surfaceCapabilities.minImageExtent.height,
+            surfaceCapabilities.maxImageExtent.height);
         swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
         swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;

@@ -95,6 +95,7 @@ namespace sp {
 
     bool GraphicsManager::InputFrame() {
         ZoneScoped;
+        FrameMarkNamed("Input");
         if (!HasActiveContext()) return false;
 
         if (!flatviewName || CVarFlatviewEntity.Changed()) {

@@ -135,7 +135,7 @@ namespace ecs {
         };
         template<typename... Tn>
         struct make_flat_components<Tecs::ECS<Tn...>> {
-            using type = std::tuple<std::shared_ptr<Tn>...>;
+            using type = std::tuple<std::optional<Tn>...>;
         };
     } // namespace detail
 
@@ -177,8 +177,8 @@ namespace ecs {
      *  QueueTransaction<Write<FocusLock>>([ent](auto lock) { Assert(ent.Ready()); lock.Set<FocusLock>(); });
      */
     template<typename... Permissions, typename Fn>
-    inline auto QueueTransaction(
-        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+    inline auto QueueTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
         return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
             Lock<Permissions...> lock = World().StartTransaction<Permissions...>();
@@ -192,8 +192,8 @@ namespace ecs {
 
     // See QueueTransaction() for usage.
     template<typename... Permissions, typename Fn>
-    inline auto QueueStagingTransaction(
-        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+    inline auto QueueStagingTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
         return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
             Lock<Permissions...> lock = StagingWorld().StartTransaction<Permissions...>();

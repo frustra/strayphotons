@@ -91,6 +91,11 @@ void main() {
         pixelRadiance += indirectDiffuse * directDiffuseColor * LIGHT_ATTENUATION *
                          smoothstep(0.0, 0.1, length(indirectDiffuse));
     }
+    if (any(isnan(pixelRadiance)) || any(isinf(pixelRadiance))) {
+        pixelRadiance = vec3(0);
+    } else {
+        pixelRadiance = clamp(pixelRadiance, vec3(-8192), vec3(8192));
+    }
 
     uint bucket = min(FRAGMENT_LIST_COUNT - 1, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);

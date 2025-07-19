@@ -55,6 +55,11 @@ void main() {
         vec4 sampleValue = vec4(0);
         sampleValue.a = frontSample.a + backSample.a * max(0, 1 - frontSample.a);
         sampleValue.rgb = frontSample.rgb + backSample.rgb * max(0, 1 - frontSample.a);
+        if (any(isnan(sampleValue)) || any(isinf(sampleValue))) {
+            sampleValue = vec4(0, 0, 0, 1);
+        } else {
+            sampleValue = clamp(sampleValue, vec4(-8192), vec4(8192));
+        }
 
         imageStore(voxelLayerOut[i], ivec3(voxelPos), sampleValue);
     }

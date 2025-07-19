@@ -485,7 +485,8 @@ namespace sp {
             liveSceneInfo.scene.data->name);
         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
 
-        auto flatParentEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
+        ecs::FlatEntity flatParentEntity;
+        scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId, flatParentEntity);
         ecs::FlatEntity flatStagingEntity;
 
         ( // For each component:
@@ -505,7 +506,7 @@ namespace sp {
                     auto &comp = ecs::LookupComponent<T>();
 
                     T compareComp = {};
-                    auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);
+                    auto &existingComp = std::get<std::optional<T>>(flatParentEntity);
                     if (existingComp) {
                         comp.ApplyComponent(compareComp, *existingComp, true);
                     }

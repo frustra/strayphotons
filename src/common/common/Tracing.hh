@@ -18,12 +18,26 @@
     #define ZonePrintf(...)
     #define ZonePrintfV(varname, ...)
 
+    #define DebugZoneScoped
+    #define DebugZoneScopedN(str)
+    #define DebugZoneStr(str)
+
 #else
 
     #define ZoneStr(str) ZoneStrV(___tracy_scoped_zone, str)
     #define ZoneStrV(varname, str) sp::tracing::TracingZoneStr(varname, str)
     #define ZonePrintf(...) ZonePrintfV(___tracy_scoped_zone, __VA_ARGS__)
     #define ZonePrintfV(varname, ...) sp::tracing::TracingZonePrintf(varname, __VA_ARGS__)
+
+    #ifdef TRACY_ENABLE_DEBUG
+        #define DebugZoneScoped ZoneScoped
+        #define DebugZoneScopedN(str) ZoneScopedN(str)
+        #define DebugZoneStr(str) ZoneStr(str)
+    #else
+        #define DebugZoneScoped
+        #define DebugZoneScopedN(str)
+        #define DebugZoneStr(str)
+    #endif
 
 // void *operator new(size_t size);
 // void operator delete(void *ptr);

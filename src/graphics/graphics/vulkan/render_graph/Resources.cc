@@ -268,7 +268,7 @@ namespace sp::vulkan::render_graph {
                     break;
                 }
             }
-            Assertf(nameScope, "Resources::Register undefined scope: %s", name);
+            if (!nameScope) return;
         } else {
             nameScope = &nameScopes[scopeStack.back()];
         }

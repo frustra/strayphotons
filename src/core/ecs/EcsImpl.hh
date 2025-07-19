@@ -11,6 +11,7 @@
 #include "common/Common.hh"
 #include "common/DispatchQueue.hh"
 #include "common/Logging.hh"
+#include "ecs/ComponentsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/EventQueue.hh"
 

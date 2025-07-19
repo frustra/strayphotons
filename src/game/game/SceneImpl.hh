@@ -22,14 +22,15 @@ namespace sp::scene_util {
     // Transform components will have their scene root transforms applied to their poses.
     // Scripts will be initialized and their event queues will be created.
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    FlatEntity BuildEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> &staging, const Entity &e) {
+    void BuildEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, ReadAll> &staging,
+        const Entity &e,
+        FlatEntity &flatEntity) {
         ZoneScoped;
-        FlatEntity flatEntity;
-        if (!e.Has<SceneInfo>(staging)) return flatEntity;
+        flatEntity = FlatEntity();
+        if (!e.Has<SceneInfo>(staging)) return;
 
         if (e.Has<Name>(staging)) {
-            auto &name = std::get<std::shared_ptr<Name>>(flatEntity);
-            name = std::make_shared<Name>(e.Get<Name>(staging));
+            std::get<std::optional<Name>>(flatEntity) = e.Get<Name>(staging);
         }
 
         auto stagingId = e;
@@ -49,10 +50,9 @@ namespace sp::scene_util {
                     } else if constexpr (std::is_same_v<T, Animation>) {
                         // Ignore, this is handled below and depends on the final TransformTree
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
-                        auto &component = std::get<std::shared_ptr<SceneProperties>>(flatEntity);
+                        auto &component = std::get<std::optional<SceneProperties>>(flatEntity);
                         if (!component) {
-                            component = std::make_shared<SceneProperties>(
-                                LookupComponent<SceneProperties>().StagingDefault());
+                            component = LookupComponent<SceneProperties>().StagingDefault();
                         }
 
                         Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
@@ -63,11 +63,11 @@ namespace sp::scene_util {
                     } else if constexpr (!Tecs::is_global_component<T>()) {
                         if (!stagingId.Has<T>(staging)) return;
 
-                        auto &component = std::get<std::shared_ptr<T>>(flatEntity);
+                        auto &component = std::get<std::optional<T>>(flatEntity);
                         if (!component) {
                             const ecs::ComponentBase *comp = LookupComponent(typeid(T));
                             Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            component = std::make_shared<T>(comp->GetStagingDefault<T>());
+                            component = comp->GetStagingDefault<T>();
                         }
 
                         if constexpr (std::is_same_v<T, TransformTree>) {
@@ -106,8 +106,8 @@ namespace sp::scene_util {
             stagingId = stagingInfo.nextStagingId;
         }
 
-        auto &flatTransform = std::get<std::shared_ptr<TransformTree>>(flatEntity);
-        auto &flatAnimation = std::get<std::shared_ptr<Animation>>(flatEntity);
+        auto &flatTransform = std::get<std::optional<TransformTree>>(flatEntity);
+        auto &flatAnimation = std::get<std::optional<Animation>>(flatEntity);
         if (flatTransform) {
             ZoneScopedN("ApplySceneTransform");
             stagingId = e;
@@ -128,15 +128,13 @@ namespace sp::scene_util {
                     }
 
                     if (!flatAnimation) {
-                        flatAnimation = std::make_shared<Animation>(LookupComponent<Animation>().StagingDefault());
+                        flatAnimation = LookupComponent<Animation>().StagingDefault();
                     }
                     LookupComponent<Animation>().ApplyComponent(*flatAnimation, animation, false);
                 }
                 stagingId = stagingInfo.nextStagingId;
             }
         }
-
-        return flatEntity;
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
@@ -144,14 +142,14 @@ namespace sp::scene_util {
         const Entity &liveId,
         const FlatEntity &flatEntity,
         bool resetLive) {
-        ZoneScoped;
+        DebugZoneScoped;
 
         // Apply flattened staging components to the live id, and remove any components that are no longer in staging
         ( // For each component:
             [&] {
                 using T = AllComponentTypes;
                 if constexpr (std::is_same_v<T, Name>) {
-                    auto &name = std::get<std::shared_ptr<Name>>(flatEntity);
+                    auto &name = std::get<std::optional<Name>>(flatEntity);
                     if (name) liveId.Set<Name>(live, *name);
                 } else if constexpr (std::is_same_v<T, SceneInfo>) {
                     // Ignore, this should always be set
@@ -160,7 +158,7 @@ namespace sp::scene_util {
                 } else if constexpr (std::is_same_v<T, SignalBindings>) {
                     // Skip, this is handled below
                 } else if constexpr (!Tecs::is_global_component<T>()) {
-                    auto &component = std::get<std::shared_ptr<T>>(flatEntity);
+                    auto &component = std::get<std::optional<T>>(flatEntity);
                     if (component) {
                         if (resetLive) liveId.Unset<T>(live);
 
@@ -168,7 +166,7 @@ namespace sp::scene_util {
                         LookupComponent<T>().ApplyComponent(dstComp, *component, true);
                     } else if (liveId.Has<T>(live)) {
                         if constexpr (std::is_same_v<T, TransformSnapshot>) {
-                            auto &transformOpt = std::get<std::shared_ptr<TransformTree>>(flatEntity);
+                            auto &transformOpt = std::get<std::optional<TransformTree>>(flatEntity);
                             if (!transformOpt) {
                                 liveId.Unset<TransformSnapshot>(live);
                             }
@@ -185,7 +183,7 @@ namespace sp::scene_util {
             signals.FreeEntitySignals(live, liveId);
         }
 
-        auto &signalOutput = std::get<std::shared_ptr<SignalOutput>>(flatEntity);
+        auto &signalOutput = std::get<std::optional<SignalOutput>>(flatEntity);
         if (signalOutput) {
             for (auto &[signalName, value] : signalOutput->signals) {
                 if (!std::isfinite(value)) continue;
@@ -193,7 +191,7 @@ namespace sp::scene_util {
                 if (!ref.HasValue(live)) ref.SetValue(live, value);
             }
         }
-        auto &signalBindings = std::get<std::shared_ptr<SignalBindings>>(flatEntity);
+        auto &signalBindings = std::get<std::optional<SignalBindings>>(flatEntity);
         if (signalBindings) {
             for (auto &[signalName, binding] : signalBindings->bindings) {
                 if (!binding) continue;

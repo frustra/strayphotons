@@ -477,7 +477,7 @@ namespace sp {
         const ecs::Entity &actorEnt,
         physx::PxRigidActor *actor,
         const ecs::Transform &offset) {
-        // ZoneScoped;
+        DebugZoneScoped;
         bool shapesChanged = false;
         auto &physics = owner.Get<ecs::Physics>(lock);
         std::vector<bool> existingShapes(physics.shapes.size());
@@ -750,7 +750,7 @@ namespace sp {
         auto &ph = e.Get<ecs::Physics>(lock);
         auto actorEnt = ph.parentActor.Get(lock);
         if (ph.type == ecs::PhysicsActorType::SubActor) {
-            // ZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
+            DebugZoneStr(ecs::ToString(lock, e) + "/" + ecs::ToString(lock, actorEnt));
             if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
                 auto parentActor = e;
                 while (parentActor.Has<ecs::TransformTree>(lock)) {
@@ -767,7 +767,7 @@ namespace sp {
                 }
             }
         } else {
-            // ZoneStr(ecs::ToString(lock, e));
+            DebugZoneStr(ecs::ToString(lock, e));
         }
         if (!actorEnt.Has<ecs::Physics, ecs::TransformTree>(lock)) {
             actorEnt = e;
