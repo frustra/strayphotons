@@ -84,10 +84,26 @@ namespace ecs {
         const CompType defaultLiveComponent = {};
         const CompType defaultStagingComponent;
 
-        CompType makeDefaultStagingComponent(const StructMetadata &metadata);
+        CompType makeDefaultStagingComponent(const StructMetadata &metadata) {
+            static const CompType defaultComp = {};
+            CompType comp = {};
+            for (auto &field : metadata.fields) {
+                field.InitUndefined(&comp, &defaultComp);
+            }
+            StructMetadata::InitUndefined(comp);
+            return comp;
+        }
 
     public:
-        Component(StructMetadata &&metadata, const char *name);
+        Component(StructMetadata &&metadata, const char *name)
+            : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
+            auto existing = dynamic_cast<const Component<CompType> *>(LookupComponent(std::string(name)));
+            if (existing == nullptr) {
+                RegisterComponent(name, std::type_index(typeid(CompType)), this);
+            } else if (*this != *existing) {
+                throw std::runtime_error("Duplicate component type registered: "s + name);
+            }
+        }
         Component(StructMetadata &&metadata) : Component(std::move(metadata), metadata.name.c_str()) {}
 
         bool IsGlobal() const override {
