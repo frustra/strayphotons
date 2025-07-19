@@ -1,0 +1,252 @@
+{
+	"entities": [
+		{
+			"name": "track_root",
+			"transform": {
+				"scale": 0.01
+			}
+		},
+		{
+			"name": "visualizer",
+			"transform": {
+				"parent": "track_root",
+				"translate": [0, 20, 0],
+				"scale": [20, 10, 40]
+			},
+			"renderable": {
+				"model": "box"
+			},
+			"signal_bindings": {
+				"x": "(visualizer/Latitude - 47.254946) * 111176",
+				"y": "visualizer/Altitude - 300",
+				"z": "(visualizer/Longitude + 123.191740) * 75693",
+				"accel_x": "visualizer/AccelX * 0.3",
+				"accel_y": "-visualizer/AccelZ",
+				"accel_z": "visualizer/AccelY * 0.3"
+			},
+			"script": {
+				"onTick": "csv_visualizer",
+				"parameters": {
+					"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
+				}
+			}
+		},
+		{
+			"name": "wheel_lf",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [0.5, -0.25, 0.35],
+				"rotate": [90, 0, 0, 1],
+				"scale": [0.8, 0.1, 0.2]
+			},
+			"renderable": {
+				"model": "cylinder",
+				"color_override": [0, 0, 0, 1]
+			}
+		},
+		{
+			"name": "wheel_rf",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [-0.5, -0.25, 0.35],
+				"rotate": [90, 0, 0, 1],
+				"scale": [0.8, 0.1, 0.2]
+			},
+			"renderable": {
+				"model": "cylinder",
+				"color_override": [0, 0, 0, 1]
+			}
+		},
+		{
+			"name": "wheel_lr",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [0.5, -0.25, -0.35],
+				"rotate": [90, 0, 0, 1],
+				"scale": [0.8, 0.1, 0.2]
+			},
+			"renderable": {
+				"model": "cylinder",
+				"color_override": [0, 0, 0, 1]
+			}
+		},
+		{
+			"name": "wheel_rr",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [-0.5, -0.25, -0.35],
+				"rotate": [90, 0, 0, 1],
+				"scale": [0.8, 0.1, 0.2]
+			},
+			"renderable": {
+				"model": "cylinder",
+				"color_override": [0, 0, 0, 1]
+			}
+		},
+		{
+			"name": "left_brake_light",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [0.412, 0.25, -0.485],
+				"scale": [0.2, 0.2, 0.05]
+			},
+			"renderable": {
+				"model": "box",
+				"color_override": [0.3, 0, 0, 1]
+			},
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.emissive": "visualizer/Brake"
+				}
+			}
+		},
+		{
+			"name": "right_brake_light",
+			"transform": {
+				"parent": "visualizer",
+				"translate": [-0.412, 0.25, -0.485],
+				"scale": [0.2, 0.2, 0.05]
+			},
+			"renderable": {
+				"model": "box",
+				"color_override": [0.3, 0, 0, 1]
+			},
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.emissive": "visualizer/Brake"
+				}
+			}
+		},
+		{
+			"name": "left_headlight",
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 10,
+				"spot_angle": 30,
+				"shadow_map_size": 10,
+				"shadow_map_clip": [0.01, 50]
+			},
+			"transform": {
+				"parent": "visualizer",
+				"translate": [0.45, 0.25, 0.5],
+				"rotate": [180, 0, 1, 0]
+			}
+		},
+		{
+			"name": "right_headlight",
+			"light": {
+				"tint": [1, 1, 1],
+				"intensity": 10,
+				"spot_angle": 30,
+				"shadow_map_size": 10,
+				"shadow_map_clip": [0.01, 50]
+			},
+			"transform": {
+				"parent": "visualizer",
+				"translate": [-0.45, 0.25, 0.5],
+				"rotate": [180, 0, 1, 0]
+			}
+		},
+		{
+			"name": "speed_display",
+			"transform": {
+				"parent": "player:head",
+				"scale": [0.16, 0.05, 1],
+				"translate": [-0.13, -0.080, -0.210]
+			},
+			"gui": {
+				"window_name": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3],
+				"resolution": [160, 50]
+			},
+			"signal_bindings": {
+				"text_color_g": "1",
+				"text_color_b": "1",
+				"text_color_r": "1",
+				"value": "visualizer/Speed"
+			}
+		},
+		{
+			"name": "tps_display",
+			"transform": {
+				"parent": "player:head",
+				"scale": [0.12, 0.05, 1],
+				"translate": [0.12, -0.080, -0.210]
+			},
+			"gui": {
+				"window_name": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3],
+				"resolution": [120, 50]
+			},
+			"signal_bindings": {
+				"text_color_g": "visualizer/TPS / 100",
+				"text_color_b": "visualizer/TPS / 200",
+				"text_color_r": "1 - visualizer/TPS / 100",
+				"max_value": "100",
+				"value": "visualizer/TPS"
+			}
+		},
+		{
+			"name": "gear_display",
+			"transform": {
+				"parent": "player:head",
+				"scale": [0.15, 0.05, 1],
+				"translate": [0.26, -0.080, -0.210]
+			},
+			"gui": {
+				"window_name": "signal_display"
+			},
+			"screen": {
+				"luminance": [3, 3, 3],
+				"resolution": [150, 50]
+			},
+			"signal_bindings": {
+				"text_color_g": "1",
+				"text_color_b": "1",
+				"text_color_r": "1",
+				"value": "visualizer/Gear"
+			}
+		},
+		{
+			"renderable": {
+				"model": "box"
+			},
+			"transform": {
+				"scale": [100, 10, 100],
+				"translate": [0, -5, 0]
+			},
+			"physics": {
+				"shapes": {
+					"model": "box"
+				},
+				"type": "Static"
+			}
+		},
+		{
+			"name": "global:spawn",
+			"transform": {
+				"translate": [4, 0, 4],
+				"rotate": [35, 0, 1, 0]
+			}
+		},
+		{
+			"light": {
+				"tint": [1, 0.5, 0.5],
+				"intensity": 300,
+				"spot_angle": 50,
+				"shadow_map_size": 11,
+				"shadow_map_clip": [5, 50]
+			},
+			"transform": {
+				"translate": [7, 20, 7],
+				"rotate": [-50, 1, -1, 0]
+			}
+		}
+	]
+}

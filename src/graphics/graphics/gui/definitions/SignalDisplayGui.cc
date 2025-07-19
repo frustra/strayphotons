@@ -48,7 +48,7 @@ namespace sp {
             if (maxValue != 0.0) {
                 ss << std::fixed << std::setprecision(2) << (value / maxValue * 100.0) << "%";
             } else {
-                ss << std::fixed << std::setprecision(2) << value << "mW";
+                ss << std::fixed << std::setprecision(2) << value << " mph";
             }
             text = ss.str();
         }

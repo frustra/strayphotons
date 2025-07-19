@@ -7,6 +7,7 @@
 
 target_sources(${PROJECT_SCRIPTS_LIB} PRIVATE
     AudioScripts.cc
+    CSVVisualizer.cc
     EditorScripts.cc
     EventScripts.cc
     InputScripts.cc
