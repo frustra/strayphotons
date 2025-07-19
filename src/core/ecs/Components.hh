@@ -135,8 +135,13 @@ namespace ecs {
         const void *GetStagingDefault() const override;
         const CompType &StagingDefault() const;
 
-        bool operator==(const Component<CompType> &other) const;
-        bool operator!=(const Component<CompType> &other) const;
+        bool operator==(const Component<CompType> &other) const {
+            return name == other.name && metadata == other.metadata;
+        }
+
+        bool operator!=(const Component<CompType> &other) const {
+            return !(*this == other);
+        }
 
     protected:
         static void Apply(CompType &dst, const CompType &src, bool liveTarget) {

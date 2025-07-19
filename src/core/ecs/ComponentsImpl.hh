@@ -131,14 +131,4 @@ namespace ecs {
         return defaultStagingComponent;
     }
 
-    template<typename CompType>
-    bool Component<CompType>::operator==(const Component<CompType> &other) const {
-        return name == other.name && metadata == other.metadata;
-    }
-
-    template<typename CompType>
-    bool Component<CompType>::operator!=(const Component<CompType> &other) const {
-        return !(*this == other);
-    }
-
 }; // namespace ecs
