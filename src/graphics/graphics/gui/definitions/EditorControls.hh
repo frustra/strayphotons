@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EntityRef.hh"
+#include "game/SceneRef.hh"
 
 namespace sp {
     struct EditorContext {
@@ -20,6 +23,7 @@ namespace sp {
         std::string entitySearch, sceneEntry, signalSearch;
         std::map<ecs::Name, TreeNode> entityTree;
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
+        const ecs::ComponentBase *selectedComponent = nullptr;
         SceneRef scene;
         ecs::SignalRef selectedSignal;
         ecs::Entity target;
@@ -32,8 +36,11 @@ namespace sp {
         int signalNameCursorPos;
 
         void RefreshEntityTree();
-        ecs::EntityRef ShowEntityTree(ecs::Name root = ecs::Name());
-        ecs::EntityRef ShowAllEntities(std::string listLabel, float listWidth = -FLT_MIN, float listHeight = -FLT_MIN);
+        bool ShowEntityTree(ecs::EntityRef &selected, ecs::Name = ecs::Name());
+        bool ShowAllEntities(ecs::EntityRef &selected,
+            std::string listLabel,
+            float listWidth = -FLT_MIN,
+            float listHeight = -FLT_MIN);
         void AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity);
         void ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock);

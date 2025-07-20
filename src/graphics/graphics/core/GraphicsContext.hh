@@ -33,7 +33,7 @@ namespace sp::vulkan {
 namespace sp {
     class GpuTexture;
     class Image;
-    class DebugGuiManager;
+    class OverlayGuiManager;
     class MenuGuiManager;
     class Game;
 
@@ -64,7 +64,7 @@ namespace sp {
         virtual void InitRenderer(Game &game) = 0;
         virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
 
-        virtual void SetDebugGui(DebugGuiManager *debugGui) = 0;
+        virtual void SetOverlayGui(OverlayGuiManager *overlayGui) = 0;
         virtual void SetMenuGui(MenuGuiManager *menuGui) = 0;
 
         virtual const std::vector<glm::ivec2> &MonitorModes() {

@@ -89,7 +89,7 @@ namespace sp::vulkan {
         void InitRenderer(Game &game) override;
         void RenderFrame(chrono_clock::duration elapsedTime) override;
 
-        void SetDebugGui(DebugGuiManager *debugGui) override;
+        void SetOverlayGui(OverlayGuiManager *overlayGui) override;
         void SetMenuGui(MenuGuiManager *menuGui) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.

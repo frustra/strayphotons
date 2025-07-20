@@ -710,7 +710,7 @@ namespace sp {
 
                 if (entSrc.count("name") && entSrc["name"].is<string>()) {
                     ecs::Name name(entSrc["name"].get<string>(), scope);
-                    if (name) std::get<std::shared_ptr<ecs::Name>>(entDst) = std::make_shared<ecs::Name>(name);
+                    if (name) std::get<std::optional<ecs::Name>>(entDst) = name;
                 }
 
                 for (auto &comp : entSrc) {
@@ -733,10 +733,10 @@ namespace sp {
 
         std::vector<ecs::Entity> scriptEntities;
         for (auto &flatEnt : entities) {
-            auto &name_ptr = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
+            auto &name_ptr = std::get<std::optional<ecs::Name>>(flatEnt);
             auto name = name_ptr ? *name_ptr : ecs::Name();
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, name, scope);
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, name);
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("LoadScene(%s): Failed to create entity, ignoring: '%s'", scenePath, name.String());
@@ -806,7 +806,7 @@ namespace sp {
 
             auto &entSrc = value.get<picojson::object>();
             auto &entDst = entities.emplace_back();
-            std::get<std::shared_ptr<ecs::Name>>(entDst) = std::make_shared<ecs::Name>(name);
+            std::get<std::optional<ecs::Name>>(entDst) = name;
 
             for (auto *comp : allowedComponents) {
                 Assertf(comp,
@@ -830,10 +830,10 @@ namespace sp {
             bindingConfig);
 
         for (auto &flatEnt : entities) {
-            auto &name = std::get<std::shared_ptr<ecs::Name>>(flatEnt);
+            auto &name = std::get<std::optional<ecs::Name>>(flatEnt);
             if (!name || !*name) continue;
 
-            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name, ecs::EntityScope("bindings", ""));
+            ecs::Entity entity = scene->NewRootEntity(lock, scene, *name);
             if (!entity) {
                 // Most llkely a duplicate entity definition
                 Errorf("Failed to create binding entity, ignoring: '%s'", name->String());

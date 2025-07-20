@@ -32,7 +32,7 @@ namespace sp::winit {
 namespace sp {
     class Game;
     class GraphicsContext;
-    class DebugGuiManager;
+    class OverlayGuiManager;
     class MenuGuiManager;
 
     class GraphicsManager : public RegisteredThread {
@@ -74,7 +74,7 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        std::shared_ptr<DebugGuiManager> debugGui;
+        std::shared_ptr<OverlayGuiManager> overlayGui;
         std::shared_ptr<MenuGuiManager> menuGui;
 
         bool initialized = false;

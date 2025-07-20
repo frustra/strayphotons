@@ -21,6 +21,7 @@ namespace sp {
         void ToggleTray();
 
     private:
+        ecs::EntityRef pickerEntity = ecs::Name("editor", "entity_picker");
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::Entity previousTarget;
 

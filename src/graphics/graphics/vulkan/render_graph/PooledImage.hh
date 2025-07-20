@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/Hashing.hh"
+#include "common/Logging.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan::render_graph {
@@ -32,8 +33,9 @@ namespace sp::vulkan::render_graph {
                 return vk::ImageViewType::e2D;
             case vk::ImageType::e3D:
                 return vk::ImageViewType::e3D;
+            default:
+                Abortf("invalid vk::ImageType: %s", imageType);
             }
-            Abortf("invalid vk::ImageType: %s", imageType);
         }
     };
 

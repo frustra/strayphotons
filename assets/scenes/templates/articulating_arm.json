@@ -64,8 +64,8 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "25 + arm/locked_ratio * 75",
+						"physics.linear_damping": "25 + arm/locked_ratio * 75"
 					}
 				},
 				{
@@ -120,8 +120,8 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "50 + arm/locked_ratio * 50",
+						"physics.linear_damping": "50 + arm/locked_ratio * 50"
 					}
 				},
 				{
@@ -181,8 +181,8 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "75 + arm/locked_ratio * 25",
+						"physics.linear_damping": "10 + arm/locked_ratio * 90"
 					}
 				},
 				{
@@ -244,8 +244,8 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "20 + arm/locked_ratio * 80",
+						"physics.linear_damping": "20 + arm/locked_ratio * 80"
 					}
 				},
 				{
@@ -298,7 +298,7 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
+						"physics.angular_damping": "10 + arm/locked_ratio * 90",
 						"physics.linear_damping": "arm/locked_ratio * 100"
 					}
 				},
@@ -354,8 +354,7 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "10 + arm/locked_ratio * 90"
 					}
 				},
 				{
@@ -417,8 +416,8 @@
 				{
 					"onTick": "component_from_signal",
 					"parameters": {
-						"physics.angular_damping": "arm/locked_ratio * 100",
-						"physics.linear_damping": "arm/locked_ratio * 100"
+						"physics.angular_damping": "50 + arm/locked_ratio * 50",
+						"physics.linear_damping": "20 + arm/locked_ratio * 80"
 					}
 				},
 				{

@@ -87,6 +87,7 @@ namespace ecs {
     }
 
     SignalNodePtr SignalManager::GetSignalNode(SignalRef ref) {
+        if (!ref) return GetConstantNode(0.0);
         return GetNode(Node{SignalNode{ref}, ref.String()});
     }
 

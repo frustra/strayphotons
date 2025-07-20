@@ -7,7 +7,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/scroll",
+                    "outputs": "gui:overlay/action/menu/scroll",
                     "filter": "is_focused(Overlay)"
                 }
             ],
@@ -29,7 +29,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/cursor",
+                    "outputs": "gui:overlay/action/menu/cursor",
                     "filter": "is_focused(Overlay)"
                 }
             ],
@@ -43,7 +43,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/primary_trigger",
+                    "outputs": "gui:overlay/action/menu/primary_trigger",
                     "filter": "is_focused(Overlay)"
                 }
             ],
@@ -53,7 +53,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/secondary_trigger",
+                    "outputs": "gui:overlay/action/menu/secondary_trigger",
                     "filter": "is_focused(Overlay)"
                 }
             ]
@@ -87,11 +87,11 @@
                 "set_value": "reloadshaders"
             },
             "/keyboard/key/backtick": {
-                "outputs": "gui:debug/action/console/toggle",
+                "outputs": "gui:overlay/action/console/toggle",
                 "filter": "event"
             },
             "/keyboard/characters": {
-                "outputs": "gui:debug/action/menu/text_input",
+                "outputs": "gui:overlay/action/menu/text_input",
                 "filter": "is_focused(Overlay)"
             },
             "/keyboard/key_down": [
@@ -100,7 +100,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/key_down",
+                    "outputs": "gui:overlay/action/menu/key_down",
                     "filter": "is_focused(Overlay)"
                 }
             ],
@@ -110,7 +110,7 @@
                     "filter": "is_focused(Menu)"
                 },
                 {
-                    "outputs": "gui:debug/action/menu/key_up",
+                    "outputs": "gui:overlay/action/menu/key_up",
                     "filter": "is_focused(Overlay)"
                 }
             ],

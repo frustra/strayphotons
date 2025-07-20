@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "WorldGuiManager.hh"
+#include "WorldGuiContext.hh"
 
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -17,7 +17,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    WorldGuiManager::WorldGuiManager(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {
+    WorldGuiContext::WorldGuiContext(ecs::Entity gui, const std::string &name) : GuiContext(name), guiEntity(gui) {
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
             ecs::Entity gui = guiEntity.Get(lock);
             if (!gui.Has<ecs::EventInput>(lock)) return;
@@ -28,27 +28,28 @@ namespace sp {
         });
     }
 
-    void WorldGuiManager::DefineWindows() {
+    void WorldGuiContext::DefineWindows() {
         ZoneScoped;
         ImGuiIO &io = ImGui::GetIO();
         for (auto &component : components) {
-            auto *window = dynamic_cast<GuiWindow *>(component.get());
+            if (!component) continue;
+            GuiRenderable &renderable = *component;
 
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
-            if (window) {
-                window->PreDefine();
-                flags |= window->flags;
+            flags |= renderable.windowFlags;
+
+            if (renderable.PreDefine()) {
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+                ImGui::Begin(component->name.c_str(), nullptr, flags);
+                component->DefineContents();
+                ImGui::End();
+                renderable.PostDefine();
             }
-            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
-            ImGui::Begin(component->name.c_str(), nullptr, flags);
-            component->DefineContents();
-            ImGui::End();
-            if (window) window->PostDefine();
         }
     }
 
-    void WorldGuiManager::BeforeFrame() {
+    void WorldGuiContext::BeforeFrame() {
         ZoneScoped;
         GuiContext::BeforeFrame();
         ImGuiIO &io = ImGui::GetIO();

@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "SystemGuiManager.hh"
+#include "FlatViewGuiContext.hh"
 
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
@@ -18,7 +18,7 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    SystemGuiManager::SystemGuiManager(const std::string &name) : GuiContext(name) {
+    FlatViewGuiContext::FlatViewGuiContext(const std::string &name) : GuiContext(name) {
         guiEntity = ecs::Name("gui", name);
 
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
@@ -45,7 +45,7 @@ namespace sp {
         }
     }
 
-    void SystemGuiManager::BeforeFrame() {
+    void FlatViewGuiContext::BeforeFrame() {
         ZoneScoped;
         GuiContext::BeforeFrame();
         ImGuiIO &io = ImGui::GetIO();

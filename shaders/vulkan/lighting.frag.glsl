@@ -101,6 +101,11 @@ void main() {
                 -rayDir,
                 worldNormal);
             indirectSpecular = sampleColor.rgb * brdf;
+            if (any(isnan(indirectSpecular)) || any(isinf(indirectSpecular))) {
+                indirectSpecular = vec3(0);
+            } else {
+                indirectSpecular = clamp(indirectSpecular, vec3(-8192), vec3(8192));
+            }
         }
     }
 

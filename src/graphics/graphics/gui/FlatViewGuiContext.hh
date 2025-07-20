@@ -7,14 +7,13 @@
 
 #pragma once
 
-#include "GuiContext.hh"
 #include "ecs/EventQueue.hh"
+#include "graphics/gui/GuiContext.hh"
 
 namespace sp {
-
-    class SystemGuiManager : public GuiContext {
+    class FlatViewGuiContext : public GuiContext {
     public:
-        SystemGuiManager(const std::string &name);
+        FlatViewGuiContext(const std::string &name);
 
         virtual void BeforeFrame();
 

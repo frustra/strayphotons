@@ -9,6 +9,7 @@
 
 namespace sp {
     void EditorContext::RefreshEntityTree() {
+        ZoneScoped;
         entityTree.clear();
 
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
@@ -22,57 +23,65 @@ namespace sp {
         }
     }
 
-    ecs::EntityRef EditorContext::ShowEntityTree(ecs::Name root) {
-        ecs::EntityRef selected;
+    bool EditorContext::ShowEntityTree(ecs::EntityRef &selected, ecs::Name root) {
+        ZoneScoped;
+        bool selectionChanged = false;
         if (!root) {
             if (ImGui::Button("Refresh List") || entityTree.empty()) {
                 RefreshEntityTree();
             }
             for (auto &pair : entityTree) {
                 if (!pair.second.hasParent) {
-                    auto tmp = ShowEntityTree(pair.first);
-                    if (tmp) selected = tmp;
+                    selectionChanged |= ShowEntityTree(selected, pair.first);
                 }
             }
         } else {
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow;
             if (entityTree[root].children.empty()) flags |= ImGuiTreeNodeFlags_Leaf;
+            if (selected.Name() == root) flags |= ImGuiTreeNodeFlags_Selected;
 
             bool open = ImGui::TreeNodeEx(root.String().c_str(), flags);
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
                 selected = root;
+                selectionChanged = true;
             }
-            if (!open) return selected;
+            if (!open) return selectionChanged;
 
             for (auto &child : entityTree[root].children) {
                 if (child) {
-                    auto tmp = ShowEntityTree(child);
-                    if (tmp) selected = tmp;
+                    selectionChanged |= ShowEntityTree(selected, child);
                 }
             }
 
             ImGui::TreePop();
         }
-        return selected;
+        return selectionChanged;
     }
 
-    ecs::EntityRef EditorContext::ShowAllEntities(std::string listLabel, float listWidth, float listHeight) {
-        ecs::EntityRef selected;
+    bool EditorContext::ShowAllEntities(ecs::EntityRef &selected,
+        std::string listLabel,
+        float listWidth,
+        float listHeight) {
+        ZoneScoped;
+        bool selectionChanged = false;
         ImGui::SetNextItemWidth(listWidth);
         ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
         if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
             auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
             for (auto &entName : entityNames) {
-                if (ImGui::Selectable(entName.String().c_str())) {
+                bool isSelected = selected.Name() == entName;
+                if (ImGui::Selectable(entName.String().c_str(), &isSelected)) {
                     selected = entName;
+                    selectionChanged = true;
                 }
             }
             ImGui::EndListBox();
         }
-        return selected;
+        return selectionChanged;
     }
 
     void EditorContext::AddLiveSignalControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        ZoneScoped;
         Assertf(ecs::IsLive(lock), "AddLiveSignalControls must be called with a live lock");
         if (ImGui::CollapsingHeader("Signals", ImGuiTreeNodeFlags_DefaultOpen)) {
             std::set<ecs::SignalRef> signals = ecs::GetSignalManager().GetSignals(targetEntity);
@@ -240,6 +249,7 @@ namespace sp {
     }
 
     void EditorContext::ShowEntityControls(const ecs::Lock<ecs::ReadAll> &lock, const ecs::EntityRef &targetEntity) {
+        ZoneScoped;
         if (!targetEntity) {
             this->target = {};
             return;
@@ -375,10 +385,35 @@ namespace sp {
 
         if (ecs::IsLive(lock)) AddLiveSignalControls(lock, targetEntity);
 
+        std::vector<const ecs::ComponentBase *> missingComponents;
         ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-            if (!comp.HasComponent(lock, this->target)) return;
-            auto flags = (name == "scene_properties") ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_DefaultOpen;
+            ZoneScopedN("ShowEntityControls::ForEachComponent");
+            ZoneStr(name);
+            if (!comp.HasComponent(lock, this->target)) {
+                if (!comp.IsGlobal() && name != "scene_properties") {
+                    if (ecs::IsLive(lock) && (name == "signal_output" || name == "signal_bindings")) return;
+                    missingComponents.push_back(&comp);
+                }
+                return;
+            }
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowItemOverlap;
+            if (name != "scene_properties") flags |= ImGuiTreeNodeFlags_DefaultOpen;
             if (ImGui::CollapsingHeader(name.c_str(), flags)) {
+                ImGui::SameLine(ImGui::GetColumnWidth() - 8);
+                std::string removeLabel = "X##" + name;
+                if (ImGui::Button(removeLabel.c_str())) {
+                    if (IsLive(lock)) {
+                        ecs::QueueTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp.UnsetComponent(lock, target);
+                        });
+                    } else {
+                        ecs::QueueStagingTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp.UnsetComponent(lock, target);
+                        });
+                    }
+                }
                 const void *component = comp.Access(lock, this->target);
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
@@ -388,6 +423,45 @@ namespace sp {
                 }
             }
         });
+        if (!missingComponents.empty()) {
+            ImGui::Dummy(ImVec2(0, 6));
+            ImGui::Separator();
+            ImGui::Dummy(ImVec2(0, 6));
+            if (!selectedComponent) ImGui::BeginDisabled();
+            if (ImGui::Button("Add") && selectedComponent) {
+                ecs::EntityScope scope(scene.data->name, "");
+                if (target.Has<ecs::SceneInfo>(lock)) {
+                    auto &targetSceneInfo = target.Get<ecs::SceneInfo>(lock);
+                    scope = targetSceneInfo.scope;
+                }
+                if (IsLive(lock)) {
+                    ecs::QueueTransaction<ecs::AddRemove>(
+                        [target = this->target, comp = selectedComponent, scope](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp->SetComponent(lock, scope, target);
+                        });
+                } else {
+                    ecs::QueueStagingTransaction<ecs::AddRemove>(
+                        [target = this->target, comp = selectedComponent, scope](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp->SetComponent(lock, scope, target);
+                        });
+                }
+                selectedComponent = nullptr;
+            } else if (!selectedComponent) {
+                ImGui::EndDisabled();
+            }
+            ImGui::SameLine();
+            if (ImGui::BeginCombo("##componentSelector", "...")) {
+                for (auto *comp : missingComponents) {
+                    bool isSelected = comp == selectedComponent;
+                    if (ImGui::Selectable(comp->name.c_str(), isSelected)) {
+                        selectedComponent = comp;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
     }
 
     void EditorContext::ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock) {

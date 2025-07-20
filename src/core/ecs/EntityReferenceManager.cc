@@ -20,6 +20,7 @@ namespace ecs {
     }
 
     EntityRef EntityReferenceManager::Get(const Name &name) {
+        DebugZoneScoped;
         if (!name) return EntityRef();
 
         EntityRef ref = entityRefs.Load(name);
@@ -35,6 +36,7 @@ namespace ecs {
     }
 
     EntityRef EntityReferenceManager::Get(const Entity &entity) {
+        DebugZoneScoped;
         if (!entity) return EntityRef();
 
         std::shared_lock lock(mutex);
@@ -50,6 +52,7 @@ namespace ecs {
     }
 
     EntityRef EntityReferenceManager::Set(const Name &name, const Entity &entity) {
+        DebugZoneScoped;
         Assertf(entity, "Trying to set EntityRef with null Entity");
 
         auto ref = Get(name);

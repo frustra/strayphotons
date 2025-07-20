@@ -8,6 +8,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "common/Common.hh"
+#include "common/Hashing.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
@@ -17,34 +18,36 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
+    const chrono_clock::duration templateCacheTime = std::chrono::seconds(1);
+
     struct TemplateParser {
-        std::shared_ptr<sp::Scene> scene;
-        Entity rootEnt;
-        size_t prefabScriptId;
         std::string sourceName;
 
         sp::AsyncPtr<sp::Asset> assetPtr;
+        bool parseFailed = false;
+        mutable chrono_clock::time_point lastAccess;
 
         bool hasRootOverride = false; // True if "components" field is defined
         FlatEntity rootComponents; // Represented by the "components" template field
         std::vector<std::pair<std::string, FlatEntity>> entityList; // Represented by the "entities" template field
 
-        TemplateParser(const std::shared_ptr<sp::Scene> &scene,
-            const Entity &rootEnt,
-            size_t prefabScriptId,
-            std::string source)
-            : scene(scene), rootEnt(rootEnt), prefabScriptId(prefabScriptId), sourceName(source) {
+        TemplateParser(std::string_view source = "") : sourceName(source) {
             if (sourceName.empty()) return;
             assetPtr = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true);
+            lastAccess = chrono_clock::now();
+        }
+
+        operator bool() const {
+            return assetPtr && !parseFailed && (chrono_clock::now() - lastAccess < templateCacheTime);
         }
 
         // The provided scope is used for debug logging only, the real scope of the resulting entities
         // is provided to the ApplyComponents() and AddEntities() functions
-        bool Parse(const EntityScope &parseScope) {
+        bool Parse() {
             if (!assetPtr) return false;
             ZoneScoped;
 
-            Debugf("Parsing template: %s in scope '%s'", sourceName, parseScope.String());
+            Debugf("Parsing template: %s", sourceName);
 
             auto asset = assetPtr->Get();
             if (!asset) {
@@ -65,6 +68,7 @@ namespace ecs {
             }
 
             auto &root = rootValue.get<picojson::object>();
+            ZoneNamedN(tracyScope2, "LoadEntities", true);
 
             auto entitiesIter = root.find("entities");
             if (entitiesIter != root.end()) {
@@ -75,7 +79,9 @@ namespace ecs {
                     return false;
                 }
 
-                for (auto &entityObj : entitiesIter->second.get<picojson::array>()) {
+                auto &entityArray = entitiesIter->second.get<picojson::array>();
+                entityList.reserve(entityArray.size());
+                for (auto &entityObj : entityArray) {
                     if (!entityObj.is<picojson::object>()) {
                         Errorf("Template 'entities' entry must be object (%s), ignoring: %s",
                             sourceName,
@@ -146,8 +152,14 @@ namespace ecs {
         }
 
         // Add defined components to the template root entity with the given name
-        Entity ApplyComponents(const Lock<AddRemove> &lock, EntityScope scope, Transform offset = {}) {
+        Entity ApplyComponents(const Lock<AddRemove> &lock,
+            const std::shared_ptr<sp::Scene> &scene,
+            const Entity &rootEnt,
+            size_t prefabScriptId,
+            EntityScope scope,
+            Transform offset = {}) const {
             ZoneScoped;
+            lastAccess = chrono_clock::now();
 
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", scope);
             ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
@@ -168,8 +180,14 @@ namespace ecs {
         }
 
         // Add defined entities as sub-entities of the template root
-        void AddEntities(const Lock<AddRemove> &lock, EntityScope scope, Transform offset = {}) {
+        void AddEntities(const Lock<AddRemove> &lock,
+            const std::shared_ptr<sp::Scene> &scene,
+            const Entity &rootEnt,
+            size_t prefabScriptId,
+            EntityScope scope,
+            Transform offset = {}) const {
             ZoneScoped;
+            lastAccess = chrono_clock::now();
 
             std::vector<Entity> scriptEntities;
             for (auto &[relativeName, flatEnt] : entityList) {
@@ -204,6 +222,21 @@ namespace ecs {
                 scriptManager.RunPrefabs(lock, e);
             }
         }
+
+        static const TemplateParser &GetParser(std::string_view source) {
+            // TODO: Convert this into AssetManager style cache to stop leaking forever
+            static robin_hood::unordered_node_map<std::string, TemplateParser, sp::StringHash, sp::StringEqual>
+                parserCache;
+            static sp::LockFreeMutex mutex;
+            std::lock_guard l(mutex);
+            auto it = parserCache.find(source);
+            if (it != parserCache.end()) {
+                if (it->second) return it->second;
+            }
+            TemplateParser &newParser = (parserCache[std::string(source)] = source);
+            if (!newParser.Parse()) newParser.parseFailed = true;
+            return newParser;
+        }
     };
 
     struct TemplatePrefab {
@@ -219,13 +252,13 @@ namespace ecs {
             EntityScope scope = Name(scene->data->name, "");
             if (ent.Has<Name>(lock)) scope = ent.Get<Name>(lock);
 
-            TemplateParser parser(scene, ent, state.GetInstanceId(), source);
-            if (!parser.Parse(scope)) return;
-
-            Entity rootOverride = parser.ApplyComponents(lock, scope);
-            parser.AddEntities(lock, scope);
-            if (rootOverride.Has<Scripts>(lock)) {
-                GetScriptManager().RunPrefabs(lock, rootOverride);
+            auto &parser = TemplateParser::GetParser(source);
+            if (parser) {
+                Entity rootOverride = parser.ApplyComponents(lock, scene, ent, state.GetInstanceId(), scope);
+                parser.AddEntities(lock, scene, ent, state.GetInstanceId(), scope);
+                if (rootOverride.Has<Scripts>(lock)) {
+                    GetScriptManager().RunPrefabs(lock, rootOverride);
+                }
             }
         }
     };
@@ -247,6 +280,8 @@ namespace ecs {
             Entity ent) {
             ZoneScoped;
 
+            size_t instanceId = state.GetInstanceId();
+
             if (axes.size() != 2) {
                 Errorf("'%s' axes are invalid, must tile on 2 unique axes: %s", axes, ToString(lock, ent));
                 return;
@@ -263,14 +298,12 @@ namespace ecs {
             EntityScope rootScope = Name(scene->data->name, "");
             if (ent.Has<Name>(lock)) rootScope = ent.Get<Name>(lock);
 
-            TemplateParser surface(scene, ent, state.GetInstanceId(), surfaceTemplate);
-            if (!surface.Parse(rootScope)) return;
-
-            TemplateParser edge(scene, ent, state.GetInstanceId(), edgeTemplate);
-            auto haveEdge = edge.Parse(rootScope);
-
-            TemplateParser corner(scene, ent, state.GetInstanceId(), cornerTemplate);
-            auto haveCorner = corner.Parse(rootScope);
+            auto &surface = TemplateParser::GetParser(surfaceTemplate);
+            if (!surface) return;
+            auto &edge = TemplateParser::GetParser(edgeTemplate);
+            auto haveEdge = !!edge;
+            auto &corner = TemplateParser::GetParser(cornerTemplate);
+            auto haveCorner = !!corner;
 
             glm::vec3 normal{1, 1, 1};
             normal[axesIndex.first] = 0;
@@ -286,7 +319,7 @@ namespace ecs {
 
                     EntityScope tileScope = Name(std::to_string(x) + "_" + std::to_string(y), rootScope);
 
-                    Entity tileEnt = surface.ApplyComponents(lock, tileScope, offset3D);
+                    Entity tileEnt = surface.ApplyComponents(lock, scene, ent, instanceId, tileScope, offset3D);
                     if (!tileEnt) {
                         // Most llkely a duplicate entity or invalid name
                         Errorf("Failed to create tiled template entity (%s), ignoring: '%s'",
@@ -298,7 +331,7 @@ namespace ecs {
                     auto &tileSignals = tileEnt.Get<SignalOutput>(lock).signals;
                     tileSignals.emplace("tile.x", x);
                     tileSignals.emplace("tile.y", y);
-                    surface.AddEntities(lock, tileScope, offset3D);
+                    surface.AddEntities(lock, scene, ent, instanceId, tileScope, offset3D);
 
                     auto xEdge = x == 0 || x == (count.x - 1);
                     auto yEdge = y == 0 || y == (count.y - 1);
@@ -314,8 +347,8 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
-                            corner.ApplyComponents(lock, tileScope, transform);
-                            corner.AddEntities(lock, tileScope, transform);
+                            corner.ApplyComponents(lock, scene, ent, instanceId, tileScope, transform);
+                            corner.AddEntities(lock, scene, ent, instanceId, tileScope, transform);
                         }
                     } else if (xEdge || yEdge) {
                         if (haveEdge) {
@@ -328,8 +361,8 @@ namespace ecs {
                                 transform.Rotate(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
-                            edge.ApplyComponents(lock, tileScope, transform);
-                            edge.AddEntities(lock, tileScope, transform);
+                            edge.ApplyComponents(lock, scene, ent, instanceId, tileScope, transform);
+                            edge.AddEntities(lock, scene, ent, instanceId, tileScope, transform);
                         }
                     }
                     if (tileEnt.Has<Scripts>(lock)) {

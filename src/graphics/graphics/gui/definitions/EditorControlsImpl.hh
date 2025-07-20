@@ -196,10 +196,11 @@ namespace sp {
             ImGui::SameLine();
         }
         ImGui::Button(value ? value.Name().String().c_str() : "None");
-        if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft)) {
-            auto selected = ShowAllEntities(fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
+        if (ImGui::BeginPopupContextItem(name.c_str(), ImGuiPopupFlags_MouseButtonLeft)) {
+            ecs::EntityRef selectedRef;
+            bool selected = ShowAllEntities(selectedRef, fieldId, 400, ImGui::GetTextLineHeightWithSpacing() * 25);
             if (selected) {
-                value = selected;
+                value = selectedRef;
                 changed = true;
                 ImGui::CloseCurrentPopup();
             }
@@ -484,7 +485,8 @@ namespace sp {
             liveSceneInfo.scene.data->name);
         auto &stagingInfo = stagingId.Get<ecs::SceneInfo>(staging);
 
-        auto flatParentEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId);
+        ecs::FlatEntity flatParentEntity;
+        scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), stagingInfo.nextStagingId, flatParentEntity);
         ecs::FlatEntity flatStagingEntity;
 
         ( // For each component:
@@ -504,7 +506,7 @@ namespace sp {
                     auto &comp = ecs::LookupComponent<T>();
 
                     T compareComp = {};
-                    auto &existingComp = std::get<std::shared_ptr<T>>(flatParentEntity);
+                    auto &existingComp = std::get<std::optional<T>>(flatParentEntity);
                     if (existingComp) {
                         comp.ApplyComponent(compareComp, *existingComp, true);
                     }

@@ -27,7 +27,7 @@ if(WIN32)
     target_link_libraries(${PROJECT_GAME_LIB} PUBLIC winmm)
 endif()
 
-target_precompile_headers(${PROJECT_GAME_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_GAME_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(console)
 add_subdirectory(editor)

@@ -48,7 +48,7 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        void SetDebugGui(GuiContext *gui);
+        void SetOverlayGui(GuiContext *gui);
         void SetMenuGui(GuiContext *gui);
 
     private:
@@ -92,10 +92,12 @@ namespace sp::vulkan {
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderableGui> guis;
-        GuiContext *debugGui = nullptr, *menuGui = nullptr;
+        GuiContext *overlayGui = nullptr, *menuGui = nullptr;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentObserver<ecs::Gui> guiObserver;
+        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
+        ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
+        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
         bool listImages = false;
 

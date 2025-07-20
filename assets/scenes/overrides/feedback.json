@@ -1,0 +1,18 @@
+{
+    "entities": [
+		{
+			"name": "feedback_light",
+			"transform": {
+                "parent": "player:pointer"
+			},
+			"light": {
+				"gel": "graph:FlatView.TonemappedLuminance",
+				"shadow_map_clip": [0.1, 64],
+				"shadow_map_size": 11,
+				"tint": [1, 1, 1],
+                "spot_angle": 31,
+                "intensity": 30
+			}
+		}
+    ]
+}
