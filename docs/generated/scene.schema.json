@@ -426,7 +426,7 @@
 								"enum": [
 									"None",
 									"World",
-									"Debug"
+									"Overlay"
 								],
 								"type": "string"
 							},
@@ -771,6 +771,11 @@
 							"model": {
 								"default": "",
 								"description": "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
+								"type": "string"
+							},
+							"texture_override": {
+								"default": "",
+								"description": "Override the mesh's texture to a specific texture resource. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
 								"type": "string"
 							},
 							"visibility": {

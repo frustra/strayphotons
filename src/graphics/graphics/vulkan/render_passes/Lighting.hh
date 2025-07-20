@@ -29,10 +29,8 @@ namespace sp::vulkan::renderer {
             ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
-        void AddGelTextures(RenderGraph &graph);
+        void SetLightTextures(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
-
-        bool PreloadGelTextures(ecs::Lock<ecs::Read<ecs::Light>> lock);
 
     private:
         void AllocateShadowMap();
@@ -65,8 +63,6 @@ namespace sp::vulkan::renderer {
 
             bool operator==(const VirtualLight &) const;
         };
-
-        robin_hood::unordered_map<string, TextureHandle> gelTextureCache;
 
         std::array<ecs::View, MAX_LIGHTS> views;
         std::vector<VirtualLight> lights; // Current frame shadowmap lights

@@ -41,7 +41,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         });
 
     funcs.Register<ecs::EntityRef, glm::vec3>("set_velocity",
-        "Sets an entity's velocity to the specified value in world-space (set_position <entity> <dx> <dy> <dz>)",
+        "Sets an entity's velocity to the specified value in world-space (set_velocity <entity> <dx> <dy> <dz>)",
         [this](ecs::EntityRef entityRef, glm::vec3 velocity) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::Physics>>();
             auto entity = entityRef.Get(lock);

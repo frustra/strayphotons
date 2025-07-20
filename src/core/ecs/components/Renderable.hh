@@ -53,6 +53,8 @@ namespace ecs {
         struct Joint {
             EntityRef entity;
             glm::mat4 inverseBindPose;
+
+            bool operator==(const Joint &other) const = default;
         };
         vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
@@ -60,11 +62,14 @@ namespace ecs {
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
         sp::color_alpha_t colorOverride = glm::vec4(-1);
+        string textureOverrideName;
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {
             return (visibility & viewMask) == viewMask;
         }
+
+        bool operator==(const Renderable &other) const = default;
     };
 
     static EntityComponent<Renderable> ComponentRenderable("renderable",
@@ -90,6 +95,11 @@ It is usually preferred to load the model using the [gltf Prefab Script](#gltf-p
             "Override the mesh's texture to a flat RGBA color. "
             "Values are in the range 0.0 to 1.0. -1 means the original color is used.",
             &Renderable::colorOverride),
+        StructField::New("texture_override",
+            "Override the mesh's texture to a specific texture resource. "
+            "Asset textures can be referenced with the format \"asset:<asset_path>.png\", "
+            "or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
+            &Renderable::textureOverrideName),
         StructField::New("metallic_roughness_override",
             "Override the mesh's metallic and roughness material properties. "
             "Values are in the range 0.0 to 1.0. -1 means the original material is used.",

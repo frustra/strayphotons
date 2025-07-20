@@ -16,6 +16,7 @@ It is usually preferred to load the model using the [gltf Prefab Script](#gltf-p
 | **visibility** | enum flags [VisibilityMask](#VisibilityMask-type) | "DirectCamera\|DirectEye\|LightingShadow\|LightingVoxel" | Visibility mask for different render passes. |
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |
+| **texture_override** | string | "" | Override the mesh's texture to a specific texture resource. Asset textures can be referenced with the format "asset:<asset_path>.png", or render graph outputs can be referenced with the format "graph:<graph_output_name>" |
 | **metallic_roughness_override** | vec2 | [-1, -1] | Override the mesh's metallic and roughness material properties. Values are in the range 0.0 to 1.0. -1 means the original material is used. |
 
 <div class="type_definition">
@@ -51,7 +52,7 @@ Enum flag names:
 This is an **enum** type, and can be one of the following case-sensitive values:
 - "**None**" - No description
 - "**World**" - No description
-- "**Debug**" - No description
+- "**Overlay**" - No description
 
 </div>
 

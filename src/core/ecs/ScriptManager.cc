@@ -86,7 +86,7 @@ namespace ecs {
     }
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state, bool runInit) {
-        // ZoneScoped;
+        DebugZoneScoped;
         auto &scriptSet = scripts[state.definition.type];
         switch (state.definition.type) {
         case ScriptType::LogicScript:
@@ -113,7 +113,7 @@ namespace ecs {
 
         ScriptState *scriptStatePtr = nullptr;
         {
-            // ZoneScopedN("InitScriptState");
+            DebugZoneScopedN("InitScriptState");
             std::shared_lock l1(dynamicLibraryMutex);
             std::lock_guard l2(scriptSet.mutex);
             size_t newIndex;
@@ -301,8 +301,8 @@ namespace ecs {
             if (!ent.Has<Scripts>(lock)) continue;
             auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            // ZoneScopedN("OnTick");
-            // ZoneStr(ecs::ToString(lock, ent));
+            DebugZoneScopedN("OnTick");
+            DebugZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
@@ -317,8 +317,8 @@ namespace ecs {
             if (!ent.Has<Scripts>(lock)) continue;
             auto &callback = std::get<OnTickFunc>(state.definition.callback);
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            // ZoneScopedN("OnPhysicsUpdate");
-            // ZoneStr(ecs::ToString(lock, ent));
+            DebugZoneScopedN("OnPhysicsUpdate");
+            DebugZoneStr(ecs::ToString(lock, ent));
             callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
@@ -330,7 +330,7 @@ namespace ecs {
         // if (!ent.Get<const Scripts>(lock).HasPrefab()) return;
 
         ZoneScopedN("RunPrefabs");
-        // ZoneStr(ecs::ToString(lock, ent));
+        DebugZoneStr(ecs::ToString(lock, ent));
 
         auto scene = ent.Get<const SceneInfo>(lock).scene;
         Assertf(scene, "RunPrefabs entity has null scene: %s", ecs::ToString(lock, ent));

@@ -32,7 +32,7 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            soundObserver = lock.Watch<ecs::ComponentEvent<ecs::Audio>>();
+            soundObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Audio>>();
         }
 
         StartThread();
@@ -143,7 +143,7 @@ namespace sp {
             resonance->SetHeadRotation(rot.x, rot.y, rot.z, rot.w);
         }
 
-        ecs::ComponentEvent<ecs::Audio> compEvent;
+        ecs::ComponentAddRemoveEvent<ecs::Audio> compEvent;
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type == Tecs::EventType::ADDED) {
                 if (!compEvent.entity.Has<ecs::EventInput, ecs::Audio>(lock)) continue;
@@ -195,6 +195,7 @@ namespace sp {
                     state.occlusion = 0;
                     state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
                         [this, file = source.file](shared_ptr<Asset> asset) {
+                            ZoneScopedN("DecodeAudioData");
                             if (!asset) {
                                 Logf("Audio file missing: %s", file->Get()->path.string());
                                 return shared_ptr<nqr::AudioData>();
@@ -218,16 +219,19 @@ namespace sp {
                 auto &state = sounds.Get(id);
                 auto resonanceID = state.resonanceID;
                 if (resonanceID == -1 && state.audioBuffer->Ready()) {
-                    auto channelCount = state.audioBuffer->Get()->channelCount;
-                    if (source.type == ecs::SoundType::Object) {
-                        resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
-                    } else if (source.type == ecs::SoundType::Stereo) {
-                        resonanceID = resonance->CreateStereoSource(channelCount);
-                    } else if (source.type == ecs::SoundType::Ambisonic) {
-                        resonanceID = resonance->CreateAmbisonicSource(channelCount);
+                    auto dataBuffer = state.audioBuffer->Get();
+                    if (dataBuffer) {
+                        auto channelCount = dataBuffer->channelCount;
+                        if (source.type == ecs::SoundType::Object) {
+                            resonanceID = resonance->CreateSoundObjectSource(vraudio::kBinauralHighQuality);
+                        } else if (source.type == ecs::SoundType::Stereo) {
+                            resonanceID = resonance->CreateStereoSource(channelCount);
+                        } else if (source.type == ecs::SoundType::Ambisonic) {
+                            resonanceID = resonance->CreateAmbisonicSource(channelCount);
+                        }
+                        state.resonanceID = resonanceID;
+                        sounds.MakeItemValid(id);
                     }
-                    state.resonanceID = resonanceID;
-                    sounds.MakeItemValid(id);
                 }
 
                 if (resonanceID != -1) {

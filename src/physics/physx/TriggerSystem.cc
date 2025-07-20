@@ -18,7 +18,7 @@
 namespace sp {
     TriggerSystem::TriggerSystem() {
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        triggerGroupObserver = lock.Watch<ecs::ComponentEvent<ecs::TriggerGroup>>();
+        triggerGroupObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TriggerGroup>>();
     }
 
     TriggerSystem::~TriggerSystem() {
@@ -31,7 +31,7 @@ namespace sp {
         ecs::SendEventsLock> lock) {
         ZoneScoped;
 
-        ecs::ComponentEvent<ecs::TriggerGroup> triggerEvent;
+        ecs::ComponentAddRemoveEvent<ecs::TriggerGroup> triggerEvent;
         while (triggerGroupObserver.Poll(lock, triggerEvent)) {
             if (triggerEvent.type == Tecs::EventType::REMOVED) {
                 for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {

@@ -12,9 +12,9 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    class LobbyGui : public GuiWindow {
+    class LobbyGui final : public GuiRenderable {
     public:
-        LobbyGui(const string &name) : GuiWindow(name) {}
+        LobbyGui(const string &name) : GuiRenderable(name, GuiLayoutAnchor::Fullscreen) {}
         virtual ~LobbyGui() {}
 
         enum class State { Initial, Page1 };
@@ -24,7 +24,7 @@ namespace sp {
         void DefineContents() {
             ZoneScoped;
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 20});
-            PushFont(Font::Primary, 32);
+            PushFont(GuiFont::Primary, 32);
             if (state == State::Initial) {
                 if (ImGui::Button("Check In")) state = State::Page1;
             } else if (state == State::Page1) {

@@ -18,7 +18,10 @@
 
 namespace sp {
     InspectorGui::InspectorGui(const string &name)
-        : GuiWindow(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
+        : GuiRenderable(name,
+              GuiLayoutAnchor::Right,
+              {400, -1},
+              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
@@ -30,18 +33,44 @@ namespace sp {
         });
     }
 
-    void InspectorGui::PreDefine() {
-        auto *viewport = ImGui::GetMainViewport();
-        ImGuiIO &io = ImGui::GetIO();
-        ImGui::SetNextWindowSize(ImVec2(std::min(500.0f, io.DisplaySize.x), viewport->Size.y));
-        ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + viewport->Size.x, viewport->Pos.y),
-            ImGuiCond_None,
-            ImVec2(1, 0));
+    bool InspectorGui::PreDefine() {
+        if (!context) return false;
+        ZoneScoped;
+        {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::ActiveScene>>();
+
+            if (lock.Has<ecs::ActiveScene>()) {
+                auto &active = lock.Get<ecs::ActiveScene>();
+                if (context->scene != active.scene) {
+                    ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>([scene = context->scene](auto &lock) {
+                        if (lock.template Has<ecs::ActiveScene>()) {
+                            lock.template Set<ecs::ActiveScene>(scene);
+                        }
+                    });
+                }
+            }
+
+            ecs::Event event;
+            while (ecs::EventInput::Poll(lock, events, event)) {
+                if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
+
+                if (event.data.type == ecs::EventDataType::Entity) {
+                    ecs::Entity newTarget = event.data.ent;
+                    targetEntity = newTarget;
+                    targetStagingEntity = ecs::IsStaging(newTarget);
+                } else {
+                    Errorf("Invalid editor event: %s", event.ToString());
+                }
+            }
+            if (!targetEntity) return false;
+        }
+
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.96f));
         ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.01f, 0.01f, 0.01f, 0.96f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.10f, 0.15f, 0.40f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
+        return true;
     }
 
     void InspectorGui::PostDefine() {
@@ -49,78 +78,49 @@ namespace sp {
     }
 
     void InspectorGui::DefineContents() {
-        if (!context) return;
         ZoneScoped;
 
-        bool selectEntityView = false;
-        {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::ActiveScene>>();
-
-            ecs::Event event;
-            while (ecs::EventInput::Poll(lock, events, event)) {
-                if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
-
-                if (event.data.type == ecs::EventDataType::Entity) {
-                    ecs::Entity ent = event.data.ent;
-                    targetEntity = ent;
-                    if (ent && ecs::IsStaging(ent)) selectEntityView = true;
-                } else {
-                    Errorf("Invalid editor event: %s", event.ToString());
-                }
-            }
-
-            if (lock.Has<ecs::ActiveScene>()) {
-                auto &active = lock.Get<ecs::ActiveScene>();
-                if (context->scene != active.scene) {
-                    std::thread([scene = context->scene]() {
-                        auto lock = ecs::StartTransaction<ecs::Write<ecs::ActiveScene>>();
-                        if (lock.Has<ecs::ActiveScene>()) {
-                            lock.Set<ecs::ActiveScene>(scene);
-                        }
-                    }).detach();
-                }
-            }
-        }
-
         if (ImGui::BeginTabBar("EditMode")) {
-            bool liveTabOpen = ImGui::BeginTabItem("Live View");
-            if (!targetEntity && ImGui::IsItemActivated()) {
-                context->RefreshEntityTree();
-            }
-            if (liveTabOpen) {
-                if (targetEntity) {
-                    if (ImGui::Button("Show Entity Tree")) {
-                        context->RefreshEntityTree();
-                        targetEntity = {};
-                    }
-
+            ImGuiTabItemFlags openFlags = ImGuiTabItemFlags_None;
+            if (targetEntity && !targetStagingEntity && stagingTabSelected) openFlags = ImGuiTabItemFlags_SetSelected;
+            if (ImGui::BeginTabItem("Live View", nullptr, openFlags)) {
+                stagingTabSelected = false;
+                if (ImGui::Button("Close")) {
+                    targetEntity = {};
+                } else {
                     auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
                     context->ShowEntityControls(liveLock, targetEntity);
-                } else {
-                    targetEntity = context->ShowEntityTree();
-                }
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Entity View",
-                    nullptr,
-                    selectEntityView ? ImGuiTabItemFlags_SetSelected : ImGuiTabItemFlags_None)) {
-                if (!targetEntity) {
-                    targetEntity = context->ShowAllEntities("##EntityList");
-                } else {
-                    if (ImGui::Button("Show All Entities")) {
-                        targetEntity = {};
+                    if (targetEntity != context->target) {
+                        ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                            ecs::EventBindings::SendEvent(lock,
+                                inspectorEntity,
+                                ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), context->target});
+                        });
                     } else {
-                        auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
-
-                        context->ShowEntityControls(stagingLock, targetEntity);
-                        targetEntity = context->target;
+                        targetStagingEntity = ecs::IsStaging(context->target);
                     }
                 }
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Scene View")) {
-                auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
-                context->ShowSceneControls(stagingLock);
+            openFlags = ImGuiTabItemFlags_None;
+            if (targetEntity && targetStagingEntity && !stagingTabSelected) openFlags = ImGuiTabItemFlags_SetSelected;
+            if (ImGui::BeginTabItem("Entity View", nullptr, openFlags)) {
+                stagingTabSelected = true;
+                if (ImGui::Button("Close")) {
+                    targetEntity = {};
+                } else {
+                    auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
+                    context->ShowEntityControls(stagingLock, targetEntity);
+                    if (targetEntity != context->target) {
+                        ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                            ecs::EventBindings::SendEvent(lock,
+                                inspectorEntity,
+                                ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), context->target});
+                        });
+                    } else {
+                        targetStagingEntity = ecs::IsStaging(context->target);
+                    }
+                }
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Signal Debugger")) {

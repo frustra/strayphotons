@@ -76,7 +76,7 @@ namespace sp::vulkan {
         auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
             if (!image) {
                 Warnf("Missing asset image: %s", name);
-                return make_shared<Async<ImageView>>(GetSinglePixel(glm::vec4(1, 0, 1, 1)));
+                return make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
             }
             return device.LoadAssetImage(image, genMipmap, srgb);
         });

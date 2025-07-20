@@ -85,7 +85,7 @@ namespace sp::vulkan::renderer {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::LightSensor>>();
             for (int i = 0; i < data->gpu.sensorCount; i++) {
                 auto entity = data->entities[i];
-                if (entity.Exists(lock)) {
+                if (entity.Has<ecs::LightSensor>(lock)) {
                     auto &sensor = entity.Get<ecs::LightSensor>(lock);
                     sensor.illuminance = illuminanceValues[i];
                 }

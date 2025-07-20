@@ -30,6 +30,7 @@ namespace sp::vulkan::render_graph {
             Undefined,
             Image,
             Buffer,
+            Future,
         };
 
         Resource() {}

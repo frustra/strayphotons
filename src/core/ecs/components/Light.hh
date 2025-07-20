@@ -23,6 +23,8 @@ namespace ecs {
         bool on = true;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane
+
+        bool operator==(const Light &other) const = default;
     };
 
     static EntityComponent<Light> ComponentLight("light",

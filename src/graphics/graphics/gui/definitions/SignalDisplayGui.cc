@@ -15,13 +15,14 @@
 
 namespace sp {
     SignalDisplayGui::SignalDisplayGui(const string &name, const ecs::Entity &ent)
-        : GuiWindow(name), signalEntity(ent) {}
+        : GuiRenderable(name, GuiLayoutAnchor::Floating), signalEntity(ent) {}
 
-    void SignalDisplayGui::PreDefine() {
+    bool SignalDisplayGui::PreDefine() {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        PushFont(Font::Monospace, 32);
+        PushFont(GuiFont::Monospace, 32);
+        return true;
     }
 
     void SignalDisplayGui::PostDefine() {

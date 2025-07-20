@@ -117,12 +117,16 @@ namespace ecs {
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
     template<typename T>
-    using EntityObserver = Tecs::Observer<ECS, Tecs::EntityEvent>;
-    using EntityEvent = Tecs::EntityEvent;
+    using EntityAddRemoveObserver = Tecs::Observer<ECS, Tecs::EntityAddRemoveEvent>;
+    using EntityAddRemoveEvent = Tecs::EntityAddRemoveEvent;
     template<typename T>
-    using ComponentObserver = Tecs::Observer<ECS, Tecs::ComponentEvent<T>>;
+    using ComponentAddRemoveObserver = Tecs::Observer<ECS, Tecs::ComponentAddRemoveEvent<T>>;
     template<typename T>
-    using ComponentEvent = Tecs::ComponentEvent<T>;
+    using ComponentAddRemoveEvent = Tecs::ComponentAddRemoveEvent<T>;
+    template<typename T>
+    using ComponentModifiedObserver = Tecs::Observer<ECS, Tecs::ComponentModifiedEvent<T>>;
+    template<typename T>
+    using ComponentModifiedEvent = Tecs::ComponentModifiedEvent<T>;
 
     namespace detail {
         template<typename>
@@ -131,7 +135,7 @@ namespace ecs {
         };
         template<typename... Tn>
         struct make_flat_components<Tecs::ECS<Tn...>> {
-            using type = std::tuple<std::shared_ptr<Tn>...>;
+            using type = std::tuple<std::optional<Tn>...>;
         };
     } // namespace detail
 

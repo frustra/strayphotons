@@ -15,8 +15,8 @@
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/core/GraphicsManager.hh"
-#include "graphics/gui/DebugGuiManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
+#include "graphics/gui/OverlayGuiManager.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -576,14 +576,12 @@ namespace sp::vulkan {
         swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
-        // TODO: Check capabilities.currentExtent is valid and correctly handles high dpi
-        if (surfaceCapabilities.currentExtent.width > surfaceCapabilities.maxImageExtent.width ||
-            surfaceCapabilities.currentExtent.height > surfaceCapabilities.maxImageExtent.height) {
-            swapchainInfo.imageExtent.setHeight(CVarWindowSize.Get().y);
-            swapchainInfo.imageExtent.setWidth(CVarWindowSize.Get().x);
-        } else {
-            swapchainInfo.imageExtent = surfaceCapabilities.currentExtent;
-        }
+        swapchainInfo.imageExtent.width = glm::clamp(surfaceCapabilities.currentExtent.width,
+            surfaceCapabilities.minImageExtent.width,
+            surfaceCapabilities.maxImageExtent.width);
+        swapchainInfo.imageExtent.height = glm::clamp(surfaceCapabilities.currentExtent.height,
+            surfaceCapabilities.minImageExtent.height,
+            surfaceCapabilities.maxImageExtent.height);
         swapchainInfo.imageArrayLayers = 1;
         // TODO: use vk::ImageUsageFlagBits::eTransferDst for rendering from another texture
         swapchainInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
@@ -626,11 +624,11 @@ namespace sp::vulkan {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
 
-    void DeviceContext::SetDebugGui(DebugGuiManager *debugGui) {
+    void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
         auto *perfTimer = GetPerfTimer();
-        if (perfTimer) debugGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
+        if (perfTimer) overlayGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
 
-        if (vkRenderer) vkRenderer->SetDebugGui(debugGui);
+        if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
     }
 
     void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {

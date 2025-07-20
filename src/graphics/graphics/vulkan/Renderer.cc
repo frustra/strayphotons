@@ -12,7 +12,7 @@
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/WorldGuiManager.hh"
+#include "graphics/gui/WorldGuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -59,7 +59,9 @@ namespace sp::vulkan {
         });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        guiObserver = lock.Watch<ecs::ComponentEvent<ecs::Gui>>();
+        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>();
+        renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
+        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
             AddGui(ent, ent.Get<const ecs::Gui>(lock));
@@ -71,6 +73,13 @@ namespace sp::vulkan {
 
     Renderer::~Renderer() {
         device->waitIdle();
+
+        {
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
+            guiObserver.Stop(lock);
+            renderableObserver.Stop(lock);
+            lightObserver.Stop(lock);
+        }
     }
 
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
@@ -143,7 +152,8 @@ namespace sp::vulkan {
         lighting.AddShadowPasses(graph);
         AddWorldGuis(lock);
         AddMenuGui(lock);
-        lighting.AddGelTextures(graph);
+        scene.AddGraphTextures(graph);
+        lighting.SetLightTextures(graph);
         voxels.AddVoxelizationInit(graph, lighting);
         voxels.AddVoxelization(graph, lighting);
         voxels.AddVoxelization2(graph, lighting);
@@ -235,12 +245,12 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(source);
                 }
 
-                if (debugGui) {
+                if (overlayGui) {
                     auto windowScale = CVarWindowScale.Get();
                     if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
                     if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
 
-                    guiRenderer->Render(*debugGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()}, windowScale);
+                    guiRenderer->Render(*overlayGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()}, windowScale);
                 }
             });
 
@@ -493,7 +503,7 @@ namespace sp::vulkan {
 
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
         if (!gui.windowName.empty()) {
-            auto context = make_shared<WorldGuiManager>(ent, gui.windowName);
+            auto context = make_shared<WorldGuiContext>(ent, gui.windowName);
             auto window = CreateGuiWindow(gui.windowName, ent);
             if (window) {
                 context->Attach(window);
@@ -506,7 +516,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock) {
-        ecs::ComponentEvent<ecs::Gui> guiEvent;
+        ecs::ComponentAddRemoveEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
 
@@ -640,49 +650,101 @@ namespace sp::vulkan {
         ZoneScoped;
         guiRenderer->Tick();
 
-        GetSceneManager().PreloadSceneGraphics([this](auto lock, auto scene) {
+        auto setModel = [](auto &lock, ecs::Entity ent, AsyncPtr<Gltf> model) {
+            if constexpr (Tecs::is_write_allowed<ecs::Renderable, std::decay_t<decltype(lock)>>()) {
+                auto &renderable = ent.Get<ecs::Renderable>(lock);
+                renderable.model = model;
+                return true;
+            } else {
+                ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ref = ecs::EntityRef(ent), model](auto lock) {
+                    ecs::Entity ent = ref.Get(lock);
+                    if (!ent.Has<ecs::Renderable>(lock)) return;
+                    auto &renderable = ent.Get<ecs::Renderable>(lock);
+                    renderable.model = model;
+                });
+                return false;
+            }
+        };
+
+        auto loadModel = [&](auto lock, ecs::Entity ent) {
+            auto &renderable = ent.Get<ecs::Renderable>(lock);
+            if (renderable.modelName.empty()) {
+                setModel(lock, ent, nullptr);
+                return true;
+            } else if (!renderable.model) {
+                if (!setModel(lock, ent, sp::Assets().LoadGltf(renderable.modelName))) {
+                    return false;
+                }
+            }
+            if (!renderable.model->Ready()) {
+                return false;
+            }
+
+            auto model = renderable.model->Get();
+            if (!model) {
+                Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
+                setModel(lock, ent, sp::Assets().LoadGltf(renderable.modelName));
+                // Don't hang preloading if models are null
+                return true;
+            } else if (renderable.modelName != model->name) {
+                setModel(lock, ent, sp::Assets().LoadGltf(renderable.modelName));
+                return false;
+            } else if (renderable.meshIndex >= model->meshes.size()) {
+                Errorf("Renderable %s mesh index is out of range: %u/%u",
+                    ecs::ToString(lock, ent),
+                    renderable.meshIndex,
+                    model->meshes.size());
+                return true;
+            }
+
+            auto vkMesh = this->scene.LoadMesh(model, renderable.meshIndex);
+            if (!vkMesh) {
+                return false;
+            }
+            if (!vkMesh->CheckReady()) return false;
+            return true;
+        };
+
+        GetSceneManager().PreloadSceneGraphics([&](auto lock, auto scene) {
             ZoneScopedN("PreloadSceneGraphics");
             bool complete = true;
             for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {
                 if (!ent.Has<ecs::SceneInfo>(lock)) continue;
                 if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
-
-                auto &renderable = ent.Get<ecs::Renderable>(lock);
-                if (!renderable.model) continue;
-                if (!renderable.model->Ready()) {
-                    complete = false;
-                    continue;
-                }
-
-                auto model = renderable.model->Get();
-                if (!model) {
-                    Errorf("Preloading renderable with null model: %s", ecs::ToString(lock, ent));
-                    continue;
-                } else if (renderable.meshIndex >= model->meshes.size()) {
-                    Errorf("Preloading renderable with out of range mesh index %u/%u: %s",
-                        renderable.meshIndex,
-                        model->meshes.size(),
-                        ecs::ToString(lock, ent));
-                    continue;
-                }
-
-                auto vkMesh = this->scene.LoadMesh(model, renderable.meshIndex);
-                if (!vkMesh) {
-                    complete = false;
-                    continue;
-                }
-                if (!vkMesh->CheckReady()) complete = false;
+                if (!loadModel(lock, ent)) complete = false;
             }
-            if (!lighting.PreloadGelTextures(lock)) complete = false;
+            if (!this->scene.PreloadTextures(lock)) complete = false;
             if (!smaa.PreloadTextures()) complete = false;
             return complete;
         });
 
+        {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable>>();
+            bool anyTexturesChanged = false;
+            ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
+            while (renderableObserver.Poll(lock, renderableEvent)) {
+                // Logf("Renderable entity changed: %s",
+                //     ecs::ToString(lock, renderableEvent.entity),
+                //     renderableEvent.component.modelName);
+                loadModel(lock, renderableEvent);
+                anyTexturesChanged = true;
+            }
+
+            ecs::ComponentModifiedEvent<ecs::Light> lightEvent;
+            while (lightObserver.Poll(lock, lightEvent)) {
+                // Logf("Light entity changed: %s",
+                //     ecs::ToString(lock, lightEvent.entity),
+                //     lightEvent.component.gelName);
+                anyTexturesChanged = true;
+            }
+            if (anyTexturesChanged) scene.PreloadTextures(lock);
+        }
+
         scene.Flush();
     }
 
-    void Renderer::SetDebugGui(GuiContext *gui) {
-        debugGui = gui;
+    void Renderer::SetOverlayGui(GuiContext *gui) {
+        overlayGui = gui;
     }
 
     void Renderer::SetMenuGui(GuiContext *gui) {

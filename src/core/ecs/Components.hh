@@ -10,15 +10,6 @@
 #include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructMetadata.hh"
-#include "ecs/components/Name.hh"
-#include "ecs/components/SceneInfo.hh"
-
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
-#include <typeindex>
 
 namespace picojson {
     class value;
@@ -47,10 +38,12 @@ namespace ecs {
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
+        virtual void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const = 0;
         virtual void SetComponent(const Lock<AddRemove> &lock,
             const EntityScope &scope,
             const Entity &dst,
             const FlatEntity &src) const = 0;
+        virtual void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const = 0;
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
         virtual bool HasComponent(const FlatEntity &ent) const = 0;
         virtual const void *Access(const DynamicLock<> &lock, Entity ent) const = 0;
@@ -138,100 +131,29 @@ namespace ecs {
             return false;
         }
 
-        bool LoadFields(CompType &dst, const picojson::value &src) const {
-            for (auto &field : metadata.fields) {
-                if (!field.Load(&dst, src)) {
-                    Errorf("Component %s has invalid field: %s", name, field.name);
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool LoadEntity(FlatEntity &dst, const picojson::value &src) const override {
-            CompType comp = defaultStagingComponent;
-            if (!LoadFields(comp, src)) return false;
-            if (StructMetadata::Load<CompType>(comp, src)) {
-                std::get<std::shared_ptr<CompType>>(dst) = std::make_shared<CompType>(std::move(comp));
-                return true;
-            }
-            return false;
-        }
-
+        bool LoadFields(CompType &dst, const picojson::value &src) const;
+        bool LoadEntity(FlatEntity &dst, const picojson::value &src) const override;
         void SaveEntity(const Lock<ReadAll> &lock,
             const EntityScope &scope,
             picojson::value &dst,
-            const Entity &src) const override {
-            auto &comp = src.Get<CompType>(lock);
+            const Entity &src) const override;
 
-            if (IsLive(lock)) {
-                for (auto &field : metadata.fields) {
-                    field.Save(scope, dst, &comp, &defaultLiveComponent);
-                }
-                StructMetadata::Save<CompType>(scope, dst, comp, &defaultLiveComponent);
-            } else {
-                for (auto &field : metadata.fields) {
-                    field.Save(scope, dst, &comp, &defaultStagingComponent);
-                }
-                StructMetadata::Save<CompType>(scope, dst, comp, &defaultStagingComponent);
-            }
-        }
-
-        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
-            const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
-            // Merge existing component with a new one
-            for (auto &field : metadata.fields) {
-                field.Apply(&dst, &src, &defaultComponent);
-            }
-            Apply(dst, src, liveTarget);
-        }
-
+        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const;
+        void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const override;
         void SetComponent(const Lock<AddRemove> &lock,
             const EntityScope &scope,
             const Entity &dst,
-            const FlatEntity &src) const override {
-            auto &opt = std::get<std::shared_ptr<CompType>>(src);
-            if (opt) {
-                auto &comp = dst.Set<CompType>(lock, *opt);
-                scope::SetScope(comp, scope);
-            }
-        }
+            const FlatEntity &src) const override;
+        void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
+        bool HasComponent(const Lock<> &lock, Entity ent) const override;
+        bool HasComponent(const FlatEntity &ent) const override;
 
-        bool HasComponent(const Lock<> &lock, Entity ent) const override {
-            return ent.Has<CompType>(lock);
-        }
+        const void *Access(const DynamicLock<> &lock, Entity ent) const override;
+        void *AccessMut(const DynamicLock<> &lock, Entity ent) const override;
 
-        bool HasComponent(const FlatEntity &ent) const override {
-            return (bool)std::get<std::shared_ptr<CompType>>(ent);
-        }
-
-        const void *Access(const DynamicLock<> &lock, Entity ent) const override {
-            if (auto tryLock = lock.TryLock<Read<CompType>>()) {
-                return &ent.Get<const CompType>(*tryLock);
-            } else {
-                return nullptr;
-            }
-        }
-
-        void *AccessMut(const DynamicLock<> &lock, Entity ent) const override {
-            if (auto tryLock = lock.TryLock<Write<CompType>>()) {
-                return &ent.Get<CompType>(*tryLock);
-            } else {
-                return nullptr;
-            }
-        }
-
-        const void *GetLiveDefault() const override {
-            return &defaultLiveComponent;
-        }
-
-        const void *GetStagingDefault() const override {
-            return &defaultStagingComponent;
-        }
-
-        const CompType &StagingDefault() const {
-            return defaultStagingComponent;
-        }
+        const void *GetLiveDefault() const override;
+        const void *GetStagingDefault() const override;
+        const CompType &StagingDefault() const;
 
         bool operator==(const EntityComponent<CompType> &other) const {
             return name == other.name && metadata == other.metadata;
@@ -284,15 +206,7 @@ namespace ecs {
             return true;
         }
 
-        bool LoadFields(CompType &dst, const picojson::value &src) const {
-            for (auto &field : metadata.fields) {
-                if (!field.Load(&dst, src)) {
-                    Errorf("Component %s has invalid field: %s", name, field.name);
-                    return false;
-                }
-            }
-            return true;
-        }
+        bool LoadFields(CompType &dst, const picojson::value &src) const;
 
         bool LoadEntity(FlatEntity &, const picojson::value &) const override {
             return false;
@@ -300,61 +214,24 @@ namespace ecs {
 
         void SaveEntity(const Lock<ReadAll> &, const EntityScope &, picojson::value &, const Entity &) const override {}
 
-        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
-            const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
-            // Merge existing component with a new one
-            for (auto &field : metadata.fields) {
-                field.Apply(&dst, &src, &defaultComponent);
-            }
-            Apply(dst, src, liveTarget);
-        }
+        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const;
 
+        void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const override;
         void SetComponent(const Lock<AddRemove> &lock,
             const EntityScope &scope,
             const Entity &,
-            const FlatEntity &src) const override {
-            auto &opt = std::get<std::shared_ptr<CompType>>(src);
-            if (opt) {
-                auto &comp = lock.Set<CompType>(*opt);
-                scope::SetScope(comp, scope);
-            }
-        }
+            const FlatEntity &src) const override;
+        void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
 
-        bool HasComponent(const Lock<> &lock, Entity) const override {
-            return lock.Has<CompType>();
-        }
+        bool HasComponent(const Lock<> &lock, Entity) const override;
+        bool HasComponent(const FlatEntity &ent) const override;
 
-        bool HasComponent(const FlatEntity &ent) const override {
-            return (bool)std::get<std::shared_ptr<CompType>>(ent);
-        }
+        const void *Access(const DynamicLock<> &lock, Entity) const override;
+        void *AccessMut(const DynamicLock<> &lock, Entity) const override;
 
-        const void *Access(const DynamicLock<> &lock, Entity) const override {
-            if (auto tryLock = lock.TryLock<Read<CompType>>()) {
-                return &tryLock->template Get<const CompType>();
-            } else {
-                return nullptr;
-            }
-        }
-
-        void *AccessMut(const DynamicLock<> &lock, Entity) const override {
-            if (auto tryLock = lock.TryLock<Write<CompType>>()) {
-                return &tryLock->template Get<CompType>();
-            } else {
-                return nullptr;
-            }
-        }
-
-        const void *GetLiveDefault() const override {
-            return &defaultLiveComponent;
-        }
-
-        const void *GetStagingDefault() const override {
-            return &defaultStagingComponent;
-        }
-
-        const CompType &StagingDefault() const {
-            return defaultStagingComponent;
-        }
+        const void *GetLiveDefault() const override;
+        const void *GetStagingDefault() const override;
+        const CompType &StagingDefault() const;
 
         bool operator==(const GlobalComponent<CompType> &other) const {
             return name == other.name && metadata == other.metadata;
@@ -369,104 +246,4 @@ namespace ecs {
             // Custom field apply is always called, default to no-op.
         }
     };
-
-    // Define these special components here to solve circular includes
-    static EntityComponent<Name> ComponentName(
-        StructMetadata{
-            typeid(Name),
-            sizeof(Name),
-            "Name",
-            DocsDescriptionName,
-            StructField::New("scene", &Name::scene, FieldAction::None),
-            StructField::New("entity", &Name::entity, FieldAction::None),
-        },
-        "name");
-    static EntityComponent<SceneInfo> ComponentSceneInfo("SceneInfo",
-        "This is an internal component storing each entity's source scene and other creation info.");
-
-    static StructMetadata MetadataEntity(typeid(Entity), sizeof(Entity), "Entity", "");
-    static StructMetadata MetadataNamedEntity(typeid(NamedEntity),
-        sizeof(NamedEntity),
-        "NamedEntity",
-        "",
-        StructFunction::New("Name", "Returns the name of the entity being referenced", &NamedEntity::Name),
-        StructFunction::New("Get",
-            "Returns the actual entity being referenced",
-            &NamedEntity::Get,
-            ArgDesc("lock", "")),
-        StructFunction::New("IsValid", "Returns true if this reference is non-empty", &NamedEntity::IsValid),
-        StructFunction::New("Find", "Finds the name of an existing entity", &NamedEntity::Find, ArgDesc("ent", "")),
-        StructFunction::New("Lookup",
-            "Looks up an entity by name",
-            &NamedEntity::Lookup,
-            ArgDesc("name", ""),
-            ArgDesc("scope", "")),
-        StructFunction::New("Clear", "Clears the entity and sets it back to empty", &NamedEntity::Clear));
-
-    static StructMetadata MetadataEntityRef(typeid(EntityRef),
-        sizeof(EntityRef),
-        "EntityRef",
-        DocsDescriptionEntityRef,
-        StructFunction::New("Name", "Returns the name of the entity being referenced", &EntityRef::Name),
-        StructFunction::New("Get", "Returns the actual entity being referenced", &EntityRef::Get, ArgDesc("lock", "")),
-        StructFunction::New("IsValid", "Returns true if this reference is non-empty", &EntityRef::IsValid),
-        StructFunction::New("Empty", "Create a new empty entity reference", &EntityRef::Empty),
-        StructFunction::New("New",
-            "Create a new entity reference from an existing entity",
-            &EntityRef::New,
-            ArgDesc("ent", "")),
-        StructFunction::New("Copy",
-            "Create a new entity reference from an existing reference",
-            &EntityRef::Copy,
-            ArgDesc("ref", "")),
-        StructFunction::New("Lookup",
-            "Create a new entity reference by name",
-            &EntityRef::Lookup,
-            ArgDesc("name", ""),
-            ArgDesc("scope", "")),
-        StructFunction::New("Clear", "Clears the reference and sets it back to empty", &EntityRef::Clear));
-
-    static StructMetadata MetadataSignalRef(typeid(SignalRef),
-        sizeof(SignalRef),
-        "SignalRef",
-        "",
-        StructFunction::New("GetEntity", "Returns the entity being being referenced", &SignalRef::GetEntity),
-        StructFunction::New("GetSignalName", "Returns the signal name being referenced", &SignalRef::GetSignalName),
-        StructFunction::New("String", "Returns the full signal path being referenced", &SignalRef::String),
-        StructFunction::New("IsValid", "Returns true if this reference is non-empty", &SignalRef::IsValid),
-        StructFunction::New("SetValue", "", &SignalRef::SetValue, ArgDesc("lock", ""), ArgDesc("value", "")),
-        StructFunction::New("HasValue", "", &SignalRef::HasValue, ArgDesc("lock", "")),
-        StructFunction::New("ClearValue", "", &SignalRef::ClearValue, ArgDesc("lock", "")),
-        StructFunction::New("GetValue", "", &SignalRef::GetValue, ArgDesc("lock", "")),
-        StructFunction::
-            New<SignalRef, SignalExpression &, const Lock<Write<Signals>, ReadSignalsLock> &, const SignalExpression &>(
-                "SetBinding",
-                "",
-                &SignalRef::SetBinding,
-                ArgDesc("lock", ""),
-                ArgDesc("expr", "")),
-        StructFunction::New("HasBinding", "", &SignalRef::HasBinding, ArgDesc("lock", "")),
-        StructFunction::New("ClearBinding", "", &SignalRef::ClearBinding, ArgDesc("lock", "")),
-        StructFunction::New("GetBinding", "", &SignalRef::GetBinding, ArgDesc("lock", "")),
-        StructFunction::New("GetSignal",
-            "Evaluates the signal referenced into a discrete value",
-            &SignalRef::GetSignal,
-            ArgDesc("lock", ""),
-            ArgDesc("depth", "")),
-        StructFunction::New("Empty", "Create a new empty signal reference", &SignalRef::Empty),
-        StructFunction::New("New",
-            "Create a new signal reference from an entity-signal pair",
-            &SignalRef::New,
-            ArgDesc("ent", ""),
-            ArgDesc("signal_name", "")),
-        StructFunction::New("Copy",
-            "Create a new signal reference from an existing reference",
-            &SignalRef::Copy,
-            ArgDesc("ref", "")),
-        StructFunction::New("Lookup",
-            "Create a new signal reference from a path string",
-            &SignalRef::Lookup,
-            ArgDesc("str", ""),
-            ArgDesc("scope", "")),
-        StructFunction::New("Clear", "Clears the reference and sets it back to empty", &SignalRef::Clear));
 }; // namespace ecs

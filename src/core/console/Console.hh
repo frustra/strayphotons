@@ -75,9 +75,10 @@ namespace sp {
 
         void AddLine(logging::Level lvl, string_view line);
 
-        const vector<ConsoleLine> Lines() {
+        template<typename Fn>
+        void AccessLines(Fn &&callback) {
             std::lock_guard lock(linesLock);
-            return outputLines;
+            callback((const vector<ConsoleLine> &)outputLines);
         }
 
         void ParseAndExecute(string_view line);

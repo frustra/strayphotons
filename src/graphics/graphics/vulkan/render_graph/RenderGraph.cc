@@ -45,6 +45,10 @@ namespace sp::vulkan::render_graph {
                     resources.AddUsageFromAccess(access.id, access.access);
                 }
                 for (auto &access : pass.futureReads) {
+                    Assertf(access.framesFromNow < RESOURCE_FRAME_COUNT,
+                        "Reading previous frame too far in the past: %d > %d",
+                        access.framesFromNow,
+                        RESOURCE_FRAME_COUNT - 1);
                     resources.IncrementRef(access.id);
                     resources.AddUsageFromAccess(access.id, access.access);
                     auto accessFrame = (resources.frameIndex + access.framesFromNow) % RESOURCE_FRAME_COUNT;
@@ -53,11 +57,6 @@ namespace sp::vulkan::render_graph {
                 }
             }
         } while (futureDependencyAdded);
-
-        for (auto id : futureDependencies[resources.frameIndex]) {
-            resources.DecrementRef(id);
-        }
-        futureDependencies[resources.frameIndex].clear();
 
         auto timer = device.GetPerfTimer();
 
@@ -199,6 +198,10 @@ namespace sp::vulkan::render_graph {
             pass.executeFunc = {}; // releases any captures
             UpdateLastOutput(pass);
         }
+        for (auto &id : futureDependencies[resources.frameIndex]) {
+            resources.DecrementRef(id);
+        }
+        futureDependencies[resources.frameIndex].clear();
 
         submitPendingCmds(true);
         AdvanceFrame();

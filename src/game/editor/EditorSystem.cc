@@ -41,6 +41,10 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "editor",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto picker = scene->NewSystemEntity(lock, scene, pickerEntity.Name());
+                picker.Set<ecs::Gui>(lock, "entity_picker", ecs::GuiTarget::None);
+                picker.Set<ecs::EventInput>(lock);
+
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
                 auto &screen = inspector.Set<ecs::Screen>(lock);
@@ -48,6 +52,9 @@ namespace sp {
                 inspector.Set<ecs::EventInput>(lock);
                 auto &transform = inspector.Set<ecs::TransformTree>(lock);
                 transform.pose.SetScale(glm::vec3(0.8, 1, 1));
+
+                auto &bindings = inspector.Set<ecs::EventBindings>(lock);
+                bindings.Bind(EDITOR_EVENT_EDIT_TARGET, pickerEntity, EDITOR_EVENT_EDIT_TARGET);
 
                 auto &ph = inspector.Set<ecs::Physics>(lock);
                 ph.group = ecs::PhysicsGroup::UserInterface;
@@ -60,8 +67,10 @@ namespace sp {
             ecs::SendEventsLock,
             ecs::Write<ecs::Gui, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
 
+        auto picker = pickerEntity.Get(lock);
         auto inspector = inspectorEntity.Get(lock);
 
+        if (!picker.Has<ecs::Gui>(lock)) return;
         if (!inspector.Has<ecs::TransformTree, ecs::Gui, ecs::Physics>(lock)) return;
 
         ecs::Entity target;
@@ -82,6 +91,7 @@ namespace sp {
             target = ref.Get(lock);
         }
 
+        auto &pickerGui = picker.Get<ecs::Gui>(lock);
         auto &gui = inspector.Get<ecs::Gui>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
         auto &focusLock = lock.Get<ecs::FocusLock>();
@@ -89,8 +99,9 @@ namespace sp {
         bool shouldClose = gui.target != ecs::GuiTarget::None && (!target || target == previousTarget);
         previousTarget = target;
         if (shouldClose) {
-            if (gui.target == ecs::GuiTarget::Debug) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             gui.target = ecs::GuiTarget::None;
+            pickerGui.target = ecs::GuiTarget::None;
             physics.shapes.clear();
             return;
         }
@@ -98,12 +109,14 @@ namespace sp {
         ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspector, target});
 
         if (flatMode) {
-            if (gui.target != ecs::GuiTarget::Debug) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
-            gui.target = ecs::GuiTarget::Debug;
+            if (gui.target != ecs::GuiTarget::Overlay) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
+            gui.target = ecs::GuiTarget::Overlay;
+            pickerGui.target = ecs::GuiTarget::Overlay;
             physics.shapes.clear();
         } else {
-            if (gui.target == ecs::GuiTarget::Debug) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             gui.target = ecs::GuiTarget::World;
+            pickerGui.target = ecs::GuiTarget::None; // TODO: Support this in-world somehow
             physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};
 
             auto &transform = inspector.Get<ecs::TransformTree>(lock);

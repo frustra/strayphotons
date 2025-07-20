@@ -74,11 +74,11 @@ namespace sp {
 
     ecs::Entity Scene::NewRootEntity(ecs::Lock<ecs::AddRemove> lock,
         const std::shared_ptr<Scene> &scene,
-        ecs::Name entityName,
-        const ecs::EntityScope &scope) {
+        ecs::Name entityName) {
         Assertf(scene, "Scene::NewRootEntity called with null scene: %s", entityName.String());
         Assertf(scene->data, "Scene::NewRootEntity called with null scene data: %s", entityName.String());
 
+        ecs::EntityScope scope(scene->data->name, "");
         if (entityName) {
             if (scene->data->priority != ScenePriority::SaveGame && !ValidateEntityName(entityName)) {
                 Errorf("Invalid root entity name: %s", entityName.String());
@@ -90,7 +90,7 @@ namespace sp {
                 return ecs::Entity();
             }
         } else {
-            entityName = GenerateEntityName(ecs::Name(scene->data->name, ""));
+            entityName = GenerateEntityName(scope);
         }
 
         if (!entityName) {
@@ -214,7 +214,8 @@ namespace sp {
             data->sceneEntity.Name().String());
 
         // Build a flattened list of entities to apply from the staging ECS
-        std::vector<std::pair<ecs::Entity, ecs::FlatEntity>> entities;
+        std::vector<ecs::Entity> entities;
+        std::vector<ecs::FlatEntity> components;
         for (auto &e : staging.EntitiesWith<ecs::SceneInfo>()) {
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
             if (sceneInfo.scene != *this) continue;
@@ -226,7 +227,11 @@ namespace sp {
                 continue;
             }
 
-            entities.emplace_back(e, scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), e));
+            entities.emplace_back(e);
+        }
+        components.resize(entities.size());
+        for (size_t i = 0; i < entities.size(); i++) {
+            scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), entities[i], components[i]);
         }
 
         auto live = ecs::StartTransaction<ecs::AddRemove>();
@@ -250,7 +255,9 @@ namespace sp {
 
             if (!sceneInfo.rootStagingId.Has<ecs::SceneInfo>(staging)) e.Destroy(live);
         }
-        for (auto &[e, flatEntity] : entities) {
+        for (size_t i = 0; i < entities.size(); i++) {
+            auto &e = entities[i];
+            auto &flatEntity = components[i];
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
 
             if (sceneInfo.liveId.Exists(live)) {
@@ -276,7 +283,7 @@ namespace sp {
                 liveSceneInfo = sceneInfo.rootStagingId.Get<ecs::SceneInfo>(staging);
 
                 // Rebuild the flat entity since the scene hierarchy has changed
-                flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId);
+                scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), liveSceneInfo.rootStagingId, flatEntity);
                 scene_util::ApplyFlatEntity(live, sceneInfo.liveId, flatEntity, resetLive);
             } else {
                 // No entity exists in the live scene
@@ -334,8 +341,8 @@ namespace sp {
                     remainingInfo.liveId.Set<ecs::SceneInfo>(live,
                         remainingInfo.rootStagingId.Get<ecs::SceneInfo>(staging));
 
-                    auto flatEntity = scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging),
-                        remainingInfo.rootStagingId);
+                    ecs::FlatEntity flatEntity;
+                    scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), remainingInfo.rootStagingId, flatEntity);
                     scene_util::ApplyFlatEntity(live, remainingInfo.liveId, flatEntity, false);
                 }
             }

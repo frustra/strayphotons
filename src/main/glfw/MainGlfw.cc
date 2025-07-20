@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
         }
         Assert(glfwVulkanSupported(), "Vulkan not supported");
 
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         // Disable OpenGL context creation
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);

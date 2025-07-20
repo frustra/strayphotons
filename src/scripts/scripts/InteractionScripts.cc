@@ -19,6 +19,9 @@ namespace sp::scripts {
 
     static CVar<float> CVarMaxGrabForce("i.MaxGrabForce", 20.0f, "Maximum force applied to held objects");
     static CVar<float> CVarMaxGrabTorque("i.MaxGrabTorque", 10.0f, "Maximum torque applied to held objects");
+    static CVar<float> CVarCarryWeightLimit("i.CarryWeightLimit",
+        250.0f,
+        "Items heavier than this aren't consider held objects");
     static CVar<bool> CVarFixedJointGrab("i.FixedJointGrab",
         false,
         "Toggle to use a fixed joint instead of force limited joint");
@@ -41,13 +44,17 @@ namespace sp::scripts {
             }
 
             glm::vec3 centerOfMass = glm::vec3(0);
+            float actualMass = 0.0f;
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 if (!massQuery) {
                     massQuery = query.NewQuery(PhysicsQuery::Mass(ent));
                 } else {
                     auto &result = query.Lookup(massQuery).result;
-                    if (result) centerOfMass = result->centerOfMass;
+                    if (result) {
+                        centerOfMass = result->centerOfMass;
+                        actualMass = result->weight;
+                    }
                 }
             }
 
@@ -166,7 +173,9 @@ namespace sp::scripts {
                 if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
                     ph.group = PhysicsGroup::World;
                 } else if (!grabEntities.empty() && ph.group == PhysicsGroup::World) {
-                    ph.group = PhysicsGroup::HeldObject;
+                    if (actualMass > 0.0f && actualMass <= CVarCarryWeightLimit.Get()) {
+                        ph.group = PhysicsGroup::HeldObject;
+                    }
                 }
             }
 
@@ -249,8 +258,8 @@ namespace sp::scripts {
                 PhysicsQuery::Raycast::Result raycastResult = {};
                 if (!raycastQuery) {
                     raycastQuery = query.NewQuery(PhysicsQuery::Raycast(grabDistance,
-                        PhysicsGroupMask(
-                            PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE | PHYSICS_GROUP_USER_INTERFACE)));
+                        PhysicsGroupMask(PHYSICS_GROUP_WORLD | PHYSICS_GROUP_INTERACTIVE |
+                                         PHYSICS_GROUP_USER_INTERFACE | PHYSICS_GROUP_HELD_OBJECT)));
                 } else {
                     auto &result = query.Lookup(raycastQuery).result;
                     if (result) raycastResult = result.value();

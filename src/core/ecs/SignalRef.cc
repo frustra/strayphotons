@@ -79,8 +79,8 @@ namespace ecs {
     }
 
     void SignalRef::AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::AddSubscriber() called with staging lock");
         Assertf(ptr, "SignalRef::AddSubscriber() called on null SignalRef");
         Assertf(subscriber, "SignalRef::AddSubscriber() called with null subscriber");
@@ -112,8 +112,8 @@ namespace ecs {
     }
 
     void SignalRef::UnsubscribeDependencies(const Lock<Write<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::UnsubscribeDependencies() called with staging lock");
         Assertf(ptr, "SignalRef::UnsubscribeDependencies() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -136,8 +136,8 @@ namespace ecs {
     }
 
     void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, size_t depth) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
         Assertf(ptr, "SignalRef::MarkDirty() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -198,7 +198,7 @@ namespace ecs {
     void SignalRef::UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock,
         size_t depth) const {
         ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
         Assertf(ptr, "SignalRef::MarkDirty() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -229,8 +229,8 @@ namespace ecs {
     }
 
     double &SignalRef::SetValue(const Lock<Write<Signals>> &lock, double value) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::SetValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::SetValue() called on null SignalRef");
         Assertf(std::isfinite(value), "SignalRef::SetValue() called with non-finite value: %f", value);
@@ -259,8 +259,8 @@ namespace ecs {
     }
 
     void SignalRef::ClearValue(const Lock<Write<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::ClearValue() called with staging lock. Use SignalOutput instead");
         Assertf(ptr, "SignalRef::ClearValue() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -284,8 +284,8 @@ namespace ecs {
     }
 
     bool SignalRef::HasValue(const Lock<Read<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::HasValue() called with staging lock. Use SignalOutput instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
@@ -296,8 +296,8 @@ namespace ecs {
     }
 
     const double &SignalRef::GetValue(const Lock<Read<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetValue() called with staging lock. Use SignalOutput instead");
         static const double empty = 0.0;
         if (!ptr) return empty;
@@ -310,8 +310,8 @@ namespace ecs {
 
     SignalExpression &SignalRef::SetBinding(const Lock<Write<Signals>, ReadSignalsLock> &lock,
         const SignalExpression &expr) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::SetBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::SetBinding() called on null SignalRef");
         Assertf(expr, "SignalRef::SetBinding() called with null SignalExpression");
@@ -345,8 +345,8 @@ namespace ecs {
     }
 
     void SignalRef::ClearBinding(const Lock<Write<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::ClearBinding() called with staging lock. Use SignalBindings instead");
         Assertf(ptr, "SignalRef::ClearBinding() called on null SignalRef");
         auto &signals = lock.Get<Signals>();
@@ -364,8 +364,8 @@ namespace ecs {
     }
 
     bool SignalRef::HasBinding(const Lock<Read<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::HasBinding() called with staging lock. Use SignalBindings instead");
         if (!ptr) return false;
         auto &signals = lock.Get<Signals>().signals;
@@ -376,8 +376,8 @@ namespace ecs {
     }
 
     const SignalExpression &SignalRef::GetBinding(const Lock<Read<Signals>> &lock) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetBinding() called with staging lock. Use SignalBindings instead");
         static const SignalExpression empty = {};
         if (!ptr) return empty;
@@ -389,8 +389,8 @@ namespace ecs {
     }
 
     double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        ZoneScoped;
-        // ZoneStr(String());
+        DebugZoneScoped;
+        DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetSignal() called with staging lock. Use SignalBindings instead");
         if (!ptr) return 0.0;
         auto &readSignals = lock.Get<Signals>().signals;

@@ -10,6 +10,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
+#include "game/SceneRef.hh"
 
 #include <functional>
 #include <map>

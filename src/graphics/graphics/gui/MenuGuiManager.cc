@@ -25,7 +25,7 @@ namespace sp {
     static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : SystemGuiManager("menu"), graphics(graphics) {
+    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : FlatViewGuiContext("menu"), graphics(graphics) {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
@@ -41,7 +41,7 @@ namespace sp {
     }
 
     void MenuGuiManager::BeforeFrame() {
-        SystemGuiManager::BeforeFrame();
+        FlatViewGuiContext::BeforeFrame();
 
         ImGui::StyleColorsClassic();
 
@@ -127,7 +127,7 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_CheckMark, green);
         ImGui::PushStyleColor(ImGuiCol_FrameBg, black);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0);
-        PushFont(Font::Monospace, 25);
+        PushFont(GuiFont::Monospace, 25);
 
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse |
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
@@ -183,13 +183,13 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
-            PushFont(Font::Monospace, 32);
+            PushFont(GuiFont::Monospace, 32);
 
             ImGui::Text("Scene Select");
             ImGui::Text(" ");
 
             ImGui::PopFont();
-            PushFont(Font::Monospace, 25);
+            PushFont(GuiFont::Monospace, 25);
 
             for (auto &[name, file] : sceneList) {
                 if (ImGui::Button(name.c_str())) {
@@ -215,13 +215,13 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
-            PushFont(Font::Monospace, 32);
+            PushFont(GuiFont::Monospace, 32);
 
             ImGui::Text("Load Game");
             ImGui::Text(" ");
 
             ImGui::PopFont();
-            PushFont(Font::Monospace, 25);
+            PushFont(GuiFont::Monospace, 25);
 
             for (auto &[name, file] : saveList) {
                 if (ImGui::Button(name.c_str())) {
@@ -247,14 +247,14 @@ namespace sp {
 
             ImGui::Image((void *)logoTex->GetHandle(), logoSize);
 
-            PushFont(Font::Monospace, 32);
+            PushFont(GuiFont::Monospace, 32);
 
             ImGui::Text("Options");
             ImGui::Text(" ");
             ImGui::Columns(2, "optcols", false);
 
             ImGui::PopFont();
-            PushFont(Font::Monospace, 25);
+            PushFont(GuiFont::Monospace, 25);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
 
             ImGui::Text("Resolution");

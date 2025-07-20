@@ -22,4 +22,8 @@ target_link_libraries(${PROJECT_COMMON_LIB} PUBLIC
     Tecs
 )
 
+if(SP_DEBUG)
+    target_compile_definitions(${PROJECT_COMMON_LIB} PUBLIC TRACY_ENABLE_DEBUG)
+endif()
+
 add_subdirectory(common)

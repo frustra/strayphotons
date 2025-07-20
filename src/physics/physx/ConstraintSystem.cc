@@ -22,12 +22,6 @@
 namespace sp {
     using namespace physx;
 
-    // clang-format off
-    static CVar<float> CVarMaxVerticalConstraintForce("x.MaxVerticalConstraintForce", 20.0f, "The maximum linear lifting force for constraints");
-    static CVar<float> CVarMaxLateralConstraintForce("x.MaxLateralConstraintForce", 20.0f, "The maximum lateral force for constraints");
-    static CVar<float> CVarMaxConstraintTorque("x.MaxConstraintTorque", 10.0f, "The maximum torque force for constraints");
-    // clang-format on
-
     ConstraintSystem::ConstraintSystem(PhysxManager &manager) : manager(manager) {}
 
     /**
@@ -106,33 +100,26 @@ namespace sp {
 
         // Update Linear Force
         if (maxForce > 0) {
-            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
+            auto deltaPos = (targetTransform.GetPosition() + targetLinearVelocity * intervalSeconds) -
+                            transform.GetPosition();
             auto currentLinearVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity());
             auto deltaVelocity = targetLinearVelocity - currentLinearVelocity;
 
-            auto maxAcceleration = maxForce / dynamic->getMass();
-            auto maxDeltaVelocity = maxAcceleration * intervalSeconds;
+            float maxAcceleration = maxForce / dynamic->getMass();
+            float maxDeltaVelocity = maxAcceleration * intervalSeconds;
+            float targetDist = glm::length(deltaPos);
+            if (targetDist > std::numeric_limits<float>::epsilon()) {
+                // Maximum velocity achievable over deltaPos distance
+                // This is the max velocity we can deccelerate from
+                float maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
+                // Subtract one frame worth of acceleration since the above formula is for continuous motion
+                deltaVelocity += glm::normalize(deltaPos) * std::max(0.0f, maxVelocity - maxDeltaVelocity);
+            }
             glm::vec3 accel;
-            auto targetDist = glm::length(deltaPos);
-            if (targetDist <= std::numeric_limits<float>::epsilon()) {
-                if (glm::length(deltaVelocity) < maxDeltaVelocity) {
-                    accel = deltaVelocity * tickFrequency;
-                } else {
-                    accel = glm::normalize(deltaVelocity) * maxAcceleration;
-                }
+            if (glm::length(deltaVelocity) < maxDeltaVelocity) {
+                accel = deltaVelocity * tickFrequency;
             } else {
-                // Maximum velocity achievable over deltaPos distance (also max velocity we can decelerate from)
-                auto maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
-                if (targetDist < maxVelocity * intervalSeconds) {
-                    maxVelocity = targetDist * tickFrequency;
-                }
-
-                auto deltaAccel = deltaVelocity + deltaPos * maxVelocity / targetDist;
-                if (glm::length(deltaAccel) < maxDeltaVelocity) {
-                    accel = deltaAccel * tickFrequency;
-                } else {
-                    accel = glm::normalize(deltaAccel) * maxAcceleration;
-                }
+                accel = glm::normalize(deltaVelocity) * maxAcceleration;
             }
             wakeUp |= joint->forceConstraint->setLinearAccel(accel);
         } else {

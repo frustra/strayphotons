@@ -11,12 +11,12 @@
 #include "graphics/gui/GuiContext.hh"
 
 namespace sp {
-    class SignalDisplayGui : public GuiWindow {
+    class SignalDisplayGui final : public GuiRenderable {
     public:
         SignalDisplayGui(const std::string &name, const ecs::Entity &ent);
         virtual ~SignalDisplayGui() {}
 
-        void PreDefine() override;
+        bool PreDefine() override;
         void DefineContents() override;
         void PostDefine() override;
 

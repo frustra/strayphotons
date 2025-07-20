@@ -20,7 +20,7 @@ namespace ecs {
         : entity(entity), signalName(signalName) {
         Assertf(signalName.find_first_of(",():/# ") == std::string::npos,
             "Signal name has invalid character: '%s'",
-            signalName);
+            std::string(signalName));
     }
 
     SignalKey::SignalKey(const std::string_view &str, const EntityScope &scope) {
@@ -196,7 +196,7 @@ namespace ecs {
     }
 
     void Signals::MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index) {
-        ZoneScoped;
+        DebugZoneScoped;
         auto &signals = lock.Get<Signals>();
         auto &prevSignals = lock.GetPrevious<Signals>();
         if (signals.changeCount == prevSignals.changeCount) {

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/EventQueue.hh"
-#include "graphics/gui/SystemGuiManager.hh"
+#include "graphics/gui/FlatViewGuiContext.hh"
 
 namespace sp {
     class GraphicsManager;
@@ -16,10 +16,9 @@ namespace sp {
 
     enum class MenuScreen { Main, Options, SceneSelect, SaveSelect };
 
-    class MenuGuiManager : public SystemGuiManager {
+    class MenuGuiManager final : public FlatViewGuiContext {
     public:
         MenuGuiManager(GraphicsManager &graphics);
-        virtual ~MenuGuiManager() {}
 
         void BeforeFrame() override;
         void DefineWindows() override;

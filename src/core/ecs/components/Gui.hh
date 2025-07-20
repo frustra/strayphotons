@@ -17,7 +17,7 @@ namespace ecs {
     enum class GuiTarget {
         None = 0,
         World,
-        Debug,
+        Overlay,
     };
 
     struct Gui {

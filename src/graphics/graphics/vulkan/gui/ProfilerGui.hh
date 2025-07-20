@@ -15,14 +15,16 @@
 #include <sstream>
 
 namespace sp::vulkan {
-    class ProfilerGui : public GuiRenderable {
+    class ProfilerGui final : public GuiRenderable {
     public:
         enum class Mode {
             CPU,
             GPU,
         };
 
-        ProfilerGui(PerfTimer &timer) : GuiRenderable("profiler"), timer(timer), msWindowSize(1000) {}
+        ProfilerGui(PerfTimer &timer)
+            : GuiRenderable("profiler", GuiLayoutAnchor::Floating, {-1, -1}, ImGuiWindowFlags_AlwaysAutoResize),
+              timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
         static float GetHistogramValue(void *data, int index) {
@@ -30,16 +32,17 @@ namespace sp::vulkan {
             return (float)self->drawHistogram.buckets[index];
         }
 
-        void DefineContents() {
-            if (timer.lastCompleteFrame.empty()) return;
-            if (!CVarProfileRender.Get()) return;
+        bool PreDefine() override {
+            if (timer.lastCompleteFrame.empty()) return false;
+            if (!CVarProfileRender.Get()) return false;
             ZoneScoped;
 
             CollectSample();
+            return true;
+        }
 
-            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize;
-
-            ImGui::Begin("Profiler", nullptr, flags);
+        void DefineContents() override {
+            ZoneScoped;
 
             if (ImGui::BeginTable("ResultTable", 7)) {
                 ImGui::TableNextRow();
@@ -118,8 +121,6 @@ namespace sp::vulkan {
             }
             ImGui::SameLine();
             if (histogramLocked && ImGui::Button("Unlock histogram")) histogramLocked = false;
-
-            ImGui::End();
         }
 
     private:

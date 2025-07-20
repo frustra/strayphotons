@@ -52,6 +52,7 @@ namespace sp::vulkan {
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock) {
         ZoneScoped;
         renderables.clear();
+        renderableTextureOverrides.clear();
         meshes.clear();
         opticEntities.clear();
         jointPoses.clear();
@@ -79,7 +80,10 @@ namespace sp::vulkan {
             gpuRenderable.meshIndex = vkMesh->SceneIndex();
             gpuRenderable.vertexOffset = vertexCount;
             gpuRenderable.emissiveScale = renderable.emissiveScale;
-            if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
+            if (!renderable.textureOverrideName.empty()) {
+                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(ERROR_COLOR);
+                renderableTextureOverrides.emplace_back(renderable.textureOverrideName, renderables.size());
+            } else if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
                 gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
             }
             if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
@@ -137,6 +141,83 @@ namespace sp::vulkan {
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
                 resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
                 resources.GetBuffer("JointPoses")->CopyFrom(jointPoses.data(), jointPoses.size());
+            });
+    }
+
+    bool GPUScene::PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light>> lock) {
+        bool complete = true;
+        textureCache.clear();
+        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            auto &renderable = ent.Get<ecs::Renderable>(lock);
+            if (renderable.textureOverrideName.empty()) continue;
+            if (renderable.textureOverrideName.length() > 6 && starts_with(renderable.textureOverrideName, "graph:")) {
+                textureCache[renderable.textureOverrideName] = {};
+            } else if (renderable.textureOverrideName.length() > 6 &&
+                       starts_with(renderable.textureOverrideName, "asset:")) {
+                auto it = textureCache.find(renderable.textureOverrideName);
+                if (it == textureCache.end()) {
+                    auto handle = textures.LoadAssetImage(renderable.textureOverrideName.substr(6), true);
+                    textureCache[renderable.textureOverrideName] = handle;
+
+                    if (!handle.Ready()) complete = false;
+                } else {
+                    auto &handle = it->second;
+                    if (!handle.Ready()) complete = false;
+                }
+            } else {
+                Logf("Entity %s has unknown override texture: %s",
+                    ecs::ToString(lock, ent),
+                    renderable.textureOverrideName);
+            }
+        }
+        for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
+            auto &light = ent.Get<ecs::Light>(lock);
+            if (light.gelName.empty()) continue;
+            if (light.gelName.length() > 6 && starts_with(light.gelName, "graph:")) {
+                textureCache[light.gelName] = {};
+            } else if (light.gelName.length() > 6 && starts_with(light.gelName, "asset:")) {
+                auto it = textureCache.find(light.gelName);
+                if (it == textureCache.end()) {
+                    auto handle = textures.LoadAssetImage(light.gelName.substr(6), true);
+                    textureCache[light.gelName] = handle;
+
+                    if (!handle.Ready()) complete = false;
+                } else {
+                    auto &handle = it->second;
+                    if (!handle.Ready()) complete = false;
+                }
+            } else {
+                Logf("Entity %s has unknown gel texture: %s", ecs::ToString(lock, ent), light.gelName);
+            }
+        }
+        return complete;
+    }
+
+    void GPUScene::AddGraphTextures(rg::RenderGraph &graph) {
+        InlineVector<std::pair<std::string, rg::ResourceID>, 128> newGraphTextures;
+        graph.AddPass("AddGraphTextures")
+            .Build([&](rg::PassBuilder &builder) {
+                for (auto &tex : textureCache) {
+                    if (starts_with(tex.first, "graph:")) {
+                        auto id = builder.ReadPreviousFrame(tex.first.substr(6), Access::FragmentShaderSampleImage);
+                        newGraphTextures.emplace_back(tex.first, id);
+                    }
+                }
+                builder.Write("RenderableEntities", Access::HostWrite);
+            })
+            .Execute([this, newGraphTextures](rg::Resources &resources, DeviceContext &device) {
+                for (auto &tex : newGraphTextures) {
+                    auto imageView = resources.GetImageView(tex.second);
+                    if (imageView) textureCache[tex.first] = textures.Add(imageView);
+                }
+                textures.Flush();
+                for (auto &overridePair : renderableTextureOverrides) {
+                    auto cacheEntry = textureCache.find(overridePair.first);
+                    if (cacheEntry != textureCache.end()) {
+                        renderables[overridePair.second].baseColorOverrideID = cacheEntry->second.index;
+                    }
+                }
+                resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());
             });
     }
 

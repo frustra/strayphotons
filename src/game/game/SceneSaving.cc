@@ -9,7 +9,7 @@
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
 #include "common/Common.hh"
-#include "ecs/Components.hh"
+#include "ecs/ComponentsImpl.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"

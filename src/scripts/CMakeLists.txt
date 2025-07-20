@@ -20,7 +20,7 @@ target_compile_definitions(${PROJECT_SCRIPTS_LIB} PUBLIC
     SP_SCRIPTS_SUPPORT
 )
 
-target_precompile_headers(${PROJECT_SCRIPTS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
+# target_precompile_headers(${PROJECT_SCRIPTS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(cabi)
 add_subdirectory(scripts)

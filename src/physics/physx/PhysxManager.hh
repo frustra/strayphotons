@@ -164,7 +164,7 @@ namespace sp {
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
 
-        ecs::ComponentObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentAddRemoveObserver<ecs::Physics> physicsObserver;
         ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;

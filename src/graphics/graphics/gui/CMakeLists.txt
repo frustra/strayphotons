@@ -6,11 +6,11 @@
 #
 
 target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
-    DebugGuiManager.cc
+    OverlayGuiManager.cc
     GuiContext.cc
     MenuGuiManager.cc
-    SystemGuiManager.cc
-    WorldGuiManager.cc
+    FlatViewGuiContext.cc
+    WorldGuiContext.cc
 )
 
 add_subdirectory(definitions)
