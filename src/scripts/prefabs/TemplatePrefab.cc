@@ -18,23 +18,27 @@
 #include <picojson/picojson.h>
 
 namespace ecs {
+    const chrono_clock::duration templateCacheTime = std::chrono::seconds(1);
+
     struct TemplateParser {
         std::string sourceName;
 
         sp::AsyncPtr<sp::Asset> assetPtr;
         bool parseFailed = false;
+        mutable chrono_clock::time_point lastAccess;
 
         bool hasRootOverride = false; // True if "components" field is defined
         FlatEntity rootComponents; // Represented by the "components" template field
         std::vector<std::pair<std::string, FlatEntity>> entityList; // Represented by the "entities" template field
 
-        TemplateParser(std::string_view source) : sourceName(source) {
+        TemplateParser(std::string_view source = "") : sourceName(source) {
             if (sourceName.empty()) return;
             assetPtr = sp::Assets().Load("scenes/templates/" + sourceName + ".json", sp::AssetType::Bundled, true);
+            lastAccess = chrono_clock::now();
         }
 
         operator bool() const {
-            return assetPtr && !parseFailed;
+            return assetPtr && !parseFailed && (chrono_clock::now() - lastAccess < templateCacheTime);
         }
 
         // The provided scope is used for debug logging only, the real scope of the resulting entities
@@ -155,6 +159,7 @@ namespace ecs {
             EntityScope scope,
             Transform offset = {}) const {
             ZoneScoped;
+            lastAccess = chrono_clock::now();
 
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", scope);
             ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
@@ -182,6 +187,7 @@ namespace ecs {
             EntityScope scope,
             Transform offset = {}) const {
             ZoneScoped;
+            lastAccess = chrono_clock::now();
 
             std::vector<Entity> scriptEntities;
             for (auto &[relativeName, flatEnt] : entityList) {
@@ -225,9 +231,9 @@ namespace ecs {
             std::lock_guard l(mutex);
             auto it = parserCache.find(source);
             if (it != parserCache.end()) {
-                return it->second;
+                if (it->second) return it->second;
             }
-            TemplateParser &newParser = parserCache.emplace(source, source).first->second;
+            TemplateParser &newParser = (parserCache[std::string(source)] = source);
             if (!newParser.Parse()) newParser.parseFailed = true;
             return newParser;
         }

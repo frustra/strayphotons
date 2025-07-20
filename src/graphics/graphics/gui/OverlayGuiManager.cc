@@ -14,14 +14,14 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    OverlayGuiManager::OverlayGuiManager() : FlatViewGuiContext("debug") {
+    OverlayGuiManager::OverlayGuiManager() : FlatViewGuiContext("overlay") {
         consoleGui = std::make_shared<ConsoleGui>();
         Attach(consoleGui);
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
         auto gui = guiEntity.Get(lock);
-        Assert(gui.Has<ecs::EventInput>(lock), "Expected debug gui to start with an EventInput");
+        Assert(gui.Has<ecs::EventInput>(lock), "Expected overlay gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
         eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
