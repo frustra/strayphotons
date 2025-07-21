@@ -41,7 +41,22 @@ namespace ecs {
                 auto &node = *model->nodes[nodeId];
 
                 if (node.name.empty()) return "gltf" + std::to_string(nodeId);
-                return node.name;
+                string out(node.name);
+                std::transform(node.name.begin(), node.name.end(), out.begin(), [](auto &ch) {
+                    switch (ch) {
+                    case ',':
+                    case '(':
+                    case ')':
+                    case ':':
+                    case '/':
+                    case '#':
+                    case ' ':
+                        return '_';
+                    default:
+                        return ch;
+                    }
+                });
+                return out;
             };
 
             robin_hood::unordered_set<size_t> jointNodes;
