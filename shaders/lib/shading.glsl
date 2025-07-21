@@ -156,7 +156,8 @@ vec3 DirectShading(vec3 worldPosition,
             vec4 cornerUVs[2] = lights[i].cornerUVs;
             coord = bilinearMix(cornerUVs[0].xy, cornerUVs[1].zw, cornerUVs[0].zw, cornerUVs[1].xy, coord);
 
-            lightTint = texture(textures[filterId], vec2(coord.x, 1 - coord.y)).rgb * float(coord == clamp(coord, 0, 1));
+            lightTint = texture(textures[filterId], vec2(coord.x, 1 - coord.y)).rgb *
+                        float(coord == clamp(coord, 0, 1));
         }
 #endif
 
