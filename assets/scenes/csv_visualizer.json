@@ -7,14 +7,23 @@
 			}
 		},
 		{
-			"name": "visualizer",
+			"name": "track_map",
 			"transform": {
 				"parent": "track_root",
-				"translate": [0, 20, 0],
-				"scale": [20, 10, 40]
+				"translate": [150, 10, -10],
+				"rotate": [[-90, 0, 1, 0], [90, 1, 0, 0]],
+				"scale": [1350, 1012.5, 1]
 			},
 			"renderable": {
-				"model": "box"
+				"model": "mirror",
+				"texture_override": "asset:textures/Ridge.image.png",
+				"metallic_roughness_override": [0, 1]
+			}
+		},
+		{
+			"name": "visualizer",
+			"transform": {
+				"parent": "track_root"
 			},
 			"signal_bindings": {
 				"x": "(visualizer/Latitude - 47.254946) * 111176",
@@ -24,75 +33,91 @@
 				"accel_y": "-visualizer/AccelZ",
 				"accel_z": "visualizer/AccelY * 0.3"
 			},
+			"script": [
+				{
+					"onTick": "csv_visualizer",
+					"parameters": {
+						"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
+					}
+				}
+			]
+		},
+		{
+			"name": "car",
+			"transform": {
+				"parent": "visualizer",
+				"rotate": [180, 0, 1, 0],
+				"translate": [0, 10, 0],
+				"scale": 10
+			},
 			"script": {
-				"onTick": "csv_visualizer",
+				"prefab": "gltf",
 				"parameters": {
-					"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
+					"model": "s2000"
 				}
 			}
 		},
 		{
-			"name": "wheel_lf",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [0.5, -0.25, 0.35],
-				"rotate": [90, 0, 0, 1],
-				"scale": [0.8, 0.1, 0.2]
-			},
+			"name": "car.LOD_A_GLASS_FRONT_mm_windows",
 			"renderable": {
-				"model": "cylinder",
-				"color_override": [0, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 21,
+				"color_override": [0.5, 0.5, 0.5, 0.5],
+				"visibility": "Transparent|LightingShadow"
 			}
 		},
 		{
-			"name": "wheel_rf",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [-0.5, -0.25, 0.35],
-				"rotate": [90, 0, 0, 1],
-				"scale": [0.8, 0.1, 0.2]
-			},
+			"name": "car.LOD_A_GLASS_LEFT_mm_windows",
 			"renderable": {
-				"model": "cylinder",
-				"color_override": [0, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 22,
+				"color_override": [0.1, 0.1, 0.1, 0.5],
+				"visibility": "Transparent|LightingShadow"
 			}
 		},
 		{
-			"name": "wheel_lr",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [0.5, -0.25, -0.35],
-				"rotate": [90, 0, 0, 1],
-				"scale": [0.8, 0.1, 0.2]
-			},
+			"name": "car.LOD_A_GLASS_RIGHT_mm_windows",
 			"renderable": {
-				"model": "cylinder",
-				"color_override": [0, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 25,
+				"color_override": [0.1, 0.1, 0.1, 0.5],
+				"visibility": "Transparent|LightingShadow"
 			}
 		},
 		{
-			"name": "wheel_rr",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [-0.5, -0.25, -0.35],
-				"rotate": [90, 0, 0, 1],
-				"scale": [0.8, 0.1, 0.2]
-			},
+			"name": "car.LOD_A_GLASS_REAR_mm_windows",
 			"renderable": {
-				"model": "cylinder",
-				"color_override": [0, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 24,
+				"color_override": [0.1, 0.1, 0.1, 0.5],
+				"visibility": "Transparent|LightingShadow"
 			}
 		},
 		{
-			"name": "left_brake_light",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [0.412, 0.25, -0.485],
-				"scale": [0.2, 0.2, 0.05]
-			},
+			"name": "car.LOD_A_HEADLIGHT_LENS_LEFT_mm_windows",
 			"renderable": {
-				"model": "box",
-				"color_override": [0.3, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 26,
+				"color_override": [1, 1, 1, 0.2],
+				"visibility": "Transparent"
+			}
+		},
+		{
+			"name": "car.LOD_A_HEADLIGHT_LENS_RIGHT_mm_windows",
+			"renderable": {
+				"model": "s2000",
+				"mesh_index": 27,
+				"color_override": [1, 1, 1, 0.2],
+				"visibility": "Transparent"
+			}
+		},
+		{
+			"name": "car.LOD_A_TAILLIGHT_LENS_LEFT_mm_windows",
+			"renderable": {
+				"model": "s2000",
+				"mesh_index": 36,
+				"color_override": [0.6, 0, 0, 0.5],
+				"visibility": "Transparent|LightingShadow"
 			},
 			"script": {
 				"onTick": "component_from_signal",
@@ -102,15 +127,27 @@
 			}
 		},
 		{
-			"name": "right_brake_light",
-			"transform": {
-				"parent": "visualizer",
-				"translate": [-0.412, 0.25, -0.485],
-				"scale": [0.2, 0.2, 0.05]
-			},
+			"name": "car.LOD_A_TAILLIGHT_LENS_RIGHT_mm_windows",
 			"renderable": {
-				"model": "box",
-				"color_override": [0.3, 0, 0, 1]
+				"model": "s2000",
+				"mesh_index": 37,
+				"color_override": [0.6, 0, 0, 0.5],
+				"visibility": "Transparent|LightingShadow"
+			},
+			"script": {
+				"onTick": "component_from_signal",
+				"parameters": {
+					"renderable.emissive": "visualizer/Brake"
+				}
+			}
+		},
+		{
+			"name": "car.LOD_A_BOOT_mm_lights",
+			"renderable": {
+				"model": "s2000",
+				"mesh_index": 6,
+				"color_override": [0.6, 0, 0, 1],
+				"visibility": "Transparent"
 			},
 			"script": {
 				"onTick": "component_from_signal",
@@ -124,14 +161,25 @@
 			"light": {
 				"tint": [1, 1, 1],
 				"intensity": 10,
-				"spot_angle": 30,
+				"spot_angle": 27,
 				"shadow_map_size": 10,
-				"shadow_map_clip": [0.01, 50]
+				"shadow_map_clip": [0.005, 50]
 			},
 			"transform": {
-				"parent": "visualizer",
-				"translate": [0.45, 0.25, 0.5],
-				"rotate": [180, 0, 1, 0]
+				"parent": "car",
+				"translate": [-0.59, 0.56, -1.74]
+			}
+		},
+		{
+			"name": "left_headlight_clip",
+			"renderable": {
+				"model": "box",
+				"visibility": "LightingShadow"
+			},
+			"transform": {
+				"parent": "left_headlight",
+				"translate": [0, 0.025, -0.015],
+				"scale": [0.1, 0.05, 0.01]
 			}
 		},
 		{
@@ -139,14 +187,25 @@
 			"light": {
 				"tint": [1, 1, 1],
 				"intensity": 10,
-				"spot_angle": 30,
+				"spot_angle": 27,
 				"shadow_map_size": 10,
-				"shadow_map_clip": [0.01, 50]
+				"shadow_map_clip": [0.005, 50]
 			},
 			"transform": {
-				"parent": "visualizer",
-				"translate": [-0.45, 0.25, 0.5],
-				"rotate": [180, 0, 1, 0]
+				"parent": "car",
+				"translate": [0.59, 0.56, -1.74]
+			}
+		},
+		{
+			"name": "right_headlight_clip",
+			"renderable": {
+				"model": "box",
+				"visibility": "LightingShadow"
+			},
+			"transform": {
+				"parent": "right_headlight",
+				"translate": [0, 0.025, -0.015],
+				"scale": [0.1, 0.05, 0.01]
 			}
 		},
 		{
