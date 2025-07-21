@@ -71,7 +71,7 @@
 				"translate": [0, -0.3, 0]
 			},
 			"light": {
-				"gel": "asset:textures/flashlight.png",
+				"filter": "asset:textures/flashlight.png",
 				"shadow_map_clip": [0.1, 64],
 				"shadow_map_size": 11,
 				"tint": [1, 1, 1]

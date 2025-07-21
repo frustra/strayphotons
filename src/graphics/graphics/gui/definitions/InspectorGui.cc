@@ -111,7 +111,12 @@ namespace sp {
                 } else {
                     auto stagingLock = ecs::StartStagingTransaction<ecs::ReadAll>();
                     context->ShowEntityControls(stagingLock, targetEntity);
-                    if (targetEntity != context->target) {
+                    auto targetRoot = context->target;
+                    if (ecs::IsStaging(targetRoot) && targetRoot.Has<ecs::SceneInfo>(stagingLock)) {
+                        auto &stagingInfo = targetRoot.Get<ecs::SceneInfo>(stagingLock);
+                        targetRoot = stagingInfo.rootStagingId;
+                    }
+                    if (targetEntity != targetRoot) {
                         ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
                             ecs::EventBindings::SendEvent(lock,
                                 inspectorEntity,

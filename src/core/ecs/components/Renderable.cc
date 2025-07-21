@@ -8,6 +8,7 @@
 #include "Renderable.hh"
 
 #include "assets/AssetManager.hh"
+#include "assets/Gltf.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
@@ -24,6 +25,9 @@ namespace ecs {
 
     template<>
     void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
+        if (liveTarget || (dst.modelName.empty() && !src.modelName.empty())) {
+            dst.modelName = src.modelName;
+        }
         if (liveTarget || (!dst.model && src.model)) {
             dst.model = src.model;
         }

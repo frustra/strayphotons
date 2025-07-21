@@ -55,7 +55,7 @@ struct Light {
     vec4 cornerUVs[2];
     vec2 clip;
 
-    uint gelId;
+    uint filterId;
     uint previousIndex;
     uint parentIndex;
 };

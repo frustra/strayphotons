@@ -10,6 +10,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Events.cc
     Focus.cc
     LaserLine.cc
+    Light.cc
     Name.cc
     Physics.cc
     PhysicsJoints.cc

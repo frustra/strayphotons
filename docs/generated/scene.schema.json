@@ -518,9 +518,9 @@
 					},
 					"light": {
 						"properties": {
-							"gel": {
+							"filter": {
 								"default": "",
-								"description": "A lighting gel (or light filter) texture to be applied to this light. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
+								"description": "A lighting stencil or color filter texture to be applied to this light. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
 								"type": "string"
 							},
 							"illuminance": {
