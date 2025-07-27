@@ -109,6 +109,13 @@ namespace ecs {
                 "New script %s has mismatched callback type: PrefabScript != Prefab",
                 state.definition.name);
             break;
+        case ScriptType::GuiScript:
+            Assertf(std::holds_alternative<GuiRenderableFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: GuiScript != GuiRenderable",
+                state.definition.name);
+            break;
+        default:
+            Abortf("New script %s has invalid script type: %s", state.definition.name, state.definition.type);
         }
 
         ScriptState *scriptStatePtr = nullptr;

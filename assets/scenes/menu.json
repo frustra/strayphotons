@@ -329,7 +329,7 @@
 				"translate": [4.94, 1.35, 2.35]
 			},
 			"gui": {
-				"window_name": "signal_display"
+				"window_name": ""
 			},
 			"screen": {
 				"luminance": [3, 3, 3],
@@ -340,12 +340,20 @@
 				"text_color_r": "airlock_in_signal_display/value < 1",
 				"value": "airlock_in_button_sensor.Icosphere/light_value_r"
 			},
-			"script": {
-				"parameters": {
-					"source": "world_gui"
+			"script": [
+				{
+					"parameters": {
+						"source": "world_gui"
+					},
+					"name": "prefab_template"
 				},
-				"name": "prefab_template"
-			}
+				{
+					"name": "signal_display",
+					"parameters": {
+						"suffix": "mph"
+					}
+				}
+			]
 		},
 		{
 			"name": "airlock_in_button_led",

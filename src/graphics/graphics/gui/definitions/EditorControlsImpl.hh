@@ -267,7 +267,6 @@ namespace sp {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            bool isPrefab = std::holds_alternative<PrefabFunc>(state.definition.callback);
             std::string scriptLabel;
             switch (state.definition.type) {
             case ScriptType::LogicScript:
@@ -296,21 +295,26 @@ namespace sp {
                     scriptLabel = "Prefab: " + state.definition.name;
                 }
                 break;
+            case ScriptType::GuiScript:
+                scriptLabel = "Gui: " + state.definition.name;
+                break;
+            default:
+                scriptLabel = "Invalid script: " + state.definition.name;
+                break;
             }
             if (state.definition.name.empty()) {
                 scriptLabel += "(inline C++ lambda)";
             }
 
-            std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
-            std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
             auto scriptType = std::string(magic_enum::enum_name(state.definition.type));
-
             if (ImGui::TreeNodeEx(rowId.c_str(),
                     ImGuiTreeNodeFlags_DefaultOpen,
                     "%s %s",
                     scriptType.c_str(),
                     scriptLabel.c_str())) {
-                if (IsLive(target) && isPrefab) {
+                if (IsLive(target) && (state.definition.type == ScriptType::PrefabScript ||
+                                          state.definition.type == ScriptType::GuiScript)) {
+                    // Don't allow editing live gui scripts (causes deadlock with editor)
                     ImGui::BeginDisabled();
                 } else if (IsStaging(target)) {
                     if (ImGui::Button("-", ImVec2(20, 0))) {
@@ -320,11 +324,10 @@ namespace sp {
                 }
                 ImGui::SetNextItemWidth(-FLT_MIN);
                 if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                    auto &scripts = GetScriptDefinitions().scripts;
+                    const auto &scripts = GetScriptDefinitions().scripts;
                     for (auto &[scriptName, definition] : scripts) {
-                        if (IsLive(target) && definition.type == ScriptType::PrefabScript &&
-                            definition.type != state.definition.type) {
-                            // Don't allow editing prefab scripts in the live ECS
+                        if (IsLive(target) && definition.type != state.definition.type) {
+                            // Don't allow change script types in the live ECS
                             continue;
                         }
                         bool isSelected = state.definition.name == scriptName;
@@ -338,7 +341,9 @@ namespace sp {
                 }
 
                 auto ctx = state.definition.context.lock();
-                if (ctx) {
+                if (ctx && state.definition.type != ScriptType::GuiScript) {
+                    std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
+                    std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
                     void *dataPtr = ctx->AccessMut(state);
                     auto &fields = ctx->metadata.fields;
                     if (dataPtr && !fields.empty()) {
@@ -370,7 +375,8 @@ namespace sp {
                         ImGui::EndTable();
                     }
                 }
-                if (IsLive(target) && isPrefab) {
+                if (IsLive(target) && (state.definition.type == ScriptType::PrefabScript ||
+                                          state.definition.type == ScriptType::GuiScript)) {
                     ImGui::EndDisabled();
                 }
 

@@ -42,7 +42,9 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-        std::sort(components.begin(), components.end(), [](const Ref &lhs, const Ref &rhs) {
+        std::sort(components.begin(), components.end(), [](const Ref &lhsWeak, const Ref &rhsWeak) {
+            auto lhs = lhsWeak.lock();
+            auto rhs = rhsWeak.lock();
             if (!lhs || !rhs) return lhs < rhs;
             return lhs->anchor < rhs->anchor;
         });
@@ -51,7 +53,8 @@ namespace sp {
         Assertf(imguiViewport, "ImGui::GetMainViewport() returned null");
         ImVec2 viewportPos = imguiViewport->WorkPos;
         ImVec2 viewportSize = imguiViewport->WorkSize;
-        for (auto &component : components) {
+        for (auto &componentWeak : components) {
+            auto component = componentWeak.lock();
             if (!component) continue;
             ecs::GuiRenderable &renderable = *component;
             ecs::Entity ent = guiEntity.GetLive();
@@ -118,7 +121,8 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput, ecs::Gui>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
+                ecs::Read<ecs::EventInput, ecs::Gui, ecs::Scripts>>();
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
@@ -152,9 +156,16 @@ namespace sp {
             for (auto &ctx : guis) {
                 Assert(ctx.entity.Has<ecs::Gui>(lock), "gui entity must have a gui component");
 
+                // if (ctx.entity.Has<ecs::Scripts>(lock)) {
+                //     auto &scripts = ctx.entity.Get<ecs::Scripts>(lock);
+                //     scripts.scripts
+                // }
+
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
-                if (!ctx.window && !gui.windowName.empty()) {
-                    ctx.window = CreateGuiWindow(gui.windowName);
+                if (!ctx.window.lock()) {
+                    const ecs::Scripts *scripts = nullptr;
+                    if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
+                    ctx.window = CreateGuiWindow(gui, scripts);
                 }
                 if (gui.target == ecs::GuiTarget::Overlay) {
                     Attach(ctx.window);

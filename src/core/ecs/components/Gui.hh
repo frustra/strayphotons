@@ -35,11 +35,12 @@ namespace ecs {
 
     class GuiRenderable {
     public:
-        GuiRenderable(const std::string &name,
+        GuiRenderable(std::string_view name,
             GuiLayoutAnchor anchor,
             glm::ivec2 preferredSize = {-1, -1},
             int windowFlags = 0)
             : name(name), anchor(anchor), preferredSize(preferredSize), windowFlags(windowFlags) {}
+        virtual ~GuiRenderable() {}
 
         virtual bool PreDefine(Entity ent) {
             return true;

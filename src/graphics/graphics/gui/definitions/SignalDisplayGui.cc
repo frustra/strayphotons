@@ -59,7 +59,7 @@ namespace sp {
         auto textSize = ImGui::CalcTextSize(text.c_str());
         ImGui::SetCursorPosX((ImGui::GetWindowSize().x - textSize.x) * 0.5f);
         ImGui::SetCursorPosY((ImGui::GetWindowSize().y - textSize.y) * 0.5f);
-        ImGui::Text("%s", text.c_str());
+        ImGui::TextUnformatted(text.data(), text.data() + text.size());
 
         ImGui::EndChild();
         ImGui::PopStyleColor(2);

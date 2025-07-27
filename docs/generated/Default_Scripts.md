@@ -557,6 +557,17 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
+## `signal_display` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **suffix** | string | "mW" | No description |
+
+</div>
+
+
+<div class="component_definition">
+
 ## `signal_from_event` Script
 
 | Parameter Name | Type | Default Value | Description |

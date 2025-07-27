@@ -10,6 +10,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "common/Defer.hh"
+#include "ecs/ScriptManager.hh"
 #include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -101,7 +102,9 @@ namespace sp::vulkan {
         });
 
         ImGui::NewFrame();
-        context.DefineWindows();
+        ecs::GetScriptManager().RunGuiScripts([&context] {
+            context.DefineWindows();
+        });
         ImGui::Render();
 
         auto drawData = ImGui::GetDrawData();

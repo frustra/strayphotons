@@ -31,7 +31,7 @@ namespace sp {
 
     class GuiContext {
     public:
-        using Ref = std::shared_ptr<ecs::GuiRenderable>;
+        using Ref = std::weak_ptr<ecs::GuiRenderable>;
 
         GuiContext(const std::string &name);
         virtual ~GuiContext();
@@ -56,7 +56,14 @@ namespace sp {
         std::string name;
     };
 
-    std::shared_ptr<ecs::GuiRenderable> CreateGuiWindow(const std::string &name);
+    std::weak_ptr<ecs::GuiRenderable> CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp
+
+namespace std {
+    // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const sp::GuiContext::Ref &a, const sp::GuiContext::Ref &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
+} // namespace std

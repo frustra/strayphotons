@@ -75,7 +75,7 @@ namespace sp::vulkan::renderer {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::Gui>(lock)) {
                         auto &gui = ent.Get<ecs::Gui>(lock);
-                        if (gui.windowName.empty() || gui.target != ecs::GuiTarget::World) continue;
+                        if (gui.target != ecs::GuiTarget::World) continue;
                         ecs::EntityRef ref(ent);
                         textureName = ResourceName("gui:") + ref.Name().String();
                     } else {

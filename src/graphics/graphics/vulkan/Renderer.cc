@@ -64,7 +64,9 @@ namespace sp::vulkan {
         lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
-            AddGui(ent, ent.Get<const ecs::Gui>(lock));
+            const ecs::Scripts *scripts = nullptr;
+            if (ent.Has<ecs::Scripts>(lock)) scripts = &ent.Get<ecs::Scripts>(lock);
+            AddGui(ent, ent.Get<const ecs::Gui>(lock), scripts);
         }
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
@@ -142,6 +144,7 @@ namespace sp::vulkan {
             ecs::OpticalElement,
             ecs::Gui,
             ecs::Screen,
+            ecs::Scripts,
             ecs::FocusLock>>();
 
         scene.LoadState(graph, lock);
@@ -501,21 +504,20 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
-        if (!gui.windowName.empty()) {
-            auto context = make_shared<WorldGuiContext>(ent, gui.windowName);
-            auto window = CreateGuiWindow(gui.windowName);
-            if (window) {
-                context->Attach(window);
-                auto windowScale = CVarWindowScale.Get();
-                if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-                if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-                guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
-            }
+    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts) {
+        auto window = CreateGuiWindow(gui, scripts).lock();
+        if (window) {
+            auto context = make_shared<WorldGuiContext>(ent, window->name);
+            context->Attach(window);
+            auto windowScale = CVarWindowScale.Get();
+            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+            guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
         }
     }
 
-    void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock) {
+    void Renderer::AddWorldGuis(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name, ecs::Scripts>> lock) {
         ecs::ComponentAddRemoveEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -529,7 +531,9 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 if (!eventEntity.Has<ecs::Gui>(lock)) continue;
-                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock));
+                const ecs::Scripts *scripts = nullptr;
+                if (eventEntity.Has<ecs::Scripts>(lock)) scripts = &eventEntity.Get<ecs::Scripts>(lock);
+                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock), scripts);
             }
         }
 

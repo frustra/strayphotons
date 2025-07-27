@@ -154,6 +154,15 @@ namespace ecs {
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
 
+        template<typename Fn>
+        void RunGuiScripts(Fn &&callback) {
+            ZoneScoped;
+            auto &scriptSet = scripts[ScriptType::GuiScript];
+            std::shared_lock l1(dynamicLibraryMutex);
+            std::shared_lock l2(scriptSet.mutex);
+            callback();
+        }
+
     private:
         void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
             const Entity &ent,

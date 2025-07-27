@@ -31,7 +31,8 @@ namespace sp {
     void WorldGuiContext::DefineWindows() {
         ZoneScoped;
         ImGuiIO &io = ImGui::GetIO();
-        for (auto &component : components) {
+        for (auto &componentWeak : components) {
+            auto component = componentWeak.lock();
             if (!component) continue;
             ecs::GuiRenderable &renderable = *component;
             ecs::Entity ent = guiEntity.GetLive();

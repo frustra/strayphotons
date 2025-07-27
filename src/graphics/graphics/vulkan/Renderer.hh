@@ -63,8 +63,9 @@ namespace sp::vulkan {
         ecs::View AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock);
         void AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock);
 
-        void AddGui(ecs::Entity ent, const ecs::Gui &gui);
-        void AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock);
+        void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
+        void AddWorldGuis(
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name, ecs::Scripts>> lock);
         void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
             const ecs::View &view,

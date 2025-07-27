@@ -18,11 +18,14 @@
 
 namespace ecs {
     class ScriptState;
+    class GuiRenderable;
 
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
         Read<TransformSnapshot, SceneInfo>,
         Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
+
+    using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, Gui, Scripts>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
     using ScriptDestroyFunc = std::function<void(ScriptState &)>;
@@ -30,15 +33,18 @@ namespace ecs {
         void(ScriptState &, const DynamicLock<ReadSignalsLock> &, Entity, chrono_clock::duration)>;
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnEventFunc, PrefabFunc>;
+    using GuiRenderableFunc = std::function<std::shared_ptr<GuiRenderable>(ScriptState &)>;
+
+    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnEventFunc, PrefabFunc, GuiRenderableFunc>;
 
     using ScriptName = sp::InlineString<63>;
 
     enum class ScriptType {
-        LogicScript = 0,
+        LogicScript,
         PhysicsScript,
         EventScript,
         PrefabScript,
+        GuiScript,
     };
 
     struct ScriptDefinitionBase {
