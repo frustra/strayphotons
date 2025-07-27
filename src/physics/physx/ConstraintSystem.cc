@@ -100,8 +100,7 @@ namespace sp {
 
         // Update Linear Force
         if (maxForce > 0) {
-            auto deltaPos = (targetTransform.GetPosition() + targetLinearVelocity * intervalSeconds) -
-                            transform.GetPosition();
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
             auto currentLinearVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity());
             auto deltaVelocity = targetLinearVelocity - currentLinearVelocity;
 
@@ -112,8 +111,10 @@ namespace sp {
                 // Maximum velocity achievable over deltaPos distance
                 // This is the max velocity we can deccelerate from
                 float maxVelocity = std::sqrt(2 * maxAcceleration * targetDist);
-                // Subtract one frame worth of acceleration since the above formula is for continuous motion
-                deltaVelocity += glm::normalize(deltaPos) * std::max(0.0f, maxVelocity - maxDeltaVelocity);
+                if (targetDist < maxVelocity * intervalSeconds) {
+                    maxVelocity = targetDist * tickFrequency;
+                }
+                deltaVelocity += glm::normalize(deltaPos) * maxVelocity;
             }
             glm::vec3 accel;
             if (glm::length(deltaVelocity) < maxDeltaVelocity) {
