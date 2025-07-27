@@ -42,28 +42,28 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
-        InlineString() : ArrayT({}) {
+        InlineString() : ArrayT() {
             setSize(0);
         }
 
-        InlineString(size_t count, CharT ch) : ArrayT({}) {
+        InlineString(size_t count, CharT ch) : ArrayT() {
             resize(count, ch);
         }
 
-        InlineString(const CharT *init) : ArrayT({}) {
+        InlineString(const CharT *init) : ArrayT() {
             size_type count = init ? traits_type::length(init) : 0;
             Assert(count <= MaxSize, "InlineString overflow");
             if (count > 0) traits_type::copy(data(), init, count);
             setSize(count);
         }
 
-        InlineString(const std::basic_string<CharT> &init) : ArrayT({}) {
+        InlineString(const std::basic_string<CharT> &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
-        InlineString(const std::basic_string_view<CharT> &init) : ArrayT({}) {
+        InlineString(const std::basic_string_view<CharT> &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
@@ -102,6 +102,14 @@ namespace sp {
                 return traits_type::length(data());
             }
             return MaxSize - unusedCount;
+        }
+
+        size_type length() {
+            return size();
+        }
+
+        size_type length() const {
+            return size();
         }
 
         size_type capacity() const {
@@ -224,7 +232,7 @@ namespace sp {
             return std::basic_string_view<CharT>(data(), size());
         }
 
-        int compare(const InlineString<MaxSize, CharT> &other) const {
+        int compare(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this).compare(other);
         }
 
@@ -236,7 +244,7 @@ namespace sp {
             return std::basic_string_view<CharT>(*this).compare(other);
         }
 
-        bool operator==(const InlineString<MaxSize, CharT> &other) const {
+        bool operator==(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this) == std::basic_string_view<CharT>(other);
         }
 
@@ -249,7 +257,7 @@ namespace sp {
             return std::basic_string_view<CharT>(*this) == other;
         }
 
-        bool operator<(const InlineString<MaxSize, CharT> &other) const {
+        bool operator<(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this) < std::basic_string_view<CharT>(other);
         }
 
@@ -258,24 +266,15 @@ namespace sp {
             return std::basic_string_view<CharT>(*this) < other;
         }
 
-        InlineString<MaxSize, CharT> &operator+=(const std::basic_string<CharT> &str) {
-            Assert(size() + str.size() <= MaxSize, "InlineString overflow");
-            traits_type::copy(data() + size(), str.data(), str.size());
-            setSize(size() + str.size());
+        InlineString<MaxSize, CharT, ArrayT> &operator+=(const std::basic_string_view<CharT> &str) {
+            size_t oldSize = size();
+            Assert(oldSize + str.size() <= MaxSize, "InlineString overflow");
+            traits_type::copy(data() + oldSize, str.data(), str.size());
+            setSize(oldSize + str.size());
             return *this;
         }
 
-        InlineString<MaxSize, CharT> &operator+=(const CharT *str) {
-            size_type count = str ? traits_type::length(str) : 0;
-            Assert(size() + count <= MaxSize, "InlineString overflow");
-            if (count > 0) {
-                traits_type::copy(data() + size(), str, count);
-                setSize(size() + count);
-            }
-            return *this;
-        }
-
-        InlineString<MaxSize, CharT> &operator+=(CharT ch) {
+        InlineString<MaxSize, CharT, ArrayT> &operator+=(CharT ch) {
             push_back(ch);
             return *this;
         }
@@ -284,7 +283,7 @@ namespace sp {
         void setSize(size_type newSize) {
             DebugAssertf(newSize <= MaxSize, "InlineString overflow: %llu", newSize);
             if (newSize == 0) {
-                // Leave an emptry string as all-zeros so strcpy doesn't result in invalid strings
+                // Leave an empty string as all-zeros so strcpy doesn't result in invalid strings
                 ArrayT::back() = CharT();
             } else {
                 ArrayT::back() = (std::make_unsigned_t<CharT>)(MaxSize - newSize);
@@ -293,22 +292,51 @@ namespace sp {
     };
 } // namespace sp
 
-template<typename CharT, size_t MaxSize>
-std::basic_string<CharT> operator+(const sp::InlineString<MaxSize, CharT> &lhs, const std::basic_string<CharT> &rhs) {
-    return std::basic_string<CharT>(lhs) + rhs;
+template<typename CharT, size_t MaxSize, typename ArrayT, size_t OtherMaxSize, typename OtherArrayT>
+sp::InlineString<MaxSize, CharT, ArrayT> operator+(const sp::InlineString<MaxSize, CharT, ArrayT> &lhs,
+    const sp::InlineString<OtherMaxSize, CharT, OtherArrayT> &rhs) {
+    sp::InlineString<MaxSize, CharT, ArrayT> result = lhs;
+    result += rhs;
+    return result;
 }
 
-template<typename CharT, size_t MaxSize>
-std::basic_string<CharT> operator+(const std::basic_string<CharT> &lhs, const sp::InlineString<MaxSize, CharT> &rhs) {
+template<typename CharT, size_t MaxSize, typename ArrayT>
+sp::InlineString<MaxSize, CharT, ArrayT> operator+(const sp::InlineString<MaxSize, CharT, ArrayT> &lhs,
+    const std::basic_string<CharT> &rhs) {
+    sp::InlineString<MaxSize, CharT, ArrayT> result = lhs;
+    result += rhs;
+    return result;
+}
+
+template<typename CharT, size_t MaxSize, typename ArrayT>
+std::basic_string<CharT> operator+(const std::basic_string<CharT> &lhs,
+    const sp::InlineString<MaxSize, CharT, ArrayT> &rhs) {
     return lhs + std::basic_string<CharT>(rhs);
 }
 
-template<typename CharT, size_t MaxSize>
-std::basic_string<CharT> operator+(const sp::InlineString<MaxSize, CharT> &lhs, const char *rhs) {
-    return std::basic_string<CharT>(lhs) + rhs;
+template<typename CharT, size_t MaxSize, typename ArrayT>
+sp::InlineString<MaxSize, CharT, ArrayT> operator+(const sp::InlineString<MaxSize, CharT, ArrayT> &lhs,
+    const std::basic_string_view<CharT> &rhs) {
+    sp::InlineString<MaxSize, CharT, ArrayT> result = lhs;
+    result += rhs;
+    return result;
 }
 
-template<typename CharT, size_t MaxSize>
-std::basic_string<CharT> operator+(const char *lhs, const sp::InlineString<MaxSize, CharT> &rhs) {
+template<typename CharT, size_t MaxSize, typename ArrayT>
+std::basic_string_view<CharT> operator+(const std::basic_string_view<CharT> &lhs,
+    const sp::InlineString<MaxSize, CharT, ArrayT> &rhs) {
+    return lhs + std::basic_string<CharT>(rhs);
+}
+
+template<typename CharT, size_t MaxSize, typename ArrayT>
+sp::InlineString<MaxSize, CharT, ArrayT> operator+(const sp::InlineString<MaxSize, CharT, ArrayT> &lhs,
+    const char *rhs) {
+    sp::InlineString<MaxSize, CharT, ArrayT> result = lhs;
+    result += rhs;
+    return result;
+}
+
+template<typename CharT, size_t MaxSize, typename ArrayT>
+std::basic_string<CharT> operator+(const char *lhs, const sp::InlineString<MaxSize, CharT, ArrayT> &rhs) {
     return lhs + std::basic_string<CharT>(rhs);
 }

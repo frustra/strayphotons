@@ -18,6 +18,7 @@
 
 namespace sp::vulkan::render_graph {
     typedef uint32 ResourceID;
+    typedef InlineString<127> ResourceName;
 
     const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
     const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
@@ -136,11 +137,11 @@ namespace sp::vulkan::render_graph {
         uint32 frameIndex = 0;
 
         struct Scope {
-            string name;
+            ResourceName name;
 
             struct PerFrame {
-                // robin_hood::unordered_flat_map<string, ResourceID, StringHash, StringEqual> resourceNames;
-                std::unordered_map<string, ResourceID, StringHash, StringEqual> resourceNames;
+                robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                // std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
             };
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames;
 
@@ -153,7 +154,7 @@ namespace sp::vulkan::render_graph {
         InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
 
         vector<Resource> resources;
-        vector<string> resourceNames;
+        vector<ResourceName> resourceNames;
         vector<ResourceID> freeIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 

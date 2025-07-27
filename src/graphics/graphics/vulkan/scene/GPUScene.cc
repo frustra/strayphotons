@@ -144,7 +144,7 @@ namespace sp::vulkan {
             });
     }
 
-    bool GPUScene::PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light>> lock) {
+    bool GPUScene::PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::Screen>> lock) {
         bool complete = true;
         textureCache.clear();
         for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
@@ -165,14 +165,14 @@ namespace sp::vulkan {
                     if (!handle.Ready()) complete = false;
                 }
             } else {
-                Logf("Entity %s has unknown override texture: %s",
+                Warnf("Entity %s has unknown override texture: %s",
                     ecs::ToString(lock, ent),
                     renderable.textureOverrideName);
             }
         }
         for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
             auto &light = ent.Get<ecs::Light>(lock);
-            if (light.gelName.empty()) continue;
+            if (light.gelName.empty() || starts_with(light.gelName, "gui:")) continue;
             if (light.gelName.length() > 6 && starts_with(light.gelName, "graph:")) {
                 textureCache[light.gelName] = {};
             } else if (light.gelName.length() > 6 && starts_with(light.gelName, "asset:")) {
@@ -187,20 +187,42 @@ namespace sp::vulkan {
                     if (!handle.Ready()) complete = false;
                 }
             } else {
-                Logf("Entity %s has unknown gel texture: %s", ecs::ToString(lock, ent), light.gelName);
+                Warnf("Entity %s has unknown gel texture: %s", ecs::ToString(lock, ent), light.gelName);
+            }
+        }
+        for (auto &ent : lock.EntitiesWith<ecs::Screen>()) {
+            auto &screen = ent.Get<ecs::Screen>(lock);
+            if (screen.textureName.empty() || starts_with(screen.textureName, "gui:")) continue;
+            if (screen.textureName.length() > 6 && starts_with(screen.textureName, "graph:")) {
+                textureCache[screen.textureName] = {};
+            } else if (screen.textureName.length() > 6 && starts_with(screen.textureName, "asset:")) {
+                auto it = textureCache.find(screen.textureName);
+                if (it == textureCache.end()) {
+                    auto handle = textures.LoadAssetImage(screen.textureName.substr(6), true);
+                    textureCache[screen.textureName] = handle;
+
+                    if (!handle.Ready()) complete = false;
+                } else {
+                    auto &handle = it->second;
+                    if (!handle.Ready()) complete = false;
+                }
+            } else {
+                Warnf("Entity %s has unknown screen texture: %s", ecs::ToString(lock, ent), screen.textureName);
             }
         }
         return complete;
     }
 
     void GPUScene::AddGraphTextures(rg::RenderGraph &graph) {
-        InlineVector<std::pair<std::string, rg::ResourceID>, 128> newGraphTextures;
+        InlineVector<std::pair<rg::ResourceName, rg::ResourceID>, 128> newGraphTextures;
         graph.AddPass("AddGraphTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &tex : textureCache) {
                     if (starts_with(tex.first, "graph:")) {
                         auto id = builder.ReadPreviousFrame(tex.first.substr(6), Access::FragmentShaderSampleImage);
-                        newGraphTextures.emplace_back(tex.first, id);
+                        if (id != rg::InvalidResource) {
+                            newGraphTextures.emplace_back(tex.first, id);
+                        }
                     }
                 }
                 builder.Write("RenderableEntities", Access::HostWrite);
@@ -208,7 +230,9 @@ namespace sp::vulkan {
             .Execute([this, newGraphTextures](rg::Resources &resources, DeviceContext &device) {
                 for (auto &tex : newGraphTextures) {
                     auto imageView = resources.GetImageView(tex.second);
-                    if (imageView) textureCache[tex.first] = textures.Add(imageView);
+                    if (imageView) {
+                        textureCache[tex.first] = textures.Add(imageView);
+                    }
                 }
                 textures.Flush();
                 for (auto &overridePair : renderableTextureOverrides) {
@@ -240,7 +264,8 @@ namespace sp::vulkan {
                 continue;
             }
 
-            activeMeshes.Register(MeshKey{model->name, meshIndex}, make_shared<Mesh>(model, meshIndex, *this, device));
+            activeMeshes.Register(MeshKey{rg::ResourceName{model->name}, meshIndex},
+                make_shared<Mesh>(model, meshIndex, *this, device));
             meshesToLoad.pop_back();
         }
     }

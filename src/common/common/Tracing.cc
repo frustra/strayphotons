@@ -7,9 +7,17 @@
 
 #include "Tracing.hh"
 
+#include <atomic>
 #include <cstdlib>
 
+thread_local std::atomic_size_t allocationCounter;
+
+// size_t SampleAllocationCount() {
+//     return allocationCounter.exchange(0u);
+// }
+
 // void *operator new(size_t size) {
+//     allocationCounter++;
 //     auto *ptr = std::malloc(size);
 //     // This holds a shared_mutex internally that causes multiple threads to block on malloc
 //     TracyAlloc(ptr, size);

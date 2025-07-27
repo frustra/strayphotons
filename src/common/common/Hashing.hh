@@ -100,6 +100,16 @@ namespace sp {
             return view == rhs;
         }
         template<size_t MaxSize>
+        std::size_t operator()(const std::string &lhs, const sp::InlineString<MaxSize> &rhs) const {
+            const std::string_view view = rhs;
+            return lhs == view;
+        }
+        template<size_t MaxSize>
+        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const std::string &rhs) const {
+            const std::string_view view = lhs;
+            return view == rhs;
+        }
+        template<size_t MaxSize>
         std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const sp::InlineString<MaxSize> &rhs) const {
             return lhs == rhs;
         }

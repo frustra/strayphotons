@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/FlatSet.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
@@ -47,7 +48,7 @@ namespace ecs {
 
         uint32_t changeCount = 0;
         std::vector<Signal> signals;
-        std::set<size_t> dirtyIndices;
+        sp::FlatSet<size_t> dirtyIndices;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);

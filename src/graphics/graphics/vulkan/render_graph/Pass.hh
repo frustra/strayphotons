@@ -82,7 +82,7 @@ namespace sp::vulkan::render_graph {
         friend class PassBuilder;
         string_view name;
         InlineVector<ResourceIDAccess, 128> accesses;
-        vector<ResourceIDFutureAccess> futureReads;
+        InlineVector<ResourceIDFutureAccess, 128> futureReads;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;

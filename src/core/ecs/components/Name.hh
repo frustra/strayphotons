@@ -56,7 +56,12 @@ The special `"scoperoot"` alias can also be used inside a template to reference 
 
         std::string String() const {
             if (scene.empty()) return entity.str();
-            return scene + ":" + entity;
+            std::string result;
+            result.reserve(scene.length() + entity.length() + 1);
+            result += scene;
+            result += ":";
+            result += entity;
+            return result;
         }
 
         explicit operator bool() const {

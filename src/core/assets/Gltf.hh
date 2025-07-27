@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "common/Common.hh"
 #include "ecs/components/Transform.h"
 
@@ -119,9 +120,9 @@ namespace sp {
 
     class Gltf : public NonCopyable {
     public:
-        Gltf(const string &name, std::shared_ptr<const Asset> asset);
+        Gltf(std::string_view name, std::shared_ptr<const Asset> asset);
 
-        const std::string name;
+        const AssetName name;
 
         std::shared_ptr<const Asset> asset;
         std::shared_ptr<const tinygltf::Model> gltfModel;

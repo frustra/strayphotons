@@ -53,7 +53,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device)
         : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
-          transparency(scene), guiRenderer(new GuiRenderer(device)) {
+          transparency(scene), emissive(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -99,14 +99,14 @@ namespace sp::vulkan {
         CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
-                completions.push_back(info.name);
+                completions.emplace_back(info.name.data(), info.name.size());
             }
         });
 
         CVarXrViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
-                completions.push_back(info.name);
+                completions.emplace_back(info.name.data(), info.name.size());
             }
         });
 
@@ -719,14 +719,16 @@ namespace sp::vulkan {
         });
 
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable, ecs::Screen>>();
             bool anyTexturesChanged = false;
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
             while (renderableObserver.Poll(lock, renderableEvent)) {
                 // Logf("Renderable entity changed: %s",
                 //     ecs::ToString(lock, renderableEvent.entity),
                 //     renderableEvent.component.modelName);
-                loadModel(lock, renderableEvent);
+                if (renderableEvent.Has<ecs::Renderable>(lock)) {
+                    loadModel(lock, renderableEvent);
+                }
                 anyTexturesChanged = true;
             }
 

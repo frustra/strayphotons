@@ -35,11 +35,12 @@ namespace sp {
     using namespace physx;
 
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
+    static CVar<uint32> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
 
     PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("PhysX", 120.0, true), windowInputQueue(windowInputQueue), characterControlSystem(*this),
-          constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this), animationSystem(*this),
-          workQueue("PhysXHullLoading") {
+        : RegisteredThread("PhysX", CVarPhysicsFPS.Get(), true), windowInputQueue(windowInputQueue),
+          characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
+          animationSystem(*this), workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
             PX_PHYSICS_VERSION_MAJOR,
             PX_PHYSICS_VERSION_MINOR,
@@ -177,6 +178,13 @@ namespace sp {
             }
             return complete;
         });
+
+        auto targetFPS = CVarPhysicsFPS.Get();
+        if (targetFPS > 0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / targetFPS));
+        } else {
+            interval = std::chrono::nanoseconds(0);
+        }
         return true;
     }
 
@@ -289,12 +297,13 @@ namespace sp {
                             auto userData = (ActorUserData *)actor->userData;
                             Assert(userData, "Physics actor is missing UserData");
 
+                            // Actors with no shapes are not added to the scene
                             if (transform != userData->pose) {
                                 PxTransform pxTransform(GlmVec3ToPxVec3(transform.GetPosition()),
                                     GlmQuatToPxQuat(transform.GetRotation()));
                                 if (pxTransform.isSane()) {
                                     auto dynamic = actor->is<PxRigidDynamic>();
-                                    if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
+                                    if (dynamic && actor->getScene() && ph.type == ecs::PhysicsActorType::Kinematic) {
                                         dynamic->setKinematicTarget(pxTransform);
                                     } else {
                                         actor->setGlobalPose(pxTransform);
@@ -480,13 +489,13 @@ namespace sp {
         DebugZoneScoped;
         bool shapesChanged = false;
         auto &physics = owner.Get<ecs::Physics>(lock);
-        std::vector<bool> existingShapes(physics.shapes.size());
+        InlineVector<bool, 256> existingShapes(physics.shapes.size());
 
         auto *userData = (ActorUserData *)actor->userData;
         if (!userData) return 0;
 
         size_t shapeCount = actor->getNbShapes();
-        std::vector<PxShape *> pxShapes(shapeCount);
+        InlineVector<PxShape *, 256> pxShapes(shapeCount);
         actor->getShapes(pxShapes.data(), pxShapes.size());
         for (auto *pxShape : pxShapes) {
             auto shapeUserData = (ShapeUserData *)pxShape->userData;
@@ -816,7 +825,7 @@ namespace sp {
                 PxTransform pxTransform(GlmVec3ToPxVec3(actorTransform.GetPosition()),
                     GlmQuatToPxQuat(actorTransform.GetRotation()));
                 if (pxTransform.isSane()) {
-                    if (dynamic && ph.type == ecs::PhysicsActorType::Kinematic) {
+                    if (dynamic && actor->getScene() && ph.type == ecs::PhysicsActorType::Kinematic) {
                         dynamic->setKinematicTarget(pxTransform);
                     } else {
                         actor->setGlobalPose(pxTransform);
@@ -882,8 +891,8 @@ namespace sp {
             auto scene = actor->getScene();
             if (scene) scene->removeActor(*actor);
             PxU32 nShapes = actor->getNbShapes();
-            vector<PxShape *> shapes(nShapes);
-            actor->getShapes(shapes.data(), nShapes);
+            InlineVector<PxShape *, 256> shapes(nShapes);
+            actor->getShapes(shapes.data(), shapes.size());
             for (auto *shape : shapes) {
                 auto shapeUserData = (ShapeUserData *)shape->userData;
                 actor->detachShape(*shape);
@@ -906,8 +915,8 @@ namespace sp {
 
     void PhysxManager::SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group) {
         PxU32 nShapes = actor->getNbShapes();
-        vector<PxShape *> shapes(nShapes);
-        actor->getShapes(shapes.data(), nShapes);
+        InlineVector<PxShape *, 256> shapes(nShapes);
+        actor->getShapes(shapes.data(), shapes.size());
 
         for (uint32 i = 0; i < nShapes; ++i) {
             SetCollisionGroup(shapes[i], group);

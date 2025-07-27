@@ -26,6 +26,7 @@ namespace sp {
             LockFreeEventQueue<ecs::Event> &inputQueue);
 
     private:
+        bool PreFrame() override;
         void Frame() override;
 
         LockFreeEventQueue<ecs::Event> &windowInputQueue;

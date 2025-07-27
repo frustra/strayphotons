@@ -51,6 +51,7 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::CreateImage(string_view name, const ImageDesc &desc, Access access) {
+        DebugZoneScoped;
         Resource resource(desc);
         resources.Register(name, resource);
         pass.AddAccess(resource.id, access);
@@ -104,6 +105,7 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access) {
+        DebugZoneScoped;
         Assert(layout.size > 0, "can't create a buffer of size 0");
 
         BufferDesc desc;

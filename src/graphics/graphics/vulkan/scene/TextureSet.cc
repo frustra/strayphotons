@@ -16,9 +16,8 @@ namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
-        textures[0] = CreateSinglePixel(glm::vec4(1));
+        textures[0] = CreateSinglePixel(ERROR_COLOR);
         texturesToFlush.push_back(0);
-        singlePixelMap.emplace(0xFFFFFFFFu, 0);
     }
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
@@ -94,7 +93,7 @@ namespace sp::vulkan {
         if (materialIndex < 0 || (size_t)materialIndex >= gltfModel.materials.size()) return {};
         auto &material = gltfModel.materials[materialIndex];
 
-        string name = source->name + "_" + std::to_string(materialIndex) + "_";
+        string name = source->name.str() + "_" + std::to_string(materialIndex) + "_";
         int textureIndex = -1;
         std::vector<double> factor;
         bool srgb = false;

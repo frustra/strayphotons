@@ -134,7 +134,7 @@ namespace sp::vulkan::render_graph {
         void Execute();
 
         struct PooledImageInfo {
-            string name;
+            ResourceName name;
             ImageDesc desc;
         };
         vector<PooledImageInfo> AllImages();

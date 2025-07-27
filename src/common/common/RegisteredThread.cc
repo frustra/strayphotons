@@ -77,6 +77,7 @@ namespace sp {
                             if (traceFrames) FrameMarkEnd(threadName.c_str());
                             this->PostFrame(false);
                         }
+                        // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());
                     }
 
                     auto realFrameEnd = chrono_clock::now();

@@ -496,6 +496,7 @@ namespace sp::vulkan::renderer {
             0,
             {},
             [this, listCount = fragmentListCount](BufferPtr buffer) {
+                ZoneScopedN("FragmentListReadback");
                 auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
                 bool printDebug = debugThisFrame.test();
                 debugThisFrame.clear();

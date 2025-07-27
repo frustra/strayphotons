@@ -9,17 +9,21 @@
 
 #include "Common.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
     class Emissive {
     public:
+        Emissive(GPUScene &scene) : scene(scene) {}
         void AddPass(RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock,
             chrono_clock::duration elapsedTime);
 
     private:
+        GPUScene &scene;
+
         struct Screen {
-            ResourceID id;
+            std::variant<ResourceID, TextureIndex> texture;
 
             struct {
                 glm::mat4 quad;

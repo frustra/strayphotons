@@ -111,7 +111,7 @@ namespace sp {
         }
     } // namespace gltf
 
-    Gltf::Gltf(const string &name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
+    Gltf::Gltf(std::string_view name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
         Assertf(asset, "Gltf not found: %s", name);
 
         ZoneScopedN("LoadGltf");

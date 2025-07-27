@@ -16,8 +16,10 @@
 #include "input/KeyCodes.hh"
 
 namespace sp {
+    static CVar<uint32> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
+
     GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue) {
+        : RegisteredThread("GameLogic", CVarLogicFPS.Get(), true), windowInputQueue(windowInputQueue) {
         funcs.Register<unsigned int>("steplogic",
             "Advance the game logic by N frames, default is 1",
             [this](unsigned int arg) {
@@ -33,6 +35,16 @@ namespace sp {
 
     void GameLogic::StartThread(bool startPaused) {
         RegisteredThread::StartThread(startPaused);
+    }
+
+    bool GameLogic::PreFrame() {
+        auto targetFPS = CVarLogicFPS.Get();
+        if (targetFPS > 0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / targetFPS));
+        } else {
+            interval = std::chrono::nanoseconds(0);
+        }
+        return true;
     }
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,

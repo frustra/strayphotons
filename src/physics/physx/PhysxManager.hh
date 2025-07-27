@@ -11,6 +11,7 @@
 #include "common/Common.hh"
 #include "common/DispatchQueue.hh"
 #include "common/EntityMap.hh"
+#include "common/Hashing.hh"
 #include "common/LockFreeEventQueue.hh"
 #include "common/Logging.hh"
 #include "common/PreservingMap.hh"
@@ -180,7 +181,7 @@ namespace sp {
         EntityMap<vector<JointState>> joints;
 
         std::mutex cacheMutex;
-        PreservingMap<string, Async<ConvexHullSet>> cache;
+        PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;
         DispatchQueue workQueue;
 
         struct TransformCacheEntry {

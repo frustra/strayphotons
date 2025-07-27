@@ -58,7 +58,7 @@ namespace sp::vulkan::renderer {
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
 
-            std::string gelName;
+            ResourceName gelName;
             std::optional<TextureIndex> gelTexture;
 
             bool operator==(const VirtualLight &) const;
