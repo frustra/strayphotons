@@ -504,7 +504,7 @@ namespace sp::vulkan {
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
         if (!gui.windowName.empty()) {
             auto context = make_shared<WorldGuiContext>(ent, gui.windowName);
-            auto window = CreateGuiWindow(gui.windowName, ent);
+            auto window = CreateGuiWindow(gui.windowName);
             if (window) {
                 context->Attach(window);
                 auto windowScale = CVarWindowScale.Get();

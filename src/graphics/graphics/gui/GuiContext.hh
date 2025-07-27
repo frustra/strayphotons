@@ -8,25 +8,15 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/components/Gui.hh"
 
-#include <glm/glm.hpp>
 #include <memory>
-#include <span>
 #include <string>
 #include <vector>
 
 struct ImGuiContext;
 
 namespace sp {
-    enum class GuiLayoutAnchor {
-        Fullscreen,
-        Left,
-        Top,
-        Right,
-        Bottom,
-        Floating,
-    };
-
     enum class GuiFont {
         Primary,
         Accent,
@@ -39,31 +29,9 @@ namespace sp {
         float size;
     };
 
-    class GuiRenderable {
-    public:
-        GuiRenderable(const std::string &name,
-            GuiLayoutAnchor anchor,
-            glm::ivec2 preferredSize = {-1, -1},
-            int windowFlags = 0)
-            : name(name), anchor(anchor), preferredSize(preferredSize), windowFlags(windowFlags) {}
-
-        virtual bool PreDefine() {
-            return true;
-        }
-        virtual void DefineContents() = 0;
-        virtual void PostDefine() {}
-
-        void PushFont(GuiFont fontType, float fontSize);
-
-        const std::string name;
-        GuiLayoutAnchor anchor;
-        glm::ivec2 preferredSize;
-        int windowFlags = 0;
-    };
-
     class GuiContext {
     public:
-        using Ref = std::shared_ptr<GuiRenderable>;
+        using Ref = std::shared_ptr<ecs::GuiRenderable>;
 
         GuiContext(const std::string &name);
         virtual ~GuiContext();
@@ -78,7 +46,7 @@ namespace sp {
             return name;
         }
 
-        void PushFont(GuiFont fontType, float fontSize);
+        static void PushFont(GuiFont fontType, float fontSize);
 
     protected:
         std::vector<Ref> components;
@@ -88,7 +56,7 @@ namespace sp {
         std::string name;
     };
 
-    std::shared_ptr<GuiRenderable> CreateGuiWindow(const std::string &name, const ecs::Entity &ent);
+    std::shared_ptr<ecs::GuiRenderable> CreateGuiWindow(const std::string &name);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp

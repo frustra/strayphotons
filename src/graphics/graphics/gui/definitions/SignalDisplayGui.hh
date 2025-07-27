@@ -8,19 +8,16 @@
 #pragma once
 
 #include "ecs/EntityRef.hh"
-#include "graphics/gui/GuiContext.hh"
+#include "ecs/components/Gui.hh"
 
 namespace sp {
-    class SignalDisplayGui final : public GuiRenderable {
+    class SignalDisplayGui final : public ecs::GuiRenderable {
     public:
-        SignalDisplayGui(const std::string &name, const ecs::Entity &ent);
+        SignalDisplayGui(const std::string &name);
         virtual ~SignalDisplayGui() {}
 
-        bool PreDefine() override;
-        void DefineContents() override;
-        void PostDefine() override;
-
-    private:
-        ecs::EntityRef signalEntity;
+        bool PreDefine(ecs::Entity ent) override;
+        void DefineContents(ecs::Entity ent) override;
+        void PostDefine(ecs::Entity ent) override;
     };
 } // namespace sp

@@ -33,18 +33,19 @@ namespace sp {
         ImGuiIO &io = ImGui::GetIO();
         for (auto &component : components) {
             if (!component) continue;
-            GuiRenderable &renderable = *component;
+            ecs::GuiRenderable &renderable = *component;
+            ecs::Entity ent = guiEntity.GetLive();
 
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
             flags |= renderable.windowFlags;
 
-            if (renderable.PreDefine()) {
+            if (renderable.PreDefine(ent)) {
                 ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
                 ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
                 ImGui::Begin(component->name.c_str(), nullptr, flags);
-                component->DefineContents();
+                component->DefineContents(ent);
                 ImGui::End();
-                renderable.PostDefine();
+                renderable.PostDefine(ent);
             }
         }
     }

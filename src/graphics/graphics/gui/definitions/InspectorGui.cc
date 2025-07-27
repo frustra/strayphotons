@@ -18,8 +18,8 @@
 
 namespace sp {
     InspectorGui::InspectorGui(const string &name)
-        : GuiRenderable(name,
-              GuiLayoutAnchor::Right,
+        : ecs::GuiRenderable(name,
+              ecs::GuiLayoutAnchor::Right,
               {400, -1},
               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
@@ -33,7 +33,7 @@ namespace sp {
         });
     }
 
-    bool InspectorGui::PreDefine() {
+    bool InspectorGui::PreDefine(ecs::Entity ent) {
         if (!context) return false;
         ZoneScoped;
         {
@@ -73,11 +73,11 @@ namespace sp {
         return true;
     }
 
-    void InspectorGui::PostDefine() {
+    void InspectorGui::PostDefine(ecs::Entity ent) {
         ImGui::PopStyleColor(5);
     }
 
-    void InspectorGui::DefineContents() {
+    void InspectorGui::DefineContents(ecs::Entity ent) {
         ZoneScoped;
 
         if (ImGui::BeginTabBar("EditMode")) {

@@ -9,6 +9,10 @@
 
 #include "ecs/Components.hh"
 
+#include <glm/glm.hpp>
+#include <memory>
+#include <span>
+
 namespace sp {
     class GuiContext;
 }
@@ -18,6 +22,35 @@ namespace ecs {
         None = 0,
         World,
         Overlay,
+    };
+
+    enum class GuiLayoutAnchor {
+        Fullscreen,
+        Top,
+        Left,
+        Right,
+        Bottom,
+        Floating,
+    };
+
+    class GuiRenderable {
+    public:
+        GuiRenderable(const std::string &name,
+            GuiLayoutAnchor anchor,
+            glm::ivec2 preferredSize = {-1, -1},
+            int windowFlags = 0)
+            : name(name), anchor(anchor), preferredSize(preferredSize), windowFlags(windowFlags) {}
+
+        virtual bool PreDefine(Entity ent) {
+            return true;
+        }
+        virtual void DefineContents(Entity ent) = 0;
+        virtual void PostDefine(Entity ent) {}
+
+        const std::string name;
+        GuiLayoutAnchor anchor;
+        glm::ivec2 preferredSize;
+        int windowFlags = 0;
     };
 
     struct Gui {

@@ -29,6 +29,21 @@ namespace sp {
         return fontList;
     }
 
+    void GuiContext::PushFont(GuiFont fontType, float fontSize) {
+        auto &io = ImGui::GetIO();
+        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
+
+        for (size_t i = 0; i < fontList.size(); i++) {
+            auto &f = fontList[i];
+            if (f.type == fontType && f.size == fontSize) {
+                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
+                return;
+            }
+        }
+
+        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
+    }
+
     GuiContext::GuiContext(const std::string &name) : name(name) {
         imCtx = ImGui::CreateContext();
         SetGuiContext();
@@ -48,17 +63,17 @@ namespace sp {
         SetGuiContext();
     }
 
-    void GuiContext::Attach(const std::shared_ptr<GuiRenderable> &component) {
+    void GuiContext::Attach(const std::shared_ptr<ecs::GuiRenderable> &component) {
         if (!sp::contains(components, component)) components.emplace_back(component);
     }
 
-    void GuiContext::Detach(const std::shared_ptr<GuiRenderable> &component) {
+    void GuiContext::Detach(const std::shared_ptr<ecs::GuiRenderable> &component) {
         auto it = std::find(components.begin(), components.end(), component);
         if (it != components.end()) components.erase(it);
     }
 
-    shared_ptr<GuiRenderable> CreateGuiWindow(const string &windowName, const ecs::Entity &ent) {
-        shared_ptr<GuiRenderable> window;
+    shared_ptr<ecs::GuiRenderable> CreateGuiWindow(const string &windowName) {
+        shared_ptr<ecs::GuiRenderable> window;
         if (windowName == "lobby") {
             window = make_shared<LobbyGui>(windowName);
         } else if (windowName == "entity_picker") {
@@ -66,34 +81,11 @@ namespace sp {
         } else if (windowName == "inspector") {
             window = make_shared<InspectorGui>(windowName);
         } else if (windowName == "signal_display") {
-            window = make_shared<SignalDisplayGui>(windowName, ent);
+            window = make_shared<SignalDisplayGui>(windowName);
         } else {
             Errorf("unknown gui window: %s", windowName);
             return nullptr;
         }
         return window;
-    }
-
-    static void pushFont(GuiFont fontType, float fontSize) {
-        auto &io = ImGui::GetIO();
-        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
-
-        for (size_t i = 0; i < fontList.size(); i++) {
-            auto &f = fontList[i];
-            if (f.type == fontType && f.size == fontSize) {
-                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
-                return;
-            }
-        }
-
-        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
-    }
-
-    void GuiRenderable::PushFont(GuiFont fontType, float fontSize) {
-        pushFont(fontType, fontSize);
-    }
-
-    void GuiContext::PushFont(GuiFont fontType, float fontSize) {
-        pushFont(fontType, fontSize);
     }
 } // namespace sp

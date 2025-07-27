@@ -32,7 +32,7 @@ namespace sp {
 
         struct GuiEntityContext {
             ecs::Entity entity;
-            shared_ptr<GuiRenderable> window = nullptr;
+            shared_ptr<ecs::GuiRenderable> window = nullptr;
         };
         vector<GuiEntityContext> guis;
     };

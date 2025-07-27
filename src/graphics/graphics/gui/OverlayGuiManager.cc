@@ -53,9 +53,10 @@ namespace sp {
         ImVec2 viewportSize = imguiViewport->WorkSize;
         for (auto &component : components) {
             if (!component) continue;
-            GuiRenderable &renderable = *component;
+            ecs::GuiRenderable &renderable = *component;
+            ecs::Entity ent = guiEntity.GetLive();
 
-            if (renderable.PreDefine()) {
+            if (renderable.PreDefine(ent)) {
                 ImVec2 windowSize(renderable.preferredSize.x, renderable.preferredSize.y);
                 windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
                 windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
@@ -64,32 +65,32 @@ namespace sp {
                 ImGui::SetNextWindowSize(windowSize);
 
                 switch (renderable.anchor) {
-                case GuiLayoutAnchor::Fullscreen:
+                case ecs::GuiLayoutAnchor::Fullscreen:
                     ImGui::SetNextWindowPos(viewportPos);
                     break;
-                case GuiLayoutAnchor::Left:
+                case ecs::GuiLayoutAnchor::Left:
                     ImGui::SetNextWindowPos(viewportPos);
                     viewportPos.x += windowSize.x;
                     viewportSize.x -= windowSize.x;
                     break;
-                case GuiLayoutAnchor::Top:
+                case ecs::GuiLayoutAnchor::Top:
                     ImGui::SetNextWindowPos(viewportPos);
                     viewportPos.y += windowSize.y;
                     viewportSize.y -= windowSize.y;
                     break;
-                case GuiLayoutAnchor::Right:
+                case ecs::GuiLayoutAnchor::Right:
                     ImGui::SetNextWindowPos(ImVec2(viewportPos.x + viewportSize.x, viewportPos.y),
                         ImGuiCond_None,
                         ImVec2(1, 0));
                     viewportSize.x -= windowSize.x;
                     break;
-                case GuiLayoutAnchor::Bottom:
+                case ecs::GuiLayoutAnchor::Bottom:
                     ImGui::SetNextWindowPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y),
                         ImGuiCond_None,
                         ImVec2(0, 1));
                     viewportSize.y -= windowSize.y;
                     break;
-                case GuiLayoutAnchor::Floating:
+                case ecs::GuiLayoutAnchor::Floating:
                     // Noop
                     break;
                 default:
@@ -97,9 +98,9 @@ namespace sp {
                 }
 
                 ImGui::Begin(component->name.c_str(), nullptr, renderable.windowFlags);
-                component->DefineContents();
+                component->DefineContents(ent);
                 ImGui::End();
-                renderable.PostDefine();
+                renderable.PostDefine(ent);
             }
         }
 
@@ -153,7 +154,7 @@ namespace sp {
 
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
                 if (!ctx.window && !gui.windowName.empty()) {
-                    ctx.window = CreateGuiWindow(gui.windowName, ctx.entity);
+                    ctx.window = CreateGuiWindow(gui.windowName);
                 }
                 if (gui.target == ecs::GuiTarget::Overlay) {
                     Attach(ctx.window);

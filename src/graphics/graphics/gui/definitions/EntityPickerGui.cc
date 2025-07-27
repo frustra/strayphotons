@@ -19,8 +19,8 @@
 
 namespace sp {
     EntityPickerGui::EntityPickerGui(const string &name)
-        : GuiRenderable(name,
-              GuiLayoutAnchor::Left,
+        : ecs::GuiRenderable(name,
+              ecs::GuiLayoutAnchor::Left,
               {400, -1},
               ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
@@ -34,7 +34,7 @@ namespace sp {
         });
     }
 
-    bool EntityPickerGui::PreDefine() {
+    bool EntityPickerGui::PreDefine(ecs::Entity ent) {
         if (!context) return false;
         ZoneScoped;
         {
@@ -60,11 +60,11 @@ namespace sp {
         return true;
     }
 
-    void EntityPickerGui::PostDefine() {
+    void EntityPickerGui::PostDefine(ecs::Entity ent) {
         ImGui::PopStyleColor(5);
     }
 
-    void EntityPickerGui::DefineContents() {
+    void EntityPickerGui::DefineContents(ecs::Entity ent) {
         ZoneScoped;
 
         if (ImGui::BeginTabBar("EditMode")) {

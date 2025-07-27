@@ -7,15 +7,15 @@
 
 #pragma once
 
+#include "ecs/components/Gui.hh"
 #include "graphics/core/Histogram.hh"
-#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
 #include <imgui/imgui.h>
 #include <sstream>
 
 namespace sp::vulkan {
-    class ProfilerGui final : public GuiRenderable {
+    class ProfilerGui final : public ecs::GuiRenderable {
     public:
         enum class Mode {
             CPU,
@@ -23,7 +23,10 @@ namespace sp::vulkan {
         };
 
         ProfilerGui(PerfTimer &timer)
-            : GuiRenderable("profiler", GuiLayoutAnchor::Floating, {-1, -1}, ImGuiWindowFlags_AlwaysAutoResize),
+            : ecs::GuiRenderable("profiler",
+                  ecs::GuiLayoutAnchor::Floating,
+                  {-1, -1},
+                  ImGuiWindowFlags_AlwaysAutoResize),
               timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
@@ -32,7 +35,7 @@ namespace sp::vulkan {
             return (float)self->drawHistogram.buckets[index];
         }
 
-        bool PreDefine() override {
+        bool PreDefine(ecs::Entity ent) override {
             if (timer.lastCompleteFrame.empty()) return false;
             if (!CVarProfileRender.Get()) return false;
             ZoneScoped;
@@ -41,7 +44,7 @@ namespace sp::vulkan {
             return true;
         }
 
-        void DefineContents() override {
+        void DefineContents(ecs::Entity ent) override {
             ZoneScoped;
 
             if (ImGui::BeginTable("ResultTable", 7)) {

@@ -8,34 +8,33 @@
 #include "SignalDisplayGui.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "graphics/gui/GuiContext.hh"
 
 #include <imgui/imgui.h>
 #include <iomanip>
 #include <sstream>
 
 namespace sp {
-    SignalDisplayGui::SignalDisplayGui(const string &name, const ecs::Entity &ent)
-        : GuiRenderable(name, GuiLayoutAnchor::Floating), signalEntity(ent) {}
+    SignalDisplayGui::SignalDisplayGui(const string &name) : ecs::GuiRenderable(name, ecs::GuiLayoutAnchor::Floating) {}
 
-    bool SignalDisplayGui::PreDefine() {
+    bool SignalDisplayGui::PreDefine(ecs::Entity ent) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        PushFont(GuiFont::Monospace, 32);
+        GuiContext::PushFont(GuiFont::Monospace, 32);
         return true;
     }
 
-    void SignalDisplayGui::PostDefine() {
+    void SignalDisplayGui::PostDefine(ecs::Entity ent) {
         ImGui::PopFont();
         ImGui::PopStyleVar(2);
         ImGui::PopStyleColor();
     }
 
-    void SignalDisplayGui::DefineContents() {
+    void SignalDisplayGui::DefineContents(ecs::Entity ent) {
         ZoneScoped;
         auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
-        auto ent = signalEntity.Get(lock);
         std::string text = "error";
         ImVec4 textColor(1, 0, 0, 1);
         if (ent.Exists(lock)) {
