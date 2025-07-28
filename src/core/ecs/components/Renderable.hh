@@ -83,7 +83,8 @@ It is usually preferred to load the model using the [gltf Prefab Script](Prefab_
 )",
         StructField::New("model",
             "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
-            &Renderable::modelName),
+            &Renderable::modelName,
+            ~FieldAction::AutoApply),
         StructField::New("mesh_index",
             "The index of the mesh to render from the GLTF model. "
             "Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab.",

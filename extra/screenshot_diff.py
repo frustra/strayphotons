@@ -21,15 +21,18 @@ def main():
     args = parser.parse_args()
 
     bin_root = os.path.realpath(os.path.join(os.path.dirname(__file__), "../bin"))
-    
+
     req = urllib.request.Request("https://api.buildkite.com/v2/organizations/frustra/pipelines/strayphotons/builds?branch=master&state=passed&page=1&per_page=1")
     req.add_header("Authorization", "Bearer " + args.token)
-    
+
     response = urllib.request.urlopen(req).read()
     content = json.loads(response.decode('utf-8'))
     if len(content) == 0:
         print('Could not find valid previous build to compare against')
-        exit(0)
+        if os.environ.get('BUILDKITE_BRANCH', 'master') == 'master':
+            # Allow master or non-buildkite to pass if previous build is missing
+            exit(0)
+        exit(1)
 
     build_info = content[0]
     artifacts = {}
@@ -37,7 +40,7 @@ def main():
     for job in build_info['jobs']:
         if job['state'] != "passed":
             continue
-        
+
         for rule in job['agent_query_rules']:
             parts = rule.split('=')
             env_value = os.environ.get('BUILDKITE_AGENT_META_DATA_' + parts[0].upper())
@@ -49,7 +52,7 @@ def main():
             while len(content) > 0 or page == 1:
                 req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
                 req.add_header("Authorization", "Bearer " + args.token)
-                
+
                 response = urllib.request.urlopen(req).read()
                 content = json.loads(response.decode('utf-8'))
 
@@ -65,7 +68,7 @@ def main():
     for path in artifacts:
         remote_path = artifacts[path]['download_url']
         local_path = os.path.join(bin_root, 'comparison/' + path)
-    
+
         os.system('mkdir -p "' + os.path.dirname(local_path) + '"')
         os.system('curl -s -L -H "Authorization: Bearer ' + args.token + '" "' + remote_path + '" --output "' + local_path + '"')
 

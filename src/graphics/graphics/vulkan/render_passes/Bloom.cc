@@ -15,10 +15,13 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarBloomScale("r.BloomScale", 0.15f, "Bloom scale");
 
     void AddBloom(RenderGraph &graph) {
+        float bloomScale = CVarBloomScale.Get();
+        if (bloomScale <= 0.0f) return;
+
         auto sourceID = graph.LastOutputID();
 
         graph.BeginScope("BloomBlur");
-        auto blurY1 = renderer::AddGaussianBlur1D(graph, sourceID, glm::ivec2(0, 1), 1, CVarBloomScale.Get());
+        auto blurY1 = renderer::AddGaussianBlur1D(graph, sourceID, glm::ivec2(0, 1), 1, bloomScale);
         auto blur1 = renderer::AddGaussianBlur1D(graph, blurY1, glm::ivec2(1, 0), 2);
         auto blurY2 = renderer::AddGaussianBlur1D(graph, blur1, glm::ivec2(0, 1), 1);
         auto blur2 = renderer::AddGaussianBlur1D(graph, blurY2, glm::ivec2(1, 0), 1);

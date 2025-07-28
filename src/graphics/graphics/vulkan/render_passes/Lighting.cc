@@ -67,10 +67,10 @@ namespace sp::vulkan::renderer {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
-            auto &gelName = light.gelName;
+            auto &filterName = light.filterName;
 
-            if (!gelName.empty() && scene.textureCache.find(gelName) == scene.textureCache.end()) {
-                // cull lights that don't have their gel loaded yet
+            if (!filterName.empty() && scene.textureCache.find(filterName) == scene.textureCache.end()) {
+                // cull lights that don't have their filter texture loaded yet
                 continue;
             }
 
@@ -106,16 +106,16 @@ namespace sp::vulkan::renderer {
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
-            data.gelId = 0;
-            if (!gelName.empty()) {
+            data.filterId = 0;
+            if (!filterName.empty()) {
                 data.cornerUVs = {
                     glm::vec2(0, 0),
                     glm::vec2(0, 1),
                     glm::vec2(1, 1),
                     glm::vec2(1, 0),
                 };
-                vLight.gelName = gelName;
-                vLight.gelTexture = scene.textureCache[gelName].index;
+                vLight.filterName = filterName;
+                vLight.filterTexture = scene.textureCache[filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -212,9 +212,9 @@ namespace sp::vulkan::renderer {
             data.intensity = light.intensity;
             data.illuminance = light.illuminance;
 
-            data.gelId = 0;
-            if (!light.gelName.empty()) {
-                // project 4 corners of optic into gel texture uv space
+            data.filterId = 0;
+            if (!light.filterName.empty()) {
+                // project 4 corners of optic into filter texture uv space
                 static const std::array<glm::vec2, 4> opticCornerOffsets = {
                     glm::vec2(-0.5, -0.5),
                     glm::vec2(-0.5, 0.5),
@@ -237,8 +237,8 @@ namespace sp::vulkan::renderer {
                         coord);
                 }
 
-                vLight.gelName = light.gelName;
-                vLight.gelTexture = scene.textureCache[light.gelName].index;
+                vLight.filterName = light.filterName;
+                vLight.filterTexture = scene.textureCache[light.filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -319,11 +319,11 @@ namespace sp::vulkan::renderer {
             })
             .Execute([this](Resources &resources, DeviceContext &device) {
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
-                    if (lights[i].gelTexture.has_value()) {
-                        if (starts_with(lights[i].gelName, "graph:")) {
-                            gpuData.lights[i].gelId = scene.textureCache[lights[i].gelName].index;
+                    if (lights[i].filterTexture.has_value()) {
+                        if (starts_with(lights[i].filterName, "graph:")) {
+                            gpuData.lights[i].filterId = scene.textureCache[lights[i].filterName].index;
                         } else {
-                            gpuData.lights[i].gelId = lights[i].gelTexture.value();
+                            gpuData.lights[i].filterId = lights[i].filterTexture.value();
                         }
                     }
                 }

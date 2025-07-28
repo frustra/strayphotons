@@ -58,8 +58,8 @@ namespace sp::vulkan::renderer {
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
 
-            std::string gelName;
-            std::optional<TextureIndex> gelTexture;
+            std::string filterName;
+            std::optional<TextureIndex> filterTexture;
 
             bool operator==(const VirtualLight &) const;
         };
@@ -88,7 +88,7 @@ namespace sp::vulkan::renderer {
             glm::vec4 bounds;
             std::array<glm::vec2, 4> cornerUVs; // clockwise winding starting at the bottom left
             glm::vec2 clip;
-            uint32_t gelId;
+            uint32_t filterId;
             uint32_t previousIndex;
             uint32_t parentIndex;
 

@@ -18,7 +18,7 @@ mkdir -p build
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Restoring assets cache"
     ./assets/cache-assets.py --restore
-    
+
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
         echo -e "~~~ Restoring physics collision cache"
         mkdir -p ./assets/cache

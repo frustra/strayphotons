@@ -572,7 +572,7 @@
 				"scale": [1, 0.25, 1]
 			},
 			"light": {
-				"gel": "asset:logos/sp-menu.png",
+				"filter": "asset:logos/sp-menu.png",
 				"intensity": 300,
 				"shadow_map_clip": [0.1, 10],
 				"shadow_map_size": 10,

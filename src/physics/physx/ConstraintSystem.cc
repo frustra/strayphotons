@@ -100,8 +100,7 @@ namespace sp {
 
         // Update Linear Force
         if (maxForce > 0) {
-            auto deltaPos = (targetTransform.GetPosition() + targetLinearVelocity * intervalSeconds) -
-                            transform.GetPosition();
+            auto deltaPos = targetTransform.GetPosition() - transform.GetPosition();
             auto currentLinearVelocity = PxVec3ToGlmVec3(dynamic->getLinearVelocity());
             auto deltaVelocity = targetLinearVelocity - currentLinearVelocity;
 
