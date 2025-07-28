@@ -149,14 +149,15 @@ vec3 DirectShading(vec3 worldPosition,
 
         vec3 lightTint = vec3(spotFalloff);
 #ifdef LIGHTING_GELS
-        uint gelId = lights[i].gelId;
-        if (gelId > 0) {
+        uint filterId = lights[i].filterId;
+        if (filterId > 0) {
             vec2 coord = ViewPosToScreenPos(shadowMapPos, lights[i].proj).xy;
 
             vec4 cornerUVs[2] = lights[i].cornerUVs;
             coord = bilinearMix(cornerUVs[0].xy, cornerUVs[1].zw, cornerUVs[0].zw, cornerUVs[1].xy, coord);
 
-            lightTint = texture(textures[gelId], vec2(coord.x, 1 - coord.y)).rgb * float(coord == clamp(coord, 0, 1));
+            lightTint = texture(textures[filterId], vec2(coord.x, 1 - coord.y)).rgb *
+                        float(coord == clamp(coord, 0, 1));
         }
 #endif
 

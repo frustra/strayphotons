@@ -660,13 +660,16 @@ namespace sp::vulkan {
                 renderable.model = model;
                 return true;
             } else {
-                ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ref = ecs::EntityRef(ent), model](auto lock) {
-                    ecs::Entity ent = ref.Get(lock);
-                    if (!ent.Has<ecs::Renderable>(lock)) return;
-                    auto &renderable = ent.Get<ecs::Renderable>(lock);
-                    renderable.model = model;
-                });
-                return false;
+                if (ecs::IsLive(ent)) {
+                    ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ent, model](auto lock) {
+                        if (!ent.Has<ecs::Renderable>(lock)) return;
+                        auto &renderable = ent.Get<ecs::Renderable>(lock);
+                        renderable.model = model;
+                    });
+                    return false;
+                } else {
+                    return true;
+                }
             }
         };
 
@@ -727,9 +730,11 @@ namespace sp::vulkan {
             bool anyTexturesChanged = false;
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
             while (renderableObserver.Poll(lock, renderableEvent)) {
-                // Logf("Renderable entity changed: %s",
-                //     ecs::ToString(lock, renderableEvent.entity),
-                //     renderableEvent.component.modelName);
+                // std::string modelName = "";
+                // if (renderableEvent.Has<ecs::Renderable>(lock)) {
+                //     modelName = renderableEvent.Get<ecs::Renderable>(lock).modelName;
+                // }
+                // Logf("Renderable entity changed: %s %s", ecs::ToString(lock, renderableEvent), modelName);
                 if (renderableEvent.Has<ecs::Renderable>(lock)) {
                     loadModel(lock, renderableEvent);
                 }
@@ -738,9 +743,11 @@ namespace sp::vulkan {
 
             ecs::ComponentModifiedEvent<ecs::Light> lightEvent;
             while (lightObserver.Poll(lock, lightEvent)) {
-                // Logf("Light entity changed: %s",
-                //     ecs::ToString(lock, lightEvent.entity),
-                //     lightEvent.component.gelName);
+                // std::string filterName = "";
+                // if (lightEvent.Has<ecs::Light>(lock)) {
+                //     filterName = lightEvent.Get<ecs::Light>(lock).filterName;
+                // }
+                // Logf("Light entity changed: %s %s", ecs::ToString(lock, lightEvent), filterName);
                 anyTexturesChanged = true;
             }
             if (anyTexturesChanged) scene.PreloadTextures(lock);

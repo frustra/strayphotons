@@ -172,14 +172,14 @@ namespace sp::vulkan {
         }
         for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
             auto &light = ent.Get<ecs::Light>(lock);
-            if (light.gelName.empty() || starts_with(light.gelName, "gui:")) continue;
-            if (light.gelName.length() > 6 && starts_with(light.gelName, "graph:")) {
-                textureCache[light.gelName] = {};
-            } else if (light.gelName.length() > 6 && starts_with(light.gelName, "asset:")) {
-                auto it = textureCache.find(light.gelName);
+            if (light.filterName.empty() || starts_with(light.filterName, "gui:")) continue;
+            if (light.filterName.length() > 6 && starts_with(light.filterName, "graph:")) {
+                textureCache[light.filterName] = {};
+            } else if (light.filterName.length() > 6 && starts_with(light.filterName, "asset:")) {
+                auto it = textureCache.find(light.filterName);
                 if (it == textureCache.end()) {
-                    auto handle = textures.LoadAssetImage(light.gelName.substr(6), true);
-                    textureCache[light.gelName] = handle;
+                    auto handle = textures.LoadAssetImage(light.filterName.substr(6), true);
+                    textureCache[light.filterName] = handle;
 
                     if (!handle.Ready()) complete = false;
                 } else {
@@ -187,7 +187,7 @@ namespace sp::vulkan {
                     if (!handle.Ready()) complete = false;
                 }
             } else {
-                Warnf("Entity %s has unknown gel texture: %s", ecs::ToString(lock, ent), light.gelName);
+                Warnf("Entity %s has unknown filter texture: %s", ecs::ToString(lock, ent), light.filterName);
             }
         }
         for (auto &ent : lock.EntitiesWith<ecs::Screen>()) {

@@ -328,9 +328,7 @@
 				"scale": [0.12, 0.05, 1],
 				"translate": [4.94, 1.35, 2.35]
 			},
-			"gui": {
-				"window_name": ""
-			},
+			"gui": {},
 			"screen": {
 				"luminance": [3, 3, 3],
 				"resolution": [120, 50]
@@ -350,7 +348,7 @@
 				{
 					"name": "signal_display",
 					"parameters": {
-						"suffix": "mph"
+						"suffix": "mW"
 					}
 				}
 			]
@@ -601,7 +599,7 @@
 				"scale": [1, 0.25, 1]
 			},
 			"light": {
-				"gel": "asset:logos/sp-menu.png",
+				"filter": "asset:logos/sp-menu.png",
 				"intensity": 300,
 				"shadow_map_clip": [0.1, 10],
 				"shadow_map_size": 10,

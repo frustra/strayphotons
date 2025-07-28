@@ -27,7 +27,10 @@ def main():
     content = json.loads(response.decode('utf-8'))
     if len(content) == 0:
         print('Could not find valid previous build to compare against')
-        exit(0)
+        if os.environ.get('BUILDKITE_BRANCH', 'master') == 'master':
+            # Allow master or non-buildkite to pass if previous build is missing
+            exit(0)
+        exit(1)
 
     build_info = content[0]
     artifacts = {}

@@ -19,15 +19,15 @@ namespace sp::scripts {
         std::string suffix = "mW";
 
         void Init(ScriptState &state) {
-            Logf("Created signal display: %llu", state.GetInstanceId());
+            // Logf("Created signal display: %llu", state.GetInstanceId());
         }
 
         void Init(ScriptState &state, GuiRenderable &gui) {
-            Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
+            // Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
         }
 
         void Destroy(ScriptState &state) {
-            Logf("Destroying signal display: %llu", state.GetInstanceId());
+            // Logf("Destroying signal display: %llu", state.GetInstanceId());
         }
 
         bool PreDefine(ScriptState &state, Entity ent) {

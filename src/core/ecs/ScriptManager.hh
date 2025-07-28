@@ -17,6 +17,7 @@
 #include <deque>
 #include <limits>
 #include <memory>
+#include <shared_mutex>
 #include <variant>
 
 namespace sp {
