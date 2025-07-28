@@ -1,3 +1,5 @@
+x.PhysicsFPS 120
+g.LogicFPS 120
 loadscene test1
 setsignal player:flashlight/on 1
 steplogic

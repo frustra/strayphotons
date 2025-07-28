@@ -187,7 +187,7 @@ namespace sp {
             return false;
         }
         case AssetType::External: {
-            stream.open(path, std::ios::in | std::ios::binary);
+            stream.open(std::filesystem::path(path), std::ios::in | std::ios::binary);
 
             if (size && stream) {
                 stream.seekg(0, std::ios::end);

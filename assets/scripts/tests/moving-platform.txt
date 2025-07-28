@@ -1,3 +1,4 @@
+x.PhysicsFPS 120
 loadscene moving-platform
 steplogic
 stepphysics

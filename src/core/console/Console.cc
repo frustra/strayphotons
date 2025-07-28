@@ -48,7 +48,7 @@ namespace sp {
                 if (outputPath) std::ofstream(outputPath, std::ios::app) << message;
             }
             if (level > GetLogLevel_static()) return;
-            std::cout << message;
+            std::cout << message << std::flush;
             if (level < Level::Debug) {
                 GetConsoleManager().AddLine(level, message);
             }
