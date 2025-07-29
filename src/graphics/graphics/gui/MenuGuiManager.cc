@@ -143,7 +143,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);
@@ -181,7 +181,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -213,7 +213,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSaveSelect", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -245,7 +245,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 

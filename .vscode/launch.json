@@ -214,6 +214,26 @@
             "console": "integratedTerminal",
         },
         {
+            "name": "StrayPhotons Components Codegen (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator",
+            "args": ["include/strayphotons/components.h", "components_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+
             "name": "StrayPhotons Tecs Codegen (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",

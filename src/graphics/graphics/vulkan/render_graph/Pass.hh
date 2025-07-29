@@ -27,7 +27,7 @@ namespace sp::vulkan::render_graph {
     struct ResourceIDFutureAccess {
         ResourceID id;
         Access access;
-        int framesFromNow;
+        uint32 framesFromNow;
     };
 
     struct AttachmentInfo {
@@ -57,7 +57,7 @@ namespace sp::vulkan::render_graph {
         void AddAccess(ResourceID id, Access access) {
             accesses.push_back({id, access});
         }
-        void AddFutureRead(ResourceID id, Access access, int framesFromNow) {
+        void AddFutureRead(ResourceID id, Access access, uint32 framesFromNow) {
             futureReads.push_back({id, access, framesFromNow});
         }
 

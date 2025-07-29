@@ -257,7 +257,7 @@ void GenerateStructWithFields(S &out,
     const std::string &prefixComment,
     const std::string &name,
     const ecs::StructMetadata &metadata) {
-    std::vector<std::set<const ecs::StructField *>> byteMap(metadata.size, {});
+    std::vector<std::set<const ecs::StructField *>> byteMap(metadata.size, std::set<const ecs::StructField *>{});
     auto fieldList = GetTypeFieldList(metadata);
     for (auto &field : fieldList) {
         for (size_t i = 0; i < field.size; i++) {

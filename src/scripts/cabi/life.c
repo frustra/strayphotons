@@ -13,7 +13,7 @@
 #include <stdbool.h>
 #include <strayphotons/components.h>
 // #include <strayphotons/logging.h>
-// #include <string.h>
+#include <string.h>
 
 #ifdef SP_EXPORT
     #undef SP_EXPORT

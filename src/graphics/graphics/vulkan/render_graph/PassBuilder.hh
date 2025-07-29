@@ -27,7 +27,7 @@ namespace sp::vulkan::render_graph {
 
         void Read(ResourceID id, Access access);
         ResourceID Read(string_view name, Access access);
-        ResourceID ReadPreviousFrame(string_view name, Access access, int framesAgo = 1);
+        ResourceID ReadPreviousFrame(string_view name, Access access, uint32 framesAgo = 1);
 
         void Write(ResourceID id, Access access);
         ResourceID Write(string_view name, Access access);

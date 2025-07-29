@@ -158,7 +158,7 @@ namespace sp::vulkan::render_graph {
         return invalidResource;
     }
 
-    ResourceID Resources::GetID(string_view name, bool assertExists, int framesAgo) const {
+    ResourceID Resources::GetID(string_view name, bool assertExists, uint32 framesAgo) const {
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 

@@ -33,7 +33,7 @@ namespace SignalBindingTests {
         if (it == nodes.end()) {
             Abortf("Could not find node in list: %s", node->text);
         } else {
-            AssertEqual(it - nodes.begin(), expectedIndex, "Unexpected node index");
+            AssertEqual((size_t)(it - nodes.begin()), expectedIndex, "Unexpected node index");
         }
     }
 

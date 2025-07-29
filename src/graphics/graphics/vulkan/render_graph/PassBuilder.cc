@@ -18,7 +18,7 @@ namespace sp::vulkan::render_graph {
         return id;
     }
 
-    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, int framesAgo) {
+    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, uint32 framesAgo) {
         auto thisFrameID = resources.GetID(name, false);
         if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
         if (thisFrameID == InvalidResource) return InvalidResource;

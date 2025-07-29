@@ -45,43 +45,47 @@ std::string TypeToString() {
         }
     } else if constexpr (std::is_same<T, std::string>()) {
         return "std::string";
+    } else if constexpr (std::is_same<T, ecs::Lock<>>()) {
+        return "ecs::Lock<>";
     } else if constexpr (Tecs::is_lock<T>()) {
-        auto dummyLong = EmbedTypeIntoSignature<ecs::Lock<long>>();
-        auto longStart = dummyLong.find("long");
-        auto tailLength = dummyLong.size() - longStart - "long"s.size();
+        auto dummyChar = EmbedTypeIntoSignature<ecs::Lock<unsigned char>>();
+        auto charStart = dummyChar.find("unsigned char");
+        auto tailLength = dummyChar.size() - charStart - "unsigned char"s.size();
 
-        auto typeStart = longStart;
+        auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-        auto structStart = embeddingSignature.find("struct ", longStart);
-        if (structStart == longStart) typeStart += "struct "s.size();
+        auto structStart = embeddingSignature.find("struct ", charStart);
+        if (structStart == charStart) typeStart += "struct "s.size();
 
         auto typeLength = embeddingSignature.size() - typeStart - tailLength;
         return "ecs::Lock<" + std::string(embeddingSignature.substr(typeStart, typeLength)) + ">";
+    } else if constexpr (std::is_same<T, ecs::DynamicLock<>>()) {
+        return "ecs::DynamicLock<>";
     } else if constexpr (Tecs::is_dynamic_lock<T>()) {
-        auto dummyLong = EmbedTypeIntoSignature<ecs::DynamicLock<long>>();
-        auto longStart = dummyLong.find("long");
-        auto tailLength = dummyLong.size() - longStart - "long"s.size();
+        auto dummyChar = EmbedTypeIntoSignature<ecs::DynamicLock<unsigned char>>();
+        auto charStart = dummyChar.find("unsigned char");
+        auto tailLength = dummyChar.size() - charStart - "unsigned char"s.size();
 
-        auto typeStart = longStart;
+        auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-        auto structStart = embeddingSignature.find("struct ", longStart);
-        if (structStart == longStart) typeStart += "struct "s.size();
+        auto structStart = embeddingSignature.find("struct ", charStart);
+        if (structStart == charStart) typeStart += "struct "s.size();
 
         auto typeLength = embeddingSignature.size() - typeStart - tailLength;
         return "ecs::DynamicLock<" + std::string(embeddingSignature.substr(typeStart, typeLength)) + ">";
     } else {
-        auto dummyLong = EmbedTypeIntoSignature<long>();
-        auto longStart = dummyLong.find("long");
-        auto tailLength = dummyLong.size() - longStart - "long"s.size();
+        auto dummyChar = EmbedTypeIntoSignature<unsigned char>();
+        auto charStart = dummyChar.find("unsigned char");
+        auto tailLength = dummyChar.size() - charStart - "unsigned char"s.size();
 
-        auto typeStart = longStart;
+        auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-        auto enumStart = embeddingSignature.find("enum ", longStart);
-        if (enumStart == longStart) typeStart += "enum "s.size();
-        auto classStart = embeddingSignature.find("class ", longStart);
-        if (classStart == longStart) typeStart += "class "s.size();
-        auto structStart = embeddingSignature.find("struct ", longStart);
-        if (structStart == longStart) typeStart += "struct "s.size();
+        auto enumStart = embeddingSignature.find("enum ", charStart);
+        if (enumStart == charStart) typeStart += "enum "s.size();
+        auto classStart = embeddingSignature.find("class ", charStart);
+        if (classStart == charStart) typeStart += "class "s.size();
+        auto structStart = embeddingSignature.find("struct ", charStart);
+        if (structStart == charStart) typeStart += "struct "s.size();
 
         auto typeLength = embeddingSignature.size() - typeStart - tailLength;
         return std::string(embeddingSignature.substr(typeStart, typeLength));

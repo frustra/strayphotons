@@ -408,7 +408,7 @@ pub fn create_context(game_handle: usize, width: i32, height: i32, enable_valida
     }
 }
 
-unsafe extern fn destroy_winit_context(ptr: *mut c_void) {
+unsafe extern "C" fn destroy_winit_context(ptr: *mut c_void) {
     let mut context = Box::from_raw(ptr.cast::<WinitContext>());
     destroy_window(&mut *context);
     drop(context);

@@ -41,6 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // $env:TARGET_AR="$env:NDK_HOME/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar.exe"
     }
 
+    // TODO: Set up way for CMake to call cargo build without recursive CMake happening
     let sp = sp
         .generator("Ninja")
         .pic(true)
