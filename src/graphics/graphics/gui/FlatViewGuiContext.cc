@@ -94,7 +94,7 @@ namespace sp {
                         Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
                         continue;
                     }
-                    auto &keyCode = (KeyCode &)event.data.i;
+                    KeyCode keyCode = (KeyCode)event.data.i;
                     if (keyCode == KEY_LEFT_CONTROL || keyCode == KEY_RIGHT_CONTROL) {
                         io.AddKeyEvent(ImGuiMod_Ctrl, true);
                     } else if (keyCode == KEY_LEFT_SHIFT || keyCode == KEY_RIGHT_SHIFT) {
@@ -113,7 +113,7 @@ namespace sp {
                         Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
                         continue;
                     }
-                    auto &keyCode = (KeyCode &)event.data.i;
+                    KeyCode keyCode = (KeyCode)event.data.i;
                     if (keyCode == KEY_LEFT_CONTROL || keyCode == KEY_RIGHT_CONTROL) {
                         io.AddKeyEvent(ImGuiMod_Ctrl, false);
                     } else if (keyCode == KEY_LEFT_SHIFT || keyCode == KEY_RIGHT_SHIFT) {
