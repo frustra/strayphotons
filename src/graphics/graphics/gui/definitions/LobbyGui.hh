@@ -28,7 +28,7 @@ namespace sp {
             if (state == State::Initial) {
                 if (ImGui::Button("Check In")) state = State::Page1;
             } else if (state == State::Page1) {
-                ImGui::Text("Unimplemented");
+                ImGui::TextUnformatted("Unimplemented");
             }
             ImGui::PopFont();
             ImGui::PopStyleVar();

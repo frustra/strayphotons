@@ -102,7 +102,7 @@ namespace sp::vulkan {
         });
 
         ImGui::NewFrame();
-        ecs::GetScriptManager().RunGuiScripts([&context] {
+        ecs::GetScriptManager().WithGuiScriptLock([&context] {
             context.DefineWindows();
         });
         ImGui::Render();

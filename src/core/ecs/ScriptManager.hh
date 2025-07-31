@@ -156,7 +156,7 @@ namespace ecs {
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
 
         template<typename Fn>
-        void RunGuiScripts(Fn &&callback) {
+        void WithGuiScriptLock(Fn &&callback) {
             ZoneScoped;
             auto &scriptSet = scripts[ScriptType::GuiScript];
             std::shared_lock l1(dynamicLibraryMutex);

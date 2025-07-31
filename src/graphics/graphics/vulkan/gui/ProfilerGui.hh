@@ -25,7 +25,7 @@ namespace sp::vulkan {
         ProfilerGui(PerfTimer &timer)
             : ecs::GuiRenderable("profiler",
                   ecs::GuiLayoutAnchor::Floating,
-                  {-1, -1},
+                  {400, -1},
                   ImGuiWindowFlags_AlwaysAutoResize),
               timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
@@ -50,19 +50,19 @@ namespace sp::vulkan {
             if (ImGui::BeginTable("ResultTable", 7)) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Time per frame (ms)");
+                ImGui::TextUnformatted("Time per frame (ms)");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextColumn();
-                ImGui::Text("CPU  ");
+                ImGui::TextUnformatted("CPU  ");
                 ImGui::TableNextColumn();
-                ImGui::Text("       ");
+                ImGui::TextUnformatted("       ");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextColumn();
-                ImGui::Text("GPU  ");
+                ImGui::TextUnformatted("GPU  ");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::SetNextItemWidth(85);
@@ -89,11 +89,11 @@ namespace sp::vulkan {
 
                 for (int i = 0; i < 2; i++) {
                     ImGui::TableNextColumn();
-                    ImGui::Text("avg");
+                    ImGui::TextUnformatted("avg");
                     ImGui::TableNextColumn();
-                    ImGui::Text("p95");
+                    ImGui::TextUnformatted("p95");
                     ImGui::TableNextColumn();
-                    ImGui::Text("max");
+                    ImGui::TextUnformatted("max");
                 }
 
                 AddResults();

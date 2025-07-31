@@ -108,7 +108,7 @@ namespace sp {
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
             if (fieldName.empty()) {
-                ImGui::Text("%s", jsonValue.serialize(true).c_str());
+                ImGui::TextUnformatted(jsonValue.serialize(true).c_str());
             } else {
                 ImGui::Text("%s: %s", fieldName.c_str(), jsonValue.serialize(true).c_str());
             }
@@ -254,7 +254,7 @@ namespace sp {
         for (auto &state : value) {
             picojson::value jsonValue;
             json::Save({}, jsonValue, state);
-            ImGui::Text("%s", jsonValue.serialize(true).c_str());
+            ImGui::TextUnformatted(jsonValue.serialize(true).c_str());
         }
         return false;
     }
@@ -358,7 +358,7 @@ namespace sp {
                                 if (!field.name.empty()) {
                                     ImGui::TableNextRow();
                                     ImGui::TableSetColumnIndex(0);
-                                    ImGui::Text("%s", field.name.c_str());
+                                    ImGui::TextUnformatted(field.name.c_str());
                                     ImGui::TableSetColumnIndex(1);
                                     GetFieldType(field.type, field.AccessMut(dataPtr), [&](auto &fieldValue) {
                                         auto parentFieldName = fieldName;

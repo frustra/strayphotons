@@ -156,11 +156,6 @@ namespace sp {
             for (auto &ctx : guis) {
                 Assert(ctx.entity.Has<ecs::Gui>(lock), "gui entity must have a gui component");
 
-                // if (ctx.entity.Has<ecs::Scripts>(lock)) {
-                //     auto &scripts = ctx.entity.Get<ecs::Scripts>(lock);
-                //     scripts.scripts
-                // }
-
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
                 if (!ctx.window.lock()) {
                     const ecs::Scripts *scripts = nullptr;
