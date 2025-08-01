@@ -1,3 +1,4 @@
+x.PhysicsFPS 120
 loadscene blackhole2
 syncscene
 setsignal player:player/move_noclip 1
