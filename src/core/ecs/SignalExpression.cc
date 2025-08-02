@@ -563,7 +563,6 @@ namespace ecs {
 
     CompiledFunc ConstantNode::Compile() const {
         return [](const Context &ctx, const Node &node, size_t depth) {
-            DebugZoneScoped;
             return std::get<ConstantNode>(node).value;
         };
     }
@@ -629,7 +628,6 @@ namespace ecs {
 
     CompiledFunc FocusCondition::Compile() const {
         return [](const Context &ctx, const Node &node, size_t depth) {
-            DebugZoneScoped;
             auto &focusNode = std::get<FocusCondition>(node);
             if (!ctx.lock.Has<FocusLock>() || !ctx.lock.Get<FocusLock>().HasPrimaryFocus(focusNode.ifFocused)) {
                 return 0.0;
@@ -645,55 +643,46 @@ namespace ecs {
     CompiledFunc OneInputOperation::Compile() const {
         if (prefixStr == "( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return node.childNodes[0]->Evaluate(ctx, depth);
             };
         } else if (prefixStr == "-") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return -node.childNodes[0]->Evaluate(ctx, depth);
             };
         } else if (prefixStr == "!") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return node.childNodes[0]->Evaluate(ctx, depth) >= 0.5 ? 0.0 : 1.0;
             };
         } else if (prefixStr == "sin( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::sin(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "cos( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::cos(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "tan( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::tan(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "floor( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::floor(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "ceil( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::ceil(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "abs( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::abs(node.childNodes[0]->Evaluate(ctx, depth));
             };
@@ -705,7 +694,6 @@ namespace ecs {
     CompiledFunc TwoInputOperation::Compile() const {
         if (prefixStr == "min( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
                 double inputA = node.childNodes[0]->Evaluate(ctx, depth);
                 double inputB = node.childNodes[1]->Evaluate(ctx, depth);
@@ -713,7 +701,6 @@ namespace ecs {
             };
         } else if (prefixStr == "max( ") {
             return [](const Context &ctx, const Node &node, size_t depth) {
-                DebugZoneScoped;
                 DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
                 double inputA = node.childNodes[0]->Evaluate(ctx, depth);
                 double inputB = node.childNodes[1]->Evaluate(ctx, depth);
@@ -722,7 +709,6 @@ namespace ecs {
         } else if (prefixStr == "") {
             if (middleStr == " + ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -737,7 +723,6 @@ namespace ecs {
                 };
             } else if (middleStr == " - ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -752,7 +737,6 @@ namespace ecs {
                 };
             } else if (middleStr == " * ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -767,7 +751,6 @@ namespace ecs {
                 };
             } else if (middleStr == " / ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -782,7 +765,6 @@ namespace ecs {
                 };
             } else if (middleStr == " && ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -792,7 +774,6 @@ namespace ecs {
                 };
             } else if (middleStr == " || ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -802,7 +783,6 @@ namespace ecs {
                 };
             } else if (middleStr == " > ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -812,7 +792,6 @@ namespace ecs {
                 };
             } else if (middleStr == " >= ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -822,7 +801,6 @@ namespace ecs {
                 };
             } else if (middleStr == " < ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -832,7 +810,6 @@ namespace ecs {
                 };
             } else if (middleStr == " <= ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -842,7 +819,6 @@ namespace ecs {
                 };
             } else if (middleStr == " == ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -852,7 +828,6 @@ namespace ecs {
                 };
             } else if (middleStr == " != ") {
                 return [](const Context &ctx, const Node &node, size_t depth) {
-                    DebugZoneScoped;
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -870,7 +845,6 @@ namespace ecs {
 
     CompiledFunc DeciderOperation::Compile() const {
         return [](const Context &ctx, const Node &node, size_t depth) {
-            DebugZoneScoped;
             DebugAssertf(node.childNodes.size() > 2, "DeciderOperation::Compile null input node: %s", node.text);
             double condition = node.childNodes[0]->Evaluate(ctx, depth);
             if (condition >= 0.5) {

@@ -7,10 +7,16 @@
         "editor.insertSpaces": true,
         "editor.tabSize": 4
     },
+    "[c]": {
+        "editor.formatOnSave": true,
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4
+    },
     "[glsl]": {
         "editor.formatOnSave": true,
         "editor.detectIndentation": false,
-        "editor.insertSpaces": false,
+        "editor.insertSpaces": true,
         "editor.tabSize": 4
     },
     "[cmake]": {
@@ -32,8 +38,5 @@
             "url": "./docs/generated/scene.schema.json"
         }
     ],
-    "cmake.configureOnOpen": false,
-    "[c]": {
-        "editor.formatOnSave": true
-    }
+    "cmake.configureOnOpen": false
 }

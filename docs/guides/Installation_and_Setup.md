@@ -6,13 +6,14 @@ Stray Photons relies on several dependencies which must be installed manually:
 - [Vulkan SDK](https://www.vulkan.org/tools) Version 1.2 or higher
 - A C++20 compatible compiler (currently supported are MSVC 2019, MSVC 2022, Clang 12+, and GCC 11+)
 - CMake Version 3.20 or higher
+- [Ninja build](https://ninja-build.org/) is the preferred build system to use with CMake for cross-platform development
 - Rust (optional for building the Rust module)
 - Python 3 (used in the CI pipeline, but not necessary for development)
 - VSCode is recommended for development, but building with CMake from the command line is also possible.
 
 ### Downloading the source code
 
-The easiest way to getting Stray Photons and all of its dependencies is through Git:
+The easiest way of getting Stray Photons's source code and all of its dependencies is through Git:
 
 ```
 ~/dev$ git clone https://github.com/frustra/strayphotons.git
@@ -90,12 +91,14 @@ Usage:
   -a, --assets arg              Override path to assets folder
   -r, --run arg                 Load commands from a file an execute them in the console
   -s, --scene arg               Initial scene to load
-      --size width height       Initial window size
+      --window-size arg         Initial window size
+      --window-scale arg        Initial window scaling factor
       --no-vr                   Disable automatic XR/VR system loading
       --headless                Disable window creation and graphics initialization
       --with-validation-layers  Enable Vulkan validation layers
   -c, --command arg             Run a console command on init
   -v, --verbose                 Enable debug logging
+      --log arg                 Set the path to the log output file
 ```
 
 `sp-test` is a special test environment variant of `sp-vk` that runs windowless for automated testing on a headless server.
@@ -112,16 +115,18 @@ Usage:
   -a, --assets arg              Override path to assets folder
   -r, --run arg                 Load commands from a file an execute them in the console
   -s, --scene arg               Initial scene to load
-      --size width height       Initial window size
+      --window-size arg         Initial window size
+      --window-scale arg        Initial window scaling factor
       --headless                Disable window creation and graphics initialization
       --with-validation-layers  Enable Vulkan validation layers
   -c, --command arg             Run a console command on init
   -v, --verbose                 Enable debug logging
+      --log arg                 Set the path to the log output file
 ```
 
 For both executables, the startup order is as follows:
 1. `--command` commands are executed
-1. If not `--headless`, Graphics is initialized using `--size` or 1080p by default
+1. If not `--headless`, Graphics is initialized using `--window-size` or 1080p by default
 1. If not `--no-vr`, the XR Runtime is loaded
 1. The `player` and `bindings` scenes are loaded
 1. If in test mode, commands from `script-file` are queued in the console
@@ -163,6 +168,6 @@ See [Loading Scenes](./Loading_Scenes.md) for more info on engine usage.
 | F2           | Open Tracy Profiler (only first instance can connect) |
 | F5           | Reload current scene, preserving player position      |
 | F6           | Reload current scene and reload player                |
-| F7           | Reload Vulkan shaders                                 |
+| F7           | Reload Vulkan shaders and dynamic library scripts     |
 
 </td></tr> </table>
