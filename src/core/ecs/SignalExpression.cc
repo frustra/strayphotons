@@ -431,6 +431,9 @@ namespace ecs {
         return node;
     }
 
+    Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
+        : lock(lock), expr(expr), input(input) {}
+
     SignalExpression::SignalExpression(const SignalRef &signal) {
         this->scope = EntityScope(signal.GetEntity().Name().scene, "");
         this->expr = signal.String();
@@ -497,38 +500,49 @@ namespace ecs {
         return true;
     }
 
-    Context::Context(const DynamicLock<ReadSignalsLock> &lock, const SignalExpression &expr, const EventData &input)
-        : lock(lock), expr(expr), input(input) {}
-
-    const SignalNodePtr &Node::AddReferences(const SignalNodePtr &node) {
-        if (!node) return node;
-        for (const auto &child : node->childNodes) {
-            if (child->uncacheable) node->uncacheable = true;
-            sp::erase_if(child->references, [](auto &weakPtr) {
-                return weakPtr.expired();
-            });
-            if (!sp::contains(child->references, node)) child->references.emplace_back(node);
-        }
-        return node;
+    bool SignalExpression::IsCacheable() const {
+        if (!rootNode) return true;
+        return !rootNode->uncacheable;
     }
 
-    bool Node::PropagateUncacheable(bool newUncacheable) {
-        bool oldUncacheable = uncacheable;
-        uncacheable = newUncacheable;
-        for (const auto &child : childNodes) {
-            if (child->uncacheable) {
-                uncacheable = true;
-                break;
-            }
+    bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+        if (!rootNode) return true;
+        return rootNode->CanEvaluate(lock, depth);
+    }
+
+    double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+        DebugZoneScoped;
+        DebugZoneStr(expr);
+        if (!rootNode) return 0.0;
+        Context ctx(lock, *this, 0.0);
+        return rootNode->Evaluate(ctx, depth);
+    }
+
+    double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
+        DebugZoneScoped;
+        DebugZoneStr(expr);
+        if (!rootNode) return 0.0;
+        Context ctx(lock, *this, input);
+        return rootNode->Evaluate(ctx, 0);
+    }
+
+    void SignalExpression::SetScope(const EntityScope &scope) {
+        this->scope = scope;
+        if (!rootNode) return;
+        SignalNodePtr newRoot = rootNode->SetScope(scope);
+        if (newRoot) {
+            newRoot->Compile();
+            // Logf("Setting scope of expression (%s): %s -> %s", scope.String(), rootNode->text, newRoot->text);
+            Assertf(newRoot->evaluate, "Failed to compile expression: %s", expr);
+            this->rootNode = newRoot;
         }
-        if (uncacheable != oldUncacheable) {
-            for (const auto &ref : references) {
-                auto reference = ref.lock();
-                if (reference) reference->PropagateUncacheable(uncacheable);
-            }
-            return true;
-        }
-        return false;
+    }
+
+    double Node::Evaluate(const Context &ctx, size_t depth) const {
+        DebugAssertf(evaluate, "Node::Evaluate null compiled function: %s", text);
+        double result = this->evaluate(ctx, *this, depth);
+        DebugAssertf(std::isfinite(result), "expression::Node::Evaluate() returned non-finite value: %f", result);
+        return result;
     }
 
     CompiledFunc Node::Compile() {
@@ -543,22 +557,6 @@ namespace ecs {
                 return evaluate = node.Compile();
             },
             (NodeVariant &)*this);
-    }
-
-    void Node::SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {
-        if (auto *signalNode = std::get_if<SignalNode>((NodeVariant *)this)) {
-            signalNode->signal.AddSubscriber(lock, subscriber);
-        }
-        for (const auto &child : childNodes) {
-            if (child) child->SubscribeToChildren(lock, subscriber);
-        }
-    }
-
-    double Node::Evaluate(const Context &ctx, size_t depth) const {
-        DebugAssertf(evaluate, "Node::Evaluate null compiled function: %s", text);
-        double result = this->evaluate(ctx, *this, depth);
-        DebugAssertf(std::isfinite(result), "expression::Node::Evaluate() returned non-finite value: %f", result);
-        return result;
     }
 
     CompiledFunc ConstantNode::Compile() const {
@@ -855,16 +853,6 @@ namespace ecs {
         };
     }
 
-    bool SignalExpression::IsCacheable() const {
-        if (!rootNode) return true;
-        return !rootNode->uncacheable;
-    }
-
-    bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        if (!rootNode) return true;
-        return rootNode->CanEvaluate(lock, depth);
-    }
-
     bool Node::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
         if (std::holds_alternative<SignalNode>(*this)) {
             const SignalNode &signalNode = std::get<SignalNode>(*this);
@@ -969,6 +957,46 @@ namespace ecs {
         return nullptr;
     }
 
+    const SignalNodePtr &Node::AddReferences(const SignalNodePtr &node) {
+        if (!node) return node;
+        for (const auto &child : node->childNodes) {
+            if (child->uncacheable) node->uncacheable = true;
+            sp::erase_if(child->references, [](auto &weakPtr) {
+                return weakPtr.expired();
+            });
+            if (!sp::contains(child->references, node)) child->references.emplace_back(node);
+        }
+        return node;
+    }
+
+    bool Node::PropagateUncacheable(bool newUncacheable) {
+        bool oldUncacheable = uncacheable;
+        uncacheable = newUncacheable;
+        for (const auto &child : childNodes) {
+            if (child->uncacheable) {
+                uncacheable = true;
+                break;
+            }
+        }
+        if (uncacheable != oldUncacheable) {
+            for (const auto &ref : references) {
+                auto reference = ref.lock();
+                if (reference) reference->PropagateUncacheable(uncacheable);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    void Node::SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {
+        if (auto *signalNode = std::get_if<SignalNode>((NodeVariant *)this)) {
+            signalNode->signal.AddSubscriber(lock, subscriber);
+        }
+        for (const auto &child : childNodes) {
+            if (child) child->SubscribeToChildren(lock, subscriber);
+        }
+    }
+
     size_t Node::Hash() const {
         size_t hash = std::visit(
             [&](auto &node) {
@@ -979,34 +1007,6 @@ namespace ecs {
             sp::hash_combine(hash, child->Hash());
         }
         return hash;
-    }
-
-    double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
-        DebugZoneScoped;
-        DebugZoneStr(expr);
-        if (!rootNode) return 0.0;
-        Context ctx(lock, *this, 0.0);
-        return rootNode->Evaluate(ctx, depth);
-    }
-
-    double SignalExpression::EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const {
-        DebugZoneScoped;
-        DebugZoneStr(expr);
-        if (!rootNode) return 0.0;
-        Context ctx(lock, *this, input);
-        return rootNode->Evaluate(ctx, 0);
-    }
-
-    void SignalExpression::SetScope(const EntityScope &scope) {
-        this->scope = scope;
-        if (!rootNode) return;
-        SignalNodePtr newRoot = rootNode->SetScope(scope);
-        if (newRoot) {
-            newRoot->Compile();
-            // Logf("Setting scope of expression (%s): %s -> %s", scope.String(), rootNode->text, newRoot->text);
-            Assertf(newRoot->evaluate, "Failed to compile expression: %s", expr);
-            this->rootNode = newRoot;
-        }
     }
 
     template<>
