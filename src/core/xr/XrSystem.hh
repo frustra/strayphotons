@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/components/XRView.hh"
+#include "ecs/components/XrView.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

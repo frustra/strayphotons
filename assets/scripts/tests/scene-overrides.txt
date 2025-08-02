@@ -1,3 +1,5 @@
+x.PhysicsFPS 120
+g.LogicFPS 120
 loadscene overrides/test1-override
 addscene test1
 respawn

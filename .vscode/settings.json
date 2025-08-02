@@ -32,5 +32,8 @@
             "url": "./docs/generated/scene.schema.json"
         }
     ],
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "[c]": {
+        "editor.formatOnSave": true
+    }
 }

@@ -86,7 +86,7 @@
 				"out_signal": "loaded/value"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -148,7 +148,7 @@
 				"in_signal": "loaded/value"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -187,7 +187,7 @@
 				"translate": [0, 0, -2]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "duck",
 					"render": true,

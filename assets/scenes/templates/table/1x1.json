@@ -12,7 +12,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -31,7 +31,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -50,7 +50,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -69,7 +69,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -89,7 +89,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -109,7 +109,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -129,7 +129,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -149,7 +149,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -169,7 +169,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -189,7 +189,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -209,7 +209,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -229,7 +229,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "extrusion",
 					"render": true
@@ -243,7 +243,7 @@
 				"translate": [0.02, 0.9, 0.02]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "table/breadboard/12x12"
 				}

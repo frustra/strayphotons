@@ -27,9 +27,8 @@ namespace ecs {
         bool operator==(const Light &other) const = default;
     };
 
-    static Component<Light> ComponentLight({typeid(Light),
-        "light",
-        "",
+    static EntityComponent<Light> ComponentLight("light",
+        "A shadow-casting spot-light with optional gel masking texture",
         StructField::New("intensity",
             "The brightness of the light measured in candela (lumens per solid angle). This value is ignored if "
             "**illuminance** != 0.",
@@ -58,7 +57,7 @@ namespace ecs {
             "The near and far clipping plane distances for this light. For example, with a clip value of `[1, 10]`, "
             "light won't start hitting objects until the near plane, 1 meter from the light. "
             "The light will then cast shadows for the next 9 meters until the far plane, 10 meters from the light.",
-            &Light::shadowMapClip)});
+            &Light::shadowMapClip));
     template<>
-    void Component<Light>::Apply(Light &dst, const Light &src, bool liveTarget);
+    void EntityComponent<Light>::Apply(Light &dst, const Light &src, bool liveTarget);
 } // namespace ecs

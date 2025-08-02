@@ -53,13 +53,6 @@ namespace sp::json {
             }
             dst = picojson::value(vec);
         }
-
-        template<typename T>
-        struct is_unordered_map : std::false_type {};
-        template<typename K, typename V>
-        struct is_unordered_map<robin_hood::unordered_flat_map<K, V>> : std::true_type {};
-        template<typename K, typename V>
-        struct is_unordered_map<robin_hood::unordered_node_map<K, V>> : std::true_type {};
     } // namespace detail
 
     // Default Load handler for enums, and all integer and float types
@@ -143,6 +136,12 @@ namespace sp::json {
         dst = glm::mat3_cast(q);
         return true;
     }
+    template<size_t MaxSize, typename CharT>
+    inline bool Load(sp::InlineString<MaxSize, CharT> &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        dst = src.get<std::string>();
+        return true;
+    }
     template<>
     inline bool Load(std::string &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
@@ -155,6 +154,11 @@ namespace sp::json {
         auto name = src.get<std::string>();
         dst = ecs::Name(name, ecs::Name());
         return name.empty() == !dst;
+    }
+    template<>
+    inline bool Load(ecs::Entity &dst, const picojson::value &src) {
+        Errorf("json::Load unsupported type: ecs::Entity: %s", src.to_str());
+        return false;
     }
     template<>
     inline bool Load(ecs::EntityRef &dst, const picojson::value &src) {
@@ -230,8 +234,8 @@ namespace sp::json {
             return true;
         }
     }
-    template<typename T>
-    inline bool Load(robin_hood::unordered_flat_map<std::string, T> &dst, const picojson::value &src) {
+    template<typename K, typename T, typename H, typename E>
+    inline bool Load(robin_hood::unordered_flat_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
@@ -241,8 +245,8 @@ namespace sp::json {
         }
         return true;
     }
-    template<typename T>
-    inline bool Load(robin_hood::unordered_node_map<std::string, T> &dst, const picojson::value &src) {
+    template<typename K, typename T, typename H, typename E>
+    inline bool Load(robin_hood::unordered_node_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
@@ -264,7 +268,7 @@ namespace sp::json {
             }
         } else if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
             dst = picojson::value((double)src);
-        } else {
+        } else if constexpr (std::is_default_constructible<T>()) {
             auto &metadata = ecs::StructMetadata::Get<T>();
             static const T defaultValue = {};
             for (auto &field : metadata.fields) {
@@ -308,6 +312,10 @@ namespace sp::json {
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const glm::mat3 &src) {
         Save(s, dst, glm::quat_cast(src));
     }
+    template<size_t MaxSize, typename CharT>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::InlineString<MaxSize, CharT> &src) {
+        dst = picojson::value(src.str());
+    }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::string &src) {
         dst = picojson::value(src);
@@ -325,6 +333,15 @@ namespace sp::json {
         } else {
             dst = picojson::value(strName.substr(prefixLen));
         }
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::Entity &src) {
+        auto refName = ecs::EntityRef(src).Name();
+        if (!refName && src) {
+            Errorf("Can't serialize unnamed Entity: %s", std::to_string(src));
+            return;
+        }
+        Save(s, dst, refName);
     }
     template<>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const ecs::EntityRef &src) {
@@ -372,23 +389,43 @@ namespace sp::json {
             dst = picojson::value(vec);
         }
     }
-    template<typename T>
+    template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,
         picojson::value &dst,
-        const robin_hood::unordered_flat_map<std::string, T> &src) {
+        const robin_hood::unordered_flat_map<std::string, T, H, E> &src) {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
         }
         dst = picojson::value(obj);
     }
-    template<typename T>
+    template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,
         picojson::value &dst,
-        const robin_hood::unordered_node_map<std::string, T> &src) {
+        const robin_hood::unordered_node_map<std::string, T, H, E> &src) {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<size_t MaxSize, typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_flat_map<InlineString<MaxSize>, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<size_t MaxSize, typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_node_map<InlineString<MaxSize>, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
         }
         dst = picojson::value(obj);
     }
@@ -534,6 +571,9 @@ namespace sp::json {
             }
         } else if constexpr (std::is_floating_point_v<T>) {
             typeSchema["type"] = picojson::value("number");
+        } else if constexpr (sp::is_inline_string<T>()) {
+            typeSchema["type"] = picojson::value("string");
+            typeSchema["maxLength"] = picojson::value((double)T::max_size());
         } else if constexpr (sp::is_glm_vec<T>()) {
             typeSchema["type"] = picojson::value("array");
             typeSchema["minItems"] = picojson::value((double)T::length());
@@ -571,11 +611,14 @@ namespace sp::json {
             anyOfArray[0] = subSchema;
             anyOfArray[1] = picojson::value(arraySchema);
             typeSchema["anyOf"] = picojson::value(anyOfArray);
-        } else if constexpr (detail::is_unordered_map<T>()) {
+        } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
             typeSchema["type"] = picojson::value("object");
-            static_assert(std::is_same_v<typename T::key_type, std::string>, "Only string map keys are supported!");
+            static_assert(
+                std::is_same<typename T::key_type, std::string>() || sp::is_inline_string<typename T::key_type>(),
+                "Only string map keys are supported!");
             SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);
-        } else if (rootType) {
+        } else if constexpr (std::is_default_constructible<T>()) {
+            if (!rootType) return;
             Assertf(metadata, "Unsupported type: %s", typeid(T).name());
 
             static const T defaultStruct = {};
@@ -714,6 +757,15 @@ namespace sp::json {
         typeSchema["type"] = picojson::value("string");
         typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
         // TODO: Define a regex to validate the name
+    }
+
+    template<>
+    inline void SaveSchema<ecs::Entity>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+        if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
+        auto &typeSchema = dst.get<picojson::object>();
+        typeSchema["type"] = picojson::value("string");
+        typeSchema["description"] = picojson::value("An entity name in the form `<scene_name>:<entity_name>`");
+        // TODO: Define a regex to validate the reference
     }
 
     template<>

@@ -6,7 +6,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "breadboard_corner",
 					"render": true

@@ -21,7 +21,7 @@ namespace ecs {
         struct Node;
     }
 
-    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, FocusLock>>;
+    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, EventInput, FocusLock>>;
 
     class SignalRef {
     private:
@@ -38,10 +38,17 @@ namespace ecs {
 
         const EntityRef &GetEntity() const;
         const std::string &GetSignalName() const;
+        bool IsValid() const;
 
         std::string String() const;
 
         void SetScope(const EntityScope &scope);
+        void Clear();
+
+        static SignalRef Empty();
+        static SignalRef New(const EntityRef &ent, const char *signalName);
+        static SignalRef Copy(const SignalRef &ref);
+        static SignalRef Lookup(const char *str, const EntityScope *scope = nullptr);
 
         void AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &ref) const;
         void MarkDirty(const Lock<Write<Signals>> &lock, size_t depth = 0) const;

@@ -20,6 +20,10 @@ Relative names specified in a template take the form:
 
 The special `"scoperoot"` alias can also be used inside a template to reference the parent entity.
 
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **scene** | string (max 63 chars) | "" | No description |
+| **entity** | string (max 63 chars) | "" | No description |
 
 </div>
 
@@ -117,7 +121,7 @@ and will only forward key down events (true data values).
 The event data is then replaced with the string `"togglesignal player:player/move_noclip"`, and forwarded to the `console:input` entity
 as the `/action/run_command` event. Upon receiving this event, the `console:input` entity will execute the provided string in the console.
 
-The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
+The `event_bindings` component has type: map&lt;string (max 127 chars), vector&lt;[EventBinding](#EventBinding-type)&gt;&gt;
 
 <div class="type_definition">
 
@@ -134,8 +138,65 @@ The `event_bindings` component has type: map&lt;string, vector&lt;[EventBinding]
 <div class="type_definition">
 
 ### `EventData` Type
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **type** | enum [EventDataType](#EventDataType-type) | "Bool" | No description |
+| **b** | bool | false | No description |
+| **i** | int32 | 0 | No description |
+| **ui** | uint32 | 0 | No description |
+| **f** | float | 0 | No description |
+| **d** | double | 0 | No description |
+| **vec2** | vec2 | [0, 0] | No description |
+| **vec3** | vec3 | [0, 0, 0] | No description |
+| **vec4** | vec4 | [0, 0, 0, 0] | No description |
+| **transform** | [Transform](#Transform-type) | {"scale":0} | No description |
+| **namedEntity** | [NamedEntity](#NamedEntity-type) | {} | No description |
+| **ent** | [Entity](#Entity-type) | "" | No description |
+| **str** | string (max 255 chars) | "" | No description |
 
 Stores a variety of possible data types for sending in events (JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).
+
+</div>
+
+<div class="type_definition">
+
+### `Entity` Type
+
+</div>
+
+<div class="type_definition">
+
+### `EventDataType` Type
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Bool**" - No description
+- "**Int**" - No description
+- "**Uint**" - No description
+- "**Float**" - No description
+- "**Double**" - No description
+- "**Vec2**" - No description
+- "**Vec3**" - No description
+- "**Vec4**" - No description
+- "**Transform**" - No description
+- "**NamedEntity**" - No description
+- "**Entity**" - No description
+- "**String**" - No description
+
+</div>
+
+<div class="type_definition">
+
+### `NamedEntity` Type
+
+</div>
+
+<div class="type_definition">
+
+### `Transform` Type
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
+| **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
+| **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
 
 </div>
 
@@ -197,22 +258,21 @@ The `script` component has type: vector&lt;[ScriptInstance](#ScriptInstance-type
 
 Script instances contain a script definition (referenced by name), and a list of parameters as input for the script state.  
 Scripts can have 2 types: 
-- "prefab": Prefab scripts such as "template" will run during scene load.
-- "onTick": OnTick scripts (or Runtime scripts) will run during in GameLogic thread during its frame.  
-            OnTick scripts starting with "physics_" will run in the Physics thread just before simulation.  
-            Some OnTick scripts may also internally define event filters to only run when events are received.
+- **Prefab scripts** prefixed with "prefab_" will run during scene load.
+- **Runtime scripts** (or OnTick scripts) will run during in GameLogic thread during its frame.  
+    Runtime scripts starting with "physics_" will run in the Physics thread just before simulation.  
+    Some OnTick scripts may also internally define event filters to only run when events are received.
 
 Script instances are defined using the following fields:
 | Instance Field | Type    | Description |
 |----------------|---------|-------------|
-| **prefab**     | string  | The name of a [Prefab Script](Prefab_Scripts.md) |
-| **onTick**     | string  | The name of a [Runtime Script](Runtime_Scripts.md) |
+| **name**     | string  | The name of a [Default Built-in Script](Default_Scripts.md) |
 | **parameters** | *any*   | A set of parameters to be given to the script. See individiaul script documentation for info. |
 
-Here is an example of an instance definition for a "spotlight" [`template` Prefab](Prefab_Scripts.md#template-prefab):
+Here is an example of an instance definition for a "spotlight" [`template` Prefab](#template-prefab):
 ```json
 {
-    "prefab": "template",
+    "name": "prefab_template",
     "parameters": {
         "source": "spotlight"
     }

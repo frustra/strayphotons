@@ -1,4 +1,5 @@
 {
+	"libraries": "life",
 	"entities": [
 		{
 			"name": "floor",
@@ -105,7 +106,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -121,7 +122,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -135,84 +136,84 @@
 					"parameters": {
 						"source": "table/life/32x32"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
 		{
 			"name": "life.3_3",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.4_4",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.4_5",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.3_5",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.2_5",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.12_5",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.11_6",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.11_7",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.13_6",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.13_7",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},
 		{
 			"name": "life.12_8",
 			"script": {
-				"onTick": "init_event",
+				"name": "init_event",
 				"parameters": ["/signal/set/alive"]
 			}
 		},

@@ -10,6 +10,7 @@
 #include "common/Async.hh"
 #include "common/Common.hh"
 #include "common/EnumTypes.hh"
+#include "common/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalRef.hh"
@@ -46,6 +47,161 @@ struct magic_enum::customize::enum_range<ecs::FieldAction> {
 };
 
 namespace ecs {
+    struct ArgDesc {
+        std::string name, desc;
+
+        ArgDesc(const std::string_view &name, const std::string_view &desc) : name(name), desc(desc) {}
+
+        bool operator==(const ArgDesc &other) const = default;
+    };
+
+    uint32_t GetFieldTypeIndex(const std::type_index &idx);
+    std::type_index GetFieldTypeIndex(uint32_t typeIndex);
+
+    struct TypeInfo {
+        uint32_t typeIndex;
+        bool isTrivial;
+        bool isConst;
+        bool isPointer;
+        bool isReference;
+        bool isTecsLock;
+        bool isFunctionPointer;
+
+        template<typename T>
+        static inline TypeInfo Lookup() {
+            using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
+            return TypeInfo{
+                .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
+                .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
+                             std::is_reference<T>() || std::is_same<T, Entity>(),
+                .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
+                           std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
+                .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
+                .isReference = std::is_reference<T>(),
+                .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
+                .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
+            };
+        }
+
+        inline operator std::type_index() const {
+            return GetFieldTypeIndex(typeIndex);
+        }
+
+        inline const char *name() const {
+            return GetFieldTypeIndex(typeIndex).name();
+        }
+
+        bool operator==(const std::type_index &other) const {
+            return GetFieldTypeIndex(typeIndex) == other;
+        };
+
+        bool operator==(const TypeInfo &other) const = default;
+    };
+
+    struct StructFunction {
+        std::string name, desc;
+        bool isStatic, isConst;
+        TypeInfo returnType;
+        std::vector<TypeInfo> argTypes;
+        std::vector<ArgDesc> argDescs;
+        int funcIndex = -1;
+
+        StructFunction(const std::string &name,
+            const std::string &desc,
+            bool isStatic,
+            bool isConst,
+            TypeInfo returnType,
+            std::vector<TypeInfo> argTypes,
+            std::vector<ArgDesc> argDescs)
+            : name(name), desc(sp::trim(desc)), isStatic(isStatic), isConst(isConst), returnType(returnType),
+              argTypes(argTypes), argDescs(argDescs) {}
+
+        /**
+         * Registers a struct's member function as a callable scripting function. For example:
+         * StructFunction::New("GetParent", &Transform::GetParent)
+         */
+        template<typename T, typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (T::*F)(Args...)) {
+            return StructFunction(name,
+                "No description",
+                false, // isStatic
+                false, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                {});
+        }
+
+        template<typename T, typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (T::*F)(Args...),
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                false, // isStatic
+                false, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                std::vector<ArgDesc>({argDescs...}));
+        }
+
+        template<typename T, typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (T::*F)(Args...) const) {
+            return StructFunction(name,
+                "No description",
+                false, // isStatic
+                true, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                {});
+        }
+
+        template<typename T, typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (T::*F)(Args...) const,
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                false, // isStatic
+                true, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                std::vector<ArgDesc>({argDescs...}));
+        }
+
+        /**
+         * Registers a static function as a callable scripting function. For example:
+         * StructFunction::New("NewScript", &Script::New)
+         */
+        template<typename R, typename... Args>
+        static const StructFunction New(const std::string &name, R (*F)(Args...)) {
+            return StructFunction(name,
+                "No description",
+                true, // isStatic
+                false, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                {});
+        }
+
+        template<typename R, typename... Args, typename... Descs>
+        static const StructFunction New(const std::string &name,
+            const std::string &desc,
+            R (*F)(Args...),
+            Descs &&...argDescs) {
+            return StructFunction(name,
+                desc,
+                true, // isStatic
+                false, // isConst
+                TypeInfo::Lookup<R>(),
+                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                std::vector<ArgDesc>({argDescs...}));
+        }
+
+        bool operator==(const StructFunction &) const = default;
+    };
+
     enum class FieldAction {
         None = 0,
         AutoLoad = 1 << 0,
@@ -55,22 +211,38 @@ namespace ecs {
 
     struct StructField {
         std::string name, desc;
-        std::type_index type;
+        TypeInfo type;
+        size_t size;
         size_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
+        std::optional<StructFunction> functionPointer;
 
+        StructField() = default;
         StructField(const std::string &name,
             const std::string &desc,
-            std::type_index type,
+            const TypeInfo &type,
+            size_t size,
             size_t offset,
-            FieldAction actions)
-            : name(name), desc(sp::trim(desc)), type(type), offset(offset), actions(actions) {}
+            FieldAction actions,
+            const std::optional<StructFunction> &functionPointer)
+            : name(name), desc(sp::trim(desc)), type(type), size(size), offset(offset), actions(actions),
+              functionPointer(functionPointer) {}
 
         template<typename T, typename F>
         static size_t OffsetOf(const F T::*M) {
             // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
             return reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
+        }
+
+        template<typename T>
+        static std::optional<StructFunction> AsFunctionPointer() {
+            if constexpr (std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>()) {
+                T funcPtr = nullptr;
+                return StructFunction::New("", funcPtr);
+            } else {
+                return {};
+            }
         }
 
         /**
@@ -88,9 +260,11 @@ namespace ecs {
         static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             return StructField(name,
                 "No description",
-                std::type_index(typeid(std::remove_cv_t<F>)),
+                TypeInfo::Lookup<std::remove_cv_t<F>>(),
+                sizeof(F),
                 OffsetOf(M),
-                actions);
+                actions,
+                AsFunctionPointer<F>());
         }
 
         template<typename T, typename F>
@@ -98,7 +272,28 @@ namespace ecs {
             const std::string &desc,
             const F T::*M,
             FieldAction actions = ~FieldAction::None) {
-            return StructField(name, desc, std::type_index(typeid(std::remove_cv_t<F>)), OffsetOf(M), actions);
+            return StructField(name,
+                desc,
+                TypeInfo::Lookup<std::remove_cv_t<F>>(),
+                sizeof(F),
+                OffsetOf(M),
+                actions,
+                AsFunctionPointer<F>());
+        }
+
+        template<typename T>
+        static const StructField New(const std::string &name,
+            const std::string &desc,
+            size_t offset,
+            FieldAction actions = FieldAction::None,
+            const std::optional<StructFunction> &functionPointer = {}) {
+            return StructField(name,
+                desc,
+                TypeInfo::Lookup<std::remove_cv_t<T>>(),
+                sizeof(T),
+                offset,
+                actions,
+                functionPointer);
         }
 
         /**
@@ -130,10 +325,16 @@ namespace ecs {
          */
         template<typename T>
         static const StructField New(FieldAction actions = ~FieldAction::None) {
-            return StructField("", "No description", std::type_index(typeid(std::remove_cv_t<T>)), 0, actions);
+            return StructField("",
+                "No description",
+                TypeInfo::Lookup<std::remove_cv_t<T>>(),
+                sizeof(T),
+                0,
+                actions,
+                AsFunctionPointer<T>());
         }
 
-        void *Access(void *structPtr) const {
+        void *AccessMut(void *structPtr) const {
             return static_cast<char *>(structPtr) + offset;
         }
 
@@ -143,16 +344,16 @@ namespace ecs {
 
         template<typename T>
         T &Access(void *structPtr) const {
-            Assertf(type == typeid(T),
+            Assertf(type == TypeInfo::Lookup<T>(),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
-            return *reinterpret_cast<T *>(Access(structPtr));
+            return *reinterpret_cast<T *>(AccessMut(structPtr));
         }
 
         template<typename T>
         const T &Access(const void *structPtr) const {
-            Assertf(type == typeid(T),
+            Assertf(type == TypeInfo::Lookup<T>(),
                 "StructMetadata::Access called with wrong type: %s, expected %s",
                 typeid(T).name(),
                 type.name());
@@ -179,14 +380,18 @@ namespace ecs {
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
 
+        static constexpr bool foo = std::is_trivially_copy_constructible_v<std::type_index>;
+
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, const char *name, const char *desc, Fields &&...fields)
-            : type(idx), name(name), description(sp::trim(desc)) {
+        StructMetadata(const std::type_index &idx, size_t size, const char *name, const char *desc, Fields &&...fields)
+            : type(idx), size(size), name(name), description(sp::trim(desc)) {
             (
                 [&] {
                     using FieldT = std::decay_t<Fields>;
                     if constexpr (std::is_same_v<FieldT, EnumDescriptions>) {
                         enumMap = fields;
+                    } else if constexpr (std::is_same_v<FieldT, StructFunction>) {
+                        this->functions.emplace_back(fields);
                     } else {
                         this->fields.emplace_back(fields);
                     }
@@ -195,12 +400,15 @@ namespace ecs {
             for (size_t i = 0; i < this->fields.size(); i++) {
                 this->fields[i].fieldIndex = i;
             }
+            for (size_t i = 0; i < this->functions.size(); i++) {
+                this->functions[i].funcIndex = i;
+            }
             Register(type, this);
         }
 
         StructMetadata(const StructMetadata &&other)
-            : type(other.type), name(other.name), description(other.description), fields(other.fields),
-              enumMap(other.enumMap) {
+            : type(other.type), size(other.size), name(other.name), description(other.description),
+              fields(other.fields), functions(other.functions), enumMap(other.enumMap) {
             Register(type, this);
         }
 
@@ -214,9 +422,11 @@ namespace ecs {
         }
 
         const std::type_index type;
+        const size_t size;
         const std::string name;
         const std::string description;
         std::vector<StructField> fields;
+        std::vector<StructFunction> functions;
         EnumDescriptions enumMap;
 
         // === The following functions are meant to specialized by individual structs
@@ -291,18 +501,45 @@ namespace ecs {
             if (dst) SetScope(*dst, scope);
         }
 
-        template<typename T>
-        inline void SetScope(robin_hood::unordered_flat_map<std::string, T> &dst, const EntityScope &scope) {
+        template<typename K, typename T, typename H, typename E>
+        inline void SetScope(robin_hood::unordered_flat_map<K, T, H, E> &dst, const EntityScope &scope) {
             for (auto &item : dst) {
                 SetScope(item.second, scope);
             }
         }
 
-        template<typename T>
-        inline void SetScope(robin_hood::unordered_node_map<std::string, T> &dst, const EntityScope &scope) {
+        template<typename K, typename T, typename H, typename E>
+        inline void SetScope(robin_hood::unordered_node_map<K, T, H, E> &dst, const EntityScope &scope) {
             for (auto &item : dst) {
                 SetScope(item.second, scope);
             }
         }
     } // namespace scope
+
+    static StructMetadata MetadataTypeInfo(typeid(TypeInfo),
+        sizeof(TypeInfo),
+        "TypeInfo",
+        "A definition describing the name, type, and memory offset of a struct field",
+        StructField::New("type_index", "The index of this type in the master list", &TypeInfo::typeIndex),
+        StructField::New("is_trivial", "True if this type is C-compatible", &TypeInfo::isTrivial),
+        StructField::New("is_const", "True if this type is const", &TypeInfo::isConst),
+        StructField::New("is_pointer", "True if this type is a pointer", &TypeInfo::isPointer),
+        StructField::New("is_reference", "True if this type is a reference", &TypeInfo::isReference),
+        StructField::New("is_tecs_lock", "True if this type is a Tecs lock", &TypeInfo::isTecsLock),
+        StructField::New("is_function_pointer",
+            "True if this type is a function pointer",
+            &TypeInfo::isFunctionPointer));
+
+    static StructMetadata MetadataStructField(typeid(StructField),
+        sizeof(StructField),
+        "StructField",
+        "A definition describing the name, type, and memory offset of a struct field",
+        StructField::New("name", "The name of the field", &StructField::name),
+        StructField::New("desc", "A description of what the field is for", &StructField::desc),
+        StructField::New("type", "The type of the field", &StructField::type),
+        StructField::New("size", "The size of the field in bytes", &StructField::size),
+        StructField::New("offset", "The byte offset of the field within its containing struct", &StructField::offset),
+        StructField::New("actions",
+            "A set of flags representing actions to take when handling this field",
+            &StructField::actions));
 }; // namespace ecs

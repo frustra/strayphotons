@@ -38,6 +38,7 @@ namespace ecs {
     };
 
     static StructMetadata MetadataSound(typeid(Sound),
+        sizeof(Sound),
         "Sound",
         "",
         StructField::New("type", &Sound::type),
@@ -56,9 +57,10 @@ namespace ecs {
         float occlusion = 0.0f, occlusionWeight = 1.0f;
     };
 
-    static Component<Audio> ComponentAudio(
-        {typeid(Audio), "audio", "", StructField::New(&Audio::sounds, ~FieldAction::AutoApply)});
+    static EntityComponent<Audio> ComponentAudio("audio",
+        "",
+        StructField::New(&Audio::sounds, ~FieldAction::AutoApply));
 
     template<>
-    void Component<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget);
+    void EntityComponent<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget);
 } // namespace ecs

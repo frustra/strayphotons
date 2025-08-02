@@ -10,6 +10,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 namespace ecs {
@@ -105,8 +106,7 @@ namespace ecs {
                             newEntity.Set<PhysicsQuery>(lock);
                             newEntity.Set<EventInput>(lock);
                             auto &scripts = newEntity.Set<Scripts>(lock);
-                            scripts.AddOnTick(prefixName, "interactive_object");
-                            GetScriptManager().RegisterEvents(lock, newEntity);
+                            scripts.AddScript(prefixName, "interactive_object");
                         }
                     }
                 }
@@ -119,6 +119,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataGltfPrefab(typeid(GltfPrefab),
+        sizeof(GltfPrefab),
         "GltfPrefab",
         "",
         StructField::New("model", &GltfPrefab::modelName),
@@ -127,5 +128,5 @@ namespace ecs {
         StructField::New("render", &GltfPrefab::render),
         StructField::New("physics", &GltfPrefab::physicsType),
         StructField::New("interactive", &GltfPrefab::interactive));
-    PrefabScript<GltfPrefab> gltfPrefab("gltf", MetadataGltfPrefab);
+    PrefabScript<GltfPrefab> gltfPrefab("prefab_gltf", MetadataGltfPrefab);
 } // namespace ecs

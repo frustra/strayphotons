@@ -1,3 +1,4 @@
+x.PhysicsFPS 120
 loadscene force-joints
 syncscene
 r.Exposure 1

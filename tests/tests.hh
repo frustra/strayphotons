@@ -19,15 +19,15 @@
 #include <utility>
 #include <vector>
 
-static inline std::ostream &operator<<(std::ostream &out, const glm::vec2 &v) {
+inline std::ostream &operator<<(std::ostream &out, const glm::vec2 &v) {
     return out << glm::to_string(v);
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
+inline std::ostream &operator<<(std::ostream &out, const glm::vec3 &v) {
     return out << glm::to_string(v);
 }
 
-static inline std::ostream &operator<<(std::ostream &out, const glm::quat &v) {
+inline std::ostream &operator<<(std::ostream &out, const glm::quat &v) {
     return out << glm::to_string(v);
 }
 

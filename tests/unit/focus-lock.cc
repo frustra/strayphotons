@@ -61,7 +61,7 @@ namespace FocusLockTests {
             ecs::Event event;
             AssertTrue(!ecs::EventInput::Poll(lock, playerQueue, event),
                 "Unexpected event, should not be visible to sender");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
         }
@@ -71,11 +71,11 @@ namespace FocusLockTests {
 
             ecs::Event event;
             AssertTrue(ecs::EventInput::Poll(lock, playerQueue, event), "Expected to receive an event");
-            AssertEqual(event.name, TEST_EVENT_ACTION, "Unexpected event name");
+            AssertEqual(event.name.str(), TEST_EVENT_ACTION, "Unexpected event name");
             AssertEqual(event.source, keyboard, "Unexpected event source");
             AssertEqual(event.data, ecs::EventData(42), "Unexpected event data");
             AssertTrue(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected second event");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
         }
@@ -95,7 +95,7 @@ namespace FocusLockTests {
 
             ecs::Event event;
             AssertTrue(!ecs::EventInput::Poll(lock, playerQueue, event), "Unexpected second event");
-            AssertEqual(event.name, "", "Event data should not be set");
+            AssertEqual(event.name.str(), "", "Event data should not be set");
             AssertTrue(!event.source, "Event data should not be set");
             AssertEqual(event.data, ecs::EventData(false), "Event data should not be set");
 

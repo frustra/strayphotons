@@ -39,6 +39,8 @@
         #define DebugZoneStr(str)
     #endif
 
+// size_t SampleAllocationCount();
+
 // void *operator new(size_t size);
 // void operator delete(void *ptr);
 

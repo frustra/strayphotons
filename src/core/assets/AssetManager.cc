@@ -95,7 +95,7 @@ namespace sp {
         LogOnExit logOnExit = "Assets shut down ======================================================";
     }
 
-    std::filesystem::path AssetManager::GetExternalPath(const std::string &path) const {
+    std::filesystem::path AssetManager::GetExternalPath(std::string_view path) const {
         if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) {
             return OVERRIDE_ASSETS_DIR / path;
         } else if (std::filesystem::is_regular_file(assetsPath / path)) {
@@ -105,8 +105,8 @@ namespace sp {
         }
     }
 
-    std::vector<std::string> AssetManager::ListBundledAssets(const std::string &prefix,
-        const std::string &extension) const {
+    std::vector<std::string> AssetManager::ListBundledAssets(std::string_view prefix,
+        std::string_view extension) const {
         std::vector<std::string> results;
         if (std::filesystem::is_directory(OVERRIDE_ASSETS_DIR / prefix)) {
             for (auto &entry : std::filesystem::directory_iterator(OVERRIDE_ASSETS_DIR / prefix)) {
@@ -131,8 +131,8 @@ namespace sp {
         if (!bundleIndex.empty()) {
             for (auto &[path, range] : bundleIndex) {
                 if (starts_with(path, prefix)) {
-                    if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) continue;
-                    if (std::filesystem::is_regular_file(assetsPath / path)) continue;
+                    if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / std::string_view(path))) continue;
+                    if (std::filesystem::is_regular_file(assetsPath / std::string_view(path))) continue;
                     results.emplace_back(path);
                 }
             }
@@ -147,7 +147,7 @@ namespace sp {
         }
     }
 
-    bool AssetManager::InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size) {
+    bool AssetManager::InputStream(std::string_view path, AssetType type, std::ifstream &stream, size_t *size) {
         switch (type) {
         case AssetType::Bundled: {
             // Allow modding the asset bundle by placing files in OVERRIDE_ASSETS_DIR
@@ -187,7 +187,7 @@ namespace sp {
             return false;
         }
         case AssetType::External: {
-            stream.open(path, std::ios::in | std::ios::binary);
+            stream.open(std::filesystem::path(path), std::ios::in | std::ios::binary);
 
             if (size && stream) {
                 stream.seekg(0, std::ios::end);
@@ -214,7 +214,7 @@ namespace sp {
         return !!stream;
     }
 
-    AsyncPtr<Asset> AssetManager::Load(const std::string &path, AssetType type, bool reload) {
+    AsyncPtr<Asset> AssetManager::Load(std::string_view path, AssetType type, bool reload) {
         Assert(!path.empty(), "AssetManager::Load called with empty path");
 
         auto asset = loadedAssets[type].Load(path);
@@ -226,7 +226,7 @@ namespace sp {
                 if (asset) return asset;
             }
 
-            asset = workQueue.Dispatch<Asset>([this, path, type] {
+            asset = workQueue.Dispatch<Asset>([this, path = AssetPath(path), type] {
                 ZoneScopedN("LoadAsset");
                 ZoneStr(path);
                 std::ifstream in;
@@ -252,22 +252,22 @@ namespace sp {
         return asset;
     }
 
-    std::string AssetManager::FindGltfByName(const std::string &name) {
-        const std::string pathOptions[] = {
-            "models/" + name + "/" + name + ".glb",
-            "models/" + name + ".glb",
-            "models/" + name + "/" + name + ".gltf",
-            "models/" + name + ".gltf",
+    AssetPath AssetManager::FindGltfByName(std::string_view name) {
+        const AssetPath pathOptions[] = {
+            AssetPath("models/") + name + "/" + name + ".glb",
+            AssetPath("models/") + name + ".glb",
+            AssetPath("models/") + name + "/" + name + ".gltf",
+            AssetPath("models/") + name + ".gltf",
         };
-        for (const std::string &path : pathOptions) {
-            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) return path;
+        for (const AssetPath &path : pathOptions) {
+            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / std::string_view(path))) return path;
             if (bundleIndex.count(path)) return path;
-            if (std::filesystem::is_regular_file(assetsPath / path)) return path;
+            if (std::filesystem::is_regular_file(assetsPath / std::string_view(path))) return path;
         }
         return "";
     }
 
-    AsyncPtr<Gltf> AssetManager::LoadGltf(const std::string &name) {
+    AsyncPtr<Gltf> AssetManager::LoadGltf(std::string_view name) {
         Assert(!name.empty(), "AssetManager::LoadGltf called with empty name");
 
         auto gltf = loadedGltfs.Load(name);
@@ -278,7 +278,7 @@ namespace sp {
                 gltf = loadedGltfs.Load(name);
                 if (gltf) return gltf;
 
-                std::string path;
+                AssetPath path;
                 {
                     std::lock_guard lock2(externalGltfMutex);
                     auto it = externalGltfPaths.find(name);
@@ -293,7 +293,7 @@ namespace sp {
                     asset = Load(path, AssetType::External);
                 }
 
-                gltf = workQueue.Dispatch<Gltf>(asset, [name](std::shared_ptr<const Asset> asset) {
+                gltf = workQueue.Dispatch<Gltf>(asset, [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
                     if (!asset) {
                         Logf("Gltf not found: %s", name);
                         return std::shared_ptr<Gltf>();
@@ -308,21 +308,21 @@ namespace sp {
         return gltf;
     }
 
-    std::string AssetManager::FindPhysicsByName(const std::string &name) {
-        const std::string pathOptions[] = {
-            "models/" + name + "/" + name + ".physics.json",
-            "models/" + name + "/physics.json",
-            "models/" + name + ".physics.json",
+    AssetPath AssetManager::FindPhysicsByName(std::string_view name) {
+        const AssetPath pathOptions[] = {
+            AssetPath("models/") + name + "/" + name + ".physics.json",
+            AssetPath("models/") + name + "/physics.json",
+            AssetPath("models/") + name + ".physics.json",
         };
-        for (const std::string &path : pathOptions) {
-            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) return path;
+        for (const AssetPath &path : pathOptions) {
+            if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / std::string_view(path))) return path;
             if (bundleIndex.count(path)) return path;
-            if (std::filesystem::is_regular_file(assetsPath / path)) return path;
+            if (std::filesystem::is_regular_file(assetsPath / std::string_view(path))) return path;
         }
         return "";
     }
 
-    AsyncPtr<PhysicsInfo> AssetManager::LoadPhysicsInfo(const std::string &name) {
+    AsyncPtr<PhysicsInfo> AssetManager::LoadPhysicsInfo(std::string_view name) {
         Assert(!name.empty(), "AssetManager::LoadPhysicsInfo called with empty name");
 
         auto physicsInfo = loadedPhysics.Load(name);
@@ -337,10 +337,11 @@ namespace sp {
                 auto path = FindPhysicsByName(name);
                 if (!path.empty()) asset = Load(path, AssetType::Bundled);
 
-                physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset, [name](std::shared_ptr<const Asset> asset) {
-                    // PhysicsInfo handles missing asset internally
-                    return std::make_shared<PhysicsInfo>(name, asset);
-                });
+                physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset,
+                    [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
+                        // PhysicsInfo handles missing asset internally
+                        return std::make_shared<PhysicsInfo>(name, asset);
+                    });
                 loadedPhysics.Register(name, physicsInfo);
             }
         }
@@ -348,14 +349,15 @@ namespace sp {
         return physicsInfo;
     }
 
-    AsyncPtr<HullSettings> AssetManager::LoadHullSettings(const std::string &modelName, const std::string &meshName) {
+    AsyncPtr<HullSettings> AssetManager::LoadHullSettings(std::string_view modelName, std::string_view meshName) {
         Assert(!modelName.empty(), "AssetManager::LoadHullSettings called with empty model name");
         Assert(!meshName.empty(), "AssetManager::LoadHullSettings called with empty mesh name");
 
         auto physicsInfo = LoadPhysicsInfo(modelName);
 
         return workQueue.Dispatch<HullSettings>(physicsInfo,
-            [modelName, meshName](std::shared_ptr<const PhysicsInfo> physicsInfo) {
+            [modelName = AssetName(modelName), meshName = AssetName(meshName)](
+                std::shared_ptr<const PhysicsInfo> physicsInfo) {
                 if (!physicsInfo) {
                     Logf("PhysicsInfo not found: %s", modelName);
                     return std::shared_ptr<HullSettings>();
@@ -364,7 +366,7 @@ namespace sp {
             });
     }
 
-    AsyncPtr<Image> AssetManager::LoadImage(const std::string &path) {
+    AsyncPtr<Image> AssetManager::LoadImage(std::string_view path) {
         Assert(!path.empty(), "AssetManager::LoadImage called with empty path");
 
         auto image = loadedImages.Load(path);
@@ -376,7 +378,7 @@ namespace sp {
                 if (image) return image;
 
                 auto asset = Load(path);
-                image = workQueue.Dispatch<Image>(asset, [path](std::shared_ptr<const Asset> asset) {
+                image = workQueue.Dispatch<Image>(asset, [path = AssetPath(path)](std::shared_ptr<const Asset> asset) {
                     if (!asset) {
                         Logf("Image not found: %s", path);
                         return std::shared_ptr<Image>();
@@ -391,7 +393,7 @@ namespace sp {
         return image;
     }
 
-    void AssetManager::RegisterExternalGltf(const std::string &name, const std::string &path) {
+    void AssetManager::RegisterExternalGltf(std::string_view name, std::string_view path) {
         std::lock_guard lock(externalGltfMutex);
         auto result = externalGltfPaths.emplace(name, path);
         if (result.second) {
@@ -403,7 +405,7 @@ namespace sp {
         }
     }
 
-    bool AssetManager::IsGltfRegistered(const std::string &name) {
+    bool AssetManager::IsGltfRegistered(std::string_view name) {
         std::lock_guard lock(externalGltfMutex);
         return externalGltfPaths.count(name) > 0;
     }

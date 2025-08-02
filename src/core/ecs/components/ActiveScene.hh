@@ -16,6 +16,10 @@ namespace ecs {
         ActiveScene() {}
         ActiveScene(const sp::SceneRef &scene) : scene(scene) {}
     };
+
+    static GlobalComponent<ActiveScene> ComponentActiveScene("active_scene",
+        "",
+        StructField::New("scene", &ActiveScene::scene));
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::ActiveScene);

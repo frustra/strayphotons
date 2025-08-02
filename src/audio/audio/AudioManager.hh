@@ -72,7 +72,7 @@ namespace sp {
             size_t soundID;
         };
 
-        EntityMap<vector<size_t>> soundEntityMap;
+        EntityMap<InlineVector<size_t, 128>> soundEntityMap;
         LockFreeAudioSet<SoundSource, 65535> sounds;
         LockFreeEventQueue<SoundEvent> soundEvents;
 

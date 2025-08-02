@@ -1,3 +1,4 @@
+x.PhysicsFPS 120
 loadscene sponza
 screenshot sponza-render-init.png
 stepgraphics

@@ -20,7 +20,7 @@ namespace ecs::detail {
     template<typename T>
     std::optional<StructField> GetVectorSubfield(std::string_view subField) {
         if (subField.empty()) {
-            return StructField("", "", typeid(T), 0, ecs::FieldAction::None);
+            return StructField::New<T>("", "", 0, ecs::FieldAction::None, StructField::AsFunctionPointer<T>());
         }
         if (subField.size() > (size_t)T::length()) {
             Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
@@ -35,24 +35,30 @@ namespace ecs::detail {
             if (!std::equal(it, it + subField.size(), subField.begin(), subField.end())) continue;
 
             size_t offset = sizeof(typename T::value_type) * index;
-            std::type_index type = typeid(void);
+            TypeInfo type = TypeInfo::Lookup<void>();
             switch (subField.size()) {
             case 1:
-                type = typeid(typename T::value_type);
+                type = TypeInfo::Lookup<typename T::value_type>();
                 break;
             case 2:
-                type = typeid(glm::vec<2, typename T::value_type>);
+                type = TypeInfo::Lookup<glm::vec<2, typename T::value_type>>();
                 break;
             case 3:
-                type = typeid(glm::vec<3, typename T::value_type>);
+                type = TypeInfo::Lookup<glm::vec<3, typename T::value_type>>();
                 break;
             case 4:
-                type = typeid(glm::vec<4, typename T::value_type>);
+                type = TypeInfo::Lookup<glm::vec<4, typename T::value_type>>();
                 break;
             default:
                 Abortf("GetVectorSubfield unexpected subfield size: %s '%s'", typeid(T).name(), std::string(subField));
             };
-            return StructField(std::string(subField), "", type, offset, FieldAction::None);
+            return StructField(std::string(subField),
+                "",
+                type,
+                sizeof(typename T::value_type) * subField.size(),
+                offset,
+                FieldAction::None,
+                {});
         }
         Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
         return {};
@@ -89,6 +95,10 @@ namespace ecs::detail {
                     return ConvertAccessor<ArgT>(innerValue, accessor);
                 },
                 value);
+        } else if constexpr (std::is_same_v<T, EventData>) {
+            return EventData::Visit(value, [&](auto &data) {
+                return ConvertAccessor<ArgT>(data, accessor);
+            });
         } else {
             return false;
         }
@@ -129,14 +139,12 @@ namespace ecs::detail {
                 return false;
             } else if constexpr (std::is_same_v<T, EventData>) {
                 auto &value = field.Access<EventData>(basePtr);
-                return std::visit(
-                    [&](auto &&event) {
-                        using EventT = std::decay_t<decltype(event)>;
-                        auto subField = field;
-                        if (field.type == typeid(T)) subField.type = typeid(EventT);
-                        return AccessStructField<ArgT>(&event, subField, accessor);
-                    },
-                    value);
+                return EventData::Visit(value, [&](auto &data) {
+                    using EventT = std::decay_t<decltype(data)>;
+                    auto subField = field;
+                    if (field.type == typeid(T)) subField.type = TypeInfo::Lookup<EventT>();
+                    return AccessStructField<ArgT>(&data, subField, accessor);
+                });
             } else {
                 auto &value = field.Access<T>(basePtr);
                 bool success = ConvertAccessor<ArgT>(value, accessor);

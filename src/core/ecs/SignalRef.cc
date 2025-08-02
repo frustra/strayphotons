@@ -38,6 +38,10 @@ namespace ecs {
         return ptr ? ptr->signal.signalName : empty;
     }
 
+    bool SignalRef::IsValid() const {
+        return !!ptr;
+    }
+
     std::string SignalRef::String() const {
         if (!ptr) return "";
         return ptr->signal.String();
@@ -52,6 +56,26 @@ namespace ecs {
         } else if (newRef != ptr->signal.entity) {
             ptr = GetSignalManager().GetRef(newRef, ptr->signal.signalName).ptr;
         }
+    }
+
+    void SignalRef::Clear() {
+        ptr.reset();
+    }
+
+    SignalRef SignalRef::Empty() {
+        return SignalRef();
+    }
+
+    SignalRef SignalRef::New(const EntityRef &ent, const char *signalName) {
+        return SignalRef(ent, signalName);
+    }
+
+    SignalRef SignalRef::Copy(const SignalRef &ref) {
+        return SignalRef(ref);
+    }
+
+    SignalRef SignalRef::Lookup(const char *str, const EntityScope *scope) {
+        return SignalRef(str, scope ? *scope : EntityScope{});
     }
 
     void SignalRef::AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const {

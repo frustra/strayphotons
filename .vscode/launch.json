@@ -13,7 +13,8 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin/",
             "environment": [],
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis"
         },
         {
             "name": "StrayPhotons GLFW (vsdbg)",
@@ -25,6 +26,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -58,6 +60,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -91,6 +94,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -105,6 +109,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -138,6 +143,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -171,6 +177,7 @@
             "cwd": "${workspaceFolder}/docs/generated/",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
         },
         {
             "name": "StrayPhotons Docs Generator (gdb)",
@@ -201,6 +208,51 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+        },
+        {
+            "name": "StrayPhotons Components Codegen (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator.exe",
+            "args": ["include/strayphotons/components.h", "components_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+        },
+        {
+            "name": "StrayPhotons Components Codegen (gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator",
+            "args": ["include/strayphotons/components.h", "components_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+
+            "name": "StrayPhotons Tecs Codegen (vsdbg)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-ecs-c-abi-codegen.exe",
+            "args": ["include/c_abi/strayphotons_ecs_c_abi_lock_gen.h", "include/c_abi/strayphotons_ecs_c_abi_entity_gen.h", "strayphotons_ecs_c_abi_ecs_gen.cc", "strayphotons_ecs_c_abi_entity_gen.cc", "strayphotons_ecs_c_abi_lock_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
         },
         {
             "name": "StrayPhotons Test (vsdbg)",
@@ -212,6 +264,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
         },
         {
             "name": "StrayPhotons Test (gdb)",
@@ -242,7 +295,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis"
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
         },
         {
             "name": "Unit Tests (gdb)",
@@ -273,6 +326,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
+            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
         },
         {
             "name": "Integration Tests (gdb)",

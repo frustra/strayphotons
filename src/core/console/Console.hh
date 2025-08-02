@@ -33,7 +33,7 @@ namespace sp {
         chrono_clock::time_point wait_until;
         std::condition_variable *handled;
 
-        ConsoleInputLine(string text, chrono_clock::time_point wait_until, std::condition_variable *handled)
+        ConsoleInputLine(string_view text, chrono_clock::time_point wait_until, std::condition_variable *handled)
             : text(text), wait_until(wait_until), handled(handled) {}
 
         bool operator==(const ConsoleInputLine &other) const {
@@ -73,7 +73,7 @@ namespace sp {
             return *derived;
         }
 
-        void AddLine(logging::Level lvl, const string &line);
+        void AddLine(logging::Level lvl, string_view line);
 
         template<typename Fn>
         void AccessLines(Fn &&callback) {
@@ -81,25 +81,25 @@ namespace sp {
             callback((const vector<ConsoleLine> &)outputLines);
         }
 
-        void ParseAndExecute(const string line);
-        void QueueParseAndExecute(const string line,
+        void ParseAndExecute(string_view line);
+        void QueueParseAndExecute(string_view line,
             chrono_clock::time_point wait_until = chrono_clock::now(),
             std::condition_variable *handled = nullptr);
 
-        void AddHistory(const string &input);
+        void AddHistory(string_view input);
         vector<string> AllHistory(size_t maxEntries);
 
         struct Completions {
             vector<string> values;
             bool pending;
         };
-        Completions AllCompletions(const string &input, bool requestNewCompletions);
+        Completions AllCompletions(string_view input, bool requestNewCompletions);
 
         // Starts the command line input handler thread. Must only be called once.
         void StartInputLoop();
 
     private:
-        void Execute(const string cmd, const string &args);
+        void Execute(string_view cmd, string_view args);
 
         bool ThreadInit() override;
         void Frame() override;

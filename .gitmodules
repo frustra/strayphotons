@@ -67,3 +67,9 @@
 [submodule "ext/fpng"]
 	path = ext/fpng
 	url = https://github.com/richgel999/fpng.git
+[submodule "ext/cglm"]
+	path = ext/cglm
+	url = https://github.com/recp/cglm.git
+[submodule "ext/dynalo"]
+	path = ext/dynalo
+	url = https://github.com/maddouri/dynalo.git

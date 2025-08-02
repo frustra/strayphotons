@@ -23,6 +23,6 @@ namespace sp {
             ecs::Write<ecs::Signals, ecs::TransformTree>> lock);
 
     private:
-        const double frameInterval;
+        PhysxManager &manager;
     };
 } // namespace sp

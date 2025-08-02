@@ -10,6 +10,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 namespace sp::scripts {
@@ -22,7 +23,10 @@ namespace sp::scripts {
         EntityRef alignmentEntity, followEntity;
         std::optional<glm::vec3> alignment;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<TransformTree>, Read<TransformSnapshot, VoxelArea>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -55,6 +59,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVoxelController(typeid(VoxelController),
+        sizeof(VoxelController),
         "VoxelController",
         "",
         StructField::New("voxel_scale", &VoxelController::voxelScale),
@@ -62,13 +67,13 @@ namespace sp::scripts {
         StructField::New("voxel_offset", &VoxelController::voxelOffset),
         StructField::New("alignment_target", &VoxelController::alignmentEntity),
         StructField::New("follow_target", &VoxelController::followEntity));
-    InternalPhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
+    PhysicsScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 
     struct RotatePhysics {
         glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<Write<TransformTree>> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -79,14 +84,15 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotatePhysics(typeid(RotatePhysics),
+        sizeof(RotatePhysics),
         "RotatePhysics",
         "",
         StructField::New("axis", &RotatePhysics::rotationAxis),
         StructField::New("speed", &RotatePhysics::rotationSpeedRpm));
-    InternalPhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
+    PhysicsScript<RotatePhysics> rotatePhysics("rotate_physics", MetadataRotatePhysics);
 
     struct PhysicsJointFromEvent {
-        robin_hood::unordered_map<std::string, ecs::PhysicsJoint> definedJoints;
+        robin_hood::unordered_map<std::string, PhysicsJoint> definedJoints;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -101,8 +107,11 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
         }
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            if (!ent.Has<ecs::Physics, ecs::PhysicsJoints>(lock)) return;
+        void OnTick(ScriptState &state,
+            Lock<Write<PhysicsJoints>, Read<TransformSnapshot, EventInput>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            if (!ent.Has<Physics, PhysicsJoints>(lock)) return;
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -118,25 +127,23 @@ namespace sp::scripts {
                 auto it = definedJoints.find(jointName);
                 if (it == definedJoints.end()) continue;
                 auto &joint = it->second;
-                auto &joints = ent.Get<ecs::PhysicsJoints>(lock).joints;
+                auto &joints = ent.Get<PhysicsJoints>(lock).joints;
                 auto existing = std::find_if(joints.begin(), joints.end(), [&joint](auto &arg) {
                     return arg.target == joint.target && arg.type == joint.type;
                 });
 
                 if (action == "enable") {
-                    bool enabled = std::visit(
-                        [](auto &arg) {
-                            using T = std::decay_t<decltype(arg)>;
+                    bool enabled = EventData::Visit(event.data, [](auto &data) {
+                        using T = std::decay_t<decltype(data)>;
 
-                            if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                                return (double)arg >= 0.5;
-                            } else if constexpr (std::is_convertible_v<T, bool>) {
-                                return (bool)arg;
-                            } else {
-                                return true;
-                            }
-                        },
-                        event.data);
+                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                            return (double)data >= 0.5;
+                        } else if constexpr (std::is_convertible_v<T, bool>) {
+                            return (bool)data;
+                        } else {
+                            return true;
+                        }
+                    });
                     if (existing == joints.end()) {
                         if (enabled) existing = joints.insert(joints.end(), joint);
                     } else if (!enabled) {
@@ -144,11 +151,11 @@ namespace sp::scripts {
                         existing = joints.end();
                     }
                 } else if (action == "set_target") {
-                    if (std::holds_alternative<std::string>(event.data)) {
-                        auto targetName = std::get<std::string>(event.data);
-                        joint.target = ecs::Name(targetName, ecs::Name());
-                    } else if (std::holds_alternative<EntityRef>(event.data)) {
-                        joint.target = std::get<EntityRef>(event.data);
+                    if (event.data.type == EventDataType::String) {
+                        auto &targetName = event.data.str;
+                        joint.target = Name(targetName, Name());
+                    } else if (event.data.type == EventDataType::NamedEntity) {
+                        joint.target = event.data.namedEntity;
                     } else {
                         Errorf("Invalid set_target event type: %s", event.ToString());
                         continue;
@@ -156,14 +163,14 @@ namespace sp::scripts {
                 } else if (action == "set_current_offset") {
                     joint.localOffset = Transform();
                     Entity target;
-                    if (std::holds_alternative<std::string>(event.data)) {
-                        auto targetName = std::get<std::string>(event.data);
-                        target = ecs::EntityRef(ecs::Name(targetName, state.scope)).Get(lock);
+                    if (event.data.type == EventDataType::String) {
+                        auto &targetName = event.data.str;
+                        target = EntityRef(Name(targetName, state.scope)).Get(lock);
                         if (!target) {
                             Errorf("Invalid set_current_offset event target: %s", targetName);
                         }
-                    } else if (std::holds_alternative<EntityRef>(event.data)) {
-                        auto targetRef = std::get<EntityRef>(event.data);
+                    } else if (event.data.type == EventDataType::NamedEntity) {
+                        auto &targetRef = event.data.namedEntity;
                         target = targetRef.Get(lock);
                         if (!target) {
                             Errorf("Invalid set_current_offset event target: %s", targetRef.Name().String());
@@ -173,19 +180,19 @@ namespace sp::scripts {
                         continue;
                     }
                     if (ent.Has<TransformSnapshot>(lock) && target.Has<TransformSnapshot>(lock)) {
-                        joint.localOffset = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse() *
-                                            target.Get<ecs::TransformSnapshot>(lock);
+                        joint.localOffset = ent.Get<TransformSnapshot>(lock).globalPose.GetInverse() *
+                                            target.Get<TransformSnapshot>(lock);
                     }
                 } else if (action == "set_local_offset") {
-                    if (std::holds_alternative<Transform>(event.data)) {
-                        joint.localOffset = std::get<Transform>(event.data);
+                    if (event.data.type == EventDataType::Transform) {
+                        joint.localOffset = event.data.transform;
                     } else {
                         Errorf("Invalid set_local_offset event type: %s", event.ToString());
                         continue;
                     }
                 } else if (action == "set_remote_offset") {
-                    if (std::holds_alternative<Transform>(event.data)) {
-                        joint.remoteOffset = std::get<Transform>(event.data);
+                    if (event.data.type == EventDataType::Transform) {
+                        joint.remoteOffset = event.data.transform;
                     } else {
                         Errorf("Invalid set_remote_offset event type: %s", event.ToString());
                         continue;
@@ -200,9 +207,10 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataPhysicsJointFromEvent(typeid(PhysicsJointFromEvent),
+        sizeof(PhysicsJointFromEvent),
         "PhysicsJointFromEvent",
         "",
         StructField::New(&PhysicsJointFromEvent::definedJoints));
-    InternalPhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
+    PhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
         MetadataPhysicsJointFromEvent);
 } // namespace sp::scripts

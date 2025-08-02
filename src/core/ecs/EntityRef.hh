@@ -33,6 +33,39 @@ If just a relative name is provided, the reference will be expanded based on the
 The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 )";
 
+    class EntityRef;
+
+    struct NamedEntity {
+        ecs::Name name;
+        Entity ent;
+
+        NamedEntity() {}
+        NamedEntity(Entity ent);
+        NamedEntity(const ecs::Name &name, Entity ent = Entity());
+
+        ecs::Name Name() const;
+        Entity Get(const Lock<> &lock) const;
+        Entity GetLive() const;
+        Entity GetStaging() const;
+        bool IsValid() const;
+
+        void SetScope(const EntityScope &scope);
+        void Clear();
+
+        static NamedEntity Lookup(Entity ent);
+        static NamedEntity Find(const char *name, const EntityScope *scope = nullptr);
+
+        operator EntityRef() const;
+
+        explicit operator bool() const {
+            return name || ent;
+        }
+
+        bool operator==(const NamedEntity &other) const;
+        bool operator==(const Entity &other) const;
+        bool operator<(const NamedEntity &other) const;
+    };
+
     class EntityRef {
     private:
         struct Ref;
@@ -48,14 +81,22 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
         Entity Get(const Lock<> &lock) const;
         Entity GetLive() const;
         Entity GetStaging() const;
+        bool IsValid() const;
 
         void SetScope(const EntityScope &scope);
+        void Clear();
+
+        static EntityRef Empty();
+        static EntityRef New(Entity ent);
+        static EntityRef Copy(const EntityRef &ref);
+        static EntityRef Lookup(const char *name, const EntityScope *scope = nullptr);
 
         explicit operator bool() const {
             return !!ptr;
         }
 
         bool operator==(const EntityRef &other) const;
+        bool operator==(const NamedEntity &other) const;
         bool operator==(const Entity &other) const;
         bool operator<(const EntityRef &other) const;
 

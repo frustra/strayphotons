@@ -11,6 +11,7 @@
 #include "common/InlineVector.hh"
 #include "common/LockFreeMutex.hh"
 #include "common/Logging.hh"
+#include "common/Tracing.hh"
 
 #include <deque>
 #include <mutex>
@@ -91,6 +92,7 @@ namespace sp {
         PreservingSet() {}
 
         void Tick(chrono_clock::duration maxTickInterval) {
+            ZoneScoped;
             auto now = chrono_clock::now();
             chrono_clock::duration tickInterval = std::min(now - last_tick, maxTickInterval);
             auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();

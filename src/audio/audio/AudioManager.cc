@@ -177,12 +177,13 @@ namespace sp {
         auto globalVolume = std::min(10.0f, CVarVolume.Get(true));
 
         for (auto &ent : lock.EntitiesWith<ecs::Audio>()) {
-            vector<size_t> *soundIDs;
+            InlineVector<size_t, 128> *soundIDs;
 
             auto &sources = ent.Get<ecs::Audio>(lock);
             if (soundEntityMap.count(ent) == 0) {
                 soundIDs = &soundEntityMap[ent];
                 for (auto &source : sources.sounds) {
+                    if (soundIDs->size() == soundIDs->capacity()) break;
                     auto soundID = sounds.AllocateItem();
                     soundIDs->push_back(soundID);
 
@@ -257,7 +258,7 @@ namespace sp {
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, sources.eventQueue, event)) {
-                int *ptr = std::get_if<int>(&event.data);
+                int *ptr = ecs::EventData::TryGet<int>(event.data);
                 int index = ptr ? *ptr : 0;
                 if (index >= soundIDs->size()) continue;
                 auto soundID = soundIDs->at(index);

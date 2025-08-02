@@ -65,7 +65,9 @@ namespace sp {
         ZoneScoped;
         bool selectionChanged = false;
         ImGui::SetNextItemWidth(listWidth);
-        ImGui::InputTextWithHint("##entity_search", "Entity Search", &entitySearch);
+        std::string entryLabel = "##entity_search" + listLabel;
+        ImGui::InputTextWithHint(entryLabel.c_str(), "Entity Search", &entitySearch);
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere(-1);
         if (ImGui::BeginListBox(listLabel.c_str(), ImVec2(listWidth, listHeight))) {
             auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
             for (auto &entName : entityNames) {
@@ -329,7 +331,7 @@ namespace sp {
                 ImGui::Text("Entity: %s", ecs::ToString(lock, this->target).c_str());
 
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text("Entity Definitions (Overrides First):");
+                ImGui::TextUnformatted("Entity Definitions (Overrides First):");
                 if (targetSceneInfo.prefabStagingId) {
                     ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().FramePadding.x - 200.0f);
                     if (ImGui::Button("Goto Prefab Source", ImVec2(200, 0))) {
@@ -352,9 +354,9 @@ namespace sp {
                                     scriptInstance = prefabScripts.FindScript(sceneInfo.prefabScriptId);
                                 }
                                 if (scriptInstance) {
-                                    if (scriptInstance->definition.name == "gltf") {
+                                    if (scriptInstance->definition.name == "prefab_gltf") {
                                         sourceName = scriptInstance->GetParam<std::string>("model") + " - Gltf Model";
-                                    } else if (scriptInstance->definition.name == "template") {
+                                    } else if (scriptInstance->definition.name == "prefab_template") {
                                         sourceName = scriptInstance->GetParam<std::string>("source") + " - Template";
                                     } else {
                                         sourceName = scriptInstance->definition.name + " - Prefab";
@@ -418,7 +420,9 @@ namespace sp {
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
                         using T = std::remove_pointer_t<decltype(typePtr)>;
-                        AddFieldControls<T>(field, comp, component);
+                        if constexpr (std::is_default_constructible<T>()) {
+                            AddFieldControls<T>(field, comp, component);
+                        }
                     });
                 }
             }
@@ -465,7 +469,7 @@ namespace sp {
     }
 
     void EditorContext::ShowSceneControls(const ecs::Lock<ecs::ReadAll> &lock) {
-        ImGui::Text("Active Scene List:");
+        ImGui::TextUnformatted("Active Scene List:");
         if (ImGui::BeginListBox("##ActiveScenes", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
             auto sceneList = GetSceneManager().GetActiveScenes();
             std::sort(sceneList.begin(), sceneList.end());
@@ -544,7 +548,7 @@ namespace sp {
                     fieldName = field.name;
                     fieldId = "##scene_properties" + std::to_string(field.fieldIndex);
                     std::string elementName = fieldName + fieldId;
-                    ecs::GetFieldType(field.type, field.Access(&properties), [&](auto &value) {
+                    ecs::GetFieldType(field.type, field.AccessMut(&properties), [&](auto &value) {
                         if (AddImGuiElement(elementName, value)) changed = true;
                     });
                 }
@@ -584,7 +588,7 @@ namespace sp {
     }
 
     void EditorContext::ShowSignalControls(const ecs::Lock<ecs::ReadAll> &lock) {
-        ImGui::Text("Signal References:");
+        ImGui::TextUnformatted("Signal References:");
         ImGui::InputTextWithHint("##signal_search", "Signal Search", &signalSearch);
         if (ImGui::BeginListBox("##SignalRefs", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
             auto refList = ecs::GetSignalManager().GetSignals(signalSearch);
@@ -609,7 +613,7 @@ namespace sp {
             if (ref.HasValue(lock)) {
                 ImGui::Text("Value = %.4f", ref.GetValue(lock));
             } else if (!ref.HasBinding(lock)) {
-                ImGui::Text("Value = 0.0 (unset)");
+                ImGui::TextUnformatted("Value = 0.0 (unset)");
             }
             if (ref.HasBinding(lock)) {
                 auto &binding = ref.GetBinding(lock);
@@ -626,7 +630,7 @@ namespace sp {
                 if (ref.IsCacheable(lock)) {
                     ImGui::Text("Cached value: %.4f %s", signal.lastValue, signal.lastValueDirty ? " (dirty)" : "");
                 } else {
-                    ImGui::Text("Signal uncacheable");
+                    ImGui::TextUnformatted("Signal uncacheable");
                 }
                 auto node = ecs::GetSignalManager().FindSignalNode(ref);
                 if (node) {

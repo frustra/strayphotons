@@ -9,7 +9,7 @@
 
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
-#include "graphics/gui/GuiContext.hh"
+#include "ecs/components/Gui.hh"
 
 #include <memory>
 #include <string>
@@ -18,14 +18,14 @@ namespace sp {
     struct EditorContext;
     class Scene;
 
-    class EntityPickerGui final : public GuiRenderable {
+    class EntityPickerGui final : public ecs::GuiRenderable {
     public:
         EntityPickerGui(const std::string &name);
         virtual ~EntityPickerGui() {}
 
-        bool PreDefine() override;
-        void DefineContents() override;
-        void PostDefine() override;
+        bool PreDefine(ecs::Entity ent) override;
+        void DefineContents(ecs::Entity ent) override;
+        void PostDefine(ecs::Entity ent) override;
 
     private:
         ecs::EventQueueRef events = ecs::EventQueue::New();

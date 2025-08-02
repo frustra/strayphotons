@@ -134,7 +134,7 @@ namespace EcsTransformTests {
             AssertEqual(transform.pose.GetRotation(), rotation1, "Expected rotation to be initilized");
             transform.pose.SetScale(glm::vec3(1, 2, 3));
             AssertEqual(transform.pose.GetRotation(), rotation1, "Expected rotation to be unchanged");
-            transform.pose.Rotate(8, glm::normalize(glm::vec3(0, 1, 1)));
+            transform.pose.RotateAxis(8, glm::normalize(glm::vec3(0, 1, 1)));
             AssertEqual(transform.pose.GetScale(), glm::vec3(1, 2, 3), "Expected scale to be unchanged");
             AssertEqual(transform.pose.GetRotation(), rotation3, "Expected rotation to add up correctly");
             transform.pose.SetRotation(rotation1);

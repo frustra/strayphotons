@@ -14,7 +14,7 @@
 
 namespace ecs {
     template<>
-    void Component<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget) {
+    void EntityComponent<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget) {
         for (auto &joint : src.joints) {
             if (!sp::contains(dst.joints, joint)) dst.joints.emplace_back(joint);
         }

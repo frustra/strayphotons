@@ -31,12 +31,12 @@ namespace sp {
     }
 
     template<typename T>
-    std::ostream &operator<<(std::ostream &os, glm::tvec2<T, glm::highp> &v) {
+    std::ostream &operator<<(std::ostream &os, const glm::tvec2<T, glm::highp> &v) {
         return os << v[0] << " " << v[1];
     }
 
     template<typename T>
-    std::ostream &operator<<(std::ostream &os, glm::tvec3<T, glm::highp> &v) {
+    std::ostream &operator<<(std::ostream &os, const glm::tvec3<T, glm::highp> &v) {
         return os << v[0] << " " << v[1] << " " << v[2];
     }
 } // namespace sp

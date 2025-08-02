@@ -9,6 +9,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -33,7 +34,7 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == "/life/neighbor_alive") {
-                    auto *neighborAlive = std::get_if<bool>(&event.data);
+                    auto *neighborAlive = EventData::TryGet<bool>(event.data);
                     if (neighborAlive == nullptr) continue;
                     neighborCount += *neighborAlive ? 1 : -1;
                 } else if (event.name == "/life/toggle_alive") {
@@ -49,14 +50,12 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataLifeCell(typeid(LifeCell),
+        sizeof(LifeCell),
         "LifeCell",
         "",
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-    InternalScript<LifeCell> lifeCell("life_cell",
-        MetadataLifeCell,
-        false,
-        "/life/neighbor_alive",
-        "/life/toggle_alive");
+    // LogicScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive",
+    // "/life/toggle_alive");
 } // namespace sp::scripts

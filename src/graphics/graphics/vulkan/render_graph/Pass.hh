@@ -27,7 +27,7 @@ namespace sp::vulkan::render_graph {
     struct ResourceIDFutureAccess {
         ResourceID id;
         Access access;
-        int framesFromNow;
+        uint32 framesFromNow;
     };
 
     struct AttachmentInfo {
@@ -57,7 +57,7 @@ namespace sp::vulkan::render_graph {
         void AddAccess(ResourceID id, Access access) {
             accesses.push_back({id, access});
         }
-        void AddFutureRead(ResourceID id, Access access, int framesFromNow) {
+        void AddFutureRead(ResourceID id, Access access, uint32 framesFromNow) {
             futureReads.push_back({id, access, framesFromNow});
         }
 
@@ -82,7 +82,7 @@ namespace sp::vulkan::render_graph {
         friend class PassBuilder;
         string_view name;
         InlineVector<ResourceIDAccess, 128> accesses;
-        vector<ResourceIDFutureAccess> futureReads;
+        InlineVector<ResourceIDFutureAccess, 128> futureReads;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
         uint8 primaryAttachmentIndex = 0;

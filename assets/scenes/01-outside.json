@@ -6,7 +6,7 @@
 				"translate": [0, 0, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "01-outside",
 					"render": true,
@@ -41,7 +41,7 @@
 				"sensitivity": 0.01
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "light_sensor" }
 			}
 		},
@@ -67,7 +67,7 @@
 				]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "airlock" }
 			}
 		},
@@ -86,7 +86,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -105,7 +105,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -124,7 +124,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},

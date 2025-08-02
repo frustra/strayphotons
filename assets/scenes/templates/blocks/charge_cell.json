@@ -30,14 +30,14 @@
 		"event_input": {},
 		"script": [
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			},
 			{
-				"onTick": "magnetic_plug"
+				"name": "magnetic_plug"
 			},
 			{
-				"onTick": "charge_cell",
+				"name": "charge_cell",
 				"parameters": {
 					"max_charge_level": 1000,
 					"output_power_r": "5",
@@ -57,7 +57,7 @@
 				"scale": [0.07, 0.01, 0.07]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
 					"render": true
@@ -84,7 +84,7 @@
 				"translate": [0, 0.025, -0.0335]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -108,7 +108,7 @@
 				"scale": [1, 1, 1.5]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
 					"render": true
@@ -123,7 +123,7 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -138,7 +138,7 @@
 				"scale": [1, 1, 1.5]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
 					"render": true
@@ -154,7 +154,7 @@
 				"scale": 0.1
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
@@ -189,7 +189,7 @@
 			},
 			"script": [
 				{
-					"onTick": "rotate_to_entity",
+					"name": "rotate_to_entity",
 					"parameters": {
 						"target": "player:head"
 					}

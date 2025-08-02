@@ -72,14 +72,13 @@ namespace ecs {
         bool operator==(const Renderable &other) const = default;
     };
 
-    static Component<Renderable> ComponentRenderable({typeid(Renderable),
-        "renderable",
+    static EntityComponent<Renderable> ComponentRenderable("renderable",
         R"(
 Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are supported,
 and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
 
 Note for GLTF models with multiple meshes:  
-It is usually preferred to load the model using the [gltf Prefab Script](Prefab_Scripts.md#gltf-prefab) to automatically generate the correct transform tree and entity structure.
+It is usually preferred to load the model using the [gltf Prefab Script](#gltf-prefab) to automatically generate the correct transform tree and entity structure.
 )",
         StructField::New("model",
             "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
@@ -105,10 +104,10 @@ It is usually preferred to load the model using the [gltf Prefab Script](Prefab_
         StructField::New("metallic_roughness_override",
             "Override the mesh's metallic and roughness material properties. "
             "Values are in the range 0.0 to 1.0. -1 means the original material is used.",
-            &Renderable::metallicRoughnessOverride)});
+            &Renderable::metallicRoughnessOverride));
 
     template<>
     bool StructMetadata::Load<Renderable>(Renderable &dst, const picojson::value &src);
     template<>
-    void Component<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget);
+    void EntityComponent<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget);
 } // namespace ecs

@@ -63,7 +63,7 @@ namespace ecs {
     enum class TriggerGroup : uint8_t;
     struct View;
     struct VoxelArea;
-    struct XRView;
+    struct XrView;
 
     using ECS = Tecs::ECS<Name,
         SceneInfo,
@@ -93,7 +93,7 @@ namespace ecs {
         TriggerGroup,
         View,
         VoxelArea,
-        XRView,
+        XrView,
 
         EventInput,
         EventBindings,
@@ -177,8 +177,8 @@ namespace ecs {
      *  QueueTransaction<Write<FocusLock>>([ent](auto lock) { Assert(ent.Ready()); lock.Set<FocusLock>(); });
      */
     template<typename... Permissions, typename Fn>
-    inline auto QueueTransaction(
-        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+    inline auto QueueTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
         return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
             Lock<Permissions...> lock = World().StartTransaction<Permissions...>();
@@ -192,8 +192,8 @@ namespace ecs {
 
     // See QueueTransaction() for usage.
     template<typename... Permissions, typename Fn>
-    inline auto QueueStagingTransaction(
-        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
+    inline auto QueueStagingTransaction(Fn &&callback)
+        -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
         return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
             Lock<Permissions...> lock = StagingWorld().StartTransaction<Permissions...>();
@@ -254,7 +254,7 @@ TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");
 TECS_NAME_COMPONENT(ecs::TriggerGroup, "TriggerGroup");
 TECS_NAME_COMPONENT(ecs::View, "View");
 TECS_NAME_COMPONENT(ecs::VoxelArea, "VoxelArea");
-TECS_NAME_COMPONENT(ecs::XRView, "XRView");
+TECS_NAME_COMPONENT(ecs::XrView, "XrView");
 
 static inline std::ostream &operator<<(std::ostream &out, const Tecs::Entity &e) {
     return out << std::to_string(e);

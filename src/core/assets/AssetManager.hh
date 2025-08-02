@@ -10,6 +10,7 @@
 #include "common/Async.hh"
 #include "common/DispatchQueue.hh"
 #include "common/EnumTypes.hh"
+#include "common/Hashing.hh"
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
@@ -32,6 +33,9 @@ namespace sp {
 
     extern const std::filesystem::path OVERRIDE_ASSETS_DIR;
 
+    using AssetName = InlineString<255>;
+    using AssetPath = InlineString<255>;
+
     enum class AssetType {
         Bundled = 0,
         External,
@@ -45,27 +49,27 @@ namespace sp {
         void StartThread(std::string assetsPath = "");
         void Shutdown();
 
-        std::filesystem::path GetExternalPath(const std::string &path) const;
-        std::vector<std::string> ListBundledAssets(const std::string &prefix, const std::string &extension = "") const;
+        std::filesystem::path GetExternalPath(std::string_view path) const;
+        std::vector<std::string> ListBundledAssets(std::string_view prefix, std::string_view extension = "") const;
 
-        AsyncPtr<Asset> Load(const std::string &path, AssetType type = AssetType::Bundled, bool reload = false);
-        AsyncPtr<Gltf> LoadGltf(const std::string &name);
-        AsyncPtr<PhysicsInfo> LoadPhysicsInfo(const std::string &name);
-        AsyncPtr<HullSettings> LoadHullSettings(const std::string &modelName, const std::string &meshName);
-        AsyncPtr<Image> LoadImage(const std::string &path);
+        AsyncPtr<Asset> Load(std::string_view path, AssetType type = AssetType::Bundled, bool reload = false);
+        AsyncPtr<Gltf> LoadGltf(std::string_view name);
+        AsyncPtr<PhysicsInfo> LoadPhysicsInfo(std::string_view name);
+        AsyncPtr<HullSettings> LoadHullSettings(std::string_view modelName, std::string_view meshName);
+        AsyncPtr<Image> LoadImage(std::string_view path);
 
-        void RegisterExternalGltf(const std::string &name, const std::string &path);
-        bool IsGltfRegistered(const std::string &name);
+        void RegisterExternalGltf(std::string_view name, std::string_view path);
+        bool IsGltfRegistered(std::string_view name);
 
-        bool InputStream(const std::string &path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
+        bool InputStream(std::string_view path, AssetType type, std::ifstream &stream, size_t *size = nullptr);
         bool OutputStream(const std::filesystem::path &path, std::ofstream &stream);
 
     private:
         void Frame() override;
 
         void UpdateBundleIndex();
-        std::string FindGltfByName(const std::string &name);
-        std::string FindPhysicsByName(const std::string &name);
+        AssetPath FindGltfByName(std::string_view name);
+        AssetPath FindPhysicsByName(std::string_view name);
 
         std::filesystem::path assetsPath;
 
@@ -77,15 +81,15 @@ namespace sp {
         std::mutex physicsInfoMutex;
         std::mutex imageMutex;
 
-        EnumArray<PreservingMap<std::string, Async<Asset>>, AssetType> loadedAssets;
-        PreservingMap<std::string, Async<Gltf>> loadedGltfs;
-        PreservingMap<std::string, Async<PhysicsInfo>> loadedPhysics;
-        PreservingMap<std::string, Async<Image>> loadedImages;
+        EnumArray<PreservingMap<AssetPath, Async<Asset>, 10000, StringHash, StringEqual>, AssetType> loadedAssets;
+        PreservingMap<AssetName, Async<Gltf>, 10000, StringHash, StringEqual> loadedGltfs;
+        PreservingMap<AssetName, Async<PhysicsInfo>, 10000, StringHash, StringEqual> loadedPhysics;
+        PreservingMap<AssetPath, Async<Image>, 10000, StringHash, StringEqual> loadedImages;
 
         std::mutex externalGltfMutex;
-        robin_hood::unordered_flat_map<std::string, std::string> externalGltfPaths;
+        robin_hood::unordered_flat_map<AssetName, AssetPath, StringHash, StringEqual> externalGltfPaths;
 
-        robin_hood::unordered_flat_map<std::string, std::pair<size_t, size_t>> bundleIndex;
+        robin_hood::unordered_flat_map<AssetPath, std::pair<size_t, size_t>, StringHash, StringEqual> bundleIndex;
     };
 
     AssetManager &Assets();

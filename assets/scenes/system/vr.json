@@ -3,7 +3,7 @@
 		{
 			"name": "origin",
 			"script": {
-				"onTick": "player_rotation",
+				"name": "player_rotation",
 				"parameters": {
 					"relative_to": "vr:hmd",
 					"smooth_rotation": false
@@ -44,7 +44,7 @@
 			},
 			"script": [
 				{
-					"onTick": "relative_movement",
+					"name": "relative_movement",
 					"parameters": {
 						"relative_to": "vr:hmd",
 						"up_reference": "player:player"
@@ -60,7 +60,7 @@
 			},
 			"script": [
 				{
-					"onTick": "relative_movement",
+					"name": "relative_movement",
 					"parameters": {
 						"relative_to": "vr:hmd",
 						"up_reference": "player:player"
@@ -86,14 +86,14 @@
 			"event_input": {},
 			"script": [
 				{
-					"prefab": "gltf",
+					"name": "prefab_gltf",
 					"parameters": {
 						"model": "vr_glove_left",
 						"render": true
 					}
 				},
 				{
-					"onTick": "vr_hand",
+					"name": "vr_hand",
 					"parameters": {
 						"hand": "left",
 						"noclip_entity": "player:player",
@@ -125,14 +125,14 @@
 			"event_input": {},
 			"script": [
 				{
-					"prefab": "gltf",
+					"name": "prefab_gltf",
 					"parameters": {
 						"model": "vr_glove_right",
 						"render": true
 					}
 				},
 				{
-					"onTick": "vr_hand",
+					"name": "vr_hand",
 					"parameters": {
 						"hand": "right",
 						"noclip_entity": "player:player",

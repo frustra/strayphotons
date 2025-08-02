@@ -23,7 +23,7 @@ namespace sp {
         void DefineWindows() override;
 
     private:
-        void AddGui(ecs::Entity ent, const ecs::Gui &gui);
+        void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
 
         std::shared_ptr<ConsoleGui> consoleGui;
         ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
@@ -32,7 +32,7 @@ namespace sp {
 
         struct GuiEntityContext {
             ecs::Entity entity;
-            shared_ptr<GuiRenderable> window = nullptr;
+            GuiContext::Ref window;
         };
         vector<GuiEntityContext> guis;
     };

@@ -3,7 +3,7 @@ Script Example Definition
 
 ```c++
     // Registered script objects are instantiated for the lifetime of the entity it is attached to.
-    // Each instance is stored in the ScriptState::userData field.
+    // Each instance is stored in the ScriptState::scriptData field.
     struct Example {
         // Input parameters
         std::string a = "default value";
@@ -40,7 +40,7 @@ Script Example Definition
         StructField::New("field_c", &Example::c),
         StructField::New("input_expression", &Example::expr));
 
-    // Scripts self-registered using an instance of the InternalScript template.
+    // Scripts self-registered using an instance of the LogicScript template.
     // A script's input events are defined here, as well as if OnTick should be called every logic frame, or only if events are available.
-    InternalScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
+    LogicScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
 ```

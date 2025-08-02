@@ -29,6 +29,21 @@ namespace sp {
         return fontList;
     }
 
+    void GuiContext::PushFont(GuiFont fontType, float fontSize) {
+        auto &io = ImGui::GetIO();
+        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
+
+        for (size_t i = 0; i < fontList.size(); i++) {
+            auto &f = fontList[i];
+            if (f.type == fontType && f.size == fontSize) {
+                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
+                return;
+            }
+        }
+
+        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
+    }
+
     GuiContext::GuiContext(const std::string &name) : name(name) {
         imCtx = ImGui::CreateContext();
         SetGuiContext();
@@ -48,52 +63,42 @@ namespace sp {
         SetGuiContext();
     }
 
-    void GuiContext::Attach(const std::shared_ptr<GuiRenderable> &component) {
+    void GuiContext::Attach(const Ref &component) {
         if (!sp::contains(components, component)) components.emplace_back(component);
     }
 
-    void GuiContext::Detach(const std::shared_ptr<GuiRenderable> &component) {
+    void GuiContext::Detach(const Ref &component) {
         auto it = std::find(components.begin(), components.end(), component);
         if (it != components.end()) components.erase(it);
     }
 
-    shared_ptr<GuiRenderable> CreateGuiWindow(const string &windowName, const ecs::Entity &ent) {
-        shared_ptr<GuiRenderable> window;
-        if (windowName == "lobby") {
-            window = make_shared<LobbyGui>(windowName);
-        } else if (windowName == "entity_picker") {
-            window = make_shared<EntityPickerGui>(windowName);
-        } else if (windowName == "inspector") {
-            window = make_shared<InspectorGui>(windowName);
-        } else if (windowName == "signal_display") {
-            window = make_shared<SignalDisplayGui>(windowName, ent);
-        } else {
-            Errorf("unknown gui window: %s", windowName);
-            return nullptr;
-        }
-        return window;
-    }
-
-    static void pushFont(GuiFont fontType, float fontSize) {
-        auto &io = ImGui::GetIO();
-        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
-
-        for (size_t i = 0; i < fontList.size(); i++) {
-            auto &f = fontList[i];
-            if (f.type == fontType && f.size == fontSize) {
-                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
-                return;
+    std::weak_ptr<ecs::GuiRenderable> CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts) {
+        if (gui.windowName == "lobby") {
+            static const auto lobby = make_shared<LobbyGui>(gui.windowName);
+            return lobby;
+        } else if (gui.windowName == "entity_picker") {
+            static const auto entityPicker = make_shared<EntityPickerGui>(gui.windowName);
+            return entityPicker;
+        } else if (gui.windowName == "inspector") {
+            static const auto inspector = make_shared<InspectorGui>(gui.windowName);
+            return inspector;
+        } else if (gui.windowName == "signal_display") {
+            static const auto signalDisplay = make_shared<SignalDisplayGui>(gui.windowName);
+            return signalDisplay;
+        } else if (gui.windowName.empty() && scripts) {
+            for (auto &script : scripts->scripts) {
+                if (!script.state) continue;
+                ecs::ScriptState &state = *script.state;
+                if (state.definition.type == ecs::ScriptType::GuiScript) {
+                    Assertf(std::holds_alternative<ecs::GuiRenderableFunc>(state.definition.callback),
+                        "Gui script %s has invalid callback type: GuiScript != GuiRenderable",
+                        state.definition.name);
+                    auto &getGuiRenderable = std::get<ecs::GuiRenderableFunc>(state.definition.callback);
+                    return getGuiRenderable(state);
+                }
             }
         }
-
-        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
-    }
-
-    void GuiRenderable::PushFont(GuiFont fontType, float fontSize) {
-        pushFont(fontType, fontSize);
-    }
-
-    void GuiContext::PushFont(GuiFont fontType, float fontSize) {
-        pushFont(fontType, fontSize);
+        if (!gui.windowName.empty()) Errorf("unknown gui window: %s", gui.windowName);
+        return std::weak_ptr<ecs::GuiRenderable>();
     }
 } // namespace sp

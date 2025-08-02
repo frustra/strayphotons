@@ -111,7 +111,7 @@ namespace sp {
         }
     } // namespace gltf
 
-    Gltf::Gltf(const string &name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
+    Gltf::Gltf(std::string_view name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
         Assertf(asset, "Gltf not found: %s", name);
 
         ZoneScopedN("LoadGltf");
@@ -124,6 +124,33 @@ namespace sp {
         std::string warn;
         bool ret = false;
         tinygltf::TinyGLTF gltfLoader;
+        tinygltf::FsCallbacks fsCallbacks = {
+            .FileExists =
+                [](const std::string &absFilename, void *) {
+                    std::ifstream stream;
+                    return Assets().InputStream(absFilename, AssetType::Bundled, stream);
+                },
+            .ExpandFilePath =
+                [](const std::string &filepath, void *) {
+                    return filepath;
+                },
+            .ReadWholeFile =
+                [](std::vector<unsigned char> *out, std::string *err, const std::string &filepath, void *gltfPtr) {
+                    Gltf &gltf = *static_cast<Gltf *>(gltfPtr);
+                    std::ifstream stream;
+                    size_t fileSize = 0;
+                    if (!Assets().InputStream(filepath, AssetType::Bundled, stream, &fileSize)) {
+                        Errorf("Failed to open Gltf %s dependency: %s", gltf.name, filepath);
+                        return false;
+                    }
+                    out->resize(fileSize);
+                    stream.read(reinterpret_cast<char *>(out->data()), fileSize);
+                    return true;
+                },
+            .WriteWholeFile = nullptr,
+            .user_data = this,
+        };
+        gltfLoader.SetFsCallbacks(fsCallbacks);
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (asset->extension == "gltf") {
             ret = gltfLoader.LoadASCIIFromString(model.get(),

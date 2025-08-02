@@ -13,7 +13,7 @@
 		"physics_joints": [],
 		"event_input": {},
 		"script": {
-			"prefab": "template",
+			"name": "prefab_template",
 			"parameters": { "source": "interactive" }
 		}
 	}

@@ -124,7 +124,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         "Rotates an entity a relative amount (rotate <entity> <degrees> <x> <y> <z>)",
         [](ecs::EntityRef entityRef, float degrees, glm::vec3 plane) {
             mutateEntityTransform(entityRef, [&](auto lock, ecs::TransformTree &transform) {
-                transform.pose.Rotate(glm::radians(degrees), plane);
+                transform.pose.RotateAxis(glm::radians(degrees), plane);
             });
         });
 
@@ -284,9 +284,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 trace.SetThreadName(tracy::GetThreadName(thread_id), event.thread);
             }
 
-            std::ofstream traceFile("tecs-trace.csv");
-            trace.SaveToCSV(traceFile);
-            traceFile.close();
+            trace.SaveToCSV("tecs-trace.csv");
 
             Logf("Tecs performance trace complete");
             tracingStarted = false;

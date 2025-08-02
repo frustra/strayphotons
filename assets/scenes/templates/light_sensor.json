@@ -38,7 +38,7 @@
 				"translate": [0, 0, 0.015]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,

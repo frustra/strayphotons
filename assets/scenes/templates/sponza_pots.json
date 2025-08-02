@@ -9,7 +9,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -22,7 +22,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -35,7 +35,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -48,7 +48,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -61,7 +61,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -74,7 +74,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -87,7 +87,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -100,7 +100,7 @@
 				"mass": 10
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		}

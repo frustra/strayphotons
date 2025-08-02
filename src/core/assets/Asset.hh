@@ -15,7 +15,7 @@
 #include <vector>
 
 namespace sp {
-    static std::string parseFileExtension(const std::string &path) {
+    static std::string parseFileExtension(std::string_view path) {
         auto extension = std::filesystem::path(path).extension().string();
         if (extension.length() > 0 && extension[0] == '.') {
             extension = extension.substr(1);
@@ -25,7 +25,7 @@ namespace sp {
 
     class Asset : public NonCopyable {
     public:
-        Asset(const std::string &path = "") : path(path), extension(parseFileExtension(path)) {}
+        Asset(std::string_view path = "") : path(path), extension(parseFileExtension(path)) {}
 
         std::string String() const {
             return std::string((char *)buffer.data(), buffer.size());

@@ -16,8 +16,10 @@
 #include "input/KeyCodes.hh"
 
 namespace sp {
+    static CVar<uint32> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
+
     GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("GameLogic", 120.0, true), windowInputQueue(windowInputQueue) {
+        : RegisteredThread("GameLogic", CVarLogicFPS.Get(), true), windowInputQueue(windowInputQueue) {
         funcs.Register<unsigned int>("steplogic",
             "Advance the game logic by N frames, default is 1",
             [this](unsigned int arg) {
@@ -33,6 +35,16 @@ namespace sp {
 
     void GameLogic::StartThread(bool startPaused) {
         RegisteredThread::StartThread(startPaused);
+    }
+
+    bool GameLogic::PreFrame() {
+        auto targetFPS = CVarLogicFPS.Get();
+        if (targetFPS > 0) {
+            interval = std::chrono::nanoseconds((int64_t)(1e9 / targetFPS));
+        } else {
+            interval = std::chrono::nanoseconds(0);
+        }
+        return true;
     }
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
@@ -51,7 +63,7 @@ namespace sp {
             }
 
             if (event.name == INPUT_EVENT_KEYBOARD_KEY_DOWN) {
-                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto &keyCode = (KeyCode &)ecs::EventData::Get<int>(event.data);
                 auto keyName = KeycodeNameLookup.find(keyCode);
                 if (keyName != KeycodeNameLookup.end()) {
                     std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
@@ -61,7 +73,7 @@ namespace sp {
                     signalRef.SetValue(lock, 1.0);
                 }
             } else if (event.name == INPUT_EVENT_KEYBOARD_KEY_UP) {
-                auto &keyCode = (KeyCode &)std::get<int>(event.data);
+                auto &keyCode = (KeyCode &)ecs::EventData::Get<int>(event.data);
                 auto keyName = KeycodeNameLookup.find(keyCode);
                 if (keyName != KeycodeNameLookup.end()) {
                     std::string eventName = INPUT_EVENT_KEYBOARD_KEY_BASE + keyName->second;
@@ -71,28 +83,28 @@ namespace sp {
                     signalRef.ClearValue(lock);
                 }
             } else if (event.name == INPUT_EVENT_MOUSE_POSITION) {
-                auto &mousePos = std::get<glm::vec2>(event.data);
+                auto &mousePos = ecs::EventData::Get<glm::vec2>(event.data);
                 ecs::SignalRef refX(mouse, INPUT_SIGNAL_MOUSE_CURSOR_X);
                 ecs::SignalRef refY(mouse, INPUT_SIGNAL_MOUSE_CURSOR_Y);
                 refX.SetValue(lock, mousePos.x);
                 refY.SetValue(lock, mousePos.y);
             } else if (event.name == INPUT_EVENT_MOUSE_LEFT_CLICK) {
                 ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_LEFT);
-                if (std::get<bool>(event.data)) {
+                if (ecs::EventData::Get<bool>(event.data)) {
                     signalRef.SetValue(lock, 1.0);
                 } else {
                     signalRef.ClearValue(lock);
                 }
             } else if (event.name == INPUT_EVENT_MOUSE_MIDDLE_CLICK) {
                 ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_MIDDLE);
-                if (std::get<bool>(event.data)) {
+                if (ecs::EventData::Get<bool>(event.data)) {
                     signalRef.SetValue(lock, 1.0);
                 } else {
                     signalRef.ClearValue(lock);
                 }
             } else if (event.name == INPUT_EVENT_MOUSE_RIGHT_CLICK) {
                 ecs::SignalRef signalRef(mouse, INPUT_SIGNAL_MOUSE_BUTTON_RIGHT);
-                if (std::get<bool>(event.data)) {
+                if (ecs::EventData::Get<bool>(event.data)) {
                     signalRef.SetValue(lock, 1.0);
                 } else {
                     signalRef.ClearValue(lock);

@@ -17,6 +17,86 @@
 #include <sstream>
 
 namespace ecs {
+    const EventData &EventData::operator=(bool newBool) {
+        type = EventDataType::Bool;
+        b = newBool;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(int newInt) {
+        type = EventDataType::Int;
+        i = newInt;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(unsigned int newUint) {
+        type = EventDataType::Uint;
+        ui = newUint;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(float newFloat) {
+        type = EventDataType::Float;
+        f = newFloat;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(double newDouble) {
+        type = EventDataType::Double;
+        d = newDouble;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(glm::vec2 newVec2) {
+        type = EventDataType::Vec2;
+        vec2 = newVec2;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(glm::vec3 newVec3) {
+        type = EventDataType::Vec3;
+        vec3 = newVec3;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(glm::vec4 newVec4) {
+        type = EventDataType::Vec4;
+        vec4 = newVec4;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(Transform newTransform) {
+        type = EventDataType::Transform;
+        transform = newTransform;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(NamedEntity newNamedEntity) {
+        type = EventDataType::NamedEntity;
+        namedEntity = newNamedEntity;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(Entity newEntity) {
+        type = EventDataType::Entity;
+        ent = newEntity;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(EventString newString) {
+        type = EventDataType::String;
+        str = newString;
+        return *this;
+    }
+
+    bool EventData::operator==(const EventData &other) const {
+        if (type != other.type) return false;
+        return EventData::Visit(*this, [&other](auto &data) {
+            using T = std::remove_cvref_t<decltype(data)>;
+            return data == EventData::Get<T>(other);
+        });
+    }
+
     template<>
     bool StructMetadata::Load<EventData>(EventData &data, const picojson::value &src) {
         if (src.is<bool>()) {
@@ -26,7 +106,7 @@ namespace ecs {
         } else if (src.is<std::string>()) {
             auto &str = src.get<std::string>();
             if (str.starts_with("entity:")) {
-                data = EntityRef(Name(str.substr(7), ecs::EntityScope()));
+                data = NamedEntity(Name(str.substr(7), ecs::EntityScope()));
             } else {
                 data = str;
             }
@@ -71,47 +151,77 @@ namespace ecs {
         const EventData *def) {
         if (def && src == *def) return;
 
-        std::visit(
-            [&](auto &&value) {
-                sp::json::Save(scope, dst, value);
-            },
-            src);
+        EventData::Visit(src, [&](auto &data) {
+            sp::json::Save(scope, dst, data);
+        });
     }
 
     template<>
     void StructMetadata::SetScope<EventData>(EventData &dst, const EntityScope &scope) {
-        if (auto *ref = std::get_if<EntityRef>(&dst)) {
-            ref->SetScope(scope);
+        if (dst.type == EventDataType::NamedEntity) {
+            dst.namedEntity.SetScope(scope);
         }
+    }
+
+    size_t Event::Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event) {
+        return ecs::EventBindings::SendEvent(lock, target, event);
+    }
+
+    size_t Event::SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event) {
+        return ecs::EventBindings::SendEvent(lock, target, event);
+    }
+
+    size_t Event::SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event) {
+        return ecs::EventBindings::SendEvent(lock, target, event);
     }
 
     std::string Event::ToString() const {
         std::stringstream ss;
-        ss << this->name << ":" << this->data;
+        ss << std::string_view(this->name) << ":" << this->data;
         return ss.str();
     }
 
     std::ostream &operator<<(std::ostream &out, const EventData &v) {
-        std::visit(
-            [&](auto &&arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, glm::vec2>) {
-                    out << glm::to_string(arg);
-                } else if constexpr (std::is_same_v<T, glm::vec3>) {
-                    out << glm::to_string(arg);
-                } else if constexpr (std::is_same_v<T, Transform>) {
-                    out << glm::to_string(arg.offset) << " scale " << glm::to_string(arg.scale);
-                } else if constexpr (std::is_same_v<T, EntityRef>) {
-                    out << arg.Name().String();
-                } else if constexpr (std::is_same_v<T, Tecs::Entity>) {
-                    out << std::to_string(arg);
-                } else if constexpr (std::is_same_v<T, std::string>) {
-                    out << "\"" << arg << "\"";
-                } else {
-                    out << typeid(arg).name() << "(" << arg << ")";
-                }
-            },
-            v);
+        switch (v.type) {
+        case EventDataType::Bool:
+            out << "bool(" << v.b << ")";
+            break;
+        case EventDataType::Int:
+            out << "int(" << v.i << ")";
+            break;
+        case EventDataType::Uint:
+            out << "uint(" << v.ui << ")";
+            break;
+        case EventDataType::Float:
+            out << "float(" << v.f << ")";
+            break;
+        case EventDataType::Double:
+            out << "double(" << v.d << ")";
+            break;
+        case EventDataType::Vec2:
+            out << glm::to_string(v.vec2);
+            break;
+        case EventDataType::Vec3:
+            out << glm::to_string(v.vec3);
+            break;
+        case EventDataType::Vec4:
+            out << glm::to_string(v.vec4);
+            break;
+        case EventDataType::Transform:
+            out << glm::to_string(v.transform.offset) << " scale " << glm::to_string(v.transform.scale);
+            break;
+        case EventDataType::NamedEntity:
+            out << v.namedEntity.Name().String();
+            break;
+        case EventDataType::Entity:
+            out << std::to_string(v.ent);
+            break;
+        case EventDataType::String:
+            out << "\"" << v.str << "\"";
+            break;
+        default:
+            Abortf("Unexpected EventData type: %s", v.type);
+        }
         return out;
     }
 

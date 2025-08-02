@@ -33,19 +33,27 @@ namespace ecs {
         glm::vec3,
         Transform,
         EventData,
+        EventDataType,
         std::string,
+        sp::InlineString<63>,
+        // ScriptName, // Duplicate of sp::InlineString<63>
+        EventName,
+        EventString,
         size_t,
         VisibilityMask,
         sp::color_alpha_t,
         double,
         glm::mat3,
         EntityRef,
+        NamedEntity,
 
         // Basic types
         bool,
+        char,
         int32_t,
         uint32_t,
         sp::angle_t,
+        Entity,
 
         // Vector types
         glm::vec4,
@@ -60,42 +68,57 @@ namespace ecs {
         glm::uvec4,
         sp::color_t,
         glm::quat,
+        glm::mat4,
 
         // Structs
-        SignalExpression,
+        AnimationState,
+        DynamicScriptDefinition,
+        Event,
         EventBinding,
         EventBindingActions,
         EventDest,
-        AnimationState,
         PhysicsJoint,
         PhysicsMaterial,
         PhysicsShape,
+        ScriptDefinition,
+        ScriptDefinitionBase,
         ScriptInstance,
+        ScriptState,
+        SignalExpression,
+        SignalRef,
         Sound,
+        StructField,
+        sp::SceneRef,
+        TypeInfo,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
         std::vector<SignalExpression>,
+        std::vector<EventName>,
         std::vector<EventDest>,
+        std::vector<EventBinding>,
         std::vector<AnimationState>,
         std::vector<PhysicsJoint>,
         std::vector<PhysicsShape>,
         std::vector<ScriptInstance>,
         std::vector<Sound>,
+        std::vector<StructField>,
         std::vector<EntityRef>,
         std::vector<std::pair<EntityRef, EntityRef>>,
+        std::pair<EntityRef, EntityRef>,
         std::optional<double>,
         std::optional<EventData>,
         std::optional<SignalExpression>,
         std::optional<PhysicsActorType>,
         robin_hood::unordered_map<std::string, double>,
-        robin_hood::unordered_map<std::string, std::string>,
+        robin_hood::unordered_map<EventName, std::string, sp::StringHash, sp::StringEqual>,
         robin_hood::unordered_map<std::string, SignalExpression>,
         robin_hood::unordered_map<std::string, PhysicsJoint>,
         robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
-        robin_hood::unordered_map<std::string, std::vector<EventBinding>>,
+        robin_hood::unordered_map<EventName, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
 
         // Enums
+        FieldAction,
         FocusLayer,
         GuiTarget,
         InterpolationMode,
@@ -103,10 +126,34 @@ namespace ecs {
         PhysicsActorType,
         PhysicsJointType,
         sp::ScenePriority,
+        ScriptType,
         SoundType,
-        TriggerGroup,
+        // TriggerGroup, // Also a Component type
         TriggerShape,
-        XrEye>;
+        XrEye,
+
+        // Locks
+        DynamicLock<>,
+        DynamicLock<ReadSignalsLock>,
+        DynamicLock<SendEventsLock>,
+        Lock<>,
+        Lock<Read<EventInput>>,
+        Lock<Read<Signals>>,
+        Lock<Read<TransformTree>>,
+        Lock<Write<Signals>>,
+        Lock<Write<Signals>, ReadSignalsLock>,
+        Lock<Write<TransformTree>>,
+
+        void *,
+
+        // Function pointers
+        void *(*)(const void *),
+        void (*)(void *),
+        void (*)(void *, ScriptState *),
+        void (*)(void *, ScriptState *),
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t),
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *),
+        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *)>;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>
@@ -119,9 +166,24 @@ namespace ecs {
             }
         }
 
+        template<uint32_t I, typename Func, typename T, typename... Tn>
+        inline static auto GetComponentType(uint32_t typeIndex, Func &&func) {
+            if (typeIndex == I) return std::invoke(func, (T *)nullptr);
+            if constexpr (sizeof...(Tn) > 0) {
+                return GetComponentType<I + 1, Func, Tn...>(typeIndex, std::forward<Func>(func));
+            } else {
+                Abortf("Type missing from FieldTypes definition: %u", typeIndex);
+            }
+        }
+
         template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
         inline static auto GetComponentType(ECSType<AllComponentTypes...> *, std::type_index type, Func &&func) {
             return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
+        }
+
+        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
+        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, uint32_t typeIndex, Func &&func) {
+            return GetComponentType<0, Func, AllComponentTypes...>(typeIndex, std::forward<Func>(func));
         }
     } // namespace detail
 
@@ -152,5 +214,32 @@ namespace ecs {
                 return func(*reinterpret_cast<T *>(ptr));
             }
         });
+    }
+
+    template<typename T, uint32_t I = 0>
+    inline static uint32_t GetFieldTypeIndex() {
+        if constexpr (std::is_same<T, void>()) {
+            return 0;
+        } else if constexpr (std::is_same<T, std::tuple_element_t<I, FieldTypes>>()) {
+            return I + 1;
+        } else if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
+            return GetFieldTypeIndex<T, I + 1>();
+        } else {
+            return I + 2 + ECS::GetComponentIndex<T>();
+        }
+    }
+
+    template<typename Func, uint32_t I = 0>
+    inline static auto GetFieldType(uint32_t typeIndex, Func &&func) {
+        if constexpr (I == 0) {
+            if (typeIndex == 0) return std::invoke(func, (void *)nullptr);
+        } else if (typeIndex == I) {
+            return std::invoke(func, (std::tuple_element_t<I - 1, FieldTypes> *)nullptr);
+        }
+        if constexpr (I + 1 <= std::tuple_size_v<FieldTypes>) {
+            return GetFieldType<Func, I + 1>(typeIndex, std::forward<Func>(func));
+        } else {
+            return detail::GetComponentType((ECS *)nullptr, typeIndex - I - 1, std::forward<Func>(func));
+        }
     }
 } // namespace ecs

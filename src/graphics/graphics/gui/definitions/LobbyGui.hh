@@ -12,23 +12,23 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    class LobbyGui final : public GuiRenderable {
+    class LobbyGui final : public ecs::GuiRenderable {
     public:
-        LobbyGui(const string &name) : GuiRenderable(name, GuiLayoutAnchor::Fullscreen) {}
+        LobbyGui(const string &name) : ecs::GuiRenderable(name, ecs::GuiLayoutAnchor::Fullscreen) {}
         virtual ~LobbyGui() {}
 
         enum class State { Initial, Page1 };
 
         State state = State::Initial;
 
-        void DefineContents() {
+        void DefineContents(ecs::Entity ent) {
             ZoneScoped;
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {30, 20});
-            PushFont(GuiFont::Primary, 32);
+            GuiContext::PushFont(GuiFont::Primary, 32);
             if (state == State::Initial) {
                 if (ImGui::Button("Check In")) state = State::Page1;
             } else if (state == State::Page1) {
-                ImGui::Text("Unimplemented");
+                ImGui::TextUnformatted("Unimplemented");
             }
             ImGui::PopFont();
             ImGui::PopStyleVar();

@@ -44,7 +44,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -53,10 +53,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					}
@@ -75,7 +75,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -84,10 +84,10 @@
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					}
@@ -106,7 +106,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -115,10 +115,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/laser_gate"
 					}
@@ -137,7 +137,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -146,10 +146,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/mirror"
 					}
@@ -168,7 +168,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -177,10 +177,10 @@
 					"parameters": {
 						"source": "blocks/splitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/splitter"
 					}
@@ -199,7 +199,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -208,10 +208,10 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/charge_cell"
 					}
@@ -230,7 +230,7 @@
 			},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -239,10 +239,10 @@
 					"parameters": {
 						"source": "blocks/big_frame"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/big_frame"
 					}
@@ -263,7 +263,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -272,10 +272,10 @@
 					"parameters": {
 						"source": "blocks/box"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/box"
 					}
@@ -296,7 +296,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -305,10 +305,10 @@
 					"parameters": {
 						"source": "blocks/cardboard_box"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/cardboard_box",
 						"reset_scale": true
@@ -330,7 +330,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "interactive_object",
+					"name": "interactive_object",
 					"parameters": {
 						"highlight_only": true
 					}
@@ -339,10 +339,10 @@
 					"parameters": {
 						"source": "blocks/1mirror_cube"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "tray_spawner",
+					"name": "tray_spawner",
 					"parameters": {
 						"source": "blocks/1mirror_cube",
 						"reset_scale": true

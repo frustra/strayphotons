@@ -13,7 +13,7 @@
 
 namespace ecs {
     SceneInfo::SceneInfo(Entity ent, const std::shared_ptr<sp::Scene> &scene, const EntityScope &scope)
-        : priority(scene->data->priority), scene(scene), scope(scope) {
+        : priority(scene ? scene->data->priority : sp::ScenePriority::System), scene(scene), scope(scope) {
         if (IsLive(ent)) {
             liveId = ent;
         } else if (IsStaging(ent)) {

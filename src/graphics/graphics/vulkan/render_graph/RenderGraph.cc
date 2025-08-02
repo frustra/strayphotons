@@ -294,7 +294,8 @@ namespace sp::vulkan::render_graph {
             for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];
                 if (res.type == Resource::Type::Image) {
-                    output.emplace_back(PooledImageInfo{scope.empty() ? name : scope + "." + name, res.imageDesc});
+                    output.emplace_back(
+                        PooledImageInfo{ResourceName{scope.empty() ? name : scope + "." + name}, res.imageDesc});
                 }
             }
         }

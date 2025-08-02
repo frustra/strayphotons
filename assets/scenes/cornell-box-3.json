@@ -13,7 +13,7 @@
 				"scale": [2, 2, 2]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "cornell-box-3",
 					"render": true

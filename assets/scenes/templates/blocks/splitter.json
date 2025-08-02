@@ -18,11 +18,11 @@
 		"event_input": {},
 		"script": [
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			},
 			{
-				"onTick": "magnetic_plug"
+				"name": "magnetic_plug"
 			}
 		]
 	},
@@ -35,7 +35,7 @@
 				"scale": [0.07, 0.01, 0.07]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
 					"render": true

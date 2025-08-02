@@ -21,11 +21,10 @@ namespace ecs {
         float startDistance = 0.0f;
     };
 
-    static Component<LaserEmitter> ComponentLaserEmitter({typeid(LaserEmitter),
-        "laser_emitter",
+    static EntityComponent<LaserEmitter> ComponentLaserEmitter("laser_emitter",
         "",
         StructField::New("intensity", &LaserEmitter::intensity),
         StructField::New("color", &LaserEmitter::color),
         StructField::New("on", &LaserEmitter::on),
-        StructField::New("start_distance", &LaserEmitter::startDistance)});
+        StructField::New("start_distance", &LaserEmitter::startDistance));
 } // namespace ecs

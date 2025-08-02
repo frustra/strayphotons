@@ -26,20 +26,20 @@
 		"event_input": {},
 		"script": [
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			},
 			{
-				"onTick": "volume_control"
+				"name": "volume_control"
 			},
 			{
-				"onTick": "signal_from_signal",
+				"name": "signal_from_signal",
 				"parameters": {
 					"last_play": "scoperoot/last_play + 1"
 				}
 			},
 			{
-				"onTick": "signal_from_event",
+				"name": "signal_from_event",
 				"parameters": {
 					"outputs": "last_play"
 				}
@@ -53,7 +53,7 @@
 				"translate": [0, -0.114, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "duck",
 					"render": true,

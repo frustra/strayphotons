@@ -14,6 +14,7 @@ target_include_directories(${PROJECT_SCRIPTS_LIB} PUBLIC
 target_link_libraries(${PROJECT_SCRIPTS_LIB} PUBLIC
     ${PROJECT_CORE_LIB}
     ${PROJECT_GAME_LIB}
+    ${PROJECT_GRAPHICS_CORE_LIB}
 )
 
 target_compile_definitions(${PROJECT_SCRIPTS_LIB} PUBLIC
@@ -22,5 +23,7 @@ target_compile_definitions(${PROJECT_SCRIPTS_LIB} PUBLIC
 
 # target_precompile_headers(${PROJECT_SCRIPTS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
+add_subdirectory(cabi)
+add_subdirectory(guis)
 add_subdirectory(scripts)
 add_subdirectory(prefabs)

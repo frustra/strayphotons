@@ -23,7 +23,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget) {
+    void EntityComponent<Audio>::Apply(Audio &dst, const Audio &src, bool liveTarget) {
         for (auto &sound : src.sounds) {
             if (!sp::contains(dst.sounds, sound)) dst.sounds.emplace_back(sound);
         }

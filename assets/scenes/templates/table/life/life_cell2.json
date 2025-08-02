@@ -10,13 +10,13 @@
 		},
 		"script": [
 			{
-				"prefab": "life_cell",
+				"name": "prefab_life_cell",
 				"parameters": {
 					"board_size": [128, 128]
 				}
 			},
 			{
-				"onTick": "life_cell"
+				"name": "life_cell"
 			}
 		]
 	},
@@ -34,7 +34,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "component_from_event",
+					"name": "component_from_event",
 					"parameters": {
 						"outputs": "renderable.emissive"
 					}

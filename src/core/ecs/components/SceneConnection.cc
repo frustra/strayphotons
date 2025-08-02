@@ -14,7 +14,7 @@
 
 namespace ecs {
     template<>
-    void Component<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget) {
+    void EntityComponent<SceneConnection>::Apply(SceneConnection &dst, const SceneConnection &src, bool liveTarget) {
         if (liveTarget) {
             dst = src;
         } else {

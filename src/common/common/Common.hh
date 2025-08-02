@@ -31,6 +31,7 @@ typedef std::chrono::steady_clock chrono_clock;
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <optional>
+#include <robin_hood.h>
 #include <variant>
 
 typedef unsigned char uint8;
@@ -205,6 +206,23 @@ namespace sp {
     struct is_pair : std::false_type {};
     template<typename A, typename B>
     struct is_pair<std::pair<A, B>> : std::true_type {};
+
+    template<typename T>
+    struct is_unordered_flat_map : std::false_type {};
+    template<typename K, typename V, typename H, typename E>
+    struct is_unordered_flat_map<robin_hood::unordered_flat_map<K, V, H, E>> : std::true_type {};
+    template<typename T>
+    struct is_unordered_node_map : std::false_type {};
+    template<typename K, typename V, typename H, typename E>
+    struct is_unordered_node_map<robin_hood::unordered_node_map<K, V, H, E>> : std::true_type {};
+
+    template<size_t, typename, typename>
+    class InlineString;
+
+    template<typename T>
+    struct is_inline_string : std::false_type {};
+    template<size_t MaxSize, typename CharT, typename ArrayT>
+    struct is_inline_string<InlineString<MaxSize, CharT, ArrayT>> : std::true_type {};
 
     template<typename T>
     struct is_optional : std::false_type {};

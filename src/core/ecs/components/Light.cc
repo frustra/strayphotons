@@ -14,7 +14,7 @@
 
 namespace ecs {
     template<>
-    void Component<Light>::Apply(Light &dst, const Light &src, bool liveTarget) {
+    void EntityComponent<Light>::Apply(Light &dst, const Light &src, bool liveTarget) {
         if (liveTarget || (dst.filterName.empty() && !src.filterName.empty())) {
             dst.filterName = src.filterName;
         }

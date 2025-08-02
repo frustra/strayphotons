@@ -158,7 +158,7 @@ namespace sp::vulkan::render_graph {
         return invalidResource;
     }
 
-    ResourceID Resources::GetID(string_view name, bool assertExists, int framesAgo) const {
+    ResourceID Resources::GetID(string_view name, bool assertExists, uint32 framesAgo) const {
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
@@ -243,6 +243,7 @@ namespace sp::vulkan::render_graph {
     }
 
     void Resources::Register(string_view name, Resource &resource) {
+        DebugZoneScoped;
         if (!name.empty()) {
             auto existingID = GetID(name, false);
             if (existingID != InvalidResource) {
@@ -290,16 +291,16 @@ namespace sp::vulkan::render_graph {
     }
 
     void Resources::BeginScope(string_view name) {
+        DebugZoneScoped;
         Assert(!name.empty(), "scopes must have a name");
 
         const auto &topScope = nameScopes[scopeStack.back()];
-        string fullName;
+        ResourceName fullName;
 
         if (topScope.name.empty()) {
             fullName = name;
         } else {
-            fullName = topScope.name + ".";
-            fullName.append(name);
+            fullName = topScope.name + "." + name;
         }
 
         size_t scopeIndex = 0;
@@ -335,7 +336,6 @@ namespace sp::vulkan::render_graph {
 
     void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace) {
         auto &resourceNames = frames[frameIndex].resourceNames;
-        Assert(name.data()[name.size()] == '\0', "string_view is not null terminated");
         auto &nameID = resourceNames[name.data()];
         if (!replace) Assert(!nameID, "resource already registered");
         nameID = id;

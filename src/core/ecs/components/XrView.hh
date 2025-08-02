@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <ecs/Components.hh>
+#include "ecs/Components.hh"
 
 namespace ecs {
     enum class XrEye {
@@ -15,12 +15,12 @@ namespace ecs {
         Right,
     };
 
-    struct XRView {
+    struct XrView {
         XrEye eye = XrEye::Left;
 
-        XRView() {}
-        XRView(XrEye eye) : eye(eye) {}
+        XrView() {}
+        XrView(XrEye eye) : eye(eye) {}
     };
 
-    static Component<XRView> ComponentXRView({typeid(XRView), "xr_view", "", StructField::New(&XRView::eye)});
+    static EntityComponent<XrView> ComponentXrView("xr_view", "", StructField::New(&XrView::eye));
 }; // namespace ecs

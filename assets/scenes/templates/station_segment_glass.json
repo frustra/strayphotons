@@ -4,7 +4,7 @@
 			"parameters": {
 				"source": "station_segment_interior"
 			},
-			"prefab": "template"
+			"name": "prefab_template"
 		}
 	},
 	"entities": [
@@ -12,7 +12,7 @@
 			"name": "segment",
 			"transform": {},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "station-segment",
 					"render": true,

@@ -148,7 +148,7 @@ namespace sp {
                         auto stagingBindings = BuildFlatComponent<SignalBindings>(staging, sceneInfo.rootStagingId);
 
                         if (liveOutputs) {
-                            const Component<SignalOutput> &base = LookupComponent<SignalOutput>();
+                            const EntityComponent<SignalOutput> &base = LookupComponent<SignalOutput>();
                             auto &value = components[base.name];
                             SignalOutput *outputsPtr = nullptr;
                             if (stagingOutputs) outputsPtr = &stagingOutputs.value();
@@ -161,7 +161,7 @@ namespace sp {
                             }
                         }
                         if (liveBindings) {
-                            const Component<SignalBindings> &base = LookupComponent<SignalBindings>();
+                            const EntityComponent<SignalBindings> &base = LookupComponent<SignalBindings>();
                             auto &value = components[base.name];
                             SignalBindings *bindingsPtr = nullptr;
                             if (stagingBindings) bindingsPtr = &stagingBindings.value();
@@ -175,7 +175,7 @@ namespace sp {
                         }
                     }
                 } else if constexpr (!Tecs::is_global_component<T>()) {
-                    const Component<T> &base = LookupComponent<T>();
+                    const EntityComponent<T> &base = LookupComponent<T>();
                     if (src.Has<T>(live)) {
                         picojson::value &value = components[base.name];
                         auto liveComp = src.Get<T>(live);
@@ -271,8 +271,10 @@ namespace sp {
             picojson::object sceneObj(sceneOrderFunc);
             static const SceneProperties defaultProperties = {};
             static const ScenePriority defaultPriority = ScenePriority::Scene;
+            static const std::vector<std::string> defaultLibraries = {};
             json::SaveIfChanged(scope, sceneObj, "properties", scene->data->GetProperties(staging), &defaultProperties);
             json::SaveIfChanged(scope, sceneObj, "priority", scene->data->priority, &defaultPriority);
+            json::SaveIfChanged(scope, sceneObj, "libraries", scene->data->libraries, &defaultLibraries);
             sceneObj["entities"] = picojson::value(entities);
             auto val = picojson::value(sceneObj);
             auto scenePath = scene->asset->path;
@@ -344,7 +346,7 @@ namespace sp {
             if (!scene || !scene->data || scene->data->priority == ScenePriority::SaveGame) continue;
             connections[scene->data->path] = picojson::value("1");
         }
-        connections[scope.scene] = picojson::value("1");
+        connections[scope.scene.str()] = picojson::value("1");
         if (!connections.empty()) {
             picojson::object ent;
             ent["scene_connection"] = picojson::value(connections);
@@ -363,6 +365,10 @@ namespace sp {
         };
         picojson::object sceneObj(sceneOrderFunc);
         json::Save(scope, sceneObj["priority"], ScenePriority::SaveGame);
+        auto libraries = GetScriptManager().GetDynamicLibraries();
+        if (!libraries.empty()) {
+            json::Save(scope, sceneObj["libraries"], libraries);
+        }
         sceneObj["entities"] = picojson::value(entities);
         auto val = picojson::value(sceneObj);
         std::filesystem::path scenePath;

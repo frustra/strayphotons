@@ -7,7 +7,7 @@ Models are loaded from the `assets/models/` folder. `.glb` and `.gltf` are suppo
 and models can be loaded from either `assets/models/<model_name>.gltf` or `assets/models/<model_name>/model_name.gltf`.
 
 Note for GLTF models with multiple meshes:  
-It is usually preferred to load the model using the [gltf Prefab Script](Prefab_Scripts.md#gltf-prefab) to automatically generate the correct transform tree and entity structure.
+It is usually preferred to load the model using the [gltf Prefab Script](#gltf-prefab) to automatically generate the correct transform tree and entity structure.
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -91,6 +91,8 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 ## `light` Component
 
+A shadow-casting spot-light with optional gel masking texture
+
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **intensity** | float | 0 | The brightness of the light measured in candela (lumens per solid angle). This value is ignored if **illuminance** != 0. |
@@ -135,6 +137,8 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `view` Component
+
+A camera view into the world that will be rendered to a texture.
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|

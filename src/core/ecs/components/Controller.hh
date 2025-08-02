@@ -33,8 +33,7 @@ namespace ecs {
         physx::PxCapsuleController *pxController = nullptr;
     };
 
-    static Component<CharacterController> ComponentCharacterController({typeid(CharacterController),
-        "character_controller",
+    static EntityComponent<CharacterController> ComponentCharacterController("character_controller",
         "",
-        StructField::New("head", &CharacterController::head)});
+        StructField::New("head", &CharacterController::head));
 } // namespace ecs

@@ -8,7 +8,7 @@
 		},
 		"laser_line": {},
 		"script": {
-			"onTick": "component_from_signal",
+			"name": "component_from_signal",
 			"parameters": {
 				"laser_emitter.intensity": "scoperoot/intensity"
 			}

@@ -1,4 +1,5 @@
 {
+	"libraries": ["game_scripts"],
 	"entities": [
 		{
 			"name": "sponza",
@@ -8,15 +9,15 @@
 			},
 			"script": [
 				{
-					"prefab": "template",
+					"name": "prefab_template",
 					"parameters": { "source": "sponza_pots" }
 				},
 				{
-					"prefab": "template",
+					"name": "prefab_template",
 					"parameters": { "source": "sponza_pillars" }
 				},
 				{
-					"prefab": "gltf",
+					"name": "prefab_gltf",
 					"parameters": {
 						"model": "sponza2",
 						"render": true,
@@ -87,7 +88,7 @@
 				"translate": [0, 0, -7]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "duck"
 				}
@@ -99,7 +100,7 @@
 				"translate": [-0.2, 3, -4.5]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -109,7 +110,7 @@
 				"translate": [0.5, 5, -4.5]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorcube" }
 			}
 		},
@@ -120,7 +121,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		},
@@ -131,7 +132,7 @@
 				"rotate": [90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		},
@@ -142,7 +143,7 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "mirrorface" }
 			}
 		},
@@ -160,7 +161,7 @@
 				"mass": 1
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
@@ -178,14 +179,14 @@
 				}
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			}
 		},
 		{
 			"name": "sponza-physics",
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "sponza_physics" }
 			}
 		},
@@ -201,7 +202,7 @@
 				"translate": [0.35, 5.3, -0.65]
 			},
 			"script": {
-				"onTick": "rotate",
+				"name": "rotate",
 				"parameters": {
 					"axis": [0, 1, 1],
 					"speed": 0
@@ -231,7 +232,7 @@
 				"translate": [7, 35, 0],
 				"rotate": [-90, 1, 0, 0]
 			},
-			"script": {"onTick": "sun"},
+			"script": {"name": "sun"},
 			"signal_output": {
 				"position": 0.2,
 				"fix_position": 1
@@ -256,7 +257,7 @@
 				"parameters": {
 					"source": "blocks/box"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		}
 	]

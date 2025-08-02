@@ -59,15 +59,14 @@ namespace ecs {
         glm::mat4 viewMat, invViewMat;
     };
 
-    static Component<View> ComponentView({typeid(View),
-        "view",
-        "",
+    static EntityComponent<View> ComponentView("view",
+        "A camera view into the world that will be rendered to a texture.",
         StructField::New("offset", &View::offset),
         StructField::New("extents", &View::extents),
         StructField::New("fov", &View::fov),
         StructField::New("clip", &View::clip),
-        StructField::New("visibility_mask", &View::visibilityMask)});
+        StructField::New("visibility_mask", &View::visibilityMask));
 
     template<>
-    void Component<View>::Apply(View &dst, const View &src, bool liveTarget);
+    void EntityComponent<View>::Apply(View &dst, const View &src, bool liveTarget);
 } // namespace ecs

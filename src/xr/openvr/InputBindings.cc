@@ -452,7 +452,8 @@ namespace sp::xr {
                     if (action.type == Action::DataType::Haptic) {
                         ecs::Event event;
                         while (ecs::EventInput::Poll(lock, action.eventQueue, event)) {
-                            float &amplitude = std::get<float>(event.data);
+                            if (event.data.type != ecs::EventDataType::Float) continue;
+                            float &amplitude = event.data.f;
                             error = vr::VRInput()->TriggerHapticVibrationAction(action.handle,
                                 0.0f, // start delay
                                 0.1f, // duration

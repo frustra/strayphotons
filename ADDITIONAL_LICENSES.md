@@ -6,9 +6,9 @@ there are a number of dependencies with their own individual licenses:
 
 ### Source Code
 - MurmurHash3: Public Domain
-- SMAA: [MIT License](https://github.com/frustra/strayphotons/blob/master/shaders/smaa/smaa.glsl)
-- Perlin Noise: [MIT License](https://github.com/frustra/strayphotons/blob/master/shaders/lib/perlin.glsl)
 - Octahedron Normal Encoding: [Creative Commons CC BY-ND](https://github.com/frustra/strayphotons/blob/master/shaders/lib/normal_encode.glsl)
+- Perlin Noise: [MIT License](https://github.com/frustra/strayphotons/blob/master/shaders/lib/perlin.glsl)
+- SMAA: [MIT License](https://github.com/frustra/strayphotons/blob/master/shaders/smaa/smaa.glsl)
 
 ### GLTF Models:
 - duck: [SCEA Shared Source License 1.0](https://github.com/frustra/strayphotons/blob/master/assets/models/duck/LICENSE.html)
@@ -20,10 +20,9 @@ there are a number of dependencies with their own individual licenses:
 - VT220: Public Domain
 
 ## Submodules:
-- SPIRV-Reflect: [Apache 2.0 License](https://github.com/KhronosGroup/SPIRV-Reflect/blob/main/LICENSE)
-- Tecs: [MIT License](https://github.com/xthexder/Tecs/blob/master/LICENSE.md)
-- VulkanMemoryAllocator: [MIT License](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/blob/master/LICENSE.txt)
+- cglm: [MIT License](https://github.com/recp/cglm/blob/master/LICENSE)
 - cxxopts: [MIT License](https://github.com/jarro2783/cxxopts/blob/master/LICENSE)
+- dynalo: [MIT License](https://github.com/maddouri/dynalo/blob/master/LICENSE)
 - Eigen: [Mozilla Public License 2.0](https://gitlab.com/libeigen/eigen/-/blob/master/COPYING.README)
 - fpng: [Public Domain](https://github.com/richgel999/fpng/blob/main/README.md)
 - GLFW: [zlib License](https://github.com/glfw/glfw/blob/master/LICENSE.md)
@@ -40,6 +39,9 @@ there are a number of dependencies with their own individual licenses:
 - picojson: [BSD 2-Clause License](https://github.com/kazuho/picojson/blob/master/LICENSE)
 - resonance-audio: [Apache 2.0 License](https://github.com/resonance-audio/resonance-audio/blob/master/LICENSE)
 - robin-hood-hashing: [MIT License](https://github.com/martinus/robin-hood-hashing/blob/master/LICENSE)
+- SPIRV-Reflect: [Apache 2.0 License](https://github.com/KhronosGroup/SPIRV-Reflect/blob/main/LICENSE)
+- Tecs: [MIT License](https://github.com/xthexder/Tecs/blob/master/LICENSE.md)
 - tinygltf: [MIT License](https://github.com/syoyo/tinygltf/blob/release/LICENSE)
 - tracy: [BSD 3-Clause License](https://github.com/wolfpld/tracy/blob/master/LICENSE)
 - v-hacd: [BSD 3-Clause License](https://github.com/kmammou/v-hacd/blob/master/LICENSE)
+- VulkanMemoryAllocator: [MIT License](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/blob/master/LICENSE.txt)

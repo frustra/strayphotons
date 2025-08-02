@@ -6,7 +6,7 @@
 				"translate": [0, 0, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "level1",
 					"render": true,

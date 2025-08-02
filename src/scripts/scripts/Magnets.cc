@@ -8,6 +8,7 @@
 #include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptImpl.hh"
 #include "input/BindingNames.hh"
 
 #include <glm/gtx/component_wise.hpp>
@@ -46,8 +47,8 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == "/magnet/nearby") {
-                    if (std::holds_alternative<bool>(event.data)) {
-                        if (std::get<bool>(event.data)) {
+                    if (event.data.type == EventDataType::Bool) {
+                        if (event.data.b) {
                             socketEntities.emplace(event.source);
                         } else {
                             socketEntities.erase(event.source);
@@ -55,9 +56,9 @@ namespace sp::scripts {
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                     if (disabled) continue;
-                    if (std::holds_alternative<bool>(event.data)) {
+                    if (event.data.type == EventDataType::Bool) {
                         // Grab(false) = Drop
-                        if (!std::get<bool>(event.data)) {
+                        if (!event.data.b) {
                             grabEntities.erase(event.source);
 
                             if (grabEntities.empty() && !attachedSocketEntity && !socketEntities.empty()) {
@@ -91,7 +92,7 @@ namespace sp::scripts {
                                 }
                             }
                         }
-                    } else if (std::holds_alternative<Transform>(event.data)) {
+                    } else if (event.data.type == EventDataType::Transform) {
                         if (attachedSocketEntity) {
                             Debugf("Detaching: %s from %s",
                                 ecs::ToString(lock, ent),
@@ -113,11 +114,12 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticPlug(typeid(MagneticPlug),
+        sizeof(MagneticPlug),
         "MagneticPlug",
         "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
         StructField::New("disabled", &MagneticPlug::disabled));
-    InternalScript<MagneticPlug> magneticPlug("magnetic_plug",
+    LogicScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,
         "/magnet/nearby",
@@ -135,7 +137,7 @@ namespace sp::scripts {
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
-                auto data = std::get_if<Entity>(&event.data);
+                auto *data = EventData::TryGet<Entity>(event.data);
                 if (!data) continue;
 
                 if (event.name == "/trigger/magnetic/leave") {
@@ -152,8 +154,8 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), "MagneticSocket", "");
-    InternalScript<MagneticSocket> magneticSocket("magnetic_socket",
+    StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), sizeof(MagneticSocket), "MagneticSocket", "");
+    LogicScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,
         "/trigger/magnetic/enter",

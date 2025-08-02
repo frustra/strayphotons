@@ -123,7 +123,7 @@
 				"parameters": {
 					"source": "laser_cube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -158,7 +158,7 @@
 				"intensity": 0
 			},
 			"script": {
-				"onTick": "physics_debounce",
+				"name": "physics_debounce",
 				"parameters": {
 					"delay_frames": 0,
 					"input": "max(100 * (pellet_laser_area/trigger_object_count != 0), laser_controller/intensity - 15)",
@@ -177,7 +177,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -194,7 +194,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -210,7 +210,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -227,7 +227,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -244,7 +244,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -261,7 +261,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -278,7 +278,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -295,7 +295,7 @@
 				"intensity": "laser_controller/intensity"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "fusion_core/fusion_laser"
 				}
@@ -346,7 +346,7 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_event",
+					"name": "component_from_event",
 					"parameters": {
 						"outputs": [
 							"renderable.emissive",
@@ -359,7 +359,7 @@
 					"parameters": {
 						"source": "interactive"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -398,7 +398,7 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_event",
+					"name": "component_from_event",
 					"parameters": {
 						"outputs": [
 							"transform.translate.xyz",
@@ -410,7 +410,7 @@
 					"parameters": {
 						"source": "interactive"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -449,7 +449,7 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_event",
+					"name": "component_from_event",
 					"parameters": {
 						"outputs": [
 							"transform.translate.xyz",
@@ -461,7 +461,7 @@
 					"parameters": {
 						"source": "interactive"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -620,7 +620,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -641,10 +641,10 @@
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.1_1.socket"
 					}
@@ -669,10 +669,10 @@
 					"parameters": {
 						"source": "blocks/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.1_4.socket"
 					}
@@ -705,16 +705,16 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.9_1.socket"
 					}
 				},
 				{
-					"onTick": "charge_cell",
+					"name": "charge_cell",
 					"parameters": {
 						"charge_level": 1000,
 						"charge_signal_b": "charge_cell_0.input-sensor.Icosphere/light_value_b",
@@ -753,10 +753,10 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.9_2.socket"
 					}
@@ -781,10 +781,10 @@
 					"parameters": {
 						"source": "blocks/splitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.8_1.socket"
 					}
@@ -812,10 +812,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.7_2.socket"
 					}
@@ -843,10 +843,10 @@
 					"parameters": {
 						"source": "blocks/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.11_1.socket"
 					}
@@ -871,10 +871,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.8_2.socket"
 					}
@@ -899,10 +899,10 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.10_1.socket"
 					}
@@ -927,10 +927,10 @@
 					"parameters": {
 						"source": "blocks/mirror"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "magnetic_plug",
+					"name": "magnetic_plug",
 					"parameters": {
 						"attach": "table.surface.10_2.socket"
 					}
@@ -957,7 +957,7 @@
 				"parameters": {
 					"source": "blocks/laser_emitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -977,7 +977,7 @@
 				"parameters": {
 					"source": "blocks/laser_gate"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -1003,7 +1003,7 @@
 				"parameters": {
 					"source": "blocks/mirror"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -1023,7 +1023,7 @@
 				"parameters": {
 					"source": "blocks/splitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -1043,7 +1043,7 @@
 				"parameters": {
 					"source": "blocks/laser_gate"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -1066,7 +1066,7 @@
 				"parameters": {
 					"source": "blocks/laser_emitter"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -1095,10 +1095,10 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "charge_cell",
+					"name": "charge_cell",
 					"parameters": {
 						"charge_level": 500,
 						"charge_signal_b": "charge_cell_2.input-sensor.Icosphere/light_value_b",
@@ -1137,10 +1137,10 @@
 					"parameters": {
 						"source": "blocks/charge_cell"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "charge_cell",
+					"name": "charge_cell",
 					"parameters": {
 						"charge_level": 500,
 						"charge_signal_b": "charge_cell_3.input-sensor.Icosphere/light_value_b",

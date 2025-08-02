@@ -9,6 +9,7 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <memory>
 #include <string>
@@ -38,6 +39,7 @@ namespace sp {
         std::string path;
         SceneType type;
         ScenePriority priority;
+        std::vector<std::string> libraries;
         ecs::EntityRef sceneEntity;
 
         const ecs::SceneProperties &GetProperties(ecs::Lock<ecs::Read<ecs::SceneProperties>> lock) const;
@@ -46,8 +48,10 @@ namespace sp {
             const string &path,
             SceneType type,
             ScenePriority priority,
+            const std::vector<std::string> &libraries,
             ecs::Entity sceneId)
-            : name(name), path(path), type(type), priority(priority), sceneEntity(ecs::Name("scene", name), sceneId) {}
+            : name(name), path(path), type(type), priority(priority), libraries(libraries),
+              sceneEntity(ecs::Name("scene", name), sceneId) {}
 
         bool operator<(const SceneMetadata &other) const;
     };
@@ -77,4 +81,6 @@ namespace sp {
     private:
         std::weak_ptr<Scene> ptr;
     };
+
+    static ecs::StructMetadata MetadataSceneRef(typeid(SceneRef), sizeof(SceneRef), "SceneRef", "");
 } // namespace sp

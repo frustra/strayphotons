@@ -36,7 +36,7 @@
 
 namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
-    static const std::string defaultXRViewTarget = "XRView.LastOutput";
+    static const std::string defaultXrViewTarget = "XrView.LastOutput";
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
@@ -44,7 +44,7 @@ namespace sp::vulkan {
 
     static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
-    static CVar<string> CVarXRViewTarget("r.XRView", defaultXRViewTarget, "HMD's render target");
+    static CVar<string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
@@ -53,7 +53,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device)
         : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
-          transparency(scene), guiRenderer(new GuiRenderer(device)) {
+          transparency(scene), emissive(scene), guiRenderer(new GuiRenderer(device)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -64,7 +64,9 @@ namespace sp::vulkan {
         lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
 
         for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
-            AddGui(ent, ent.Get<const ecs::Gui>(lock));
+            const ecs::Scripts *scripts = nullptr;
+            if (ent.Has<ecs::Scripts>(lock)) scripts = &ent.Get<ecs::Scripts>(lock);
+            AddGui(ent, ent.Get<const ecs::Gui>(lock), scripts);
         }
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
@@ -85,7 +87,7 @@ namespace sp::vulkan {
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
         if (CVarMirrorXR.Changed()) {
             bool mirrorXR = CVarMirrorXR.Get(true);
-            CVarWindowViewTarget.Set(mirrorXR ? CVarXRViewTarget.Get() : defaultWindowViewTarget);
+            CVarWindowViewTarget.Set(mirrorXR ? CVarXrViewTarget.Get() : defaultWindowViewTarget);
         }
 
         if (game.xr) game.xr->WaitFrame();
@@ -99,14 +101,14 @@ namespace sp::vulkan {
         CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
-                completions.push_back(info.name);
+                completions.emplace_back(info.name.data(), info.name.size());
             }
         });
 
-        CVarXRViewTarget.UpdateCompletions([&](vector<string> &completions) {
+        CVarXrViewTarget.UpdateCompletions([&](vector<string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
-                completions.push_back(info.name);
+                completions.emplace_back(info.name.data(), info.name.size());
             }
         });
 
@@ -138,10 +140,11 @@ namespace sp::vulkan {
             ecs::VoxelArea,
             ecs::Renderable,
             ecs::View,
-            ecs::XRView,
+            ecs::XrView,
             ecs::OpticalElement,
             ecs::Gui,
             ecs::Screen,
+            ecs::Scripts,
             ecs::FocusLock>>();
 
         scene.LoadState(graph, lock);
@@ -161,11 +164,11 @@ namespace sp::vulkan {
 
         if (game.xr) {
             {
-                auto scope = graph.Scope("XRView");
-                auto view = AddXRView(lock);
+                auto scope = graph.Scope("XrView");
+                auto view = AddXrView(lock);
                 if (graph.HasResource("GBuffer0") && view) AddDeferredPasses(lock, view, elapsedTime);
             }
-            AddXRSubmit(lock);
+            AddXrSubmit(lock);
         }
 
         {
@@ -315,10 +318,10 @@ namespace sp::vulkan {
         return view;
     }
 
-    ecs::View Renderer::AddXRView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XRView>> lock) {
+    ecs::View Renderer::AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock) {
         if (!game.xr) return {};
 
-        auto xrViews = lock.EntitiesWith<ecs::XRView>();
+        auto xrViews = lock.EntitiesWith<ecs::XrView>();
         if (xrViews.size() == 0) return {};
 
         glm::ivec2 viewExtents = glm::ivec2(0);
@@ -331,7 +334,7 @@ namespace sp::vulkan {
             if (viewExtents == glm::ivec2(0)) viewExtents = view.extents;
             Assert(viewExtents == view.extents, "All XR views must have the same extents");
 
-            auto &xrView = ent.Get<ecs::XRView>(lock);
+            auto &xrView = ent.Get<ecs::XrView>(lock);
             viewsByEye[xrView.eye] = view;
             viewsByEye[xrView.eye].UpdateViewMatrix(lock, ent);
         }
@@ -463,21 +466,21 @@ namespace sp::vulkan {
         return viewsByEye[ecs::XrEye::Left];
     }
 
-    void Renderer::AddXRSubmit(ecs::Lock<ecs::Read<ecs::XRView>> lock) {
+    void Renderer::AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock) {
         if (!game.xr) return;
 
-        auto xrViews = lock.EntitiesWith<ecs::XRView>();
+        auto xrViews = lock.EntitiesWith<ecs::XrView>();
         if (xrViews.size() != 2) return;
 
         rg::ResourceID sourceID;
-        graph.AddPass("XRSubmit")
+        graph.AddPass("XrSubmit")
             .Build([&](rg::PassBuilder &builder) {
-                auto &sourceName = CVarXRViewTarget.Get();
+                auto &sourceName = CVarXrViewTarget.Get();
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultXRViewTarget) {
-                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXRViewTarget);
-                    CVarXRViewTarget.Set(defaultXRViewTarget);
-                    sourceID = builder.GetID(defaultXRViewTarget, false);
+                if (sourceID == rg::InvalidResource && sourceName != defaultXrViewTarget) {
+                    Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
+                    CVarXrViewTarget.Set(defaultXrViewTarget);
+                    sourceID = builder.GetID(defaultXrViewTarget, false);
                 }
 
                 if (sourceID != rg::InvalidResource) {
@@ -501,21 +504,20 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui) {
-        if (!gui.windowName.empty()) {
-            auto context = make_shared<WorldGuiContext>(ent, gui.windowName);
-            auto window = CreateGuiWindow(gui.windowName, ent);
-            if (window) {
-                context->Attach(window);
-                auto windowScale = CVarWindowScale.Get();
-                if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-                if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-                guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
-            }
+    void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts) {
+        auto window = CreateGuiWindow(gui, scripts).lock();
+        if (window) {
+            auto context = make_shared<WorldGuiContext>(ent, window->name);
+            context->Attach(window);
+            auto windowScale = CVarWindowScale.Get();
+            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+            guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
         }
     }
 
-    void Renderer::AddWorldGuis(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name>> lock) {
+    void Renderer::AddWorldGuis(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name, ecs::Scripts>> lock) {
         ecs::ComponentAddRemoveEvent<ecs::Gui> guiEvent;
         while (guiObserver.Poll(lock, guiEvent)) {
             auto &eventEntity = guiEvent.entity;
@@ -529,7 +531,9 @@ namespace sp::vulkan {
                 }
             } else if (guiEvent.type == Tecs::EventType::ADDED) {
                 if (!eventEntity.Has<ecs::Gui>(lock)) continue;
-                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock));
+                const ecs::Scripts *scripts = nullptr;
+                if (eventEntity.Has<ecs::Scripts>(lock)) scripts = &eventEntity.Get<ecs::Scripts>(lock);
+                AddGui(eventEntity, eventEntity.Get<ecs::Gui>(lock), scripts);
             }
         }
 
@@ -722,7 +726,7 @@ namespace sp::vulkan {
         });
 
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable, ecs::Screen>>();
             bool anyTexturesChanged = false;
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
             while (renderableObserver.Poll(lock, renderableEvent)) {
@@ -731,7 +735,9 @@ namespace sp::vulkan {
                 //     modelName = renderableEvent.Get<ecs::Renderable>(lock).modelName;
                 // }
                 // Logf("Renderable entity changed: %s %s", ecs::ToString(lock, renderableEvent), modelName);
-                loadModel(lock, renderableEvent);
+                if (renderableEvent.Has<ecs::Renderable>(lock)) {
+                    loadModel(lock, renderableEvent);
+                }
                 anyTexturesChanged = true;
             }
 

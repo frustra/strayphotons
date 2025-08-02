@@ -12,7 +12,9 @@ set(TRACY_ENABLE ${SP_ENABLE_TRACY} CACHE BOOL "" FORCE)
 set(TRACY_ONLY_LOCALHOST ON CACHE BOOL "" FORCE)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-Wno-unused-but-set-variable -Wno-array-bounds)
+    add_compile_options(-Wno-unused-but-set-variable -Wno-array-bounds -Wno-unused-result -Wno-unused-function -Wno-maybe-uninitialized)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wno-unused-function)
 endif()
 
 add_subdirectory(tracy)

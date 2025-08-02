@@ -12,7 +12,7 @@
 				"type": "Static"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "ground-3x3",
 					"render": true

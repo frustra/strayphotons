@@ -9,6 +9,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
@@ -33,8 +34,7 @@ namespace sp::scripts {
         // Internal script state
         std::optional<double> previousValue;
 
-        template<typename LockType>
-        void updateEdgeTrigger(ScriptState &state, const LockType &lock, const Entity &ent) {
+        void OnTick(ScriptState &state, DynamicLock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
             auto value = inputExpr.Evaluate(lock);
             if (!previousValue) previousValue = value;
 
@@ -54,15 +54,9 @@ namespace sp::scripts {
             }
             previousValue = value;
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateEdgeTrigger(state, lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateEdgeTrigger(state, lock, ent);
-        }
     };
     StructMetadata MetadataEdgeTrigger(typeid(EdgeTrigger),
+        sizeof(EdgeTrigger),
         "EdgeTrigger",
         "",
         StructField::New("input_expr", &EdgeTrigger::inputExpr),
@@ -72,8 +66,8 @@ namespace sp::scripts {
         StructField::New("init_value", &EdgeTrigger::previousValue),
         StructField::New("set_event_value", &EdgeTrigger::eventValue),
         StructField::New("_previous_value", &EdgeTrigger::previousValue));
-    InternalScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
-    InternalPhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
+    LogicScript<EdgeTrigger> edgeTrigger("edge_trigger", MetadataEdgeTrigger);
+    PhysicsScript<EdgeTrigger> physicsEdgeTrigger("physics_edge_trigger", MetadataEdgeTrigger);
 
     struct ModelSpawner {
         EntityRef targetEntity;
@@ -123,7 +117,7 @@ namespace sp::scripts {
                         }
                         for (auto &templateName : templates) {
                             auto &scripts = newEntity.Get<Scripts>(lock);
-                            auto &prefab = scripts.AddPrefab(scope, "template");
+                            auto &prefab = scripts.AddScript(scope, "prefab_template");
                             prefab.SetParam("source", templateName);
                         }
                         if (!templates.empty()) {
@@ -134,13 +128,14 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataModelSpawner(typeid(ModelSpawner),
+        sizeof(ModelSpawner),
         "ModelSpawner",
         "",
         StructField::New("relative_to", &ModelSpawner::targetEntity),
         StructField::New("position", &ModelSpawner::position),
         StructField::New("model", &ModelSpawner::modelName),
         StructField::New("templates", &ModelSpawner::templates));
-    InternalScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
+    LogicScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
 
     struct Rotate {
         glm::vec3 rotationAxis = glm::vec3(0);
@@ -157,11 +152,12 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotate(typeid(Rotate),
+        sizeof(Rotate),
         "Rotate",
         "",
         StructField::New("axis", &Rotate::rotationAxis),
         StructField::New("speed", &Rotate::rotationSpeedRpm));
-    InternalScript<Rotate> rotate("rotate", MetadataRotate);
+    LogicScript<Rotate> rotate("rotate", MetadataRotate);
 
     struct RotateToEntity {
         EntityRef targetEntityRef, upEntityRef;
@@ -197,11 +193,12 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataRotateToEntity(typeid(RotateToEntity),
+        sizeof(RotateToEntity),
         "RotateToEntity",
         "",
         StructField::New("up", &RotateToEntity::upEntityRef),
         StructField::New("target", &RotateToEntity::targetEntityRef));
-    InternalScript<RotateToEntity> rotateToEntity("rotate_to_entity", MetadataRotateToEntity);
+    LogicScript<RotateToEntity> rotateToEntity("rotate_to_entity", MetadataRotateToEntity);
 
     struct ChargeCell {
         // Charge level is light units * ticks
@@ -215,7 +212,10 @@ namespace sp::scripts {
         SignalExpression chargeSignalBlue;
         bool discharging = false;
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             glm::dvec3 chargeColor = {std::max(0.0, chargeSignalRed.Evaluate(lock)),
                 std::max(0.0, chargeSignalGreen.Evaluate(lock)),
                 std::max(0.0, chargeSignalBlue.Evaluate(lock))};
@@ -252,6 +252,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataChargeCell(typeid(ChargeCell),
+        sizeof(ChargeCell),
         "ChargeCell",
         "",
         StructField::New("discharging", &ChargeCell::discharging),
@@ -263,15 +264,17 @@ namespace sp::scripts {
         StructField::New("charge_signal_r", &ChargeCell::chargeSignalRed),
         StructField::New("charge_signal_g", &ChargeCell::chargeSignalGreen),
         StructField::New("charge_signal_b", &ChargeCell::chargeSignalBlue));
-    InternalPhysicsScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
+    PhysicsScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
 
     struct ComponentFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> mapping;
         robin_hood::unordered_map<std::string, std::pair<const ComponentBase *, std::optional<StructField>>>
             componentCache;
 
-        template<typename LockType>
-        void updateComponentFromSignal(const LockType &lock, Entity ent) {
+        void OnTick(ScriptState &state,
+            DynamicLock<ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             for (auto &[fieldPath, signalExpr] : mapping) {
                 size_t delimiter = fieldPath.find('.');
                 if (delimiter == std::string::npos) {
@@ -304,7 +307,7 @@ namespace sp::scripts {
 
                 auto signalValue = signalExpr.Evaluate(lock);
 
-                void *compPtr = comp->Access(lock, ent);
+                void *compPtr = comp->AccessMut(lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromSignal %s access returned null data: %s",
                         componentName,
@@ -316,20 +319,14 @@ namespace sp::scripts {
                 });
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromSignal(lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromSignal(lock, ent);
-        }
     };
     StructMetadata MetadataComponentFromSignal(typeid(ComponentFromSignal),
+        sizeof(ComponentFromSignal),
         "ComponentFromSignal",
         "",
         StructField::New(&ComponentFromSignal::mapping));
-    InternalScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
-    InternalPhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
+    LogicScript<ComponentFromSignal> componentFromSignal("component_from_signal", MetadataComponentFromSignal);
+    PhysicsScript<ComponentFromSignal> physicsComponentFromSignal("physics_component_from_signal",
         MetadataComponentFromSignal);
 
     struct SignalFromSignal {
@@ -340,8 +337,10 @@ namespace sp::scripts {
             refs.reserve(mapping.size());
         }
 
-        template<typename LockType>
-        void updateSignalFromSignal(const LockType &lock, Entity ent) {
+        void OnTick(ScriptState &state,
+            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (refs.size() < mapping.size()) {
                 for (auto &[outputSignal, signalExpr] : mapping) {
                     refs.emplace_back(SignalRef(ent, outputSignal), &signalExpr);
@@ -352,21 +351,14 @@ namespace sp::scripts {
                 outputSignal.SetValue(lock, signalExpr->Evaluate(readLock));
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateSignalFromSignal(lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateSignalFromSignal(lock, ent);
-        }
     };
     StructMetadata MetadataSignalFromSignal(typeid(SignalFromSignal),
+        sizeof(SignalFromSignal),
         "SignalFromSignal",
         "",
         StructField::New(&SignalFromSignal::mapping));
-    InternalScript<SignalFromSignal> signalFromSignal("signal_from_signal", MetadataSignalFromSignal);
-    InternalPhysicsScript<SignalFromSignal> physicsSignalFromSignal("physics_signal_from_signal",
-        MetadataSignalFromSignal);
+    LogicScript<SignalFromSignal> signalFromSignal("signal_from_signal", MetadataSignalFromSignal);
+    PhysicsScript<SignalFromSignal> physicsSignalFromSignal("physics_signal_from_signal", MetadataSignalFromSignal);
 
     struct DebounceSignal {
         size_t delayFrames = 1;
@@ -377,8 +369,10 @@ namespace sp::scripts {
         std::optional<double> lastSignal;
         size_t frameCount = 0;
 
-        template<typename LockType>
-        void updateSignal(const LockType &lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (output.empty()) return;
 
             SignalRef ref(ent, output);
@@ -397,23 +391,17 @@ namespace sp::scripts {
                 ref.SetValue(lock, currentInput);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateSignal(lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateSignal(lock, ent, interval);
-        }
     };
     StructMetadata MetadataDebounceSignal(typeid(DebounceSignal),
+        sizeof(DebounceSignal),
         "DebounceSignal",
         "",
         StructField::New("delay_frames", &DebounceSignal::delayFrames),
         StructField::New("delay_ms", &DebounceSignal::delayMs),
         StructField::New("input", &DebounceSignal::input),
         StructField::New("output", &DebounceSignal::output));
-    InternalScript<DebounceSignal> debounceSignal("debounce", MetadataDebounceSignal);
-    InternalPhysicsScript<DebounceSignal> physicsDebounceSignal("physics_debounce", MetadataDebounceSignal);
+    LogicScript<DebounceSignal> debounceSignal("debounce", MetadataDebounceSignal);
+    PhysicsScript<DebounceSignal> physicsDebounceSignal("physics_debounce", MetadataDebounceSignal);
 
     struct TimerSignal {
         std::vector<std::string> names = {"timer"};
@@ -426,9 +414,10 @@ namespace sp::scripts {
             }
         }
 
-        template<typename LockType>
-        void updateTimer(ScriptState &state, LockType lock, Entity ent, chrono_clock::duration interval) {
-
+        void OnTick(ScriptState &state,
+            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             for (auto &name : names) {
                 SignalRef valueRef(ent, name);
                 double timerValue = valueRef.GetSignal(lock);
@@ -441,17 +430,15 @@ namespace sp::scripts {
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
-                double eventValue = std::visit(
-                    [](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                double eventValue = EventData::Visit(event.data, [](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            return (double)arg;
-                        } else {
-                            return 0.0;
-                        }
-                    },
-                    event.data);
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        return (double)data;
+                    } else {
+                        return 0.0;
+                    }
+                });
 
                 if (!sp::starts_with(event.name, "/reset_timer/")) {
                     Errorf("Unexpected event received by timer: %s", event.name);
@@ -467,18 +454,12 @@ namespace sp::scripts {
                 SignalRef(ent, timerName).SetValue(lock, eventValue);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateTimer(state, lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateTimer(state, lock, ent, interval);
-        }
     };
     StructMetadata MetadataTimerSignal(typeid(TimerSignal),
+        sizeof(TimerSignal),
         "TimerSignal",
         "",
         StructField::New("names", &TimerSignal::names));
-    InternalScript<TimerSignal> timerScript("timer", MetadataTimerSignal);
-    InternalPhysicsScript<TimerSignal> physicsTimerScript("physics_timer", MetadataTimerSignal);
+    LogicScript<TimerSignal> timerScript("timer", MetadataTimerSignal);
+    PhysicsScript<TimerSignal> physicsTimerScript("physics_timer", MetadataTimerSignal);
 } // namespace sp::scripts

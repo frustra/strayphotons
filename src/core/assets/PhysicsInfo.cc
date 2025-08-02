@@ -17,7 +17,7 @@
 #include <sstream>
 
 namespace sp {
-    PhysicsInfo::PhysicsInfo(const std::string &modelName, std::shared_ptr<const Asset> asset)
+    PhysicsInfo::PhysicsInfo(std::string_view modelName, std::shared_ptr<const Asset> asset)
         : modelName(modelName), asset(asset) {
         Assertf(!modelName.empty(), "PhysicsInfo is missing model name");
 
@@ -40,7 +40,7 @@ namespace sp {
 
         for (auto &param : root.get<picojson::object>()) {
             HullSettings settings;
-            settings.name = modelName + "." + param.first;
+            settings.name = AssetName(modelName) + "." + param.first;
             auto &hull = settings.hull;
 
             if (!param.second.is<picojson::object>()) {
@@ -123,8 +123,9 @@ namespace sp {
         }
     }
 
-    HullSettings PhysicsInfo::GetHull(const std::shared_ptr<const PhysicsInfo> &source, const std::string &meshName) {
+    HullSettings PhysicsInfo::GetHull(const std::shared_ptr<const PhysicsInfo> &source, std::string_view meshName) {
         Assertf(source, "PhysicsInfo::GetHull called with null source");
+        Assert(meshName.data()[meshName.size()] == '\0', "PhysicsInfo::GetHull string_view is not null terminated");
 
         auto it = source->hulls.find(meshName);
         if (it != source->hulls.end()) return it->second;
@@ -133,8 +134,9 @@ namespace sp {
                 return !std::isdigit(ch);
             });
             if (end == meshName.end()) {
-                size_t meshIndex = strtoull(meshName.c_str() + 6, nullptr, 10); // Defaults to 0 on failure
-                return HullSettings(source, source->modelName + "." + meshName, meshIndex);
+                size_t meshIndex = strtoull(meshName.data() + 6, nullptr, 10); // Defaults to 0 on failure
+                AssetName hullName = source->modelName + "." + meshName;
+                return HullSettings(source, hullName, meshIndex);
             } else {
                 Warnf("Missing physics hull, defaulting to convex: %s.%s", source->modelName, meshName);
             }

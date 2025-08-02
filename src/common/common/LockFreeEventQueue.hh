@@ -10,6 +10,7 @@
 #include "common/InlineVector.hh"
 #include "common/LockFreeMutex.hh"
 
+#include <mutex>
 #include <vector>
 
 namespace sp {

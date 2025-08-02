@@ -143,7 +143,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);
@@ -181,12 +181,12 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
-            ImGui::Text("Scene Select");
-            ImGui::Text(" ");
+            ImGui::TextUnformatted("Scene Select");
+            ImGui::TextUnformatted(" ");
 
             ImGui::PopFont();
             PushFont(GuiFont::Monospace, 25);
@@ -200,7 +200,7 @@ namespace sp {
             }
 
             ImGui::PopFont();
-            ImGui::Text(" ");
+            ImGui::TextUnformatted(" ");
 
             if (ImGui::Button("Back")) {
                 selectedScreen = MenuScreen::Main;
@@ -213,12 +213,12 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSaveSelect", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
-            ImGui::Text("Load Game");
-            ImGui::Text(" ");
+            ImGui::TextUnformatted("Load Game");
+            ImGui::TextUnformatted(" ");
 
             ImGui::PopFont();
             PushFont(GuiFont::Monospace, 25);
@@ -232,7 +232,7 @@ namespace sp {
             }
 
             ImGui::PopFont();
-            ImGui::Text(" ");
+            ImGui::TextUnformatted(" ");
 
             if (ImGui::Button("Back")) {
                 selectedScreen = MenuScreen::Main;
@@ -245,21 +245,21 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
-            ImGui::Image((void *)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
-            ImGui::Text("Options");
-            ImGui::Text(" ");
+            ImGui::TextUnformatted("Options");
+            ImGui::TextUnformatted(" ");
             ImGui::Columns(2, "optcols", false);
 
             ImGui::PopFont();
             PushFont(GuiFont::Monospace, 25);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
 
-            ImGui::Text("Resolution");
-            ImGui::Text("Full Screen");
-            ImGui::Text("Mirror VR View");
+            ImGui::TextUnformatted("Resolution");
+            ImGui::TextUnformatted("Full Screen");
+            ImGui::TextUnformatted("Mirror VR View");
 
             ImGui::PopStyleVar();
             ImGui::NextColumn();
@@ -289,17 +289,17 @@ namespace sp {
                     CVarWindowFullscreen.Set(fullscreen);
                 }
 
-                auto &mirrorXRCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
-                bool mirrorXR = mirrorXRCVar.Get();
+                auto &mirrorXrCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
+                bool mirrorXR = mirrorXrCVar.Get();
                 if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
-                    mirrorXRCVar.Set(mirrorXR);
+                    mirrorXrCVar.Set(mirrorXR);
                 }
             }
 
             ImGui::PopStyleVar(2);
             ImGui::PopFont();
             ImGui::Columns(1);
-            ImGui::Text(" ");
+            ImGui::TextUnformatted(" ");
 
             if (ImGui::Button("Done")) {
                 selectedScreen = MenuScreen::Main;

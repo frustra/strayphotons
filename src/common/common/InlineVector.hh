@@ -34,16 +34,16 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
-        InlineVector(size_t initialSize = 0) {
+        InlineVector(size_t initialSize = 0) : ArrayT() {
             resize(initialSize);
         }
 
-        InlineVector(size_t initialSize, const T &value) {
+        InlineVector(size_t initialSize, const T &value) : ArrayT() {
             resize(initialSize);
             fill(value);
         }
 
-        InlineVector(std::initializer_list<T> init) {
+        InlineVector(std::initializer_list<T> init) : ArrayT() {
             for (auto it = init.begin(); it != init.end(); it++) {
                 push_back(*it);
             }
@@ -137,7 +137,7 @@ namespace sp {
             return rend() - offset;
         }
 
-        bool operator==(const InlineVector<T, MaxSize> &other) const {
+        bool operator==(const InlineVector<T, MaxSize, ArrayT> &other) const {
             return offset == other.offset && std::equal(begin(), end(), other.begin());
         }
 

@@ -40,9 +40,17 @@ using namespace std;
 #include <fstream>
 #include <memory>
 #include <strayphotons.h>
+#include <tracy/Tracy.hpp>
 #include <vulkan/vulkan.hpp>
 
 using cxxopts::value;
+
+#include <c_abi/Tecs.hh>
+#include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
+#include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
+#include <strayphotons/components.h>
+
+TECS_IMPLEMENT_C_ABI
 
 namespace sp {
     sp_game_t *GameInstance = nullptr;

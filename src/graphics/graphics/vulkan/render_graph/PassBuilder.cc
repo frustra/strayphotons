@@ -18,7 +18,7 @@ namespace sp::vulkan::render_graph {
         return id;
     }
 
-    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, int framesAgo) {
+    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, uint32 framesAgo) {
         auto thisFrameID = resources.GetID(name, false);
         if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
         if (thisFrameID == InvalidResource) return InvalidResource;
@@ -51,6 +51,7 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::CreateImage(string_view name, const ImageDesc &desc, Access access) {
+        DebugZoneScoped;
         Resource resource(desc);
         resources.Register(name, resource);
         pass.AddAccess(resource.id, access);
@@ -104,6 +105,7 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access) {
+        DebugZoneScoped;
         Assert(layout.size > 0, "can't create a buffer of size 0");
 
         BufferDesc desc;

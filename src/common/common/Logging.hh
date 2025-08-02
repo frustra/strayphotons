@@ -15,7 +15,6 @@
 #include <magic_enum.hpp>
 #include <memory>
 #include <string>
-#include <tracy/Tracy.hpp>
 #include <type_traits>
 
 #ifdef SP_SHARED_BUILD
@@ -125,6 +124,8 @@ namespace sp::logging {
 
         if constexpr (std::is_same<BaseType, std::string>()) {
             return std::forward<T>(t).c_str();
+        } else if constexpr (sp::is_inline_string<BaseType>()) {
+            return std::forward<T>(t).c_str();
         } else if constexpr (std::is_same<BaseType, std::string_view>()) {
             if (t.empty()) return "";
             Assert(t.data()[t.size()] == '\0', "string_view is not null terminated");
@@ -144,8 +145,6 @@ namespace sp::logging {
         std::string buf(size + 1, '\0');
         std::snprintf(buf.data(), size + 1, fmt.c_str(), std::forward<T>(t)...);
         buf.resize(size); // Remove unnecessary null terminator
-
-        TracyMessage(buf.data(), size);
         GlobalLogOutput(lvl, buf);
     }
 

@@ -10,6 +10,7 @@
 #include "assets/JsonHelpers.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptManager.hh"
 
 #include <atomic>
 
@@ -17,73 +18,44 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<ScriptInstance>(ScriptInstance &instance, const picojson::value &src) {
         const auto &definitions = GetScriptDefinitions();
-        const ScriptDefinition *definition = nullptr;
         if (!src.is<picojson::object>()) {
             Errorf("Script has invalid definition: %s", src.to_str());
             return false;
         }
-        auto &srcObj = src.get<picojson::object>();
-        for (auto param : srcObj) {
-            if (param.first == "onTick") {
-                if (param.second.is<std::string>()) {
-                    auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.scripts.find(scriptName);
-                    if (it != definitions.scripts.end()) {
-                        if (definition) {
-                            Errorf("Script has multiple definitions: %s", scriptName);
-                            return false;
-                        }
-                        definition = &it->second;
-                    } else {
-                        Errorf("Script has unknown onTick definition: %s", scriptName);
-                        return false;
-                    }
-                } else {
-                    Errorf("Script onTick has invalid definition: %s", param.second.to_str());
-                    return false;
-                }
-            } else if (param.first == "prefab") {
-                if (param.second.is<std::string>()) {
-                    auto scriptName = param.second.get<std::string>();
-                    auto it = definitions.prefabs.find(scriptName);
-                    if (it != definitions.prefabs.end()) {
-                        if (definition) {
-                            Errorf("Script has multiple definitions: %s", scriptName);
-                            return false;
-                        }
-                        definition = &it->second;
-                    } else {
-                        Errorf("Script has unknown prefab definition: %s", scriptName);
-                        return false;
-                    }
-                } else {
-                    Errorf("Script prefab has invalid definition: %s", param.second.to_str());
-                    return false;
-                }
-            }
+        const auto &srcObj = src.get<picojson::object>();
+        auto nameIt = srcObj.find("name");
+        if (nameIt == srcObj.end()) {
+            Errorf("Script is missing name");
+            return false;
         }
-        if (!definition) {
-            Errorf("Script has no definition: %s", src.to_str());
+        const auto &scriptName = nameIt->second.get<std::string>();
+        auto definitionIt = definitions.scripts.find(scriptName);
+        if (definitionIt == definitions.scripts.end()) {
+            Errorf("Script has unknown definition: %s", scriptName);
             return false;
         }
 
-        auto state = ScriptState(*definition);
-        if (definition->context) {
-            // Access will initialize default parameters
-            void *dataPtr = state.definition.context->Access(state);
-            Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
-
+        auto newState = std::make_shared<ScriptState>(definitionIt->second);
+        ScriptState &state = *newState;
+        auto ctx = state.definition.context.lock();
+        if (ctx) {
             auto it = srcObj.find("parameters");
             if (it != srcObj.end()) {
-                for (auto &field : state.definition.context->metadata.fields) {
-                    if (!field.Load(dataPtr, it->second)) {
-                        Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
-                        return false;
+                // Access will initialize default parameters
+                void *dataPtr = ctx->AccessMut(state);
+                if (!dataPtr) {
+                    Warnf("Can't set parameters on context-free script: %s", state.definition.name);
+                } else {
+                    for (auto &field : ctx->metadata.fields) {
+                        if (!field.Load(dataPtr, it->second)) {
+                            Errorf("Script %s has invalid parameter: %s", state.definition.name, field.name);
+                            return false;
+                        }
                     }
                 }
             }
         }
-        instance = std::make_shared<ScriptState>(std::move(state));
+        instance = newState;
         return true;
     }
 
@@ -99,27 +71,25 @@ namespace ecs {
         } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
-            if (std::holds_alternative<PrefabFunc>(state.definition.callback)) {
-                obj["prefab"] = picojson::value(state.definition.name);
-            } else {
-                obj["onTick"] = picojson::value(state.definition.name);
-            }
+            obj["name"] = picojson::value(state.definition.name.str());
 
-            if (state.definition.context) {
-                std::lock_guard l(GetScriptManager().mutexes[state.definition.callback.index()]);
+            auto ctx = state.definition.context.lock();
+            if (ctx) {
+                std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
+                std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
 
-                const void *dataPtr = state.definition.context->Access(state);
-                const void *defaultPtr = state.definition.context->GetDefault();
-                Assertf(dataPtr, "Script definition returned null data: %s", state.definition.name);
+                const void *dataPtr = ctx->Access(state);
+                if (!dataPtr) return;
+                const void *defaultPtr = ctx->GetDefault();
                 bool changed = false;
-                for (auto &field : state.definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (!field.Compare(dataPtr, defaultPtr)) {
                         changed = true;
                         break;
                     }
                 }
                 if (changed) {
-                    for (auto &field : state.definition.context->metadata.fields) {
+                    for (auto &field : ctx->metadata.fields) {
                         field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
                     }
                 }
@@ -135,30 +105,49 @@ namespace ecs {
             // Create a new script instance so references to the old scope remain valid.
             auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
 
-            if (oldState.definition.context) {
-                const void *defaultPtr = oldState.definition.context->GetDefault();
-                void *oldPtr = oldState.definition.context->Access(oldState);
-                void *newPtr = newState->definition.context->Access(*newState);
-                Assertf(oldPtr, "Script definition returned null data: %s", oldState.definition.name);
-                Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
-                for (auto &field : oldState.definition.context->metadata.fields) {
-                    field.Apply(newPtr, oldPtr, defaultPtr);
-                    field.SetScope(newPtr, scope);
+            auto oldCtx = oldState.definition.context.lock();
+            auto newCtx = newState->definition.context.lock();
+            if (oldCtx) {
+                const void *defaultPtr = oldCtx->GetDefault();
+                const void *oldPtr = oldCtx->Access(oldState);
+                if (oldPtr) {
+                    void *newPtr = newCtx->AccessMut(*newState);
+                    Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
+                    for (auto &field : oldCtx->metadata.fields) {
+                        field.Apply(newPtr, oldPtr, defaultPtr);
+                        field.SetScope(newPtr, scope);
+                    }
                 }
             }
             dst.state = std::move(newState);
         }
     }
 
-    bool ScriptState::operator==(const ScriptState &other) const {
-        if (definition.name.empty() || !definition.context) return instanceId == other.instanceId;
-        if (definition.name != other.definition.name) return false;
-        if (definition.context != other.definition.context) return false;
+    ScriptState &Scripts::AddScript(const EntityScope &scope, const ScriptDefinition &definition) {
+        auto &instance = scripts.emplace_back(scope, definition);
+        return *(instance.state);
+    }
 
-        const void *aPtr = definition.context->Access(*this);
-        const void *bPtr = definition.context->Access(other);
-        Assertf(aPtr && bPtr, "Script definition returned null data: %s", definition.name);
-        for (auto &field : definition.context->metadata.fields) {
+    ScriptState &Scripts::AddScript(const EntityScope &scope, const std::string &scriptName) {
+        return AddScript(scope, GetScriptDefinitions().scripts.at(scriptName));
+    }
+
+    bool ScriptState::operator==(const ScriptState &other) const {
+        if (definition.name.empty()) return instanceId == other.instanceId;
+        if (definition.name != other.definition.name) return false;
+        // Compare (definition.context != other.definition.context) without locking both pointers
+        if (definition.context.owner_before(other.definition.context) ||
+            other.definition.context.owner_before(definition.context)) {
+            return false;
+        }
+
+        auto ctx = definition.context.lock();
+        if (!ctx) return instanceId == other.instanceId;
+        const void *aPtr = ctx->Access(*this);
+        const void *bPtr = ctx->Access(other);
+        if (aPtr == bPtr) return true;
+        if (!aPtr || !bPtr) return false;
+        for (auto &field : ctx->metadata.fields) {
             if (!field.Compare(aPtr, bPtr)) return false;
         }
         return true;
@@ -169,9 +158,9 @@ namespace ecs {
         if (definition.name != other.definition.name) return false;
         if (definition.callback.index() != other.definition.callback.index()) return false;
         if (std::get_if<PrefabFunc>(&definition.callback)) {
-            if (definition.name == "gltf") {
+            if (definition.name == "prefab_gltf") {
                 return GetParam<string>("model") == other.GetParam<string>("model");
-            } else if (definition.name == "template") {
+            } else if (definition.name == "prefab_template") {
                 return GetParam<string>("source") == other.GetParam<string>("source");
             }
         }
@@ -179,7 +168,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
+    void EntityComponent<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
         for (auto &instance : src.scripts) {
             if (!instance) continue;
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {

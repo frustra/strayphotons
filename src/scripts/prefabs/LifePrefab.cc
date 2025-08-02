@@ -9,6 +9,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 
 #include <cmath>
@@ -53,8 +54,9 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataLifeCellPrefab(typeid(LifeCellPrefab),
+        sizeof(LifeCellPrefab),
         "LifeCellPrefab",
         "",
         StructField::New("board_size", &LifeCellPrefab::boardSize));
-    PrefabScript<LifeCellPrefab> lifeCellPrefab("life_cell", MetadataLifeCellPrefab);
+    PrefabScript<LifeCellPrefab> lifeCellPrefab("prefab_life_cell", MetadataLifeCellPrefab);
 } // namespace sp::scripts

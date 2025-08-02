@@ -7,16 +7,18 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "common/Common.hh"
+#include "common/Hashing.hh"
 
-#include <unordered_map>
+#include <robin_hood.h>
 
 namespace sp {
     class Asset;
     class PhysicsInfo;
 
     struct HullSettings {
-        std::string name; // modelName.meshName
+        AssetName name; // modelName.meshName
 
 #pragma pack(push, 1)
         // Separate these fields to make them hashable
@@ -35,9 +37,7 @@ namespace sp {
         std::shared_ptr<const PhysicsInfo> sourceInfo;
 
         HullSettings() {}
-        HullSettings(const std::shared_ptr<const PhysicsInfo> &sourceInfo,
-            const std::string &name,
-            size_t meshIndex = 0)
+        HullSettings(const std::shared_ptr<const PhysicsInfo> &sourceInfo, std::string_view name, size_t meshIndex = 0)
             : name(name), sourceInfo(sourceInfo) {
             hull.meshIndex = meshIndex;
         }
@@ -45,18 +45,18 @@ namespace sp {
 
     class PhysicsInfo : public NonCopyable {
     public:
-        PhysicsInfo(const std::string &modelName, std::shared_ptr<const Asset> asset = nullptr);
+        PhysicsInfo(std::string_view modelName, std::shared_ptr<const Asset> asset = nullptr);
 
-        static HullSettings GetHull(const std::shared_ptr<const PhysicsInfo> &source, const std::string &meshName);
+        static HullSettings GetHull(const std::shared_ptr<const PhysicsInfo> &source, std::string_view meshName);
 
-        const std::unordered_map<std::string, HullSettings> &GetHulls() const {
+        const robin_hood::unordered_map<AssetName, HullSettings, StringHash, StringEqual> &GetHulls() const {
             return hulls;
         }
 
-        const std::string modelName;
+        const AssetName modelName;
 
     private:
         std::shared_ptr<const Asset> asset;
-        std::unordered_map<std::string, HullSettings> hulls;
+        robin_hood::unordered_map<AssetName, HullSettings, StringHash, StringEqual> hulls;
     };
 } // namespace sp

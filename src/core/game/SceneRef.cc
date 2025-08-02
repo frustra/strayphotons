@@ -13,7 +13,7 @@
 #include <memory>
 
 namespace sp {
-    SceneRef::SceneRef(const std::shared_ptr<Scene> &scene) : data(scene->data), ptr(scene) {}
+    SceneRef::SceneRef(const std::shared_ptr<Scene> &scene) : data(scene ? scene->data : nullptr), ptr(scene) {}
 
     bool SceneRef::operator==(const SceneRef &other) const {
         return data && data == other.data;

@@ -665,13 +665,16 @@ namespace sp::vulkan {
                 if (acquireResult.result == vk::Result::eTimeout) {
                     Warnf("vkAcquireNextImageKHR timeout");
                     return false;
+                } else if (acquireResult.result == vk::Result::eSuboptimalKHR) {
+                    RecreateSwapchain(); // X11 / Wayland returns this on resize
+                    return false;
                 } else {
                     AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
                 }
                 swapchainImageIndex = acquireResult.value;
                 ZoneValue(swapchainImageIndex);
             } catch (const vk::OutOfDateKHRError &) {
-                RecreateSwapchain();
+                RecreateSwapchain(); // Windows returns this on resize
                 return false;
             } catch (const std::system_error &err) {
                 Abortf("Exception: %s", err.what());

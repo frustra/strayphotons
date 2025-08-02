@@ -1,5 +1,6 @@
 {
 	"priority": "Player",
+	"libraries": ["camera_view", "game_scripts"],
 	"entities": [
 		{
 			"name": "player",
@@ -35,7 +36,7 @@
 			"event_input": {},
 			"signal_output": {},
 			"script": {
-				"onTick": "interact_handler",
+				"name": "interact_handler",
 				"parameters": {
 					"noclip_entity": "player",
 					"grab_distance": 2
@@ -53,14 +54,14 @@
 			"signal_output": {},
 			"script": [
 				{
-					"onTick": "relative_movement",
+					"name": "relative_movement",
 					"parameters": {
 						"relative_to": "flatview",
 						"up_reference": "player"
 					}
 				},
 				{
-					"onTick": "physics_camera_view"
+					"name": "camera_view2"
 				}
 			]
 		},
@@ -83,10 +84,7 @@
 				"on": 0
 			},
 			"script": {
-				"onTick": "flashlight",
-				"parameters": {
-					"parent": "pointer"
-				}
+				"name": "flashlight"
 			}
 		},
 		{

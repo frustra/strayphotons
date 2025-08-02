@@ -61,11 +61,13 @@ namespace sp {
         using EditSceneCallback = std::function<void(ecs::Lock<ecs::AddRemove>, std::shared_ptr<Scene>)>;
         using EditCallback = std::function<void(ecs::Lock<ecs::AddRemove>)>;
         using VoidCallback = std::function<void()>;
-        void QueueAction(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
-        void QueueAction(SceneAction action, std::string sceneName, EditCallback callback);
+        void QueueAction(SceneAction action, std::string_view sceneName = "", EditSceneCallback callback = nullptr);
+        void QueueAction(SceneAction action, std::string_view sceneName, EditCallback callback);
         void QueueAction(SceneAction action, EditCallback callback);
         void QueueAction(VoidCallback callback);
-        void QueueActionAndBlock(SceneAction action, std::string sceneName = "", EditSceneCallback callback = nullptr);
+        void QueueActionAndBlock(SceneAction action,
+            std::string_view sceneName = "",
+            EditSceneCallback callback = nullptr);
         void QueueActionAndBlock(VoidCallback callback);
 
         using ScenePreloadCallback = std::function<bool(ecs::Lock<ecs::ReadAll>, std::shared_ptr<Scene>)>;
@@ -78,6 +80,10 @@ namespace sp {
 
         void DisablePhysicsPreload() {
             enablePhysicsPreload = false;
+        }
+
+        void DisableDynamicLibraries() {
+            enableDynamicLibraries = false;
         }
 
         static std::string_view GetSceneName(std::string_view scenePath);
@@ -120,9 +126,9 @@ namespace sp {
             VoidCallback voidCallback;
             std::promise<void> promise;
 
-            QueuedAction(SceneAction action, std::string scenePath, EditSceneCallback editSceneCallback = nullptr)
+            QueuedAction(SceneAction action, std::string_view scenePath, EditSceneCallback editSceneCallback = nullptr)
                 : action(action), scenePath(scenePath), editSceneCallback(editSceneCallback) {}
-            QueuedAction(SceneAction action, std::string scenePath, EditCallback editCallback)
+            QueuedAction(SceneAction action, std::string_view scenePath, EditCallback editCallback)
                 : action(action), scenePath(scenePath), editCallback(editCallback) {}
             QueuedAction(SceneAction action, EditCallback editCallback) : action(action), editCallback(editCallback) {}
             QueuedAction(SceneAction action, VoidCallback voidCallback) : action(action), voidCallback(voidCallback) {}
@@ -135,6 +141,7 @@ namespace sp {
         std::atomic_flag graphicsPreload, physicsPreload;
         bool enableGraphicsPreload = true;
         bool enablePhysicsPreload = true;
+        bool enableDynamicLibraries = true;
 
         LockFreeMutex activeSceneMutex;
         std::vector<SceneRef> activeSceneCache;

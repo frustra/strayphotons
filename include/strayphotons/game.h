@@ -20,7 +20,7 @@ extern "C" {
 typedef sp::CGameContext sp_game_t;
 #else
 typedef void sp_game_t;
-typedef unsigned int bool;
+typedef uint8_t bool;
 #endif
 
 struct GLFWwindow;

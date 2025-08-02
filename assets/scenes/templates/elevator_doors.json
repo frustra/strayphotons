@@ -16,7 +16,7 @@
 				"door_open": "station-center:elevator1.door/door_open && station-center:elevator1/animation_state == scoperoot/floor"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "slide_door" }
 			}
 		},
@@ -31,7 +31,7 @@
 				"door_open": "station-center:elevator2.door/door_open && station-center:elevator2/animation_state == scoperoot/floor"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "slide_door" }
 			}
 		},
@@ -68,7 +68,7 @@
 				"right_is_closest": "call_button/right_travel_distance < call_button/left_travel_distance"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": {
 					"source": "button"
 				}
@@ -80,7 +80,7 @@
 				"/elevator/call": "station-center:elevator1/elevator/call_to_floor"
 			},
 			"script": {
-				"onTick": "edge_trigger",
+				"name": "edge_trigger",
 				"parameters": {
 					"input_expr": "call_button/button_pressed && call_button/left_is_closest",
 					"output_event": "/elevator/call",
@@ -95,7 +95,7 @@
 				"/elevator/call": "station-center:elevator2/elevator/call_to_floor"
 			},
 			"script": {
-				"onTick": "edge_trigger",
+				"name": "edge_trigger",
 				"parameters": {
 					"input_expr": "call_button/button_pressed && call_button/right_is_closest",
 					"output_event": "/elevator/call",

@@ -35,10 +35,10 @@
             },
             "script": [
                 {
-                    "onTick": "edit_tool"
+                    "name": "edit_tool"
                 },
                 {
-                    "onTick": "signal_from_event",
+                    "name": "signal_from_event",
                     "parameters": {
                         "outputs": "edit_mode"
                     }

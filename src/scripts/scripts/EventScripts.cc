@@ -7,6 +7,7 @@
 
 #include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
 
@@ -25,8 +26,12 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataInitEvent(typeid(InitEvent), "InitEvent", "", StructField::New(&InitEvent::outputs));
-    InternalScript<InitEvent> initEvent("init_event", MetadataInitEvent);
+    StructMetadata MetadataInitEvent(typeid(InitEvent),
+        sizeof(InitEvent),
+        "InitEvent",
+        "",
+        StructField::New(&InitEvent::outputs));
+    LogicScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
         std::string inputEvent, outputEvent;
@@ -54,15 +59,16 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEventGateBySignal(typeid(EventGateBySignal),
+        sizeof(EventGateBySignal),
         "EventGateBySignal",
         "",
         StructField::New("input_event", &EventGateBySignal::inputEvent),
         StructField::New("output_event", &EventGateBySignal::outputEvent),
         StructField::New("gate_expr", &EventGateBySignal::gateExpression));
-    InternalScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
+    LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
-        robin_hood::unordered_map<std::string, std::string> mapping;
+        robin_hood::unordered_map<EventName, std::string, StringHash, StringEqual> mapping;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -73,9 +79,8 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
-            robin_hood::unordered_map<std::string, std::optional<Event>> outputEvents;
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
+            robin_hood::unordered_map<EventName, std::optional<Event>, StringHash, StringEqual> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 auto it = mapping.find(event.name);
@@ -87,20 +92,14 @@ namespace sp::scripts {
                 if (outputEvent) EventBindings::SendEvent(lock, ent, *outputEvent);
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateEvents(state, lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateEvents(state, lock, ent, interval);
-        }
     };
     StructMetadata MetadataCollapseEvents(typeid(CollapseEvents),
+        sizeof(CollapseEvents),
         "CollapseEvents",
         "",
         StructField::New(&CollapseEvents::mapping));
-    InternalScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
-    InternalPhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
+    LogicScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
+    PhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
     struct SignalFromEvent {
         std::vector<std::string> outputs;
@@ -121,19 +120,17 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
-                double eventValue = std::visit(
-                    [](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                double eventValue = EventData::Visit(event.data, [](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            return (double)arg;
-                        } else if constexpr (std::is_convertible_v<T, bool>) {
-                            return (double)(bool)arg;
-                        } else {
-                            return 1.0;
-                        }
-                    },
-                    event.data);
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        return (double)data;
+                    } else if constexpr (std::is_convertible_v<T, bool>) {
+                        return (double)(bool)data;
+                    } else {
+                        return 1.0;
+                    }
+                });
 
                 auto eventName = std::string_view(event.name).substr("/signal/"s.size());
                 auto delimiter = eventName.find('/');
@@ -163,16 +160,16 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSignalFromEvent(typeid(SignalFromEvent),
+        sizeof(SignalFromEvent),
         "SignalFromEvent",
         "",
         StructField::New("outputs", &SignalFromEvent::outputs));
-    InternalScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
+    LogicScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
 
     struct EventFromSignal {
         robin_hood::unordered_map<std::string, SignalExpression> outputs;
 
-        template<typename LockType>
-        void sendOutputEvents(ScriptState &state, LockType &lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
                 ZoneScopedN("EventFromSignal::sendOutputEvents");
                 auto value = expr.Evaluate(lock);
@@ -182,20 +179,14 @@ namespace sp::scripts {
                 }
             }
         }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            sendOutputEvents(state, lock, ent, interval);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            sendOutputEvents(state, lock, ent, interval);
-        }
     };
     StructMetadata MetadataEventFromSignal(typeid(EventFromSignal),
+        sizeof(EventFromSignal),
         "EventFromSignal",
         "",
         StructField::New(&EventFromSignal::outputs));
-    InternalScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
-    InternalPhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
+    LogicScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
+    PhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
     struct ComponentFromEvent {
         std::vector<std::string> outputs;
@@ -217,8 +208,10 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        template<typename LockType>
-        void updateComponentFromEvent(ScriptState &state, LockType &lock, Entity ent) {
+        void OnTick(ScriptState &state,
+            DynamicLock<Read<Name, EventInput>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (!sp::starts_with(event.name, "/set/")) {
@@ -257,63 +250,55 @@ namespace sp::scripts {
                 }
                 if (!comp->HasComponent(lock, ent)) continue;
 
-                void *compPtr = comp->Access(lock, ent);
+                void *compPtr = comp->AccessMut(lock, ent);
                 if (!compPtr) {
                     Errorf("ComponentFromEvent %s access returned null data: %s",
                         componentName,
                         ecs::ToString(lock, ent));
                     continue;
                 }
-                std::visit(
-                    [&](auto &&arg) {
-                        using T = std::decay_t<decltype(arg)>;
+                EventData::Visit(event.data, [&](auto &data) {
+                    using T = std::decay_t<decltype(data)>;
 
-                        if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                            ecs::WriteStructField(compPtr, *field, [&arg](double &value) {
-                                value = (double)arg;
+                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                        ecs::WriteStructField(compPtr, *field, [&data](double &value) {
+                            value = (double)data;
+                        });
+                    } else if constexpr (sp::is_glm_vec<T>()) {
+                        if constexpr (T::length() == 2) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec2 &value) {
+                                value = (glm::dvec2)data;
                             });
-                        } else if constexpr (sp::is_glm_vec<T>()) {
-                            if constexpr (T::length() == 2) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec2 &value) {
-                                    value = (glm::dvec2)arg;
-                                });
-                            } else if constexpr (T::length() == 3) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec3 &value) {
-                                    value = (glm::dvec3)arg;
-                                });
-                            } else if constexpr (T::length() == 4) {
-                                ecs::WriteStructField(compPtr, *field, [&arg](glm::dvec4 &value) {
-                                    value = (glm::dvec4)arg;
-                                });
-                            } else {
-                                Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
-                                    event.name,
-                                    typeid(T).name(),
-                                    comp->metadata.type.name());
-                            }
+                        } else if constexpr (T::length() == 3) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec3 &value) {
+                                value = (glm::dvec3)data;
+                            });
+                        } else if constexpr (T::length() == 4) {
+                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec4 &value) {
+                                value = (glm::dvec4)data;
+                            });
                         } else {
-                            Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                            Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
                                 event.name,
                                 typeid(T).name(),
                                 comp->metadata.type.name());
                         }
-                    },
-                    event.data);
+                    } else {
+                        Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                            event.name,
+                            typeid(T).name(),
+                            comp->metadata.type.name());
+                    }
+                });
             }
-        }
-
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromEvent(state, lock, ent);
-        }
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
-            updateComponentFromEvent(state, lock, ent);
         }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),
+        sizeof(ComponentFromEvent),
         "ComponentFromEvent",
         "",
         StructField::New("outputs", &ComponentFromEvent::outputs));
-    InternalScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
-    InternalPhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",
+    LogicScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
+    PhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",
         MetadataComponentFromEvent);
 } // namespace sp::scripts

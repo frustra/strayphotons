@@ -8,6 +8,7 @@
 #include "common/Common.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/SignalStructAccess_common.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
@@ -52,8 +53,8 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), "SoundOcclusion", "");
-    InternalScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
+    StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), sizeof(SoundOcclusion), "SoundOcclusion", "");
+    LogicScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
 
     struct VolumeControl {
         SignalExpression volumeInput;
@@ -93,10 +94,11 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVolumeControl(typeid(VolumeControl),
+        sizeof(VolumeControl),
         "VolumeControl",
         "",
         StructField::New("volume", &VolumeControl::volumeInput));
-    InternalScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
+    LogicScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
 
     struct SpeedControlledSound {
         bool init = false;
@@ -133,6 +135,9 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataSpeedControlledSound(typeid(SpeedControlledSound), "SpeedControlledSound", "");
-    InternalScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
+    StructMetadata MetadataSpeedControlledSound(typeid(SpeedControlledSound),
+        sizeof(SpeedControlledSound),
+        "SpeedControlledSound",
+        "");
+    LogicScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
 } // namespace sp::scripts

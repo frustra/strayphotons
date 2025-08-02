@@ -20,15 +20,16 @@ namespace sp {
         const std::string &path,
         SceneType type,
         ScenePriority priority,
+        std::shared_ptr<const Asset> asset,
         const ecs::SceneProperties &properties,
-        std::shared_ptr<const Asset> asset) {
+        const std::vector<std::string> &libraries) {
         Assert(IsStaging(stagingLock), "Scene::New must be called with a Staging lock");
 
         auto sceneId = stagingLock.NewEntity();
         ecs::Name sceneName("scene", name);
         sceneId.Set<ecs::Name>(stagingLock, sceneName);
         sceneId.Set<ecs::SceneProperties>(stagingLock, properties);
-        return std::make_shared<Scene>(Scene{SceneMetadata{name, path, type, priority, sceneId}, asset});
+        return std::make_shared<Scene>(Scene{SceneMetadata{name, path, type, priority, libraries, sceneId}, asset});
     }
 
     ecs::Entity Scene::NewSystemEntity(ecs::Lock<ecs::AddRemove> stagingLock,

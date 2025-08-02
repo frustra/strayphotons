@@ -20,6 +20,7 @@ namespace ecs {
         glm::vec3 illuminance = glm::vec3(0);
     };
 
-    static Component<LaserSensor> ComponentLaserSensor(
-        {typeid(LaserSensor), "laser_sensor", "", StructField::New("threshold", &LaserSensor::threshold)});
+    static EntityComponent<LaserSensor> ComponentLaserSensor("laser_sensor",
+        "",
+        StructField::New("threshold", &LaserSensor::threshold));
 } // namespace ecs

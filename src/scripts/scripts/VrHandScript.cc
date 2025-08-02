@@ -12,6 +12,7 @@
 #include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 #include "input/BindingNames.hh"
 
@@ -197,7 +198,10 @@ namespace sp::scripts {
             return shape;
         };
 
-        void HandlePointing(ScriptState &state, PhysicsUpdateLock lock, const Entity &ent, bool isPointing) {
+        void HandlePointing(ScriptState &state,
+            Lock<Write<PhysicsQuery, LaserLine>, Read<TransformSnapshot>, SendEventsLock> lock,
+            const Entity &ent,
+            bool isPointing) {
             glm::vec3 pointOrigin = glm::vec3(0);
             glm::vec3 pointDir = glm::vec3(0);
             glm::vec3 pointPos = glm::vec3(0);
@@ -287,7 +291,12 @@ namespace sp::scripts {
             }
         }
 
-        void OnPhysicsUpdate(ScriptState &state, PhysicsUpdateLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<Physics, PhysicsJoints, PhysicsQuery, LaserLine, TransformTree>,
+                Read<TransformSnapshot>,
+                SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             ZoneScopedN("VrHandScript");
             if (!ent.Has<Name, Physics, PhysicsJoints, PhysicsQuery, TransformTree>(lock)) return;
 
@@ -381,7 +390,7 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    if (std::holds_alternative<bool>(event.data)) {
+                    if (event.data.type == EventDataType::Bool) {
                         if (pressEntity) {
                             // Unpress the currently pressed entity
                             EventBindings::SendEvent(lock,
@@ -389,7 +398,7 @@ namespace sp::scripts {
                                 Event{INTERACT_EVENT_INTERACT_PRESS, ent, false});
                             pressEntity = {};
                         }
-                        if (std::get<bool>(event.data) && pointEntity) {
+                        if (event.data.b && pointEntity) {
                             // Press the entity being looked at
                             EventBindings::SendEvent(lock,
                                 pointEntity,
@@ -398,8 +407,8 @@ namespace sp::scripts {
                         }
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                    if (!std::holds_alternative<Entity>(event.data)) continue;
-                    grabTarget = std::get<Entity>(event.data);
+                    if (event.data.type != EventDataType::Entity) continue;
+                    grabTarget = event.data.ent;
                 }
             }
 
@@ -443,6 +452,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataVrHandScript(typeid(VrHandScript),
+        sizeof(VrHandScript),
         "VrHandScript",
         "",
         StructField::New("hand", &VrHandScript::handStr),
@@ -451,7 +461,7 @@ namespace sp::scripts {
         StructField::New("force_limit", &VrHandScript::forceLimit),
         StructField::New("torque_limit", &VrHandScript::torqueLimit),
         StructField::New("noclip_entity", &VrHandScript::noclipEntity));
-    InternalPhysicsScript<VrHandScript> vrHandScript("vr_hand",
+    PhysicsScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
         INTERACT_EVENT_INTERACT_GRAB,

@@ -7,15 +7,15 @@
 
 #pragma once
 
+#include "ecs/components/Gui.hh"
 #include "graphics/core/Histogram.hh"
-#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
 #include <imgui/imgui.h>
 #include <sstream>
 
 namespace sp::vulkan {
-    class ProfilerGui final : public GuiRenderable {
+    class ProfilerGui final : public ecs::GuiRenderable {
     public:
         enum class Mode {
             CPU,
@@ -23,7 +23,10 @@ namespace sp::vulkan {
         };
 
         ProfilerGui(PerfTimer &timer)
-            : GuiRenderable("profiler", GuiLayoutAnchor::Floating, {-1, -1}, ImGuiWindowFlags_AlwaysAutoResize),
+            : ecs::GuiRenderable("profiler",
+                  ecs::GuiLayoutAnchor::Floating,
+                  {400, -1},
+                  ImGuiWindowFlags_AlwaysAutoResize),
               timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
@@ -32,7 +35,7 @@ namespace sp::vulkan {
             return (float)self->drawHistogram.buckets[index];
         }
 
-        bool PreDefine() override {
+        bool PreDefine(ecs::Entity ent) override {
             if (timer.lastCompleteFrame.empty()) return false;
             if (!CVarProfileRender.Get()) return false;
             ZoneScoped;
@@ -41,25 +44,25 @@ namespace sp::vulkan {
             return true;
         }
 
-        void DefineContents() override {
+        void DefineContents(ecs::Entity ent) override {
             ZoneScoped;
 
             if (ImGui::BeginTable("ResultTable", 7)) {
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
-                ImGui::Text("Time per frame (ms)");
+                ImGui::TextUnformatted("Time per frame (ms)");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextColumn();
-                ImGui::Text("CPU  ");
+                ImGui::TextUnformatted("CPU  ");
                 ImGui::TableNextColumn();
-                ImGui::Text("       ");
+                ImGui::TextUnformatted("       ");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextColumn();
-                ImGui::Text("GPU  ");
+                ImGui::TextUnformatted("GPU  ");
                 ImGui::TableNextColumn();
-                ImGui::Text("     ");
+                ImGui::TextUnformatted("     ");
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::SetNextItemWidth(85);
@@ -86,11 +89,11 @@ namespace sp::vulkan {
 
                 for (int i = 0; i < 2; i++) {
                     ImGui::TableNextColumn();
-                    ImGui::Text("avg");
+                    ImGui::TextUnformatted("avg");
                     ImGui::TableNextColumn();
-                    ImGui::Text("p95");
+                    ImGui::TextUnformatted("p95");
                     ImGui::TableNextColumn();
-                    ImGui::Text("max");
+                    ImGui::TextUnformatted("max");
                 }
 
                 AddResults();

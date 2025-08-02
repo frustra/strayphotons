@@ -41,19 +41,19 @@
 		},
 		"script": [
 			{
-				"prefab": "life_cell",
+				"name": "prefab_life_cell",
 				"parameters": {
 					"board_size": [32, 32]
 				}
 			},
 			{
-				"onTick": "signal_from_event",
+				"name": "signal_from_event",
 				"parameters": {
 					"outputs": ["alive", "neighbor_count", "force_toggle"]
 				}
 			},
 			{
-				"onTick": "event_from_signal",
+				"name": "event_from_signal",
 				"parameters": {
 					"/life/toggle_alive": "scoperoot/alive != scoperoot/next_alive"
 				}
@@ -74,7 +74,7 @@
 			"event_input": {},
 			"script": [
 				{
-					"onTick": "component_from_event",
+					"name": "component_from_event",
 					"parameters": {
 						"outputs": "renderable.emissive"
 					}
@@ -93,7 +93,7 @@
 				"color_override": [0, 0, 0, 1]
 			},
 			"_script": {
-				"onTick": "component_from_signal",
+				"name": "component_from_signal",
 				"parameters": {
 					"renderable.color_override.r": "scoperoot/neighbor_count < 2 || scoperoot/neighbor_count > 3",
 					"renderable.color_override.g": "scoperoot/alive",

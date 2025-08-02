@@ -230,7 +230,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget) {
+    void EntityComponent<SignalOutput>::Apply(SignalOutput &dst, const SignalOutput &src, bool liveTarget) {
         for (auto &signal : src.signals) {
             // noop if key already exists
             dst.signals.emplace(signal.first, signal.second);
@@ -238,7 +238,7 @@ namespace ecs {
     }
 
     template<>
-    void Component<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget) {
+    void EntityComponent<SignalBindings>::Apply(SignalBindings &dst, const SignalBindings &src, bool liveTarget) {
         for (auto &binding : src.bindings) {
             // noop if key already exists
             dst.bindings.emplace(binding.first, binding.second);

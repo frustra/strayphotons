@@ -25,7 +25,7 @@
 				"translate": [0, 82, 0.7]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},
 			"trigger_area": "Box"
@@ -38,7 +38,7 @@
 				"translate": [0, 19, 1.2]
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},
 			"trigger_area": "Box"
@@ -175,7 +175,7 @@
 				"station-center": "elevator_zone/trigger_player_count"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "ship_airlock" }
 			}
 		},
@@ -194,7 +194,7 @@
 				"requested_floor": "elevator1/down_requested ? 3 : (elevator1/up_requested ? 0 : 3 - elevator2/animation_target)"
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "elevator" }
 			}
 		},
@@ -217,7 +217,7 @@
 				"animation_target": 3
 			},
 			"script": {
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "elevator" }
 			}
 		},

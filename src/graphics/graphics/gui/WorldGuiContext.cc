@@ -31,20 +31,22 @@ namespace sp {
     void WorldGuiContext::DefineWindows() {
         ZoneScoped;
         ImGuiIO &io = ImGui::GetIO();
-        for (auto &component : components) {
+        for (auto &componentWeak : components) {
+            auto component = componentWeak.lock();
             if (!component) continue;
-            GuiRenderable &renderable = *component;
+            ecs::GuiRenderable &renderable = *component;
+            ecs::Entity ent = guiEntity.GetLive();
 
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
             flags |= renderable.windowFlags;
 
-            if (renderable.PreDefine()) {
+            if (renderable.PreDefine(ent)) {
                 ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
                 ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
                 ImGui::Begin(component->name.c_str(), nullptr, flags);
-                component->DefineContents();
+                component->DefineContents(ent);
                 ImGui::End();
-                renderable.PostDefine();
+                renderable.PostDefine(ent);
             }
         }
     }
@@ -69,8 +71,8 @@ namespace sp {
                 });
 
                 if (event.name == INTERACT_EVENT_INTERACT_POINT) {
-                    if (std::holds_alternative<ecs::Transform>(event.data)) {
-                        auto &pointWorld = std::get<ecs::Transform>(event.data).GetPosition();
+                    if (event.data.type == ecs::EventDataType::Transform) {
+                        auto &pointWorld = event.data.transform.GetPosition();
                         auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
                         pointOnScreen += 0.5f;
 
@@ -84,14 +86,14 @@ namespace sp {
                         } else {
                             pointingStack.emplace_back(PointingState{event.source, mousePos});
                         }
-                    } else if (std::holds_alternative<glm::vec2>(event.data)) {
-                        glm::vec2 &mousePos = std::get<glm::vec2>(event.data);
+                    } else if (event.data.type == ecs::EventDataType::Vec2) {
+                        glm::vec2 &mousePos = event.data.vec2;
                         if (existingState != pointingStack.end()) {
                             existingState->mousePos = mousePos;
                         } else {
                             pointingStack.emplace_back(PointingState{event.source, mousePos});
                         }
-                    } else if (std::holds_alternative<bool>(event.data)) {
+                    } else if (event.data.type == ecs::EventDataType::Bool) {
                         if (existingState != pointingStack.end()) {
                             if (existingState->mouseDown) {
                                 // Keep state if mouse was dragged off screen
@@ -105,8 +107,8 @@ namespace sp {
                             event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    if (std::holds_alternative<bool>(event.data)) {
-                        bool mouseDown = std::get<bool>(event.data);
+                    if (event.data.type == ecs::EventDataType::Bool) {
+                        bool mouseDown = event.data.b;
                         if (existingState != pointingStack.end()) {
                             if (mouseDown != existingState->mouseDown) {
                                 // Send previous mouse event immediately so fast clicks aren't missed

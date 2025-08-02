@@ -52,11 +52,11 @@
 		"event_input": {},
 		"script": [
 			{
-				"prefab": "template",
+				"name": "prefab_template",
 				"parameters": { "source": "interactive" }
 			},
 			{
-				"onTick": "magnetic_plug"
+				"name": "magnetic_plug"
 			}
 		]
 	},
@@ -69,7 +69,7 @@
 				"scale": [0.07, 0.01, 0.07]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
 					"render": true
@@ -83,7 +83,7 @@
 				"translate": [0, 0.025, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-3mm-flat-one-side",
 					"render": true
@@ -97,7 +97,7 @@
 				"translate": [0, 0.025, -0.0165]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -112,7 +112,7 @@
 				"rotate": [270, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -127,7 +127,7 @@
 				"rotate": [180, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
 					"render": true
@@ -141,7 +141,7 @@
 				"rotate": [-90, 0, 1, 0]
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
 					"render": true
@@ -164,7 +164,7 @@
 				"value": "gate/input_value"
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
@@ -203,13 +203,13 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"renderable.color_override.a": "!gate/value"
 					}
 				},
 				{
-					"onTick": "physics_component_from_signal",
+					"name": "physics_component_from_signal",
 					"parameters": {
 						"optic.pass_tint.rgb": "gate/value"
 					}
@@ -243,13 +243,13 @@
 			},
 			"script": [
 				{
-					"onTick": "component_from_signal",
+					"name": "component_from_signal",
 					"parameters": {
 						"renderable.color_override.a": "gate/value"
 					}
 				},
 				{
-					"onTick": "physics_component_from_signal",
+					"name": "physics_component_from_signal",
 					"parameters": {
 						"optic.pass_tint.rgb": "!gate/value"
 					}

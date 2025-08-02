@@ -32,7 +32,7 @@ namespace ecs {
         Transform(const Transform &) = default;
 
         void Translate(const glm::vec3 &xyz);
-        void Rotate(float radians, const glm::vec3 &axis);
+        void RotateAxis(float radians, const glm::vec3 &axis);
         void Rotate(const glm::quat &quat);
         void Scale(const glm::vec3 &xyz);
 
@@ -83,27 +83,39 @@ namespace ecs {
     #ifndef SP_WASM_BUILD
 
     static StructMetadata MetadataTransform(typeid(Transform),
+        sizeof(Transform),
         "Transform",
         "",
-        StructField("translate",
+        StructField::New<glm::vec3>("translate",
             "Specifies the entity's position in 3D space. "
             "The +X direction represents Right, +Y represents Up, and -Z represents Forward.",
-            typeid(glm::vec3),
-            StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3),
-            FieldAction::None),
-        StructField("rotate",
+            StructField::OffsetOf(&Transform::offset) + sizeof(glm::mat3)),
+        StructField::New<glm::mat3>("rotate",
             "Specifies the entity's orientation in 3D space. "
             "Multiple rotations can be combined by specifying an array of rotations: "
             "`[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. "
             "The rotation axis is automatically normalized.",
-            typeid(glm::mat3),
-            StructField::OffsetOf(&Transform::offset),
-            FieldAction::None),
+            StructField::OffsetOf(&Transform::offset)),
         StructField::New("scale",
             "Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. "
             "If the scale is the same on all axes, a single scalar can be specified like `\"scale\": 0.5`",
             &Transform::scale,
-            FieldAction::None));
+            FieldAction::None),
+        StructFunction::New("Translate", "", &Transform::Translate, ArgDesc("xyz", "")),
+        StructFunction::New("RotateAxis", "", &Transform::RotateAxis, ArgDesc("radians", ""), ArgDesc("axis", "")),
+        StructFunction::New("Rotate", "", &Transform::Rotate, ArgDesc("quat", "")),
+        StructFunction::New("Scale", "", &Transform::Scale, ArgDesc("xyz", "")),
+        StructFunction::New("SetPosition", "", &Transform::SetPosition, ArgDesc("pos", "")),
+        StructFunction::New("SetRotation", "", &Transform::SetRotation, ArgDesc("quat", "")),
+        StructFunction::New("SetScale", "", &Transform::SetScale, ArgDesc("xyz", "")),
+        StructFunction::New("GetPosition", "", &Transform::GetPosition),
+        StructFunction::New("GetRotation", "", &Transform::GetRotation),
+        StructFunction::New("GetForward", "", &Transform::GetForward),
+        StructFunction::New("GetUp", "", &Transform::GetUp),
+        StructFunction::New("GetScale", "", &Transform::GetScale),
+        StructFunction::New("Get", "", &Transform::Get),
+        StructFunction::New("GetInverse", "", &Transform::GetInverse),
+        StructFunction::New("GetMatrix", "", &Transform::GetMatrix));
     template<>
     bool StructMetadata::Load<Transform>(Transform &dst, const picojson::value &src);
     template<>
@@ -126,8 +138,9 @@ namespace ecs {
         }
     };
 
-    static Component<TransformSnapshot> ComponentTransformSnapshot(
+    static EntityComponent<TransformSnapshot> ComponentTransformSnapshot(
         {typeid(TransformSnapshot),
+            sizeof(TransformSnapshot),
             "TransformSnapshot",
             R"(
 Transform snapshots should not be set directly.
@@ -163,8 +176,9 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
     };
 
-    static Component<TransformTree> ComponentTransformTree(
+    static EntityComponent<TransformTree> ComponentTransformTree(
         {typeid(TransformTree),
+            sizeof(TransformTree),
             "TransformTree",
             R"(
 Transforms are performed in the following order:  
@@ -180,12 +194,17 @@ behavior is undefined if the combinations introduce skew. (The scale should be a
                 "Specifies a parent entity that this transform is relative to. "
                 "If empty, the transform is relative to the scene root.",
                 &TransformTree::parent,
-                ~FieldAction::AutoApply)},
+                ~FieldAction::AutoApply),
+            StructFunction::New("MoveViaRoot", &TransformTree::MoveViaRoot),
+            StructFunction::New("GetRoot", &TransformTree::GetRoot),
+            StructFunction::New("GetGlobalTransform", &TransformTree::GetGlobalTransform),
+            StructFunction::New("GetGlobalRotation", &TransformTree::GetGlobalRotation),
+            StructFunction::New("GetRelativeTransform", &TransformTree::GetRelativeTransform)},
         "transform");
     template<>
     void StructMetadata::InitUndefined<TransformTree>(TransformTree &dst);
     template<>
-    void Component<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget);
+    void EntityComponent<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget);
     #endif
 } // namespace ecs
 #endif

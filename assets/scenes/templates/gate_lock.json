@@ -18,7 +18,7 @@
 					"parameters": {
 						"source": "optics/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -35,7 +35,7 @@
 					"parameters": {
 						"source": "optics/laser_sensor"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -52,7 +52,7 @@
 					"parameters": {
 						"source": "blocks/laser_gate"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
@@ -75,7 +75,7 @@
 					"parameters": {
 						"source": "optics/laser_emitter"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		}

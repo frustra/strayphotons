@@ -19,5 +19,4 @@ Welcome to the Stray Photons documentation!
 
 ## Script Definitions <!-- {docsify-ignore} -->
 
-- [Prefab Scripts](generated/Prefab_Scripts.md)
-- [Runtime Scripts](generated/Runtime_Scripts.md)
+- [Default Built-in Scripts](generated/Default_Scripts.md)

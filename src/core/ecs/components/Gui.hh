@@ -9,6 +9,10 @@
 
 #include "ecs/Components.hh"
 
+#include <glm/glm.hpp>
+#include <memory>
+#include <span>
+
 namespace sp {
     class GuiContext;
 }
@@ -20,6 +24,36 @@ namespace ecs {
         Overlay,
     };
 
+    enum class GuiLayoutAnchor {
+        Fullscreen,
+        Top,
+        Left,
+        Right,
+        Bottom,
+        Floating,
+    };
+
+    class GuiRenderable {
+    public:
+        GuiRenderable(std::string_view name,
+            GuiLayoutAnchor anchor,
+            glm::ivec2 preferredSize = {-1, -1},
+            int windowFlags = 0)
+            : name(name), anchor(anchor), preferredSize(preferredSize), windowFlags(windowFlags) {}
+        virtual ~GuiRenderable() {}
+
+        virtual bool PreDefine(Entity ent) {
+            return true;
+        }
+        virtual void DefineContents(Entity ent) = 0;
+        virtual void PostDefine(Entity ent) {}
+
+        const std::string name;
+        GuiLayoutAnchor anchor;
+        glm::ivec2 preferredSize;
+        int windowFlags = 0;
+    };
+
     struct Gui {
         GuiTarget target = GuiTarget::World;
         std::string windowName; // Must be set at component creation
@@ -28,9 +62,8 @@ namespace ecs {
         Gui(std::string windowName, GuiTarget target = GuiTarget::World) : target(target), windowName(windowName) {}
     };
 
-    static Component<Gui> ComponentGui({typeid(Gui),
-        "gui",
+    static EntityComponent<Gui> ComponentGui("gui",
         "",
         StructField::New("window_name", &Gui::windowName),
-        StructField::New("target", &Gui::target)});
+        StructField::New("target", &Gui::target));
 } // namespace ecs

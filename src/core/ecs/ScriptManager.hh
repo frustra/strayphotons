@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,19 +7,17 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "common/LockFreeMutex.hh"
 #include "common/Logging.hh"
-#include "ecs/Ecs.hh"
-#include "ecs/SignalRef.hh"
-#include "ecs/components/Events.hh"
+#include "console/CFunc.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/ScriptDefinition.hh"
 
 #include <any>
 #include <deque>
-#include <functional>
 #include <limits>
-#include <map>
 #include <memory>
+#include <shared_mutex>
 #include <variant>
 
 namespace sp {
@@ -27,53 +25,8 @@ namespace sp {
 }
 
 namespace ecs {
-    class ScriptState;
     class ScriptInstance;
-
-    using PhysicsUpdateLock = Lock<SendEventsLock,
-        ReadSignalsLock,
-        Read<TransformSnapshot, SceneInfo>,
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
-
-    using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using OnTickFunc = std::function<void(ScriptState &, Lock<WriteAll>, Entity, chrono_clock::duration)>;
-    using OnPhysicsUpdateFunc = std::function<void(ScriptState &, PhysicsUpdateLock, Entity, chrono_clock::duration)>;
-    using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnPhysicsUpdateFunc, PrefabFunc>;
-
-    template<typename T>
-    struct ScriptCallbackIndex : std::integral_constant<size_t, 0> {};
-    template<>
-    struct ScriptCallbackIndex<OnTickFunc> : std::integral_constant<size_t, 1> {};
-    template<>
-    struct ScriptCallbackIndex<OnPhysicsUpdateFunc> : std::integral_constant<size_t, 2> {};
-    template<>
-    struct ScriptCallbackIndex<PrefabFunc> : std::integral_constant<size_t, 3> {};
-
-    struct InternalScriptBase {
-        const StructMetadata &metadata;
-        InternalScriptBase(const StructMetadata &metadata) : metadata(metadata) {}
-        virtual const void *GetDefault() const = 0;
-        virtual void *Access(ScriptState &state) const = 0;
-        virtual const void *Access(const ScriptState &state) const = 0;
-    };
-
-    struct ScriptDefinition {
-        std::string name;
-        std::vector<std::string> events;
-        bool filterOnEvent = false;
-        const InternalScriptBase *context = nullptr;
-        std::optional<ScriptInitFunc> initFunc;
-        ScriptCallback callback;
-    };
-
-    struct ScriptDefinitions {
-        std::map<std::string, ScriptDefinition> scripts;
-        std::map<std::string, ScriptDefinition> prefabs;
-
-        void RegisterScript(ScriptDefinition &&definition);
-        void RegisterPrefab(ScriptDefinition &&definition);
-    };
+    class DynamicLibrary;
 
     class ScriptState {
     public:
@@ -91,10 +44,11 @@ namespace ecs {
 
         template<typename T>
         void SetParam(std::string name, const T &value) {
-            if (definition.context) {
-                void *dataPtr = definition.context->Access(*this);
+            auto ctx = definition.context.lock();
+            if (ctx) {
+                void *dataPtr = ctx->AccessMut(*this);
                 Assertf(dataPtr, "ScriptState::SetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (field.name == name) {
                         field.Access<T>(dataPtr) = value;
                         break;
@@ -107,10 +61,11 @@ namespace ecs {
 
         template<typename T>
         T GetParam(std::string name) const {
-            if (definition.context) {
-                const void *dataPtr = definition.context->Access(*this);
+            auto ctx = definition.context.lock();
+            if (ctx) {
+                const void *dataPtr = ctx->Access(*this);
                 Assertf(dataPtr, "ScriptState::GetParam access returned null data: %s", definition.name);
-                for (auto &field : definition.context->metadata.fields) {
+                for (auto &field : ctx->metadata.fields) {
                     if (field.name == name) {
                         return field.Access<T>(dataPtr);
                     }
@@ -122,6 +77,9 @@ namespace ecs {
                 return {};
             }
         }
+
+        // The returned pointer remains valid until the next event is polled, or until the end of the script's onTick.
+        Event *PollEvent(const Lock<Read<EventInput>> &lock);
 
         explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(definition.callback);
@@ -141,25 +99,53 @@ namespace ecs {
         ScriptDefinition definition;
         ecs::EventQueueRef eventQueue;
 
-        std::any userData;
+        std::any scriptData;
 
     private:
         size_t instanceId;
         size_t index = std::numeric_limits<size_t>::max();
+        bool initialized = false;
+        Event lastEvent;
 
         friend class ScriptInstance;
         friend class ScriptManager;
+    };
+
+    static StructMetadata MetadataScriptState(typeid(ScriptState),
+        sizeof(ScriptState),
+        "ScriptState",
+        "Stores the definition and state of a script instance",
+        StructField::New("scope", "The name scope this script will look for entities in", &ScriptState::scope),
+        StructField::New("definition",
+            "The definition of the script this struct is holding the state for",
+            &ScriptState::definition),
+        StructFunction::New("PollEvent",
+            "Read the next available script event if there is one",
+            &ScriptState::PollEvent,
+            ArgDesc("lock", ""),
+            ArgDesc("event_out", "")));
+
+    struct ScriptSet {
+        std::deque<std::pair<Entity, ScriptState>> scripts;
+        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
+        mutable sp::LockFreeMutex mutex;
     };
 
     class ScriptManager {
         sp::LogOnExit logOnExit = "Scripts shut down =====================================================";
 
     public:
-        ScriptManager() {}
+        ScriptManager();
         ~ScriptManager();
 
         std::shared_ptr<ScriptState> NewScriptInstance(const ScriptState &state, bool runInit);
-        std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope, const ScriptDefinition &definition);
+        std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope,
+            const ScriptDefinition &definition,
+            bool runInit = false);
+
+        std::shared_ptr<DynamicLibrary> LoadDynamicLibrary(const std::string &name);
+        void ReloadDynamicLibraries();
+        std::vector<std::string> GetDynamicLibraries() const;
 
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
@@ -169,30 +155,25 @@ namespace ecs {
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
 
+        template<typename Fn>
+        void WithGuiScriptLock(Fn &&callback) {
+            ZoneScoped;
+            auto &scriptSet = scripts[ScriptType::GuiScript];
+            std::shared_lock l1(dynamicLibraryMutex);
+            std::shared_lock l2(scriptSet.mutex);
+            callback();
+        }
+
     private:
         void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
             const Entity &ent,
-            ScriptState &state) const;
+            ScriptState &state);
 
-        std::deque<EventQueue> eventQueues;
-        std::deque<std::pair<Entity, ScriptState>> onTickScripts;
-        std::deque<std::pair<Entity, ScriptState>> onPhysicsUpdateScripts;
-        std::deque<std::pair<Entity, ScriptState>> prefabScripts;
+        sp::CFuncCollection funcs;
+        sp::EnumArray<ScriptSet, ScriptType> scripts = {};
 
-        // Mutex index 0 is for eventQeuues, 1+ are for script lists
-        std::array<sp::LockFreeMutex, std::variant_size_v<ScriptCallback>> mutexes;
-
-        const std::array<decltype(onTickScripts) *, std::variant_size_v<ScriptCallback>> scriptLists = {
-            nullptr, // std::monostate
-            &onTickScripts,
-            &onPhysicsUpdateScripts,
-            &prefabScripts,
-        };
-
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeEventQueues;
-        std::array<std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>>,
-            std::variant_size_v<ScriptCallback>>
-            freeScriptLists;
+        mutable sp::LockFreeMutex dynamicLibraryMutex;
+        robin_hood::unordered_map<std::string, std::shared_ptr<DynamicLibrary>> dynamicLibraries;
 
         friend class StructMetadata;
         friend class ScriptInstance;
@@ -200,5 +181,4 @@ namespace ecs {
     };
 
     ScriptManager &GetScriptManager();
-    ScriptDefinitions &GetScriptDefinitions();
 } // namespace ecs

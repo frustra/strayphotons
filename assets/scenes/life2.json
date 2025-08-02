@@ -1,4 +1,5 @@
 {
+	"libraries": "life",
 	"entities": [
 		{
 			"name": "floor",
@@ -105,7 +106,7 @@
 				"parameters": {
 					"source": "table/1x1"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -128,7 +129,7 @@
 				"parameters": {
 					"source": "button"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -144,7 +145,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -158,14 +159,14 @@
 					"parameters": {
 						"source": "table/life/128x128"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},
 		{
 			"name": "life.3_3",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -174,7 +175,7 @@
 		{
 			"name": "life.4_4",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -183,7 +184,7 @@
 		{
 			"name": "life.4_5",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -192,7 +193,7 @@
 		{
 			"name": "life.3_5",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -201,7 +202,7 @@
 		{
 			"name": "life.2_5",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -210,7 +211,7 @@
 		{
 			"name": "life.12_5",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -219,7 +220,7 @@
 		{
 			"name": "life.11_6",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -228,7 +229,7 @@
 		{
 			"name": "life.11_7",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -237,7 +238,7 @@
 		{
 			"name": "life.13_6",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -246,7 +247,7 @@
 		{
 			"name": "life.13_7",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}
@@ -255,7 +256,7 @@
 		{
 			"name": "life.12_8",
 			"script": {
-				"onTick": "life_cell",
+				"name": "life_cell",
 				"parameters": {
 					"alive": true
 				}

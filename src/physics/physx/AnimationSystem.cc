@@ -14,12 +14,13 @@
 #include "physx/PhysxManager.hh"
 
 namespace sp {
-    AnimationSystem::AnimationSystem(PhysxManager &manager) : frameInterval(manager.interval.count() / 1e9) {}
+    AnimationSystem::AnimationSystem(PhysxManager &manager) : manager(manager) {}
 
     void AnimationSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
         ecs::Read<ecs::Animation, ecs::LightSensor, ecs::LaserSensor>,
         ecs::Write<ecs::Signals, ecs::TransformTree>> lock) {
         ZoneScoped;
+        double frameInterval = manager.interval.count() / 1e9;
         for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation>(lock)) continue;
             auto &animation = ent.Get<ecs::Animation>(lock);

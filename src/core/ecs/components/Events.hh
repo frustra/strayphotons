@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/Common.hh"
+#include "common/Hashing.hh"
 #include "common/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
@@ -22,14 +23,11 @@
 namespace ecs {
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
-    using SendEventsLock = Lock<
-        Read<Name, FocusLock, EventBindings, EventInput, Signals, SignalBindings, SignalOutput>>;
-
     struct EventInput {
         EventInput() {}
 
-        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const std::string &binding);
-        void Unregister(const EventQueueRef &queue, const std::string &binding);
+        void Register(Lock<Write<EventInput>> lock, const EventQueueRef &queue, const EventName &binding);
+        void Unregister(const EventQueueRef &queue, const EventName &binding);
 
         /**
          * Adds an event to any matching event input queues.
@@ -41,25 +39,26 @@ namespace ecs {
         size_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<std::string, std::vector<EventQueueWeakRef>> events;
+        robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
     };
 
-    static Component<EventInput> ComponentEventInput({typeid(EventInput), "event_input", R"(
+    static EntityComponent<EventInput> ComponentEventInput("event_input", R"(
 For an entity to receive events (not just forward them), it must have an `event_input` component.  
 This component stores a list of event queues that have been registered to receive events on a per-entity basis.
 
 No configuration is stored for the `event_input` component. Scripts and other systems programmatically register 
 their own event queues as needed.
-)"});
+)");
 
     struct EventDest {
         EntityRef target;
-        std::string queueName;
+        EventName queueName;
 
         bool operator==(const EventDest &) const = default;
     };
 
     static StructMetadata MetadataEventDest(typeid(EventDest),
+        sizeof(EventDest),
         "EventDest",
         "An event destination in the form of a string: `\"target_entity/event/input\"`");
     template<>
@@ -87,6 +86,7 @@ their own event queues as needed.
     };
 
     static StructMetadata MetadataEventBindingActions(typeid(EventBindingActions),
+        sizeof(EventBindingActions),
         "EventBindingActions",
         "",
         StructField::New("filter",
@@ -117,6 +117,7 @@ their own event queues as needed.
     };
 
     static StructMetadata MetadataEventBinding(typeid(EventBinding),
+        sizeof(EventBinding),
         "EventBinding",
         "",
         StructField::New("outputs",
@@ -139,25 +140,24 @@ their own event queues as needed.
     public:
         EventBindings() {}
 
-        EventBinding &Bind(std::string source, const EventBinding &binding);
-        EventBinding &Bind(std::string source, EntityRef target, std::string dest);
-        void Unbind(std::string source, EntityRef target, std::string dest);
+        EventBinding &Bind(std::string_view source, const EventBinding &binding);
+        EventBinding &Bind(std::string_view source, EntityRef target, std::string_view dest);
+        void Unbind(std::string_view source, EntityRef target, std::string_view dest);
 
         static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const Event &event,
             size_t depth = 0);
-        static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
+        static size_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const AsyncEvent &event,
             size_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
-        robin_hood::unordered_map<std::string, BindingList> sourceToDest;
+        robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
     };
 
-    static Component<EventBindings> ComponentEventBindings({typeid(EventBindings),
-        "event_bindings",
+    static EntityComponent<EventBindings> ComponentEventBindings("event_bindings",
         R"(
 Event bindings, along with [`signal_bindings`](#signal_bindings-component), are the main ways entites 
 communicate with eachother. When an event is generated at an entity, it will first be delivered to 
@@ -200,11 +200,11 @@ and will only forward key down events (true data values).
 The event data is then replaced with the string `"togglesignal player:player/move_noclip"`, and forwarded to the `console:input` entity
 as the `/action/run_command` event. Upon receiving this event, the `console:input` entity will execute the provided string in the console.
 )",
-        StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave)});
+        StructField::New(&EventBindings::sourceToDest, FieldAction::AutoSave));
     template<>
     bool StructMetadata::Load<EventBindings>(EventBindings &dst, const picojson::value &src);
     template<>
-    void Component<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
+    void EntityComponent<EventBindings>::Apply(EventBindings &dst, const EventBindings &src, bool liveTarget);
 
-    std::pair<ecs::Name, std::string> ParseEventString(const std::string &str);
+    std::pair<ecs::Name, EventName> ParseEventString(const std::string &str);
 } // namespace ecs

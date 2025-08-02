@@ -1,4 +1,5 @@
 {
+	"libraries": "life",
 	"entities": [
 		{
 			"name": "floor",
@@ -128,16 +129,16 @@
 					"parameters": {
 						"source": "button"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				},
 				{
-					"onTick": "signal_from_signal",
+					"name": "signal_from_signal",
 					"parameters": {
 						"toggle_alive": "0"
 					}
 				},
 				{
-					"onTick": "signal_from_event",
+					"name": "signal_from_event",
 					"parameters": {
 						"outputs": "toggle_alive"
 					}
@@ -157,7 +158,7 @@
 				"parameters": {
 					"source": "mirrorcube"
 				},
-				"prefab": "template"
+				"name": "prefab_template"
 			}
 		},
 		{
@@ -171,7 +172,7 @@
 					"parameters": {
 						"source": "table/life/32x32_signals"
 					},
-					"prefab": "template"
+					"name": "prefab_template"
 				}
 			]
 		},

@@ -329,7 +329,7 @@ namespace sp {
         }
 
         std::ofstream out;
-        if (Assets().OutputStream(assetsPath / "cache/collision" / settings->name, out)) {
+        if (Assets().OutputStream(assetsPath / "cache/collision" / std::string_view(settings->name), out)) {
             hullCacheHeader header = {};
             header.modelHash = model->asset->Hash();
             HashKey<HullSettings::Fields> settingsHash = {};

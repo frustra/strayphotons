@@ -8,25 +8,18 @@
 #pragma once
 
 #include "console/Console.hh"
-#include "graphics/gui/GuiContext.hh"
+#include "ecs/components/Gui.hh"
 
 #include <imgui/imgui.h>
 
 namespace sp {
-    static ImVec4 LogColours[] = {
-        {1.0f, 0.6f, 0.4f, 1.0f},
-        {1.0f, 0.9f, 0.4f, 1.0f},
-        {0.8f, 0.8f, 0.8f, 1.0f},
-        {0.5f, 0.5f, 0.6f, 1.0f},
-    };
-
-    class ConsoleGui final : public GuiRenderable {
+    class ConsoleGui final : public ecs::GuiRenderable {
     public:
         ConsoleGui();
 
-        bool PreDefine() override;
-        void DefineContents() override;
-        void PostDefine() override;
+        bool PreDefine(ecs::Entity ent) override;
+        void DefineContents(ecs::Entity ent) override;
+        void PostDefine(ecs::Entity ent) override;
 
         static int CommandEditStub(ImGuiInputTextCallbackData *data);
 

@@ -9,6 +9,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
@@ -29,13 +30,16 @@ namespace sp::scripts {
         std::string templateSource;
         bool resetScale = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Write<ActiveScene>, Read<TransformTree, TransformSnapshot, SceneInfo>, ReadSignalsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
 
                 // Ignore drop events
-                if (!std::holds_alternative<Transform>(event.data)) continue;
+                if (event.data.type != ecs::EventDataType::Transform) continue;
 
                 if (templateSource.empty()) {
                     Errorf("TraySpawner missing source parameter");
@@ -76,7 +80,7 @@ namespace sp::scripts {
                     if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
                 }
                 if (!scene) {
-                    auto &spawnInfo = entities::Spawn.Get(lock).Get<ecs::SceneInfo>(lock);
+                    const auto &spawnInfo = entities::Spawn.Get(lock).Get<const ecs::SceneInfo>(lock);
                     scene = spawnInfo.scene;
                     if (scene) Logf("TraySpawner using spawn scene: %s", scene.data->path);
                 }
@@ -111,7 +115,7 @@ namespace sp::scripts {
                             newEntity.Set<SignalBindings>(lock, *signalBindings);
                         }
                         auto &scripts = newEntity.Set<Scripts>(lock);
-                        auto &prefab = scripts.AddPrefab(scope, "template");
+                        auto &prefab = scripts.AddScript(scope, "prefab_template");
                         prefab.SetParam("source", source);
                         ecs::GetScriptManager().RunPrefabs(lock, newEntity);
 
@@ -128,11 +132,12 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataTraySpawner(typeid(TraySpawner),
+        sizeof(TraySpawner),
         "TraySpawner",
         "",
         StructField::New("source", &TraySpawner::templateSource),
         StructField::New("reset_scale", &TraySpawner::resetScale));
-    InternalScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+    LogicScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {
         Entity selectedEntity;
@@ -180,7 +185,7 @@ namespace sp::scripts {
                 auto snapRadians = glm::radians(CVarEditRotateSnapDegrees.Get());
                 auto angle = std::round(toolDepth * CVarEditRotateSensitivity.Get() / snapRadians) * snapRadians;
                 if (angle == 0.0f) return false;
-                targetTree.pose.Rotate(angle, relativeNormal);
+                targetTree.pose.RotateAxis(angle, relativeNormal);
             }
             selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
             return true;
@@ -221,8 +226,8 @@ namespace sp::scripts {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    if (std::holds_alternative<bool>(event.data)) {
-                        if (std::get<bool>(event.data) && raycastResult.subTarget.Has<TransformTree>(lock)) {
+                    if (event.data.type == EventDataType::Bool) {
+                        if (event.data.b && raycastResult.subTarget.Has<TransformTree>(lock)) {
                             selectedEntity = raycastResult.subTarget;
                             toolDistance = raycastResult.distance;
                             lastToolPosition = position + forward * toolDistance;
@@ -294,6 +299,6 @@ namespace sp::scripts {
             }
         }
     };
-    StructMetadata MetadataEditTool(typeid(EditTool), "EditTool", "");
-    InternalScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
+    StructMetadata MetadataEditTool(typeid(EditTool), sizeof(EditTool), "EditTool", "");
+    LogicScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

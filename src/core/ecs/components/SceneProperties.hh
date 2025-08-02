@@ -28,8 +28,9 @@ namespace ecs {
         bool operator==(const SceneProperties &other) const;
     };
 
-    static Component<SceneProperties> ComponentSceneProperties(
+    static EntityComponent<SceneProperties> ComponentSceneProperties(
         {typeid(SceneProperties),
+            sizeof(SceneProperties),
             "SceneProperties",
             "",
             StructField::New("root_transform", &SceneProperties::rootTransform, FieldAction::AutoApply),
@@ -46,5 +47,5 @@ namespace ecs {
         const SceneProperties *def);
 
     template<>
-    void Component<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget);
+    void EntityComponent<SceneProperties>::Apply(SceneProperties &dst, const SceneProperties &src, bool liveTarget);
 } // namespace ecs

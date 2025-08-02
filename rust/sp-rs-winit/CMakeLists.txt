@@ -50,6 +50,7 @@ target_include_directories(sp-rs-winit
 target_link_libraries(sp-rs-winit INTERFACE
     "${CXXBRIDGE_WINIT_DIR}/${RUST_OUTPUT_LIB}"
     ${PROJECT_COMMON_LIB}
+    ${PROJECT_LIB_NAME}
 )
 target_compile_definitions(sp-rs-winit INTERFACE
     SP_RUST_WINIT_SUPPORT

@@ -11,9 +11,19 @@ macro_rules! debug {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let bindings = builder()
-        .header("../../include/strayphotons.h")
-        .generate()?;
+    let mut build = builder().header("../../include/strayphotons.h");
+    let include_list_opt = option_env!("RUST_INCLUDES");
+    if let Some(include_list) = include_list_opt {
+        for path in include_list.split(";") {
+            if !path.is_empty() {
+                build = build.clang_arg(format!("-I{}", path));
+            }
+        }
+    } else {
+        // build.include("../../src/common/");
+        // build.include("../../ext/robin-hood-hashing/src/include/");
+    }
+    let bindings = build.generate()?;
     bindings.write_to_file("src/game.rs")?;
 
     let current_dir = env::current_dir()?;
@@ -31,11 +41,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         // $env:TARGET_AR="$env:NDK_HOME/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-ar.exe"
     }
 
+    // TODO: Set up way for CMake to call cargo build without recursive CMake happening
     let sp = sp
         .generator("Ninja")
         .pic(true)
         .static_crt(true)
-        .uses_cxx11()
         .always_configure(false)
         .build_target("sp")
         .build();

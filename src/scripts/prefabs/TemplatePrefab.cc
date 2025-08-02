@@ -11,6 +11,7 @@
 #include "common/Hashing.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -263,10 +264,11 @@ namespace ecs {
         }
     };
     StructMetadata MetadataTemplatePrefab(typeid(TemplatePrefab),
+        sizeof(TemplatePrefab),
         "TemplatePrefab",
         "",
         StructField::New("source", &TemplatePrefab::source));
-    PrefabScript<TemplatePrefab> templatePrefab("template", MetadataTemplatePrefab);
+    PrefabScript<TemplatePrefab> templatePrefab("prefab_template", MetadataTemplatePrefab);
 
     struct TilePrefab {
         glm::ivec2 count = {1, 1};
@@ -340,11 +342,11 @@ namespace ecs {
                         if (haveCorner) {
                             Transform transform;
                             if (x != 0 && y != 0) {
-                                transform.Rotate(M_PI, normal);
+                                transform.RotateAxis(M_PI, normal);
                             } else if (x != 0) {
-                                transform.Rotate(-M_PI / 2, normal);
+                                transform.RotateAxis(-M_PI / 2, normal);
                             } else if (y != 0) {
-                                transform.Rotate(M_PI / 2, normal);
+                                transform.RotateAxis(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
                             corner.ApplyComponents(lock, scene, ent, instanceId, tileScope, transform);
@@ -354,11 +356,11 @@ namespace ecs {
                         if (haveEdge) {
                             Transform transform;
                             if (x == (count.x - 1)) {
-                                transform.Rotate(-M_PI / 2, normal);
+                                transform.RotateAxis(-M_PI / 2, normal);
                             } else if (y == (count.y - 1)) {
-                                transform.Rotate(M_PI, normal);
+                                transform.RotateAxis(M_PI, normal);
                             } else if (x == 0) {
-                                transform.Rotate(M_PI / 2, normal);
+                                transform.RotateAxis(M_PI / 2, normal);
                             }
                             transform.Translate(offset3D);
                             edge.ApplyComponents(lock, scene, ent, instanceId, tileScope, transform);
@@ -373,6 +375,7 @@ namespace ecs {
         }
     };
     StructMetadata MetadataTilePrefab(typeid(TilePrefab),
+        sizeof(TilePrefab),
         "TilePrefab",
         "",
         StructField::New("count", &TilePrefab::count),
@@ -381,5 +384,5 @@ namespace ecs {
         StructField::New("surface", &TilePrefab::surfaceTemplate),
         StructField::New("edge", &TilePrefab::edgeTemplate),
         StructField::New("corner", &TilePrefab::cornerTemplate));
-    PrefabScript<TilePrefab> tilePrefab("tile", MetadataTilePrefab);
+    PrefabScript<TilePrefab> tilePrefab("prefab_tile", MetadataTilePrefab);
 } // namespace ecs

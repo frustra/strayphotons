@@ -8,17 +8,24 @@
 #include "ConsoleGui.hh"
 
 namespace sp {
+    static ImVec4 LogColours[] = {
+        {1.0f, 0.6f, 0.4f, 1.0f},
+        {1.0f, 0.9f, 0.4f, 1.0f},
+        {0.8f, 0.8f, 0.8f, 1.0f},
+        {0.5f, 0.5f, 0.6f, 1.0f},
+    };
+
     ConsoleGui::ConsoleGui()
-        : GuiRenderable("console",
-              GuiLayoutAnchor::Top,
+        : ecs::GuiRenderable("console",
+              ecs::GuiLayoutAnchor::Top,
               {-1, 300},
               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar) {}
 
-    bool ConsoleGui::PreDefine() {
+    bool ConsoleGui::PreDefine(ecs::Entity ent) {
         return consoleOpen;
     }
 
-    void ConsoleGui::DefineContents() {
+    void ConsoleGui::DefineContents(ecs::Entity ent) {
         ZoneScoped;
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("ScrollingRegion",
@@ -95,7 +102,7 @@ namespace sp {
         popupPos = ImGui::GetItemRectMin();
     }
 
-    void ConsoleGui::PostDefine() {
+    void ConsoleGui::PostDefine(ecs::Entity ent) {
         ZoneScoped;
         if (completionMode == COMPLETION_INPUT && completionPending) {
             string line(inputBuf);

@@ -9,6 +9,7 @@
 
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -22,14 +23,11 @@ namespace sp {
                 auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                auto &scriptState = scripts.AddOnTick(ecs::Name(scene->data->name, ""),
-                    [](ecs::ScriptState &state,
-                        ecs::Lock<ecs::WriteAll> lock,
-                        ecs::Entity ent,
-                        chrono_clock::duration interval) {
+                auto eventScript = ecs::CreateLogicScript<ecs::Lock<ecs::Read<ecs::EventInput>>>(
+                    [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         ecs::Event event;
                         while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
-                            auto command = std::get_if<std::string>(&event.data);
+                            auto *command = ecs::EventData::TryGet<ecs::EventString>(event.data);
                             if (command && !command->empty()) {
                                 GetConsoleManager().QueueParseAndExecute(*command);
                             } else {
@@ -37,8 +35,9 @@ namespace sp {
                             }
                         }
                     });
-                scriptState.definition.events = {ACTION_EVENT_RUN_COMMAND};
-                scriptState.definition.filterOnEvent = true;
+                eventScript.events = {ACTION_EVENT_RUN_COMMAND};
+                eventScript.filterOnEvent = true;
+                scripts.AddScript(ecs::Name(scene->data->name, ""), eventScript);
             });
 
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);

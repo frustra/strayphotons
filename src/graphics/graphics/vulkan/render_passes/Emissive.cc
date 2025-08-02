@@ -70,29 +70,41 @@ namespace sp::vulkan::renderer {
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);
 
-                    string textureName;
+                    ResourceName textureName;
                     if (!screenComp.textureName.empty()) {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::Gui>(lock)) {
                         auto &gui = ent.Get<ecs::Gui>(lock);
-                        if (gui.windowName.empty() || gui.target != ecs::GuiTarget::World) continue;
+                        if (gui.target != ecs::GuiTarget::World) continue;
                         ecs::EntityRef ref(ent);
-                        textureName = "gui:" + ref.Name().String();
+                        textureName = ResourceName("gui:") + ref.Name().String();
                     } else {
                         continue;
                     }
 
-                    if (builder.GetID(textureName, false) == InvalidResource) {
-                        Warnf("Screen missing resource: '%s'", textureName);
-                        continue;
-                    }
-
-                    auto id = builder.Read(textureName, Access::FragmentShaderSampleImage);
-
                     Screen screen;
-                    screen.id = id;
+                    screen.texture = scene.textures.GetSinglePixelIndex(ERROR_COLOR);
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
+
+                    if (starts_with(textureName, "gui:")) {
+                        auto resourceID = builder.GetID(textureName, false);
+                        if (resourceID != InvalidResource) {
+                            screen.texture = resourceID;
+                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                        }
+                    } else if (auto it = scene.textureCache.find(textureName); it != scene.textureCache.end()) {
+                        if (starts_with(it->first, "graph:")) {
+                            auto resourceID = builder.ReadPreviousFrame(textureName.substr(6),
+                                Access::FragmentShaderSampleImage);
+                            if (resourceID != InvalidResource) {
+                                screen.texture = resourceID;
+                            }
+                        } else if (it->second.Ready()) {
+                            screen.texture = it->second.index;
+                        }
+                    }
+
                     screens.push_back(std::move(screen));
                 }
             })
@@ -169,8 +181,24 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaders("textured_quad.vert", "single_texture.frag");
                     cmd.SetUniformBuffer("ViewStates", "ViewState");
 
+                    cmd.SetBindlessDescriptors(1, scene.textures.GetDescriptorSet());
+
                     for (auto &screen : screens) {
-                        cmd.SetImageView("tex", screen.id);
+                        if (std::holds_alternative<ResourceID>(screen.texture)) {
+                            auto &resourceID = std::get<ResourceID>(screen.texture);
+                            auto imageView = resources.GetImageView(resourceID);
+                            if (imageView) {
+                                if (imageView->ViewType() == vk::ImageViewType::e2DArray) {
+                                    cmd.SetImageView("tex", resources.GetImageLayerView(resourceID, 0));
+                                } else {
+                                    cmd.SetImageView("tex", imageView);
+                                }
+                            } else {
+                                cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                            }
+                        } else {
+                            cmd.SetImageView("tex", scene.textures.Get(std::get<TextureIndex>(screen.texture)));
+                        }
                         cmd.PushConstants(screen.gpuData);
                         cmd.Draw(4);
                     }

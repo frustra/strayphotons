@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2023 Jacob Wirth
+# Copyright (C) 2025 Jacob Wirth
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,11 +9,9 @@
 import argparse
 import os
 import glob
-import sys
 import subprocess
 import urllib.request
 import json
-import shutil
 
 def main():
     parser = argparse.ArgumentParser()
@@ -41,27 +39,25 @@ def main():
         if job['state'] != "passed":
             continue
 
-        for rule in job['agent_query_rules']:
-            parts = rule.split('=')
-            env_value = os.environ.get('BUILDKITE_AGENT_META_DATA_' + parts[0].upper())
-            if env_value != parts[1]:
-                break
-        else:
-            print("Using Job:", job['artifacts_url'])
-            page = 1
-            while len(content) > 0 or page == 1:
-                req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
-                req.add_header("Authorization", "Bearer " + args.token)
+        build_label = os.environ.get('BUILDKITE_LABEL')
+        if job['name'] != build_label:
+            continue
 
-                response = urllib.request.urlopen(req).read()
-                content = json.loads(response.decode('utf-8'))
+        print("Using Job:", job['artifacts_url'])
+        page = 1
+        while len(content) > 0 or page == 1:
+            req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
+            req.add_header("Authorization", "Bearer " + args.token)
 
-                for artifact in content:
-                    if artifact['path'].startswith('screenshots/tests/'):
-                        artifacts[artifact['path']] = artifact
-                        artifacts[artifact['path']]['job'] = job
+            response = urllib.request.urlopen(req).read()
+            content = json.loads(response.decode('utf-8'))
 
-                page += 1
+            for artifact in content:
+                if artifact['path'].startswith('screenshots/tests/'):
+                    artifacts[artifact['path']] = artifact
+                    artifacts[artifact['path']]['job'] = job
+
+            page += 1
 
     print('Downloading', len(artifacts), 'artifacts...')
 
