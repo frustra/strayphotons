@@ -15,15 +15,6 @@
 // #include <strayphotons/logging.h>
 #include <string.h>
 
-#ifdef SP_EXPORT
-    #undef SP_EXPORT
-#endif
-#ifdef _WIN32
-    #define SP_EXPORT __declspec(dllexport)
-#else
-    #define SP_EXPORT __attribute__((__visibility__("default")))
-#endif
-
 typedef struct script_life_cell_t {
     int neighborCount;
     bool alive;
@@ -65,7 +56,7 @@ void life_cell_on_tick(void *context,
     }
 }
 
-SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         strncpy(output[0].name, "life_cell", sizeof(output[0].name) - 1);
         output[1].desc = "An event handling script to notify neighboring cells when state changes";

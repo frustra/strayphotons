@@ -183,17 +183,25 @@ namespace ecs {
         }
         for (auto &[libraryName, dynamicLibrary] : dynamicLibraries) {
             std::vector<ScriptDefinition> previousList;
-            for (auto &dynamicScript : dynamicLibrary->scripts) {
-                auto &reloadingCtx = dynamicScript->definition.context;
-                // Destroy existing script contexts before reloading
-                for (auto &scriptSet : scripts) {
-                    for (auto &script : scriptSet.scripts) {
-                        auto &scriptCtx = script.second.definition.context;
+            // Destroy existing script contexts before reloading
+            for (auto &scriptSet : scripts) {
+                for (auto &script : scriptSet.scripts) {
+                    auto &scriptCtx = script.second.definition.context;
+                    if (scriptCtx.expired()) continue;
+                    for (auto &dynamicScript : dynamicLibrary->scripts) {
+                        auto &reloadingCtx = dynamicScript->definition.context;
                         if (!reloadingCtx.owner_before(scriptCtx) && !scriptCtx.owner_before(reloadingCtx)) {
                             script.second.scriptData.reset();
+                            script.second.definition = ScriptDefinition{
+                                .name = script.second.definition.name,
+                                .type = script.second.definition.type,
+                                .context = script.second.definition.context,
+                            };
                         }
                     }
                 }
+            }
+            for (auto &dynamicScript : dynamicLibrary->scripts) {
                 previousList.emplace_back(dynamicScript->definition);
                 GetScriptDefinitions().scripts.erase(dynamicScript->definition.name);
             }
@@ -306,11 +314,12 @@ namespace ecs {
         std::shared_lock l2(scriptSet.mutex);
         for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
-            auto &callback = std::get<OnTickFunc>(state.definition.callback);
+            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnTick");
             DebugZoneStr(ecs::ToString(lock, ent));
-            callback(state, lock, ent, interval);
+            (*callback)(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -322,11 +331,12 @@ namespace ecs {
         std::shared_lock l2(scriptSet.mutex);
         for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
-            auto &callback = std::get<OnTickFunc>(state.definition.callback);
+            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnPhysicsUpdate");
             DebugZoneStr(ecs::ToString(lock, ent));
-            callback(state, lock, ent, interval);
+            (*callback)(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -359,7 +369,7 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
-            auto callback = std::get_if<PrefabFunc>(&state.definition.callback);
+            auto *callback = std::get_if<PrefabFunc>(&state.definition.callback);
             if (callback && *callback) (*callback)(state, scene, lock, ent);
         }
     }

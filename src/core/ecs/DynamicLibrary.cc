@@ -19,11 +19,11 @@ namespace ecs {
     void DynamicLibrary::ReloadLibrary() {
         ZoneScoped;
         ZoneStr(name);
-        scripts.clear(); // Free script contexts with old library version
+        scripts.clear(); // Free script contexts with old plugin library version
         dynamicLib.reset();
         auto newLibrary = Load(name);
         if (!newLibrary) {
-            Errorf("Failed to reload library: %s", dynalo::to_native_name(name));
+            Errorf("Failed to reload plugin library: %s", dynalo::to_native_name(name));
             return;
         }
         dynamicLib = std::move(newLibrary->dynamicLib);
@@ -41,12 +41,16 @@ namespace ecs {
         ZoneScoped;
         ZoneStr(name);
         auto nativeName = dynalo::to_native_name(name);
-        dynalo::library dynamicLib("./" + nativeName);
+        dynalo::library dynamicLib("./plugins/" + nativeName);
+        if (!dynamicLib.get_native_handle()) {
+            Errorf("Failed to load %s: %s", nativeName, dynalo::detail::last_error());
+            return nullptr;
+        }
 
         auto getDefinitionsFunc = dynamicLib.get_function<size_t(DynamicScriptDefinition *, size_t)>(
-            "sp_library_get_script_definitions");
+            "sp_plugin_get_script_definitions");
         if (!getDefinitionsFunc) {
-            Errorf("Failed to load %s, sp_library_get_script_definitions() is missing", nativeName);
+            Errorf("Failed to load %s, sp_plugin_get_script_definitions() is missing", nativeName);
             return nullptr;
         }
         size_t scriptCount = getDefinitionsFunc(nullptr, 0);
