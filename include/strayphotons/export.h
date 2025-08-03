@@ -24,3 +24,11 @@
         #endif
     #endif
 #endif
+
+#ifndef PLUGIN_EXPORT
+    #ifdef _WIN32
+        #define PLUGIN_EXPORT __declspec(dllexport)
+    #else
+        #define PLUGIN_EXPORT __attribute__((__visibility__("default")))
+    #endif
+#endif

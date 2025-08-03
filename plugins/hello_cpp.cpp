@@ -12,15 +12,6 @@
 #include <glm/glm.hpp>
 #include <strayphotons/components.h>
 
-#ifdef SP_EXPORT
-    #undef SP_EXPORT
-#endif
-#ifdef _WIN32
-    #define SP_EXPORT __declspec(dllexport)
-#else
-    #define SP_EXPORT __attribute__((__visibility__("default")))
-#endif
-
 static uint32_t instanceCount = 0;
 
 struct ScriptHelloWorld {
@@ -80,7 +71,7 @@ struct ScriptHelloWorld {
 
 extern "C" {
 
-SP_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
         std::strncpy(output[0].name, "hello_world", sizeof(output[0].name) - 1);
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
