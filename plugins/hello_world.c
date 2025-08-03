@@ -81,7 +81,7 @@ void hello_world_on_tick_physics(void *context,
     ctx->frameCount++;
 }
 
-SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+SP_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
         strncpy(output[0].name, "hello_world", sizeof(output[0].name) - 1);
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;

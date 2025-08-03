@@ -163,6 +163,7 @@ add_subdirectory(src)
 add_subdirectory(docs_generator)
 add_subdirectory(hull_compiler)
 add_subdirectory(scene_formatter)
+add_subdirectory(plugins)
 add_subdirectory(assets)
 
 if(SP_PACKAGE_RELEASE)

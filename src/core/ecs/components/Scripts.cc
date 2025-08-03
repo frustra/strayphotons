@@ -157,7 +157,7 @@ namespace ecs {
         if (instanceId == other.instanceId) return true;
         if (definition.name != other.definition.name) return false;
         if (definition.callback.index() != other.definition.callback.index()) return false;
-        if (std::get_if<PrefabFunc>(&definition.callback)) {
+        if (std::holds_alternative<PrefabFunc>(definition.callback)) {
             if (definition.name == "prefab_gltf") {
                 return GetParam<string>("model") == other.GetParam<string>("model");
             } else if (definition.name == "prefab_template") {

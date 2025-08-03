@@ -65,7 +65,7 @@ void life_cell_on_tick(void *context,
     }
 }
 
-SP_EXPORT size_t sp_library_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
+SP_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         strncpy(output[0].name, "life_cell", sizeof(output[0].name) - 1);
         output[1].desc = "An event handling script to notify neighboring cells when state changes";

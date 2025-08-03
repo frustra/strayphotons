@@ -152,8 +152,9 @@ fi
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
 
-    mkdir -p sp_bins
+    mkdir -p sp_bins/plugins
     mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
+    mv plugins/*.dll sp_bins/plugins/
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
 
