@@ -138,7 +138,9 @@ namespace sp {
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData1->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, maxForce});
-            } else if (pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_LOST)) {
+            } else if ((pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_LOST) ||
+                           pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_PERSISTS)) &&
+                       maxForce < thresholdForce) {
                 ecs::EventBindings::SendEvent(lock,
                     shapeUserData0->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, maxForce});

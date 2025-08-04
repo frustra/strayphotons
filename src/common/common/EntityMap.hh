@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/Common.hh"
+#include "common/Logging.hh"
 
 #include <Tecs.hh>
 #include <map>

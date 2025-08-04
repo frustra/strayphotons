@@ -7,6 +7,8 @@
 
 #include "Asset.hh"
 
+#include "common/Logging.hh"
+
 #include <murmurhash/MurmurHash3.h>
 
 namespace sp {

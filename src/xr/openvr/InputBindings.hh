@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/EntityRef.hh"
+#include "ecs/EventQueue.hh"
 
 #include <openvr.h>
 #include <string>

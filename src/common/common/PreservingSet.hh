@@ -15,6 +15,7 @@
 
 #include <deque>
 #include <mutex>
+#include <queue>
 #include <robin_hood.h>
 #include <set>
 #include <shared_mutex>

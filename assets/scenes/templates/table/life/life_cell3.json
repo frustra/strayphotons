@@ -8,17 +8,16 @@
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
 			"next_alive": "scoperoot/force_alive || (scoperoot/toggle_alive ? !scoperoot/alive : scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive))",
-			"decay": "min(1, 1 / (scoperoot/age * scoperoot/age + 1))"
+			"decay": "min(1, 1 / (scoperoot/age * scoperoot/age + 1))",
+			"force_alive": "scoperoot/physics_force"
 		},
 		"event_input": {},
 		"event_bindings": {
 			"/physics/collision/force_found": {
-				"outputs": ["scoperoot/signal/set/force_alive"],
-				"set_value": 1
+				"outputs": ["scoperoot/signal/set/physics_force"]
 			},
 			"/physics/collision/force_lost": {
-				"outputs": ["scoperoot/signal/set/force_alive"],
-				"set_value": 0
+				"outputs": ["scoperoot/signal/set/physics_force"]
 			}
 		},
 		"physics": {
@@ -47,7 +46,7 @@
 			{
 				"name": "signal_from_event",
 				"parameters": {
-					"outputs": "force_alive"
+					"outputs": "physics_force"
 				}
 			}
 		]
