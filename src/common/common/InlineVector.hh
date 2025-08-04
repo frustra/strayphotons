@@ -107,7 +107,7 @@ namespace sp {
             T *posPtr = &at(posOffset);
             T *oldEndPtr = &at(offset);
 
-            if (posPtr < oldEndPtr) std::memmove(posPtr + n, posPtr, (oldEndPtr - posPtr) * sizeof(T));
+            if (posPtr < oldEndPtr) std::move(posPtr, oldEndPtr, posPtr + n);
             std::copy(first, last, posPtr);
             offset += n;
             return begin() + posOffset;
