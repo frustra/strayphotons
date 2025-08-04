@@ -28,7 +28,7 @@ namespace ecs {
     };
 
     static EntityComponent<Light> ComponentLight("light",
-        "A shadow-casting spot-light with optional gel masking texture",
+        "A shadow-casting spot-light with optional color filter / mask texture",
         StructField::New("intensity",
             "The brightness of the light measured in candela (lumens per solid angle). This value is ignored if "
             "**illuminance** != 0.",

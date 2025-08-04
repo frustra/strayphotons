@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/Ecs.hh"
+#include "ecs/Components.hh"
 
 #include <bitset>
 

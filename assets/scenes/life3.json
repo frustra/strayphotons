@@ -146,6 +146,48 @@
 			]
 		},
 		{
+			"name": "chaos_button",
+			"transform": {
+				"rotate": [90, 0, 0, -1],
+				"translate": [0.65, 1.2, 0.35]
+			},
+			"signal_output": {
+				"force_alive": 0
+			},
+			"signal_bindings": {
+				"light": "max(0.05, chaos_button/button_pressed)"
+			},
+			"event_bindings": {
+				"/button/press": {
+					"outputs": [
+						"chaos_button/signal/toggle/force_alive"
+					],
+					"set_value": true
+				}
+			},
+			"event_input": {},
+			"script": [
+				{
+					"parameters": {
+						"source": "button"
+					},
+					"name": "prefab_template"
+				},
+				{
+					"name": "signal_from_event",
+					"parameters": {
+						"outputs": "force_alive"
+					}
+				}
+			]
+		},
+		{
+			"name": "chaos_button.button_actuator",
+			"renderable": {
+				"color_override": [1, 0.05, 0.05, 1]
+			}
+		},
+		{
 			"name": "mirrorcube1",
 			"transform": {
 				"scale": 0.5,
@@ -175,6 +217,24 @@
 					"name": "prefab_template"
 				}
 			]
+		},
+		{
+			"name": "life.19_17",
+			"signal_bindings": {
+				"force_alive": "chaos_button/force_alive"
+			}
+		},
+		{
+			"name": "life.19_16",
+			"signal_bindings": {
+				"force_alive": "chaos_button/force_alive"
+			}
+		},
+		{
+			"name": "life.17_18",
+			"signal_bindings": {
+				"force_alive": "chaos_button/force_alive"
+			}
 		},
 		{
 			"name": "life.3_3",

@@ -19,7 +19,7 @@
 // Components
 #include "ecs/components/ActiveScene.hh"
 #include "ecs/components/Animation.hh"
-#include "ecs/components/Controller.hh"
+#include "ecs/components/CharacterController.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Focus.hh"
 #include "ecs/components/Gui.hh"

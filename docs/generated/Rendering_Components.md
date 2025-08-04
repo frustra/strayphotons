@@ -91,7 +91,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 ## `light` Component
 
-A shadow-casting spot-light with optional gel masking texture
+A shadow-casting spot-light with optional color filter / mask texture
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
