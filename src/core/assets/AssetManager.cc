@@ -106,37 +106,47 @@ namespace sp {
     }
 
     std::vector<std::string> AssetManager::ListBundledAssets(std::string_view prefix,
-        std::string_view extension) const {
+        std::string_view extension,
+        size_t maxDepth) const {
         std::vector<std::string> results;
-        if (std::filesystem::is_directory(OVERRIDE_ASSETS_DIR / prefix)) {
-            for (auto &entry : std::filesystem::directory_iterator(OVERRIDE_ASSETS_DIR / prefix)) {
-                if (entry.is_regular_file() && (extension.empty() || entry.path().extension() == extension)) {
-                    auto path = entry.path().lexically_relative(OVERRIDE_ASSETS_DIR).string();
-                    std::replace(path.begin(), path.end(), (char)std::filesystem::path::preferred_separator, '/');
-                    results.emplace_back(path);
+        std::optional<std::filesystem::path> ignorePrefix;
+        std::function<void(std::filesystem::path, const std::filesystem::path &, size_t)> appendDirectoryFiles =
+            [&](auto dir, auto &base, size_t depth) {
+                if (std::filesystem::is_directory(dir)) {
+                    for (auto &entry : std::filesystem::directory_iterator(dir)) {
+                        if (entry.is_regular_file() && (extension.empty() || entry.path().extension() == extension)) {
+                            auto path = entry.path().lexically_relative(base).string();
+                            std::replace(path.begin(),
+                                path.end(),
+                                (char)std::filesystem::path::preferred_separator,
+                                '/');
+                            results.emplace_back(path);
+                        } else if (entry.is_directory() && depth < maxDepth) {
+                            appendDirectoryFiles(entry.path(), base, depth + 1);
+                        }
+                    }
                 }
-            }
-        }
-        if (std::filesystem::is_directory(assetsPath / prefix)) {
-            for (auto &entry : std::filesystem::directory_iterator(assetsPath / prefix)) {
-                auto path = entry.path().lexically_relative(assetsPath);
-                if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / path)) continue;
-                if (entry.is_regular_file() && (extension.empty() || entry.path().extension() == extension)) {
-                    std::string pathStr = path.string();
-                    std::replace(pathStr.begin(), pathStr.end(), (char)std::filesystem::path::preferred_separator, '/');
-                    results.emplace_back(pathStr);
-                }
-            }
-        }
+            };
+        appendDirectoryFiles(OVERRIDE_ASSETS_DIR / prefix, OVERRIDE_ASSETS_DIR, 0);
+        ignorePrefix = OVERRIDE_ASSETS_DIR;
+        appendDirectoryFiles(assetsPath / prefix, assetsPath, 0);
         if (!bundleIndex.empty()) {
             for (auto &[path, range] : bundleIndex) {
                 if (starts_with(path, prefix)) {
+                    size_t depth = 0;
+                    size_t sep = prefix.length();
+                    while (depth <= maxDepth && sep != std::string::npos) {
+                        sep = path.find('/', sep + 1);
+                        depth++;
+                    }
+                    if (sep != std::string::npos) continue;
                     if (std::filesystem::is_regular_file(OVERRIDE_ASSETS_DIR / std::string_view(path))) continue;
                     if (std::filesystem::is_regular_file(assetsPath / std::string_view(path))) continue;
                     results.emplace_back(path);
                 }
             }
         }
+        std::sort(results.begin(), results.end());
         return results;
     }
 

@@ -340,7 +340,7 @@ namespace sp {
             {"Cornell Box Mirror", "cornell-box-3"},
             {"Test 1", "test1"},
         };
-        auto sceneAssets = Assets().ListBundledAssets("scenes/", ".json");
+        auto sceneAssets = Assets().ListBundledAssets("scenes/", ".json", 0);
         for (auto &path : sceneAssets) {
             if (starts_with(path, "scenes/") && ends_with(path, ".json")) {
                 std::string scene = path.substr(7, path.length() - 5 - 7);
