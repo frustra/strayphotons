@@ -26,6 +26,7 @@
 #include "graphics/vulkan/render_passes/LightSensors.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/render_passes/Outline.hh"
+#include "graphics/vulkan/render_passes/Skybox.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
@@ -609,6 +610,7 @@ namespace sp::vulkan {
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
+        renderer::AddSkyboxPass(graph);
         transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);

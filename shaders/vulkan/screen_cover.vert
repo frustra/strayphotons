@@ -19,9 +19,10 @@ vec2 uvs[3] = vec2[](vec2(-0.5, 1), vec2(1.5, 1), vec2(0.5, -1));
 
 vec2 uvsFlipped[3] = vec2[](vec2(-0.5, 0), vec2(1.5, 0), vec2(0.5, 2));
 
-const bool flipped = false;
+layout(constant_id = 0) const bool FLIPPED = false;
+layout(constant_id = 1) const float DRAW_DEPTH = 0.0;
 
 void main() {
-    outTexCoord = flipped ? uvsFlipped[gl_VertexIndex] : uvs[gl_VertexIndex];
-    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
+    outTexCoord = FLIPPED ? uvsFlipped[gl_VertexIndex] : uvs[gl_VertexIndex];
+    gl_Position = vec4(positions[gl_VertexIndex], DRAW_DEPTH, 1.0);
 }
