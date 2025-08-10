@@ -30,15 +30,14 @@ layout(push_constant) uniform PushConstants {
     float starSize;
 };
 
-const vec3[3] colorTints = vec3[](vec3(255, 182, 119) / 255,
-    vec3(255, 252, 246) / 255,
-    vec3(188, 210, 255) / 255);
+const vec3[3] colorTints = vec3[](vec3(255, 182, 119) / 255, vec3(255, 252, 246) / 255, vec3(188, 210, 255) / 255);
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
 
     vec2 flippedCoord = vec2(inTexCoord.x, 1 - inTexCoord.y);
-    vec3 rayDir = mat3(rotation) * normalize(mat3(view.invViewMat) * ScreenPosToViewPos(flippedCoord, 1, view.invProjMat));
+    vec3 rayDir = normalize(
+        mat3(rotation) * mat3(view.invViewMat) * ScreenPosToViewPos(flippedCoord, 1, view.invProjMat));
     rayDir = clamp(rayDir, -1, 1);
 
     float latitude = atan(rayDir.z, rayDir.x) * (0.5 / M_PI) + 0.5;
@@ -62,7 +61,8 @@ void main() {
     vec3 starDir = vec3(cos(starAngle.x), sin(starAngle.y), sin(starAngle.x));
     starDir.xz *= cos(starAngle.y);
 
-    vec3 color = colorTints[int(rand2(rng)*3)].rgb * brightness * rand2(rng);
-    outFragColor = vec4(color * smoothstep(1 - pointSize / sqrt(length(view.extents)), 1, dot(starDir, rayDir)) * exposure, 1.0);
+    vec3 color = colorTints[int(rand2(rng) * 3)].rgb * brightness * rand2(rng);
+    float pointDist = smoothstep(1 - pointSize / sqrt(length(view.extents)), 1, dot(starDir, rayDir));
+    outFragColor = vec4(color * pointDist * exposure, 1.0);
     // outFragColor = vec4(vec3(fract(viewPos), 0) * exposure, 1.0);
 }
