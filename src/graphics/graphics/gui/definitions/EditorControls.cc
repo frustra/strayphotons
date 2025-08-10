@@ -281,8 +281,11 @@ namespace sp {
                 lock.GetInstance().GetInstanceId());
         }
 
-        if (!this->target.Has<ecs::SceneInfo>(lock)) {
+        if (!this->target.Exists(lock)) {
             ImGui::Text("Missing Entity: %s", ecs::ToString(lock, this->target).c_str());
+            return;
+        } else if (!this->target.Has<ecs::SceneInfo>(lock)) {
+            ImGui::Text("Entity has no SceneInfo: %s", ecs::ToString(lock, this->target).c_str());
             return;
         }
 

@@ -13,6 +13,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     Exposure.cc
     Mipmap.cc
     Screenshots.cc
+    Skybox.cc
     SMAA.cc
     Lighting.cc
     LightSensors.cc
