@@ -72,7 +72,7 @@ namespace sp {
         if (it != components.end()) components.erase(it);
     }
 
-    std::weak_ptr<ecs::GuiRenderable> CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts) {
+    GuiContext::Ref CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts) {
         if (gui.windowName == "lobby") {
             static const auto lobby = make_shared<LobbyGui>(gui.windowName);
             return lobby;

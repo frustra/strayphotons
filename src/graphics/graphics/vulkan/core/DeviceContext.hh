@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <future>
+#include <memory>
 #include <robin_hood.h>
 #include <variant>
 
@@ -44,9 +45,10 @@ namespace sp::vulkan {
     class PerfTimer;
     class Pipeline;
     class PipelineManager;
-    struct PipelineCompileInput;
-    class Shader;
+    class ProfilerGui;
     class Renderer;
+    class Shader;
+    struct PipelineCompileInput;
 
     namespace render_graph {
         class Resources;
@@ -272,6 +274,7 @@ namespace sp::vulkan {
         DeferredFunc surfaceDestroy;
 
         unique_ptr<PerfTimer> perfTimer;
+        shared_ptr<ProfilerGui> profilerGui;
 
 #ifdef TRACY_ENABLE_GRAPHICS
         struct {

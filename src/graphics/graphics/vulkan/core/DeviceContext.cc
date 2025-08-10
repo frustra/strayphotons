@@ -626,7 +626,10 @@ namespace sp::vulkan {
 
     void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
         auto *perfTimer = GetPerfTimer();
-        if (perfTimer) overlayGui->Attach(make_shared<vulkan::ProfilerGui>(*perfTimer));
+        if (perfTimer) {
+            if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
+            overlayGui->Attach(profilerGui);
+        }
 
         if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
     }

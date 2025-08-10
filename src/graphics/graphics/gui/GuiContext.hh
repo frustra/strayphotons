@@ -56,7 +56,7 @@ namespace sp {
         std::string name;
     };
 
-    std::weak_ptr<ecs::GuiRenderable> CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts);
+    GuiContext::Ref CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp
