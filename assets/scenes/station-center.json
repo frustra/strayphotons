@@ -21,8 +21,8 @@
 			"name": "elevator_zone",
 			"signal_output": {},
 			"transform": {
-				"scale": [6, 164, 6],
-				"translate": [0, 82, 0.7]
+				"scale": [6, 150, 6],
+				"translate": [0, 74, 0.7]
 			},
 			"script": {
 				"name": "prefab_template",
@@ -172,7 +172,7 @@
 				"translate": [0, 145, -3.9]
 			},
 			"scene_connection": {
-				"station-center": "elevator_zone/trigger_player_count"
+				"station-center": "global:ship_airlock.triggerzone/trigger_player_count || elevator_zone/trigger_player_count"
 			},
 			"script": {
 				"name": "prefab_template",

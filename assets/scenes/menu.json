@@ -581,6 +581,7 @@
 			"transform": {}
 		},
 		{
+			"name": "voxel_grid",
 			"transform": {},
 			"voxel_area": {
 				"extents": [128, 64, 180]
