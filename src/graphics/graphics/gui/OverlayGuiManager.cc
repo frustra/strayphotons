@@ -61,11 +61,13 @@ namespace sp {
 
             if (renderable.PreDefine(ent)) {
                 ImVec2 windowSize(renderable.preferredSize.x, renderable.preferredSize.y);
-                windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
-                windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
-                if (windowSize.x <= 0) windowSize.x = viewportSize.x;
-                if (windowSize.y <= 0) windowSize.y = viewportSize.y;
-                ImGui::SetNextWindowSize(windowSize);
+                if (renderable.anchor != ecs::GuiLayoutAnchor::Floating) {
+                    windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
+                    windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
+                    if (windowSize.x <= 0) windowSize.x = viewportSize.x;
+                    if (windowSize.y <= 0) windowSize.y = viewportSize.y;
+                    ImGui::SetNextWindowSize(windowSize);
+                }
 
                 switch (renderable.anchor) {
                 case ecs::GuiLayoutAnchor::Fullscreen:

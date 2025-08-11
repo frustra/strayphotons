@@ -25,7 +25,7 @@ namespace sp::vulkan {
         ProfilerGui(PerfTimer &timer)
             : ecs::GuiRenderable("profiler",
                   ecs::GuiLayoutAnchor::Floating,
-                  {400, -1},
+                  {-1, -1},
                   ImGuiWindowFlags_AlwaysAutoResize),
               timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
@@ -37,7 +37,11 @@ namespace sp::vulkan {
 
         bool PreDefine(ecs::Entity ent) override {
             if (timer.lastCompleteFrame.empty()) return false;
-            if (!CVarProfileRender.Get()) return false;
+            if (!CVarProfileRender.Get()) {
+                // Auto-resize on first frame shown
+                windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+                return false;
+            }
             ZoneScoped;
 
             CollectSample();
@@ -47,26 +51,19 @@ namespace sp::vulkan {
         void DefineContents(ecs::Entity ent) override {
             ZoneScoped;
 
+            ImGui::PushStyleColor(ImGuiCol_TableHeaderBg, ImGui::GetStyleColorVec4(ImGuiCol_ChildBg));
             if (ImGui::BeginTable("ResultTable", 7)) {
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("Time per frame (ms)");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("     ");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("CPU  ");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("       ");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("     ");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("GPU  ");
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted("     ");
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-                ImGui::SetNextItemWidth(85);
+                ImGui::TableSetupColumn("Time per frame (ms)");
+                ImGui::TableSetupColumn("CPU avg", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("CPU p95", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("CPU max", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("GPU avg", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("GPU p95", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("GPU max", ImGuiTableColumnFlags_WidthFixed);
 
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("Time per frame (ms)");
                 ImGui::Text("%d ms window%s",
                     msWindowSize,
                     SpacePadding(msWindowSize < 1000    ? 2
@@ -74,31 +71,37 @@ namespace sp::vulkan {
                                                         : 0));
                 ImGui::SameLine();
                 if (ImGui::SmallButton("-")) {
-                    if (msWindowSize <= 1000)
-                        msWindowSize -= 100;
-                    else
+                    if (msWindowSize <= 1000) {
+                        if (msWindowSize > 100) msWindowSize -= 100;
+                    } else {
                         msWindowSize -= 1000;
+                    }
                 }
                 ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
                 if (ImGui::SmallButton("+")) {
-                    if (msWindowSize < 1000)
+                    if (msWindowSize < 1000) {
                         msWindowSize += 100;
-                    else
+                    } else {
                         msWindowSize += 1000;
+                    }
                 }
-
-                for (int i = 0; i < 2; i++) {
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted("avg");
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted("p95");
-                    ImGui::TableNextColumn();
-                    ImGui::TextUnformatted("max");
-                }
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("CPU  \navg##CPUavg");
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("     \np95##CPUp95");
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("     \nmax##CPUmax");
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("GPU  \navg##GPUavg");
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("     \np95##GPUp95");
+                ImGui::TableNextColumn();
+                ImGui::TableHeader("     \nmax##GPUmax");
 
                 AddResults();
                 ImGui::EndTable();
             }
+            ImGui::PopStyleColor();
 
             ImGui::SetNextItemWidth(-1);
             ImGui::PlotHistogram("##histogram",
@@ -124,6 +127,8 @@ namespace sp::vulkan {
             }
             ImGui::SameLine();
             if (histogramLocked && ImGui::Button("Unlock histogram")) histogramLocked = false;
+
+            windowFlags &= ~ImGuiWindowFlags_AlwaysAutoResize;
         }
 
     private:
