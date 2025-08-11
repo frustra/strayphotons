@@ -7,10 +7,7 @@
 
 #include "Light.hh"
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
-
-#include <picojson/picojson.h>
 
 namespace ecs {
     template<>

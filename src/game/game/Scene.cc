@@ -368,6 +368,15 @@ namespace sp {
         if (stagingSceneId.Exists(staging)) stagingSceneId.Destroy(staging);
 
         live.Get<ecs::Signals>().UpdateMissingEntitySignals(live);
+        {
+            ZoneScopedN("AnimationUpdate");
+            for (auto &e : live.EntitiesWith<ecs::Animation>()) {
+                if (!e.Has<ecs::Animation, ecs::TransformTree>(live)) continue;
+
+                ecs::Animation::UpdateTransform(live, e);
+            }
+        }
+        ecs::GetScriptManager().RegisterEvents(live);
 
         active = false;
     }

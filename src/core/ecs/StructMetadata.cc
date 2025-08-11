@@ -58,6 +58,9 @@ namespace ecs {
             glm::vec2(-INFINITY),
             glm::vec3(-INFINITY),
             glm::vec4(-INFINITY),
+            glm::ivec2(std::numeric_limits<int32_t>::min()),
+            glm::ivec3(std::numeric_limits<int32_t>::min()),
+            glm::ivec4(std::numeric_limits<int32_t>::min()),
             sp::color_t(glm::vec3(-INFINITY)),
             sp::color_alpha_t(glm::vec4(-INFINITY)),
             glm::quat(-INFINITY, -INFINITY, -INFINITY, -INFINITY));
