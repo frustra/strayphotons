@@ -259,7 +259,9 @@ namespace sp {
 
             ImGui::TextUnformatted("Resolution");
             ImGui::TextUnformatted("Full Screen");
+            ImGui::TextUnformatted("Field of View");
             ImGui::TextUnformatted("Mirror VR View");
+            ImGui::TextUnformatted("Shadow Quality");
 
             ImGui::PopStyleVar();
             ImGui::NextColumn();
@@ -289,11 +291,73 @@ namespace sp {
                     CVarWindowFullscreen.Set(fullscreen);
                 }
 
+                auto &fovCVar = GetConsoleManager().GetCVar<float>("r.fieldofview");
+                float fovDegrees = fovCVar.Get();
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::SliderFloat("##fovDegrees", &fovDegrees, 1.0f, 160.0f, "%.0f degrees")) {
+                    fovCVar.Set(fovDegrees);
+                }
+
                 auto &mirrorXrCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
                 bool mirrorXR = mirrorXrCVar.Get();
                 if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
                     mirrorXrCVar.Set(mirrorXR);
                 }
+
+                struct ShadowSetting {
+                    const char *name;
+                    int sizeOffset;
+                    int sampleCount;
+                    float sampleWidth;
+                };
+
+                static const std::array<ShadowSetting, 5> shadowResolutions = {
+                    ShadowSetting{"Overdrive", 1, 12, 3.5f},
+                    ShadowSetting{"Very High", 0, 11, 3.8f},
+                    ShadowSetting{"High", -1, 9, 3.2f},
+                    ShadowSetting{"Medium", -2, 8, 2.4f},
+                    ShadowSetting{"Low", -3, 7, 1.9f},
+                };
+
+                auto &shadowMapSizeOffsetCVar = GetConsoleManager().GetCVar<int>("r.shadowmapsizeoffset");
+                auto &shadowMapSampleCountCVar = GetConsoleManager().GetCVar<int>("r.shadowmapsamplecount");
+                auto &shadowMapSampleWidthCVar = GetConsoleManager().GetCVar<float>("r.shadowmapsamplewidth");
+                int shadowMapSizeOffset = shadowMapSizeOffsetCVar.Get();
+                int shadowMapSampleCount = shadowMapSampleCountCVar.Get();
+                float shadowMapSampleWidth = shadowMapSampleWidthCVar.Get();
+                int shadowResolutionModeIndex = shadowResolutions.size();
+                for (int i = 0; i < shadowResolutions.size(); i++) {
+                    if (shadowResolutions[i].sizeOffset == shadowMapSizeOffset) {
+                        shadowResolutionModeIndex = i;
+                        break;
+                    }
+                }
+                if (shadowResolutionModeIndex < shadowResolutions.size()) {
+                    auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
+                    if (shadowSetting.sampleCount != shadowMapSampleCount ||
+                        shadowSetting.sampleWidth != shadowMapSampleWidth) {
+                        shadowResolutionModeIndex = shadowResolutions.size();
+                    }
+                }
+                int itemCount = std::max((int)shadowResolutions.size(), shadowResolutionModeIndex + 1);
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::Combo(
+                        "##shadowqualitypicker",
+                        &shadowResolutionModeIndex,
+                        [](void *, int i) {
+                            if (i < 0 || i >= shadowResolutions.size()) return "Custom";
+                            return shadowResolutions[i].name;
+                        },
+                        nullptr,
+                        itemCount)) {
+                    if (shadowResolutionModeIndex >= 0 && shadowResolutionModeIndex < shadowResolutions.size()) {
+                        auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
+                        shadowMapSizeOffsetCVar.Set(shadowSetting.sizeOffset);
+                        shadowMapSampleCountCVar.Set(shadowSetting.sampleCount);
+                        shadowMapSampleWidthCVar.Set(shadowSetting.sampleWidth);
+                    }
+                }
+                ImGui::PopItemWidth();
             }
 
             ImGui::PopStyleVar(2);

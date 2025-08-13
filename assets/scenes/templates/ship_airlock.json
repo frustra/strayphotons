@@ -7,7 +7,7 @@
 				"translate": [0, 2, 0],
 				"scale": [4, 4.2, 4]
 			},
-			"script": {
+			"_script": {
 				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},

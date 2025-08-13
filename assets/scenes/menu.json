@@ -480,7 +480,7 @@
 			"physics": {
 				"type": "Static",
 				"shapes": {
-					"model": "round-mirror-mounted.convex1"
+					"box": [1, 1, 0.02]
 				}
 			},
 			"optic": {}
