@@ -153,7 +153,7 @@ if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
 
     mkdir -p sp_bins/plugins
-    if [ "$OS" = "Windows_NT"]; then
+    if [ "$OS" = "Windows_NT" ]; then
         mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
         mv plugins/*.dll sp_bins/plugins/
     else
