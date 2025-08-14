@@ -153,21 +153,29 @@ if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "--- Uploading package release :arrow_up:"
 
     mkdir -p sp_bins/plugins
-    mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
-    mv plugins/*.dll sp_bins/plugins/
+    if [ "$OS" = "Windows_NT"]; then
+        mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
+        mv plugins/*.dll sp_bins/plugins/
+    else
+        mv libsp.so sp-vk sp-winit libopenvr_api.so sp_bins/
+        mv plugins/lib*.so sp_bins/plugins/
+    fi
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
-
-    mkdir -p sp_debug_symbols
-    mv sp.pdb sp-vk.pdb sp-winit.pdb sp_debug_symbols/
-    zip -r sp_debug_symbols.zip sp_debug_symbols
-    buildkite-agent artifact upload "sp_debug_symbols.zip"
-
+    
+    if [ "$OS" = "Windows_NT"]; then
+        mkdir -p sp_debug_symbols
+        mv sp.pdb sp-vk.pdb sp-winit.pdb sp_debug_symbols/
+        zip -r sp_debug_symbols.zip sp_debug_symbols
+        buildkite-agent artifact upload "sp_debug_symbols.zip"
+    fi
+    
     mkdir -p sp_assets
     mv assets.spdata scripts actions.json sp_assets/
     mv sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json sp_assets/
     zip -r sp_assets.zip sp_assets
     buildkite-agent artifact upload "sp_assets.zip"
+
 
 elif [ -n "$BUILDKITE_API_TOKEN" ]; then
     echo -e "--- Comparing screenshots :camera_with_flash:"
