@@ -163,7 +163,7 @@ if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
     
-    if [ "$OS" = "Windows_NT"]; then
+    if [ "$OS" = "Windows_NT" ]; then
         mkdir -p sp_debug_symbols
         mv sp.pdb sp-vk.pdb sp-winit.pdb sp_debug_symbols/
         zip -r sp_debug_symbols.zip sp_debug_symbols
