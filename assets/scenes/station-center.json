@@ -24,7 +24,7 @@
 				"scale": [6, 150, 6],
 				"translate": [0, 74, 0.7]
 			},
-			"script": {
+			"_script": {
 				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},
@@ -37,7 +37,7 @@
 				"scale": [20, 40, 20],
 				"translate": [0, 19, 1.2]
 			},
-			"script": {
+			"_script": {
 				"name": "prefab_template",
 				"parameters": { "source": "laser_cube" }
 			},
