@@ -65,7 +65,7 @@ def main():
         remote_path = artifacts[path]['download_url']
         local_path = os.path.join(bin_root, 'comparison/' + path)
 
-        os.system('mkdir -p "' + os.path.dirname(local_path) + '"')
+        os.system('bash -c \'mkdir -p "' + os.path.dirname(local_path) + '"\'')
         os.system('curl -s -L -H "Authorization: Bearer ' + args.token + '" "' + remote_path + '" --output "' + local_path + '"')
 
     glob_path = os.path.join(bin_root, 'screenshots/tests/**/*.png')
@@ -83,7 +83,7 @@ def main():
         current_img_src = 'https://builds.strayphotons.net/' + os.environ.get('BUILDKITE_JOB_ID') + '/' + path
         master_img_src = 'https://builds.strayphotons.net/' + artifacts[path]['job']['id'] + '/' + path
 
-        os.system('mkdir -p "' + os.path.dirname(diff_path) + '"')
+        os.system('bash -c \'mkdir -p "' + os.path.dirname(diff_path) + '"\'')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
         metrics = difference_str.split(' ')
         if float(metrics[0]) < 5.0:
