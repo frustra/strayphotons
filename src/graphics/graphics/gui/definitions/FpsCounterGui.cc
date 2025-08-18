@@ -26,9 +26,9 @@ namespace sp {
         : ecs::GuiRenderable("fps_counter",
               ecs::GuiLayoutAnchor::Floating,
               {-1, -1},
-              ImGuiWindowFlags_AlwaysAutoResize || ImGuiWindowFlags_NoTitleBar || ImGuiWindowFlags_NoMove ||
-                  ImGuiWindowFlags_NoResize || ImGuiWindowFlags_NoDecoration || ImGuiWindowFlags_NoNav ||
-                  ImGuiWindowFlags_NoCollapse || ImGuiWindowFlags_NoInputs || ImGuiWindowFlags_NoBringToFrontOnFocus) {}
+              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                  ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
+                  ImGuiWindowFlags_NoBringToFrontOnFocus) {}
 
     bool FpsCounterGui::PreDefine(ecs::Entity ent) {
         if (!CVarShowFPS.Get()) return false;
