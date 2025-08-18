@@ -12,4 +12,5 @@ target_sources(${PROJECT_LIB_NAME} PRIVATE
     Graphics.cc
     Input.cc
     Logging.cc
+    Threads.cc
 )

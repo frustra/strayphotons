@@ -307,6 +307,9 @@ int main(int argc, char **argv) {
 
             sp_cvar_t *cvarWindowFullscreen = sp_get_cvar("r.fullscreen");
             sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
+            auto *monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode *mode = nullptr;
+            if (monitor) mode = glfwGetVideoMode(monitor);
             bool fullscreen = sp_cvar_get_bool(cvarWindowFullscreen);
             if (systemFullscreen != fullscreen) {
                 if (fullscreen) {
@@ -314,11 +317,7 @@ int main(int argc, char **argv) {
                     storedWindowRect.z = systemWindowSize.x;
                     storedWindowRect.w = systemWindowSize.y;
 
-                    auto *monitor = glfwGetPrimaryMonitor();
-                    if (monitor) {
-                        auto *mode = glfwGetVideoMode(monitor);
-                        systemWindowSize = {mode->width, mode->height};
-                    }
+                    if (mode) systemWindowSize = {mode->width, mode->height};
                     glfwSetWindowMonitor(window, monitor, 0, 0, systemWindowSize.x, systemWindowSize.y, 60);
                 } else {
                     systemWindowSize = {storedWindowRect.z, storedWindowRect.w};
@@ -336,6 +335,14 @@ int main(int argc, char **argv) {
 
             glm::ivec2 windowSize = glm::ivec2(0);
             sp_cvar_get_ivec2(cvarWindowSize, &windowSize.x, &windowSize.y);
+            if (mode) {
+                // Don't allow window sizes larger than the monitor resolution
+                if (windowSize.x > mode->width || windowSize.y > mode->height) {
+                    windowSize.x = std::min(mode->width, windowSize.x);
+                    windowSize.y = std::min(mode->height, windowSize.y);
+                    sp_cvar_set_ivec2(cvarWindowSize, windowSize.x, windowSize.y);
+                }
+            }
             if (systemWindowSize != windowSize) {
                 if (sp_cvar_get_bool(cvarWindowFullscreen)) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);

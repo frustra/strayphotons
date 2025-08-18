@@ -19,17 +19,21 @@ layout(early_fragment_tests) in;
 
 const float scatterTermMultiplier = 0.2;
 
-layout(constant_id = 0) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
-layout(constant_id = 1) const int SHADOW_MAP_SAMPLE_COUNT = 3;
+layout(constant_id = 0) const uint LIGHTING_MODE = 1;
+layout(constant_id = 1) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
+layout(constant_id = 2) const int SHADOW_MAP_SAMPLE_COUNT = 3;
+layout(constant_id = 3) const bool ENABLE_SPECULAR_TRACING = true;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
+#include "../lib/voxel_shared.glsl"
 
 layout(binding = 0) uniform sampler2D shadowMap;
 layout(binding = 1) uniform sampler3D voxelRadiance;
 layout(binding = 2) uniform sampler3D voxelNormals;
 
 layout(set = 2, binding = 0) uniform sampler2D textures[];
+layout(set = 3, binding = 0) uniform sampler3D voxelLayersIn[6];
 
 layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
@@ -78,7 +82,7 @@ void main() {
     vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
     vec3 indirectSpecular = vec3(0);
-    {
+    if (ENABLE_SPECULAR_TRACING) {
         // specular
         vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
         if (any(greaterThan(directSpecularColor, vec3(0.0))) && roughness < 1.0) {
@@ -98,9 +102,18 @@ void main() {
         }
     }
 
-    vec3 directDiffuseColor = baseColor * (1 - metalness) * scatterTerm;
-    vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
+    vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
+    vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
 
+    vec3 indirectDiffuse = vec3(0);
+    for (int i = 0; i < 6; i++) {
+        // vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos), 0);
+        vec4 sampleValue = texture(voxelLayersIn[i], voxelPos / voxelInfo.gridSize);
+        indirectDiffuse += sampleValue.rgb * max(0, dot(AxisDirections[i], voxelNormal));
+    }
+
+    vec3 directDiffuseColor = baseColor * (1 - metalness) * scatterTerm;
     vec3 directLight = DirectShading(worldPosition,
         -rayDir,
         baseColor,
@@ -110,8 +123,21 @@ void main() {
         metalness,
         scatterTerm);
 
-    vec3 totalLight = emissive + directLight + indirectDiffuse + indirectSpecular;
+    vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
+    vec3 totalLight = emissive + directLight + indirectLight;
 
-    outFragColor = vec4(totalLight * exposure, 1);
+    if (LIGHTING_MODE == 0) { // Direct only
+        outFragColor = vec4(directLight, 1.0);
+    } else if (LIGHTING_MODE == 2) { // Indirect lighting
+        outFragColor = vec4(indirectLight, 1.0);
+    } else if (LIGHTING_MODE == 3) { // diffuse
+        outFragColor = vec4(indirectDiffuse, 1.0);
+    } else if (LIGHTING_MODE == 4) { // specular
+        outFragColor = vec4(indirectSpecular, 1.0);
+    } else { // Full lighting
+        outFragColor = vec4(totalLight, 1.0);
+    }
+
+    outFragColor.rgb *= exposure;
     outTransparencyMask = vec4(baseColorAlpha.rgb, 1);
 }

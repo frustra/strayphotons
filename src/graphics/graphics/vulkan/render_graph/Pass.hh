@@ -80,7 +80,7 @@ namespace sp::vulkan::render_graph {
     private:
         friend class RenderGraph;
         friend class PassBuilder;
-        string_view name;
+        ResourceName name;
         InlineVector<ResourceIDAccess, 128> accesses;
         InlineVector<ResourceIDFutureAccess, 128> futureReads;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;

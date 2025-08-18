@@ -12,10 +12,11 @@ layout(num_views = 2) in;
 #define SHADOWS_ENABLED
 #define LIGHTING_GELS
 
-layout(constant_id = 0) const uint MODE = 1;
+layout(constant_id = 0) const uint LIGHTING_MODE = 1;
 layout(constant_id = 1) const uint VOXEL_LAYERS = 1;
 layout(constant_id = 2) const float SHADOW_MAP_SAMPLE_WIDTH = 2.25;
 layout(constant_id = 3) const int SHADOW_MAP_SAMPLE_COUNT = 3;
+layout(constant_id = 4) const bool ENABLE_SPECULAR_TRACING = true;
 
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
@@ -84,7 +85,7 @@ void main() {
     vec3 rayReflectDir = reflect(rayDir, worldNormal);
 
     vec3 indirectSpecular = vec3(0);
-    {
+    if (ENABLE_SPECULAR_TRACING) {
         // specular
         vec3 directSpecularColor = mix(vec3(0.04), baseColor, metalness);
         if (any(greaterThan(directSpecularColor, vec3(0.0))) && roughness < 1.0) {
@@ -143,13 +144,13 @@ void main() {
     vec3 indirectLight = indirectDiffuse * directDiffuseColor + indirectSpecular;
     vec3 totalLight = emissive + directLight + indirectLight;
 
-    if (MODE == 0) { // Direct only
+    if (LIGHTING_MODE == 0) { // Direct only
         outFragColor = vec4(directLight, 1.0);
-    } else if (MODE == 2) { // Indirect lighting
+    } else if (LIGHTING_MODE == 2) { // Indirect lighting
         outFragColor = vec4(indirectLight, 1.0);
-    } else if (MODE == 3) { // diffuse
+    } else if (LIGHTING_MODE == 3) { // diffuse
         outFragColor = vec4(indirectDiffuse, 1.0);
-    } else if (MODE == 4) { // specular
+    } else if (LIGHTING_MODE == 4) { // specular
         outFragColor = vec4(indirectSpecular, 1.0);
     } else { // Full lighting
         outFragColor = vec4(totalLight, 1.0);

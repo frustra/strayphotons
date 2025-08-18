@@ -8,7 +8,6 @@
 #include "GuiContext.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "graphics/gui/definitions/ConsoleGui.hh"
 #include "graphics/gui/definitions/EntityPickerGui.hh"
 #include "graphics/gui/definitions/InspectorGui.hh"
 #include "graphics/gui/definitions/LobbyGui.hh"
