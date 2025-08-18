@@ -102,7 +102,8 @@ void main() {
         }
     }
 
-    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) * directDiffuseColor;
+    // vec3 indirectDiffuse = HemisphereIndirectDiffuse(worldPosition, worldNormal, gl_FragCoord.xy) *
+    // directDiffuseColor;
     vec3 voxelPos = (voxelInfo.worldToVoxel * vec4(worldPosition, 1.0)).xyz;
     vec3 voxelNormal = normalize(mat3(voxelInfo.worldToVoxel) * worldNormal);
 

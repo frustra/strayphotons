@@ -15,7 +15,9 @@
 
 #include <array>
 #include <iostream>
+#include <mutex>
 #include <numeric>
+#include <shared_mutex>
 #include <thread>
 
 namespace sp {
