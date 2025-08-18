@@ -97,7 +97,7 @@ namespace sp::vulkan::render_graph {
 
         private:
             RenderGraph &graph;
-            string_view name;
+            ResourceName name;
             uint32 passIndex = ~0u;
         };
 

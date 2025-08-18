@@ -14,6 +14,7 @@
 namespace sp {
     class GraphicsContext;
     class ConsoleGui;
+    class FpsCounterGui;
 
     class OverlayGuiManager final : public FlatViewGuiContext {
     public:
@@ -26,6 +27,7 @@ namespace sp {
         void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
 
         std::shared_ptr<ConsoleGui> consoleGui;
+        std::shared_ptr<FpsCounterGui> fpsCounterGui;
         ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();

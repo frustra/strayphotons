@@ -9,26 +9,55 @@
 
 #include "common/Common.hh"
 #include "common/Defer.hh"
+#include "common/Hashing.hh"
+#include "common/LockFreeMutex.hh"
 #include "common/Tracing.hh"
 
 #include <array>
 #include <iostream>
+#include <mutex>
 #include <numeric>
+#include <shared_mutex>
 #include <thread>
 
 namespace sp {
+
+    LockFreeMutex &getRegistrationMutex() {
+        static LockFreeMutex registrationMutex;
+        return registrationMutex;
+    }
+    robin_hood::unordered_map<std::string, const RegisteredThread *, StringHash, StringEqual> &getRegisteredThreads() {
+        static robin_hood::unordered_map<std::string, const RegisteredThread *, StringHash, StringEqual>
+            registeredThreads;
+        return registeredThreads;
+    }
+
+    void registerThread(const RegisteredThread &thread) {
+        std::lock_guard l(getRegistrationMutex());
+        getRegisteredThreads().emplace(thread.threadName, &thread);
+    }
+
+    void unregisterThread(std::string_view threadName) {
+        std::lock_guard l(getRegistrationMutex());
+        getRegisteredThreads().erase(std::string(threadName));
+    }
+
     RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames)
-        : threadName(threadName), interval(interval), traceFrames(traceFrames), state(ThreadState::Stopped) {}
+        : threadName(threadName), interval(interval), traceFrames(traceFrames), state(ThreadState::Stopped) {
+        registerThread(*this);
+    }
 
     RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames)
         : threadName(threadName), interval(0), traceFrames(traceFrames), state(ThreadState::Stopped) {
         if (framesPerSecond > 0.0) {
             interval = std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond));
         }
+        registerThread(*this);
     }
 
     RegisteredThread::~RegisteredThread() {
         StopThread();
+        unregisterThread(threadName);
         if (thread.joinable()) thread.join();
     }
 
@@ -56,7 +85,9 @@ namespace sp {
 
             if (!ThreadInit()) return;
 
-            auto frameEnd = chrono_clock::now();
+            auto targetFrameEnd = chrono_clock::now() + this->interval;
+            uint32_t fpsCounter = 0;
+            chrono_clock::time_point fpsTimer = chrono_clock::now();
 #ifdef CATCH_GLOBAL_EXCEPTIONS
             try {
 #endif
@@ -77,21 +108,33 @@ namespace sp {
                             if (traceFrames) FrameMarkEnd(threadName.c_str());
                             this->PostFrame(false);
                         }
-                        // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());
+                        // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());fpsMeasuredTime
+                        fpsCounter++;
                     }
 
                     auto realFrameEnd = chrono_clock::now();
+                    if (realFrameEnd - fpsTimer > std::chrono::seconds(1)) {
+                        measuredFps = fpsCounter;
+                        fpsCounter = 0;
+                        fpsTimer = chrono_clock::now();
+                    }
 
                     if (this->interval.count() > 0) {
-                        frameEnd += this->interval;
+                        targetFrameEnd += this->interval;
 
-                        if (realFrameEnd >= frameEnd) {
+                        if (realFrameEnd < targetFrameEnd) {
+                            std::this_thread::sleep_until(targetFrameEnd);
+                        } else {
+                            // std::cout << std::string("Thread behind: " + threadName + " by " +
+                            //                          std::to_string((realFrameEnd - targetFrameEnd).count() / 1000) +
+                            //                          "\n");
+
                             // Falling behind, reset target frame end time.
                             // Add some extra time to allow other threads to start transactions.
-                            frameEnd = realFrameEnd + std::chrono::nanoseconds(100);
+                            targetFrameEnd = realFrameEnd + std::chrono::nanoseconds(100);
+                            std::this_thread::yield();
                         }
 
-                        std::this_thread::sleep_until(frameEnd);
                     } else {
                         std::this_thread::yield();
                     }
@@ -137,5 +180,16 @@ namespace sp {
 
     std::thread::id RegisteredThread::GetThreadId() const {
         return thread.get_id();
+    }
+
+    uint32_t GetMeasuredFps_static(std::string_view threadName) {
+        std::shared_lock l(getRegistrationMutex());
+        auto &registeredThreads = getRegisteredThreads();
+        auto it = registeredThreads.find(threadName);
+        if (it != registeredThreads.end()) {
+            return it->second->GetMeasuredFps();
+        } else {
+            return 0;
+        }
     }
 } // namespace sp

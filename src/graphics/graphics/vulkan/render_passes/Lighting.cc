@@ -24,15 +24,16 @@ namespace sp::vulkan::renderer {
     CVar<float> CVarShadowMapSampleWidth("r.ShadowMapSampleWidth",
         3.2,
         "The size of filter used for filtering shadows");
+    CVar<bool> CVarEnableSpecularTracing("r.SpecularTracing", true, "Enable specular cone tracing into the voxel grid");
 
     static CVar<bool> CVarBlurShadowMap("r.BlurShadowMap", false, "Blur the shadow map before sampling");
     static CVar<int> CVarShadowMapSizeOffset("r.ShadowMapSizeOffset", -1, "Adjust shadow map sizes by 2^N");
     static CVar<bool> CVarPCF("r.PCF", true, "Enable screen space shadow filtering (0: off, 1: on)");
-    static CVar<int> CVarLightingMode("r.LightingMode",
+    CVar<int> CVarLightingMode("r.LightingMode",
         1,
         "Toggle between different lighting shader modes "
         "(0: direct only, 1: full lighting, 2: indirect only, 3: diffuse only, 4: specular only)");
-    static CVar<uint32_t> CVarLightingVoxelLayers("r.LightingVoxelLayers",
+    CVar<uint32_t> CVarLightingVoxelLayers("r.LightingVoxelLayers",
         8,
         "Number of voxel layers to use for diffuse lighting");
 
@@ -584,10 +585,13 @@ namespace sp::vulkan::renderer {
                 } else {
                     cmd.SetShaders("screen_cover.vert", "lighting.frag");
                 }
-                cmd.SetShaderConstant(ShaderStage::Fragment, "MODE", CVarLightingMode.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment, "LIGHTING_MODE", CVarLightingMode.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "VOXEL_LAYERS", voxelLayerCount);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment,
+                    "ENABLE_SPECULAR_TRACING",
+                    CVarEnableSpecularTracing.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetDepthTest(false, false);

@@ -16,11 +16,11 @@
 
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), workQueue("", 0), textures(device, workQueue) {
-        indexBuffer = device.AllocateBuffer({sizeof(uint32), 10 * 1024 * 1024},
+        indexBuffer = device.AllocateBuffer({sizeof(uint32), 64 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
 
-        vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), 1024 * 1024},
+        vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), 16 * 1024 * 1024},
             vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
 

@@ -19,6 +19,9 @@ namespace sp::vulkan::renderer {
 
     extern CVar<int> CVarShadowMapSampleCount;
     extern CVar<float> CVarShadowMapSampleWidth;
+    extern CVar<bool> CVarEnableSpecularTracing;
+    extern CVar<uint32_t> CVarLightingVoxelLayers;
+    extern CVar<int> CVarLightingMode;
 
     class Voxels;
 

@@ -24,6 +24,10 @@ namespace sp {
         void Step(unsigned int count = 1);
         std::thread::id GetThreadId() const;
 
+        uint32_t GetMeasuredFps() const {
+            return measuredFps;
+        }
+
         const std::string threadName;
         chrono_clock::duration interval;
         std::atomic_uint64_t stepCount, maxStepCount;
@@ -55,8 +59,21 @@ namespace sp {
             Stopping,
         };
         std::atomic<ThreadState> state;
+        std::atomic_uint32_t measuredFps;
 
     private:
         std::thread thread;
     };
+
+#ifdef SP_SHARED_BUILD
+    inline uint32_t GetMeasuredFps(std::string_view threadName) {
+        Assert(threadName.data()[threadName.size()] == '\0', "GetMeasuredFps string_view is not null terminated");
+        return sp_thread_get_measured_fps(threadName.c_str());
+    }
+#else
+    uint32_t GetMeasuredFps_static(std::string_view threadName);
+    inline uint32_t GetMeasuredFps(std::string_view threadName) {
+        return GetMeasuredFps_static(threadName);
+    }
+#endif
 } // namespace sp

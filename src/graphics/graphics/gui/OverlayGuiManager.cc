@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/definitions/ConsoleGui.hh"
+#include "graphics/gui/definitions/FpsCounterGui.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
@@ -17,6 +18,8 @@ namespace sp {
     OverlayGuiManager::OverlayGuiManager() : FlatViewGuiContext("overlay") {
         consoleGui = std::make_shared<ConsoleGui>();
         Attach(consoleGui);
+        fpsCounterGui = std::make_shared<FpsCounterGui>();
+        Attach(fpsCounterGui);
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
@@ -102,8 +105,8 @@ namespace sp {
                     Abortf("Unexpected GuiLayoutAnchor: %s", renderable.anchor);
                 }
 
-                ImGui::Begin(component->name.c_str(), nullptr, renderable.windowFlags);
-                component->DefineContents(ent);
+                ImGui::Begin(renderable.name.c_str(), nullptr, renderable.windowFlags);
+                renderable.DefineContents(ent);
                 ImGui::End();
                 renderable.PostDefine(ent);
             }

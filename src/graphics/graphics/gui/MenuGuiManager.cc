@@ -259,8 +259,12 @@ namespace sp {
 
             ImGui::TextUnformatted("Resolution");
             ImGui::TextUnformatted("Full Screen");
+            ImGui::TextUnformatted("Show FPS");
             ImGui::TextUnformatted("Field of View");
+            ImGui::TextUnformatted("UI Scaling");
             ImGui::TextUnformatted("Mirror VR View");
+            ImGui::TextUnformatted("Voxel Lighting Mode");
+            ImGui::TextUnformatted("Voxel Traced Reflections");
             ImGui::TextUnformatted("Shadow Quality");
 
             ImGui::PopStyleVar();
@@ -291,6 +295,12 @@ namespace sp {
                     CVarWindowFullscreen.Set(fullscreen);
                 }
 
+                auto &showFpsCVar = GetConsoleManager().GetCVar<bool>("r.showfps");
+                bool showFps = showFpsCVar.Get();
+                if (ImGui::Checkbox("##showfpscheck", &showFps)) {
+                    showFpsCVar.Set(showFps);
+                }
+
                 auto &fovCVar = GetConsoleManager().GetCVar<float>("r.fieldofview");
                 float fovDegrees = fovCVar.Get();
                 ImGui::PushItemWidth(300.0f);
@@ -298,10 +308,55 @@ namespace sp {
                     fovCVar.Set(fovDegrees);
                 }
 
+                float scale = CVarWindowScale.Get().x * 100.0f;
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::InputFloat("##uiscaleinput", &scale, 5.0f, 10.0f, "%.0f%%")) {
+                    if (scale >= 5.0f) {
+                        CVarWindowScale.Set(glm::vec2(scale / 100.0f));
+                    }
+                }
+                ImGui::PopItemWidth();
+
                 auto &mirrorXrCVar = GetConsoleManager().GetCVar<bool>("r.mirrorxr");
                 bool mirrorXR = mirrorXrCVar.Get();
                 if (ImGui::Checkbox("##mirrorxrcheck", &mirrorXR)) {
                     mirrorXrCVar.Set(mirrorXR);
+                }
+
+                static const std::array<std::pair<const char *, int>, 5> voxelLightingModes = {
+                    std::make_pair("Full Lighting", 1),
+                    std::make_pair("Off", 0),
+                    std::make_pair("[Debug] Indirect Only", 2),
+                    std::make_pair("[Debug] Diffuse Only", 3),
+                    std::make_pair("[Debug] Specular Only", 4),
+                };
+
+                auto &lightingModeCVar = GetConsoleManager().GetCVar<int>("r.lightingmode");
+                int voxelLighting = lightingModeCVar.Get();
+                int voxelLightingIndex = 0;
+                for (int i = 0; i < voxelLightingModes.size(); i++) {
+                    if (voxelLightingModes[i].second == voxelLighting) {
+                        voxelLightingIndex = i;
+                        break;
+                    }
+                }
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::Combo(
+                        "##bouncelightingcheck",
+                        &voxelLightingIndex,
+                        [](void *, int i) {
+                            return voxelLightingModes.at(i).first;
+                        },
+                        nullptr,
+                        voxelLightingModes.size())) {
+                    lightingModeCVar.Set(voxelLightingModes.at(voxelLightingIndex).second);
+                }
+                ImGui::PopItemWidth();
+
+                auto &specularTracingCVar = GetConsoleManager().GetCVar<bool>("r.speculartracing");
+                bool specularTracing = specularTracingCVar.Get();
+                if (ImGui::Checkbox("##tracedreflectionscheck", &specularTracing)) {
+                    specularTracingCVar.Set(specularTracing);
                 }
 
                 struct ShadowSetting {

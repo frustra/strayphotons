@@ -13,11 +13,13 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
+#include "graphics/vulkan/render_passes/Voxels.hh"
 
 namespace sp::vulkan::renderer {
     void Transparency::AddPass(RenderGraph &graph, const ecs::View &view) {
         glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, ecs::VisibilityMask::Transparent, true);
+        uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Transparency")
             .Build([&](PassBuilder &builder) {
@@ -25,6 +27,11 @@ namespace sp::vulkan::renderer {
                 builder.Read("ShadowMap.Linear", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
                 builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+
+                for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
+                    builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
+                }
+
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("LightState");
                 builder.ReadUniform("VoxelState");
@@ -36,11 +43,15 @@ namespace sp::vulkan::renderer {
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
             })
-            .Execute([this, drawIDs](Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawIDs, voxelLayerCount](Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "lighting_transparent.frag");
 
+                cmd.SetShaderConstant(ShaderStage::Fragment, "LIGHTING_MODE", CVarLightingMode.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
+                cmd.SetShaderConstant(ShaderStage::Fragment,
+                    "ENABLE_SPECULAR_TRACING",
+                    CVarEnableSpecularTracing.Get());
 
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
@@ -64,6 +75,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer("ExposureState", "ExposureState");
                 cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.SetUniformBuffer("LightData", "LightState");
+
+                for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
+                    cmd.SetImageView(3, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
+                }
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),

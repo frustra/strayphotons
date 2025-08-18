@@ -15,3 +15,4 @@
 #include "strayphotons/graphics.h"
 #include "strayphotons/input.h"
 #include "strayphotons/logging.h"
+#include "strayphotons/threads.h"
