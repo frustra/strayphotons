@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Tecs.hh>
+#include <cstring>
 #include <ecs/EcsImpl.hh>
 #include <ecs/StructFieldTypes.hh>
 #include <fstream>
@@ -10,7 +11,8 @@
 
 template<typename T>
 auto EmbedTypeIntoSignature() {
-    return std::string_view{std::source_location::current().function_name()};
+    const char *funcName = std::source_location::current().function_name();
+    return std::string_view(std::strcmp("EmbedTypeIntoSignature", funcName) == 0 ? typeid(T).name() : funcName);
 }
 
 template<typename T>
