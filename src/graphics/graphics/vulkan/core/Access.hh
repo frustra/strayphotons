@@ -35,6 +35,7 @@ namespace sp::vulkan {
         AnyShaderReadStorage,
         TransferRead,
         HostRead,
+        SwapchainPresent,
 
         AccessTypesEndOfReads,
 

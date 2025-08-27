@@ -1,5 +1,12 @@
 {
+	"libraries": ["imgui_graph", "racecapture_csv"],
 	"entities": [
+		{
+			"name": "player:flatview",
+			"render_output": {
+				"gui_elements": ["graph_display"]
+			}
+		},
 		{
 			"name": "track_root",
 			"transform": {
@@ -26,18 +33,19 @@
 				"parent": "track_root"
 			},
 			"signal_bindings": {
-				"x": "(visualizer/Latitude - 47.254946) * 111176",
-				"y": "visualizer/Altitude - 300",
-				"z": "(visualizer/Longitude + 123.191740) * 75693",
+				"x": "(visualizer/Latitude - 47.254946) * 111176 - 46700",
+				"y": "visualizer/Altitude",
+				"z": "(visualizer/Longitude + 123.191740) * 75693 - 82100",
 				"accel_x": "visualizer/AccelX * 0.3",
 				"accel_y": "-visualizer/AccelZ",
 				"accel_z": "visualizer/AccelY * 0.3"
 			},
+			"event_input": {},
 			"script": [
 				{
-					"name": "csv_visualizer",
+					"name": "csv_visualizer2",
 					"parameters": {
-						"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
+						"filename": "C:/Users/xthexder/Downloads/rc_79_limpmode.log"
 					}
 				}
 			]
@@ -209,39 +217,80 @@
 			}
 		},
 		{
+			"name": "gear_display",
+			"transform": {
+				"parent": "player:head",
+				"scale": [0.06, 0.025, 1],
+				"translate": [0.185, -0.046, -0.210]
+			},
+			"gui_element": {},
+			"render_output": {
+				"output_size": [120, 50],
+				"scale": [1, 1],
+				"gui_elements": ["gear_display"]
+			},
+			"screen": {
+				"luminance": [3, 3, 3]
+			},
+			"signal_bindings": {
+				"text_color_g": "1",
+				"text_color_b": "1",
+				"text_color_r": "1",
+				"value": "visualizer/Gear"
+			},
+			"script": {
+				"name": "signal_display2",
+				"parameters": {
+					"precision": 0,
+					"prefix": "gear ",
+					"suffix": ""
+				}
+			}
+		},
+		{
 			"name": "speed_display",
 			"transform": {
 				"parent": "player:head",
-				"scale": [0.16, 0.05, 1],
-				"translate": [-0.13, -0.080, -0.210]
+				"scale": [0.08, 0.025, 1],
+				"translate": [0.175, -0.073, -0.210]
 			},
-			"gui": {
-				"window_name": "signal_display"
+			"gui_element": {},
+			"render_output": {
+				"output_size": [160, 50],
+				"scale": [1, 1],
+				"gui_elements": ["speed_display"]
 			},
 			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [160, 50]
+				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
 				"text_color_g": "1",
 				"text_color_b": "1",
 				"text_color_r": "1",
 				"value": "visualizer/Speed"
+			},
+			"script": {
+				"name": "signal_display2",
+				"parameters": {
+					"suffix": " mph"
+				}
 			}
 		},
 		{
 			"name": "tps_display",
 			"transform": {
 				"parent": "player:head",
-				"scale": [0.12, 0.05, 1],
-				"translate": [0.12, -0.080, -0.210]
+				"scale": [0.11, 0.025, 1],
+				"translate": [0.16, -0.1, -0.210]
 			},
-			"gui": {
-				"window_name": "signal_display"
+			"gui_element": {},
+			"render_output": {
+				"output_size": [220, 50],
+				"scale": [1, 1],
+				"gui_elements": ["tps_display"]
 			},
 			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [120, 50]
+				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
 				"text_color_g": "visualizer/TPS / 100",
@@ -249,27 +298,38 @@
 				"text_color_r": "1 - visualizer/TPS / 100",
 				"max_value": "100",
 				"value": "visualizer/TPS"
+			},
+			"script": {
+				"name": "signal_display2",
+				"parameters": {
+					"precision": 0,
+					"prefix": "throttle ",
+					"suffix": "%"
+				}
 			}
 		},
 		{
-			"name": "gear_display",
+			"name": "graph_display",
 			"transform": {
 				"parent": "player:head",
-				"scale": [0.15, 0.05, 1],
-				"translate": [0.26, -0.080, -0.210]
+				"scale": [0.24, 0.16, 1],
+				"translate": [0.0, 0.0, -0.210]
 			},
-			"gui": {
-				"window_name": "signal_display"
+			"gui_element": {},
+			"_render_output": {
+				"output_size": [480, 320],
+				"gui_elements": ["graph_display"]
 			},
-			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [150, 50]
+			"_screen": {
+				"luminance": [3, 3, 3]
 			},
-			"signal_bindings": {
-				"text_color_g": "1",
-				"text_color_b": "1",
-				"text_color_r": "1",
-				"value": "visualizer/Gear"
+			"event_input": {},
+			"script": {
+				"name": "signal_graph",
+				"parameters": {
+					"data_entity": "visualizer",
+					"gui_definition_entity": "graph_display"
+				}
 			}
 		},
 		{

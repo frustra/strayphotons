@@ -89,6 +89,42 @@ namespace sp::scripts {
         glm::vec3 lastPosition;
         glm::vec3 lastDir = glm::vec3(0, 0, -1);
 
+        void HandleEvents(ScriptState &state, Lock<ReadSignalsLock> lock, Entity ent) {
+            Event event = {};
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                if (event.name == "/csv/query_range") {
+                    Logf("Received event: %s", event.ToString());
+                } else {
+                    Errorf("Unknown csv visualizer event received: %s", event.name);
+                }
+            }
+        }
+
+        void LoadCSVData(const std::shared_ptr<sp::Asset> &asset, Lock<Write<Signals>> lock, Entity ent) {
+            std::string_view dataStr((const char *)asset->BufferPtr(), asset->BufferSize());
+            std::vector<std::string_view> lines;
+            SplitStr(dataStr, '\n', lines);
+            std::vector<std::string_view> columnNames;
+            SplitStr(lines.front(), ',', columnNames);
+            for (auto &col : columnNames) {
+                auto &colData = columns.emplace_back(col, lines.size() - 1);
+                outputs.emplace_back(ent, colData.name);
+            }
+            std::vector<std::string_view> values;
+            for (size_t i = 1; i < lines.size(); i++) {
+                SplitStr(lines[i], ',', values);
+                size_t intervalCol = (size_t)ParseNumber(values.front());
+                for (size_t c = 0; c < values.size(); c++) {
+                    double num = ParseNumber(values[c]);
+                    if (!std::isnan(num)) {
+                        columns[c].data.emplace_back(intervalCol, num);
+                    }
+                }
+            }
+            loadingRef.ClearValue(lock);
+            currentTimeNs = (size_t)columns.front().data.front().second * 1e6;
+        }
+
         void OnTick(ScriptState &state,
             Lock<ReadSignalsLock, Write<TransformTree, Signals>> lock,
             Entity ent,
@@ -113,32 +149,12 @@ namespace sp::scripts {
                 assetPtr = Assets().Load(filename, AssetType::External);
                 loaded = filename;
             }
+            HandleEvents(state, lock, ent);
             if (!assetPtr->Ready()) return;
             auto asset = assetPtr->Get();
             if (!asset) return;
             if (columns.empty()) {
-                std::string_view dataStr((const char *)asset->BufferPtr(), asset->BufferSize());
-                std::vector<std::string_view> lines;
-                SplitStr(dataStr, '\n', lines);
-                std::vector<std::string_view> columnNames;
-                SplitStr(lines.front(), ',', columnNames);
-                for (auto &col : columnNames) {
-                    auto &colData = columns.emplace_back(col, lines.size() - 1);
-                    outputs.emplace_back(ent, colData.name);
-                }
-                std::vector<std::string_view> values;
-                for (size_t i = 1; i < lines.size(); i++) {
-                    SplitStr(lines[i], ',', values);
-                    size_t intervalCol = (size_t)ParseNumber(values.front());
-                    for (size_t c = 0; c < values.size(); c++) {
-                        double num = ParseNumber(values[c]);
-                        if (!std::isnan(num)) {
-                            columns[c].data.emplace_back(intervalCol, num);
-                        }
-                    }
-                }
-                loadingRef.ClearValue(lock);
-                currentTimeNs = (size_t)columns.front().data.front().second * 1e6;
+                LoadCSVData(asset, lock, ent);
             } else {
                 for (size_t i = 0; i < columns.size(); i++) {
                     double value = columns[i].SampleTimestamp(currentTimeNs / 1e6);
@@ -184,5 +200,5 @@ namespace sp::scripts {
         "",
         StructField::New("filename", &CSVVisualizer::filename),
         StructField::New("current_time_ns", &CSVVisualizer::currentTimeNs));
-    LogicScript<CSVVisualizer> csvVisualizer("csv_visualizer", MetadataCSVVisualizer);
+    LogicScript<CSVVisualizer> csvVisualizer("csv_visualizer", MetadataCSVVisualizer, false, "/csv/query_range");
 } // namespace sp::scripts

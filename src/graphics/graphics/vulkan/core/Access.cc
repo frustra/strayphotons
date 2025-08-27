@@ -133,6 +133,12 @@ namespace sp::vulkan {
             vk::ImageLayout::eTransferSrcOptimal},
         // HostRead
         {vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostRead, {}, {}, vk::ImageLayout::eGeneral},
+        // SwapchainPresent
+        {vk::PipelineStageFlagBits::eAllCommands,
+            vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eShaderRead,
+            {},
+            vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled,
+            vk::ImageLayout::ePresentSrcKHR},
         // EndOfReads, not a valid index
         {{}, {}, {}, {}, vk::ImageLayout::eUndefined},
         // VertexShaderWrite

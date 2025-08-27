@@ -1,5 +1,5 @@
 {
-	"libraries": ["hello_cpp"],
+	"libraries": ["hello_cpp", "imgui_graph", "doomgeneric"],
 	"entities": [
 		{
 			"scene_connection": {
@@ -68,7 +68,24 @@
 			}
 		},
 		{
-			"name": "lobby_display",
+			"name": "input:keyboard",
+			"event_bindings": {
+				"/keyboard/key/escape": [
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && is_primary_focus(HUD) && menu:doom_display/menu_open",
+						"set_value": "releasefocus HUD"
+					},
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && is_primary_focus(HUD)",
+						"set_value": "togglesignal menu:doom_display/menu_open"
+					}
+				]
+			}
+		},
+		{
+			"name": "doom_display",
 			"transform": {
 				"rotate": [62.7994, -0.678598, -0.678598, -0.281085],
 				"scale": [0.8, 0.5, 1],
@@ -76,7 +93,18 @@
 			},
 			"gui_element": {},
 			"render_output": {
-				"source": "/ent:player:flatview"
+				"source": "/ent:player:flatview",
+				"gui_elements": ["doom_display"]
+			},
+			"signal_output": {
+				"menu_open": 0
+			},
+			"event_bindings": {
+				"/interact/press": {
+					"outputs": "console:input/action/run_command",
+					"filter": "event",
+					"set_value": "acquirefocus HUD"
+				}
 			},
 			"screen": {
 				"luminance": [2, 1.6, 1]
@@ -88,6 +116,12 @@
 						"source": "world_gui"
 					},
 					"name": "prefab_template"
+				},
+				{
+					"name": "doomgeneric",
+					"parameters": {
+						"cli_args": []
+					}
 				}
 			]
 		},
