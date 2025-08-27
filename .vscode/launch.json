@@ -43,7 +43,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
-            "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr", "--scene", "csv_visualizer"],
+            "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr", "--scene", "menu"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

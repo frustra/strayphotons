@@ -14,6 +14,8 @@ set(C_SCRIPT_LIST
 
 set(CPP_SCRIPT_LIST
     hello_cpp
+    imgui_graph
+    racecapture_csv
 )
 
 # Put plugin library outputs into a subfolder
@@ -44,7 +46,7 @@ endforeach()
 foreach(SCRIPT_NAME ${CPP_SCRIPT_LIST})
     add_library(${SCRIPT_NAME} SHARED ${SCRIPT_NAME}.cpp)
 
-    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm ImGui)
+    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm ImGui ImPlot)
 
     if(WIN32)
         target_compile_definitions(${SCRIPT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
@@ -55,3 +57,5 @@ foreach(SCRIPT_NAME ${CPP_SCRIPT_LIST})
         )
     endif()
 endforeach()
+
+add_subdirectory(doomgeneric)

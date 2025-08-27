@@ -183,6 +183,17 @@ namespace sp::vulkan {
         for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Light>()) {
             addTexture(ent.Get<ecs::Light>(lock).filterName);
         }
+        // TODO: Don't use up texture indexes for render output sources
+        // for (const ecs::Entity &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
+        //     addTexture(ent.Get<ecs::RenderOutput>(lock).sourceName);
+        // }
+        // for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
+        //     auto &textureName = ent.Get<ecs::Screen>(lock).textureName;
+        //     if (textureName.empty() && ent.Has<ecs::RenderOutput>(lock)) {
+        //         addTexture("/ent:" + ent.Get<ecs::Name>(lock).String());
+        //     }
+        //     addTexture(textureName);
+        // }
         return complete;
     }
 

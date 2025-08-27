@@ -133,6 +133,10 @@
                 {
                     "outputs": "gui:overlay/action/menu/key_down",
                     "filter": "is_primary_focus(Overlay)"
+                },
+                {
+                    "outputs": "menu:doom_display/action/menu/key_down",
+                    "filter": "is_primary_focus(HUD)"
                 }
             ],
             "/keyboard/key_up": [
@@ -147,6 +151,10 @@
                 {
                     "outputs": "gui:overlay/action/menu/key_up",
                     "filter": "is_primary_focus(Overlay)"
+                },
+                {
+                    "outputs": "menu:doom_display/action/menu/key_up",
+                    "filter": "is_primary_focus(HUD)"
                 }
             ],
             "/keyboard/key/escape": [
