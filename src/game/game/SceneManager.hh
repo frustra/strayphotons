@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/DispatchQueue.hh"
 #include "common/EnumTypes.hh"
 #include "common/LockFreeMutex.hh"
 #include "common/Logging.hh"

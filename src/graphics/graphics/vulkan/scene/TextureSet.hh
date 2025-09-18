@@ -31,7 +31,7 @@ namespace sp::vulkan {
 
     class TextureSet {
     public:
-        TextureSet(DeviceContext &device, DispatchQueue &workQueue);
+        TextureSet(DeviceContext &device);
 
         TextureHandle LoadAssetImage(const string &name, bool genMipmap = false, bool srgb = true);
         TextureHandle LoadGltfMaterial(const shared_ptr<const Gltf> &source, int materialIndex, TextureType type);
@@ -76,6 +76,6 @@ namespace sp::vulkan {
         robin_hood::unordered_map<uint32_t, TextureIndex> singlePixelMap;
 
         DeviceContext &device;
-        DispatchQueue &workQueue;
+        DispatchQueue workQueue;
     };
 } // namespace sp::vulkan

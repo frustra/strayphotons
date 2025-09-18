@@ -52,7 +52,10 @@ namespace sp::vulkan {
 
         switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
+    #ifdef TRACY_ENABLE_GRAPHICS
+            // Ignore Tracy timer query errors
             if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+    #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
                 string_view::npos)
@@ -80,456 +83,461 @@ namespace sp::vulkan {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
         string message(pCallbackData->pMessage);
 
-        switch (messageSeverity) {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+    #ifdef TRACY_ENABLE_GRAPHICS
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) {
+                // Ignore Tracy timer query errors
+                return VK_FALSE;
+            }
+    #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
                 string_view::npos)
-                break;
+                return VK_FALSE;
             Errorf("VK %s %s", typeStr, message);
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) break;
-            Warnf("VK %s %s", typeStr, message);
-            break;
-        default:
-            break;
+        } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+            if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+                Tracef("VK %s %s", typeStr, message);
+            } else {
+                Warnf("VK %s %s", typeStr, message);
+            }
+        } else {
+            Tracef("VK %s %s", typeStr, message);
         }
-        Tracef("VK %s %s", typeStr, message);
         return VK_FALSE;
     }
 #endif
 
     DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
         : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
-          frameBeginQueue("BeginFrame", 0), frameEndQueue("EndFrame", 0), allocatorQueue("GPUAllocator") {
+          frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
+          allocatorQueue("GPUAllocator", 1, {}) {
         ZoneScoped;
 
-        Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
+        try {
+            Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
 
-        bool enableSwapchain = true;
-        if (graphics.glfwWindow) {
-            Logf("Graphics starting up (Vulkan GLFW)");
-            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-        } else if (graphics.winitContext) {
-            Logf("Graphics starting up (Vulkan Winit)");
-            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-        } else {
-            Logf("Graphics starting up (Vulkan Headless)");
-            enableSwapchain = false;
-        }
+            bool enableSwapchain = true;
+            if (graphics.glfwWindow) {
+                Logf("Graphics starting up (Vulkan GLFW)");
+                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+            } else if (graphics.winitContext) {
+                Logf("Graphics starting up (Vulkan Winit)");
+                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+            } else {
+                Logf("Graphics starting up (Vulkan Headless)");
+                enableSwapchain = false;
+            }
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(&vkGetInstanceProcAddr);
+            VULKAN_HPP_DEFAULT_DISPATCHER.init(&vkGetInstanceProcAddr);
 
-        instance = graphics.vkInstance.get();
-        instanceDestroy.SetFunc([&graphics] {
-            graphics.vkInstance.reset();
-        });
-        surface = graphics.vkSurface.get();
-        surfaceDestroy.SetFunc([&graphics] {
-            graphics.vkSurface.reset();
-        });
+            instance = graphics.vkInstance.get();
+            surface = graphics.vkSurface.get();
 
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+            VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
 
-        vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
-        debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
+            vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
+            debugInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+                                    vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                    vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
 
-        debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
-                                    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
+            debugInfo.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eError |
+                                        vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning;
 #ifdef SP_DEBUG
-        debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
+            debugInfo.messageSeverity |= vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo;
 #endif
-        debugInfo.pfnUserCallback = &VulkanDebugCallback;
-        debugInfo.pUserData = this;
+            debugInfo.pfnUserCallback = &VulkanDebugCallback;
+            debugInfo.pUserData = this;
 
-        debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
+            debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
-        std::vector<const char *> layers;
-        if (enableValidationLayers) {
-            layers.emplace_back("VK_LAYER_KHRONOS_validation");
-        }
-
-        bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
-        auto availableExtensions = vk::enumerateInstanceExtensionProperties();
-        // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
-        for (auto &ext : availableExtensions) {
-            string_view name(ext.extensionName.data());
-            // Debugf("\t%s", name);
-
-            if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
-                hasMemoryRequirements2Ext = true;
-            } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
-                hasDedicatedAllocationExt = true;
+            std::vector<const char *> layers;
+            if (enableValidationLayers) {
+                layers.emplace_back("VK_LAYER_KHRONOS_validation");
             }
-        }
 
-        auto physicalDevices = instance.enumeratePhysicalDevices();
-        // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
-        if (physicalDevices.size() > 0) {
-            // TODO: Check device extension support
-            physicalDeviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
-            physicalDevices.front().getProperties2(&physicalDeviceProperties);
-            // auto features = device.getFeatures();
-            Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
-            physicalDevice = physicalDevices.front();
-        }
-        Assert(physicalDevice, "No suitable graphics device found!");
+            bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
+            auto availableExtensions = vk::enumerateInstanceExtensionProperties();
+            // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
+            for (auto &ext : availableExtensions) {
+                string_view name(ext.extensionName.data());
+                // Debugf("\t%s", name);
 
-        std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
-        auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-        vector<uint32> queuesUsedCount(queueFamilies.size());
-        vector<vector<float>> queuePriority(queueFamilies.size());
-
-        const auto findQueue = [&](QueueType queueType,
-                                   vk::QueueFlags require,
-                                   vk::QueueFlags deny,
-                                   float priority,
-                                   bool surfaceSupport = false) {
-            for (uint32_t i = 0; i < queueFamilies.size(); i++) {
-                auto &props = queueFamilies[i];
-                if (!(props.queueFlags & require)) continue;
-                if (props.queueFlags & deny) continue;
-                if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, surface)) continue;
-                if (queuesUsedCount[i] >= props.queueCount) continue;
-
-                queueFamilyIndex[queueType] = i;
-                queueIndex[queueType] = queuesUsedCount[i]++;
-                queuePriority[i].push_back(priority);
-                return true;
-            }
-            return false;
-        };
-
-        if (!findQueue(QUEUE_TYPE_GRAPHICS,
-                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
-                {},
-                1.0f,
-                enableSwapchain))
-            Abortf("could not find a supported graphics queue family");
-
-        if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
-            // must be only one queue that supports compute, fall back to it
-            queueFamilyIndex[QUEUE_TYPE_COMPUTE] = queueFamilyIndex[QUEUE_TYPE_GRAPHICS];
-            queueIndex[QUEUE_TYPE_COMPUTE] = queueIndex[QUEUE_TYPE_GRAPHICS];
-        }
-
-        if (!findQueue(QUEUE_TYPE_TRANSFER,
-                vk::QueueFlagBits::eTransfer,
-                vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
-                0.3f)) {
-            // no queues support only transfer, fall back to a compute queue that also supports transfer
-            if (!findQueue(QUEUE_TYPE_TRANSFER, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, 0.3f)) {
-                // fall back to the main compute queue
-                queueFamilyIndex[QUEUE_TYPE_TRANSFER] = queueFamilyIndex[QUEUE_TYPE_COMPUTE];
-                queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
-            }
-        }
-
-        // currently we have code that assumes the transfer queue family is different from the other queues
-        Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
-            "transfer queue family overlaps graphics queue");
-
-        std::vector<vk::DeviceQueueCreateInfo> queueInfos;
-        for (uint32 i = 0; i < queueFamilies.size(); i++) {
-            if (queuesUsedCount[i] == 0) continue;
-
-            vk::DeviceQueueCreateInfo queueInfo;
-            queueInfo.queueFamilyIndex = i;
-            queueInfo.queueCount = queuesUsedCount[i];
-            queueInfo.pQueuePriorities = queuePriority[i].data();
-            queueInfos.push_back(queueInfo);
-        }
-
-        vector<const char *> enabledDeviceExtensions = {
-            VK_KHR_MULTIVIEW_EXTENSION_NAME,
-            VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
-            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
-            VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
-            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-        };
-
-        if (enableSwapchain) {
-            enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        }
-
-        auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
-
-        for (auto requiredExtension : enabledDeviceExtensions) {
-            bool found = false;
-            for (auto &availableExtension : availableDeviceExtensions) {
-                if (strncmp(requiredExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
-                    found = true;
-                    break;
+                if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
+                    hasMemoryRequirements2Ext = true;
+                } else if (name == VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) {
+                    hasDedicatedAllocationExt = true;
                 }
             }
-            Assertf(found, "device must have extension %s", requiredExtension);
-        }
 
-        vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
-        vk::PhysicalDeviceVulkan11Features availableVulkan11Features;
-        availableVulkan11Features.pNext = &availableVulkan12Features;
-        vk::PhysicalDeviceFeatures2 deviceFeatures2;
-        deviceFeatures2.pNext = &availableVulkan11Features;
+            auto physicalDevices = instance.enumeratePhysicalDevices();
+            // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
+            if (physicalDevices.size() > 0) {
+                // TODO: Check device extension support
+                physicalDeviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
+                physicalDevices.front().getProperties2(&physicalDeviceProperties);
+                // auto features = device.getFeatures();
+                Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
+                physicalDevice = physicalDevices.front();
+            }
+            Assert(physicalDevice, "No suitable graphics device found!");
 
-        physicalDevice.getFeatures2KHR(&deviceFeatures2);
+            std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
+            auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+            vector<uint32> queuesUsedCount(queueFamilies.size());
+            vector<vector<float>> queuePriority(queueFamilies.size());
 
-        const auto &availableDeviceFeatures = deviceFeatures2.features;
-        Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
-        Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
-        Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
-        Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
-        Assert(availableDeviceFeatures.drawIndirectFirstInstance, "device must support drawIndirectFirstInstance");
-        Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
-        Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
-        Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
-        Assert(availableVulkan11Features.multiview, "device must support multiview");
-        Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
-        Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
-        Assert(availableVulkan11Features.uniformAndStorageBuffer16BitAccess,
-            "device must support uniformAndStorageBuffer16BitAccess");
-        Assert(availableVulkan12Features.shaderOutputViewportIndex, "device must support shaderOutputViewportIndex");
-        Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
-        Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
-        Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
-        Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
-            "device must support descriptorBindingPartiallyBound");
-        Assert(availableVulkan12Features.descriptorBindingVariableDescriptorCount,
-            "device must support descriptorBindingVariableDescriptorCount");
-        Assert(availableVulkan12Features.shaderSampledImageArrayNonUniformIndexing,
-            "device must support shaderSampledImageArrayNonUniformIndexing");
-        Assert(availableVulkan12Features.descriptorBindingUpdateUnusedWhilePending,
-            "device must support descriptorBindingUpdateUnusedWhilePending");
+            const auto findQueue = [&](QueueType queueType,
+                                       vk::QueueFlags require,
+                                       vk::QueueFlags deny,
+                                       float priority,
+                                       bool surfaceSupport = false) {
+                for (uint32_t i = 0; i < queueFamilies.size(); i++) {
+                    auto &props = queueFamilies[i];
+                    if (!(props.queueFlags & require)) continue;
+                    if (props.queueFlags & deny) continue;
+                    if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, surface)) continue;
+                    if (queuesUsedCount[i] >= props.queueCount) continue;
 
-        vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
-        enabledVulkan12Features.shaderOutputViewportIndex = true;
-        enabledVulkan12Features.shaderOutputLayer = true;
-        enabledVulkan12Features.drawIndirectCount = true;
-        enabledVulkan12Features.runtimeDescriptorArray = true;
-        enabledVulkan12Features.descriptorBindingPartiallyBound = true;
-        enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
-        enabledVulkan12Features.shaderSampledImageArrayNonUniformIndexing = true;
-        enabledVulkan12Features.descriptorBindingUpdateUnusedWhilePending = true;
+                    queueFamilyIndex[queueType] = i;
+                    queueIndex[queueType] = queuesUsedCount[i]++;
+                    queuePriority[i].push_back(priority);
+                    return true;
+                }
+                return false;
+            };
 
-        vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
-        enabledVulkan11Features.storageBuffer16BitAccess = true;
-        enabledVulkan11Features.uniformAndStorageBuffer16BitAccess = true;
-        enabledVulkan11Features.multiview = true;
-        enabledVulkan11Features.shaderDrawParameters = true;
-        enabledVulkan11Features.pNext = &enabledVulkan12Features;
+            if (!findQueue(QUEUE_TYPE_GRAPHICS,
+                    vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                    {},
+                    1.0f,
+                    enableSwapchain))
+                Abortf("could not find a supported graphics queue family");
 
-        vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
-        enabledDeviceFeatures2.pNext = &enabledVulkan11Features;
-        auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
-        enabledDeviceFeatures.dualSrcBlend = true;
-        enabledDeviceFeatures.fillModeNonSolid = true;
-        enabledDeviceFeatures.samplerAnisotropy = true;
-        enabledDeviceFeatures.multiDrawIndirect = true;
-        enabledDeviceFeatures.drawIndirectFirstInstance = true;
-        enabledDeviceFeatures.multiViewport = true;
-        enabledDeviceFeatures.shaderInt16 = true;
-        enabledDeviceFeatures.fragmentStoresAndAtomics = true;
-        enabledDeviceFeatures.wideLines = true;
+            if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
+                // must be only one queue that supports compute, fall back to it
+                queueFamilyIndex[QUEUE_TYPE_COMPUTE] = queueFamilyIndex[QUEUE_TYPE_GRAPHICS];
+                queueIndex[QUEUE_TYPE_COMPUTE] = queueIndex[QUEUE_TYPE_GRAPHICS];
+            }
 
-        vk::DeviceCreateInfo deviceInfo;
-        deviceInfo.queueCreateInfoCount = queueInfos.size();
-        deviceInfo.pQueueCreateInfos = queueInfos.data();
-        deviceInfo.pNext = &enabledDeviceFeatures2;
-        deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
-        deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
-        deviceInfo.enabledLayerCount = layers.size();
-        deviceInfo.ppEnabledLayerNames = layers.data();
+            if (!findQueue(QUEUE_TYPE_TRANSFER,
+                    vk::QueueFlagBits::eTransfer,
+                    vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
+                    0.3f)) {
+                // no queues support only transfer, fall back to a compute queue that also supports transfer
+                if (!findQueue(QUEUE_TYPE_TRANSFER, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, 0.3f)) {
+                    // fall back to the main compute queue
+                    queueFamilyIndex[QUEUE_TYPE_TRANSFER] = queueFamilyIndex[QUEUE_TYPE_COMPUTE];
+                    queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
+                }
+            }
 
-        device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
+            // currently we have code that assumes the transfer queue family is different from the other queues
+            Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
+                "transfer queue family overlaps graphics queue");
+
+            std::vector<vk::DeviceQueueCreateInfo> queueInfos;
+            for (uint32 i = 0; i < queueFamilies.size(); i++) {
+                if (queuesUsedCount[i] == 0) continue;
+
+                vk::DeviceQueueCreateInfo queueInfo;
+                queueInfo.queueFamilyIndex = i;
+                queueInfo.queueCount = queuesUsedCount[i];
+                queueInfo.pQueuePriorities = queuePriority[i].data();
+                queueInfos.push_back(queueInfo);
+            }
+
+            vector<const char *> enabledDeviceExtensions = {
+                VK_KHR_MULTIVIEW_EXTENSION_NAME,
+                VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+                VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
+                VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
+                VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+            };
+
+            if (enableSwapchain) {
+                enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+            }
+
+            auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+
+            for (auto requiredExtension : enabledDeviceExtensions) {
+                bool found = false;
+                for (auto &availableExtension : availableDeviceExtensions) {
+                    if (strncmp(requiredExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+                        found = true;
+                        break;
+                    }
+                }
+                Assertf(found, "device must have extension %s", requiredExtension);
+            }
+
+            vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
+            vk::PhysicalDeviceVulkan11Features availableVulkan11Features;
+            availableVulkan11Features.pNext = &availableVulkan12Features;
+            vk::PhysicalDeviceFeatures2 deviceFeatures2;
+            deviceFeatures2.pNext = &availableVulkan11Features;
+
+            physicalDevice.getFeatures2KHR(&deviceFeatures2);
+
+            const auto &availableDeviceFeatures = deviceFeatures2.features;
+            Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
+            Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
+            Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
+            Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
+            Assert(availableDeviceFeatures.drawIndirectFirstInstance, "device must support drawIndirectFirstInstance");
+            Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
+            Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
+            Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
+            Assert(availableVulkan11Features.multiview, "device must support multiview");
+            Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
+            Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
+            Assert(availableVulkan11Features.uniformAndStorageBuffer16BitAccess,
+                "device must support uniformAndStorageBuffer16BitAccess");
+            Assert(availableVulkan12Features.shaderOutputViewportIndex,
+                "device must support shaderOutputViewportIndex");
+            Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
+            Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
+            Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
+            Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
+                "device must support descriptorBindingPartiallyBound");
+            Assert(availableVulkan12Features.descriptorBindingVariableDescriptorCount,
+                "device must support descriptorBindingVariableDescriptorCount");
+            Assert(availableVulkan12Features.shaderSampledImageArrayNonUniformIndexing,
+                "device must support shaderSampledImageArrayNonUniformIndexing");
+            Assert(availableVulkan12Features.descriptorBindingUpdateUnusedWhilePending,
+                "device must support descriptorBindingUpdateUnusedWhilePending");
+
+            vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
+            enabledVulkan12Features.shaderOutputViewportIndex = true;
+            enabledVulkan12Features.shaderOutputLayer = true;
+            enabledVulkan12Features.drawIndirectCount = true;
+            enabledVulkan12Features.runtimeDescriptorArray = true;
+            enabledVulkan12Features.descriptorBindingPartiallyBound = true;
+            enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
+            enabledVulkan12Features.shaderSampledImageArrayNonUniformIndexing = true;
+            enabledVulkan12Features.descriptorBindingUpdateUnusedWhilePending = true;
+
+            vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
+            enabledVulkan11Features.storageBuffer16BitAccess = true;
+            enabledVulkan11Features.uniformAndStorageBuffer16BitAccess = true;
+            enabledVulkan11Features.multiview = true;
+            enabledVulkan11Features.shaderDrawParameters = true;
+            enabledVulkan11Features.pNext = &enabledVulkan12Features;
+
+            vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
+            enabledDeviceFeatures2.pNext = &enabledVulkan11Features;
+            auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
+            enabledDeviceFeatures.dualSrcBlend = true;
+            enabledDeviceFeatures.fillModeNonSolid = true;
+            enabledDeviceFeatures.samplerAnisotropy = true;
+            enabledDeviceFeatures.multiDrawIndirect = true;
+            enabledDeviceFeatures.drawIndirectFirstInstance = true;
+            enabledDeviceFeatures.multiViewport = true;
+            enabledDeviceFeatures.shaderInt16 = true;
+            enabledDeviceFeatures.fragmentStoresAndAtomics = true;
+            enabledDeviceFeatures.wideLines = true;
+
+            vk::DeviceCreateInfo deviceInfo;
+            deviceInfo.queueCreateInfoCount = queueInfos.size();
+            deviceInfo.pQueueCreateInfos = queueInfos.data();
+            deviceInfo.pNext = &enabledDeviceFeatures2;
+            deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
+            deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
+            deviceInfo.enabledLayerCount = layers.size();
+            deviceInfo.ppEnabledLayerNames = layers.data();
+
+            device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
+            VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
 #ifdef TRACY_ENABLE_GRAPHICS
-        tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
+            tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
 #endif
 
-        for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-            auto familyIndex = queueFamilyIndex[queueType];
-            auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
-            queues[queueType] = queue;
-            queueLastSubmit[queueType] = 0;
+            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                auto familyIndex = queueFamilyIndex[queueType];
+                auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
+                queues[queueType] = queue;
+                queueLastSubmit[queueType] = 0;
 
 #ifdef TRACY_ENABLE_GRAPHICS
-            if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
+                if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
 
-            vk::CommandPoolCreateInfo cmdPoolInfo;
-            cmdPoolInfo.queueFamilyIndex = familyIndex;
-            cmdPoolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-            tracing.cmdPools.push_back(device->createCommandPoolUnique(cmdPoolInfo));
+                vk::CommandPoolCreateInfo cmdPoolInfo;
+                cmdPoolInfo.queueFamilyIndex = familyIndex;
+                cmdPoolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+                tracing.cmdPools.push_back(device->createCommandPoolUnique(cmdPoolInfo));
 
-            vk::CommandBufferAllocateInfo cmdAllocInfo;
-            cmdAllocInfo.commandPool = *tracing.cmdPools.back();
-            cmdAllocInfo.level = vk::CommandBufferLevel::ePrimary;
-            cmdAllocInfo.commandBufferCount = 1;
-            auto cmdBufs = device->allocateCommandBuffersUnique(cmdAllocInfo);
-            tracing.cmdBuffers.insert(tracing.cmdBuffers.end(),
-                std::make_move_iterator(cmdBufs.begin()),
-                std::make_move_iterator(cmdBufs.end()));
+                vk::CommandBufferAllocateInfo cmdAllocInfo;
+                cmdAllocInfo.commandPool = *tracing.cmdPools.back();
+                cmdAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+                cmdAllocInfo.commandBufferCount = 1;
+                auto cmdBufs = device->allocateCommandBuffersUnique(cmdAllocInfo);
+                tracing.cmdBuffers.insert(tracing.cmdBuffers.end(),
+                    std::make_move_iterator(cmdBufs.begin()),
+                    std::make_move_iterator(cmdBufs.end()));
 
-            tracing.tracyContexts[queueType] = tracy::CreateVkContext(physicalDevice,
-                *device,
-                queue,
-                *tracing.cmdBuffers.back(),
-                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
-                VULKAN_HPP_DEFAULT_DISPATCHER.vkGetCalibratedTimestampsEXT);
+                tracing.tracyContexts[queueType] = tracy::CreateVkContext(physicalDevice,
+                    *device,
+                    queue,
+                    *tracing.cmdBuffers.back(),
+                    VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+                    VULKAN_HPP_DEFAULT_DISPATCHER.vkGetCalibratedTimestampsEXT);
 #endif
-        }
-
-        vk::SemaphoreCreateInfo semaphoreInfo;
-        vk::FenceCreateInfo fenceInfo;
-        fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
-        for (auto &frame : frameContexts) {
-            frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
-            frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
-            frame.inFlightFence = device->createFenceUnique(fenceInfo);
-
-            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-                vk::CommandPoolCreateInfo poolInfo;
-                poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
-                poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient;
-                frame.commandContexts[queueType].commandPool = device->createCommandPoolUnique(poolInfo);
             }
-        }
 
-        VmaAllocatorCreateInfo allocatorInfo = {};
-        allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
-        allocatorInfo.physicalDevice = physicalDevice;
-        allocatorInfo.device = *device;
-        allocatorInfo.instance = instance;
-        allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
-        allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
-        allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+            vk::SemaphoreCreateInfo semaphoreInfo;
+            vk::FenceCreateInfo fenceInfo;
+            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
-        if (hasMemoryRequirements2Ext && hasDedicatedAllocationExt) {
-            allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-        }
+            for (auto &frame : frameContexts) {
+                frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+                frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+                frame.inFlightFence = device->createFenceUnique(fenceInfo);
 
-        VmaAllocator alloc;
-        Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
-        allocator = unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)>(alloc, [](VmaAllocator alloc) {
-            if (alloc) vmaDestroyAllocator(alloc);
-        });
+                for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                    vk::CommandPoolCreateInfo poolInfo;
+                    poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
+                    poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient;
+                    frame.commandContexts[queueType].commandPool = device->createCommandPoolUnique(poolInfo);
+                }
+            }
 
-        semaphorePool = make_unique<HandlePool<vk::Semaphore>>(
-            [&]() {
-                return device->createSemaphore({});
-            },
-            [&](vk::Semaphore sem) {
-                device->destroySemaphore(sem);
+            VmaAllocatorCreateInfo allocatorInfo = {};
+            allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
+            allocatorInfo.physicalDevice = physicalDevice;
+            allocatorInfo.device = *device;
+            allocatorInfo.instance = instance;
+            allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
+            allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
+            allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+
+            if (hasMemoryRequirements2Ext && hasDedicatedAllocationExt) {
+                allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+            }
+
+            VmaAllocator alloc;
+            Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
+            allocator = unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)>(alloc, [](VmaAllocator alloc) {
+                if (alloc) vmaDestroyAllocator(alloc);
             });
 
-        fencePool = make_unique<HandlePool<vk::Fence>>(
-            [&]() {
-                return device->createFence({});
-            },
-            [&](vk::Fence fence) {
-                device->destroyFence(fence);
-            },
-            [&](vk::Fence fence) {
-                device->resetFences({fence});
+            semaphorePool = make_unique<HandlePool<vk::Semaphore>>(
+                [&]() {
+                    return device->createSemaphore({});
+                },
+                [&](vk::Semaphore sem) {
+                    device->destroySemaphore(sem);
+                });
+
+            fencePool = make_unique<HandlePool<vk::Fence>>(
+                [&]() {
+                    return device->createFence({});
+                },
+                [&](vk::Fence fence) {
+                    device->destroyFence(fence);
+                },
+                [&](vk::Fence fence) {
+                    device->resetFences({fence});
+                });
+
+            pipelinePool = make_unique<PipelineManager>(*this);
+            renderPassPool = make_unique<RenderPassManager>(*this);
+            framebufferPool = make_unique<FramebufferManager>(*this);
+
+            for (auto &threadContextUnique : threadContexts) {
+                threadContextUnique = make_unique<ThreadContext>();
+                ThreadContext *threadContext = threadContextUnique.get();
+
+                threadContext->bufferPool = make_unique<BufferPool>(*this);
+
+                for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                    vk::CommandPoolCreateInfo poolInfo;
+                    poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
+                    poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
+                                     vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+                    threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
+
+                    threadContext->commandContexts[queueType] = make_unique<HandlePool<CommandContextPtr>>(
+                        [this, threadContext, queueType]() {
+                            vk::CommandBufferAllocateInfo allocInfo;
+                            allocInfo.commandPool = *threadContext->commandPools[queueType];
+                            allocInfo.level = vk::CommandBufferLevel::ePrimary;
+                            allocInfo.commandBufferCount = 1;
+                            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+
+                            return make_shared<CommandContext>(*this,
+                                std::move(buffers[0]),
+                                CommandContextType(queueType),
+                                CommandContextScope::Fence);
+                        },
+                        [](CommandContextPtr) {
+                            // destroy happens via ~CommandContext
+                        },
+                        [this](CommandContextPtr cmd) {
+                            auto type = cmd->GetType();
+                            auto buffer = std::move(cmd->RawRef());
+                            auto fence = std::move(cmd->fence);
+
+                            cmd->~CommandContext();
+                            new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
+                            cmd->fence = std::move(fence);
+
+                            cmd->Raw().reset();
+                            if (cmd->fence) device->resetFences({cmd->Fence()});
+                        });
+                }
+            }
+
+            funcs = make_unique<CFuncCollection>();
+            funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
+                reloadShaders = true;
             });
-
-        pipelinePool = make_unique<PipelineManager>(*this);
-        renderPassPool = make_unique<RenderPassManager>(*this);
-        framebufferPool = make_unique<FramebufferManager>(*this);
-
-        for (auto &threadContextUnique : threadContexts) {
-            threadContextUnique = make_unique<ThreadContext>();
-            ThreadContext *threadContext = threadContextUnique.get();
-
-            threadContext->bufferPool = make_unique<BufferPool>(*this);
-
-            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-                vk::CommandPoolCreateInfo poolInfo;
-                poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
-                poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
-                                 vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-                threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
-
-                threadContext->commandContexts[queueType] = make_unique<HandlePool<CommandContextPtr>>(
-                    [this, threadContext, queueType]() {
-                        vk::CommandBufferAllocateInfo allocInfo;
-                        allocInfo.commandPool = *threadContext->commandPools[queueType];
-                        allocInfo.level = vk::CommandBufferLevel::ePrimary;
-                        allocInfo.commandBufferCount = 1;
-                        auto buffers = device->allocateCommandBuffersUnique(allocInfo);
-
-                        return make_shared<CommandContext>(*this,
-                            std::move(buffers[0]),
-                            CommandContextType(queueType),
-                            CommandContextScope::Fence);
-                    },
-                    [](CommandContextPtr) {
-                        // destroy happens via ~CommandContext
-                    },
-                    [this](CommandContextPtr cmd) {
-                        auto type = cmd->GetType();
-                        auto buffer = std::move(cmd->RawRef());
-                        auto fence = std::move(cmd->fence);
-
-                        cmd->~CommandContext();
-                        new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
-                        cmd->fence = std::move(fence);
-
-                        cmd->Raw().reset();
-                        if (cmd->fence) device->resetFences({cmd->Fence()});
-                    });
-            }
-        }
-
-        funcs = make_unique<CFuncCollection>();
-        funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
-            reloadShaders = true;
-        });
-        funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
-            for (auto &tc : threadContexts) {
-                tc->printBufferStats = true;
-            }
-        });
-
-        perfTimer.reset(new PerfTimer(*this));
-
-        if (graphics.windowHandlers.get_video_modes) {
-            size_t modeCount;
-            graphics.windowHandlers.get_video_modes(&graphics, &modeCount, nullptr);
-            monitorModes.resize(modeCount);
-            std::vector<sp_video_mode_t> videoModes(modeCount);
-            graphics.windowHandlers.get_video_modes(&graphics, &modeCount, videoModes.data());
-            for (size_t i = 0; i < modeCount; i++) {
-                monitorModes[i] = {videoModes[i].width, videoModes[i].height};
-            }
-            std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
-                uint8_t ratioBitsA = 0;
-                uint8_t ratioBitsB = 0;
-                if (IsAspect(a, 16, 9)) ratioBitsA |= 1 << 2;
-                if (IsAspect(a, 16, 10)) ratioBitsA |= 1 << 1;
-                if (IsAspect(a, 4, 3)) ratioBitsA |= 1 << 0;
-                if (IsAspect(b, 16, 9)) ratioBitsB |= 1 << 2;
-                if (IsAspect(b, 16, 10)) ratioBitsB |= 1 << 1;
-                if (IsAspect(b, 4, 3)) ratioBitsB |= 1 << 0;
-                if (ratioBitsA != ratioBitsB) {
-                    return ratioBitsA > ratioBitsB;
-                } else {
-                    return a.x > b.x || (a.x == b.x && a.y > b.y);
+            funcs->Register("vkbufferstats", "Print Vulkan buffer pool stats", [&]() {
+                for (auto &tc : threadContexts) {
+                    tc->printBufferStats = true;
                 }
             });
-            monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
-        }
 
-        if (enableSwapchain) CreateSwapchain();
+            perfTimer.reset(new PerfTimer(*this));
+
+            if (graphics.windowHandlers.get_video_modes) {
+                size_t modeCount;
+                graphics.windowHandlers.get_video_modes(&graphics, &modeCount, nullptr);
+                monitorModes.resize(modeCount);
+                std::vector<sp_video_mode_t> videoModes(modeCount);
+                graphics.windowHandlers.get_video_modes(&graphics, &modeCount, videoModes.data());
+                for (size_t i = 0; i < modeCount; i++) {
+                    monitorModes[i] = {videoModes[i].width, videoModes[i].height};
+                }
+                std::sort(monitorModes.begin(), monitorModes.end(), [](const glm::ivec2 &a, const glm::ivec2 &b) {
+                    uint8_t ratioBitsA = 0;
+                    uint8_t ratioBitsB = 0;
+                    if (IsAspect(a, 16, 9)) ratioBitsA |= 1 << 2;
+                    if (IsAspect(a, 16, 10)) ratioBitsA |= 1 << 1;
+                    if (IsAspect(a, 4, 3)) ratioBitsA |= 1 << 0;
+                    if (IsAspect(b, 16, 9)) ratioBitsB |= 1 << 2;
+                    if (IsAspect(b, 16, 10)) ratioBitsB |= 1 << 1;
+                    if (IsAspect(b, 4, 3)) ratioBitsB |= 1 << 0;
+                    if (ratioBitsA != ratioBitsB) {
+                        return ratioBitsA > ratioBitsB;
+                    } else {
+                        return a.x > b.x || (a.x == b.x && a.y > b.y);
+                    }
+                });
+                monitorModes.erase(std::unique(monitorModes.begin(), monitorModes.end()), monitorModes.end());
+            }
+
+            if (enableSwapchain) CreateSwapchain();
+        } catch (const vk::InitializationFailedError &err) {
+            Errorf("Device initialization failed! %s", err.what());
+            deviceResetRequired = true;
+        }
     }
 
     DeviceContext::~DeviceContext() {
         if (vkRenderer) vkRenderer.reset();
-        if (device) device->waitIdle();
+        if (device && !deviceResetRequired) device->waitIdle();
         Debugf("Destroying DeviceContext");
         swapchain.reset();
         graphics.glfwWindow.reset();
@@ -640,77 +648,83 @@ namespace sp::vulkan {
 
     bool DeviceContext::BeginFrame() {
         ZoneScoped;
-        if (perfTimer) perfTimer->StartFrame();
+        try {
+            if (perfTimer) perfTimer->StartFrame();
 
-        if (reloadShaders.exchange(false)) {
-            for (size_t i = 0; i < shaders.size(); i++) {
-                auto &currentShader = shaders[i];
-                auto newShader = CreateShader(currentShader->name, currentShader->hash);
-                if (newShader) {
-                    shaders[i] = newShader;
+            if (reloadShaders.exchange(false)) {
+                for (size_t i = 0; i < shaders.size(); i++) {
+                    auto &currentShader = shaders[i];
+                    auto newShader = CreateShader(currentShader->name, currentShader->hash);
+                    if (newShader) {
+                        shaders[i] = newShader;
+                    }
                 }
             }
-        }
 
-        {
-            ZoneScopedN("WaitForFrameFence");
-            auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
-            AssertVKSuccess(result, "timed out waiting for fence");
-        }
-
-        if (swapchain) {
-            try {
-                ZoneScopedN("AcquireNextImage");
-                auto acquireResult = device->acquireNextImageKHR(*swapchain,
-                    FENCE_WAIT_TIME,
-                    *Frame().imageAvailableSemaphore,
-                    nullptr);
-                if (acquireResult.result == vk::Result::eTimeout) {
-                    Warnf("vkAcquireNextImageKHR timeout");
-                    return false;
-                } else if (acquireResult.result == vk::Result::eSuboptimalKHR) {
-                    RecreateSwapchain(); // X11 / Wayland returns this on resize
-                    return false;
-                } else {
-                    AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
-                }
-                swapchainImageIndex = acquireResult.value;
-                ZoneValue(swapchainImageIndex);
-            } catch (const vk::OutOfDateKHRError &) {
-                RecreateSwapchain(); // Windows returns this on resize
-                return false;
-            } catch (const std::system_error &err) {
-                Abortf("Exception: %s", err.what());
-            }
-
-            if (SwapchainImage().inFlightFence) {
-                ZoneScopedN("WaitForImageFence");
-                auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+            {
+                ZoneScopedN("WaitForFrameFence");
+                auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
                 AssertVKSuccess(result, "timed out waiting for fence");
             }
-            SwapchainImage().inFlightFence = *Frame().inFlightFence;
-        }
 
-        vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
-        PrepareResourcesForFrame();
+            if (swapchain) {
+                try {
+                    ZoneScopedN("AcquireNextImage");
+                    auto acquireResult = device->acquireNextImageKHR(*swapchain,
+                        FENCE_WAIT_TIME,
+                        *Frame().imageAvailableSemaphore,
+                        nullptr);
+                    if (acquireResult.result == vk::Result::eTimeout) {
+                        Warnf("vkAcquireNextImageKHR timeout");
+                        return false;
+                    } else if (acquireResult.result == vk::Result::eSuboptimalKHR) {
+                        RecreateSwapchain(); // X11 / Wayland returns this on resize
+                        return false;
+                    } else {
+                        AssertVKSuccess(acquireResult.result, "invalid swap chain acquire image");
+                    }
+                    swapchainImageIndex = acquireResult.value;
+                    ZoneValue(swapchainImageIndex);
+                } catch (const vk::OutOfDateKHRError &) {
+                    RecreateSwapchain(); // Windows returns this on resize
+                    return false;
+                } catch (const std::system_error &err) {
+                    Abortf("Exception: %s", err.what());
+                }
+
+                if (SwapchainImage().inFlightFence) {
+                    ZoneScopedN("WaitForImageFence");
+                    auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
+                    AssertVKSuccess(result, "timed out waiting for fence");
+                }
+                SwapchainImage().inFlightFence = *Frame().inFlightFence;
+            }
+
+            vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
+            PrepareResourcesForFrame();
 
 #ifdef TRACY_ENABLE_GRAPHICS
-        for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
-            auto prevQueueSubmitFrame = queueLastSubmit[i];
-            if (prevQueueSubmitFrame < frameCounter - 1) continue;
+            for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
+                auto prevQueueSubmitFrame = queueLastSubmit[i];
+                if (prevQueueSubmitFrame < frameCounter - 1) continue;
 
-            auto trctx = tracing.tracyContexts[i];
-            if (!trctx) continue;
+                auto trctx = tracing.tracyContexts[i];
+                if (!trctx) continue;
 
-            auto ctx = GetFencedCommandContext(CommandContextType(i));
-            TracyVkCollect(trctx, ctx->Raw());
-            Submit(ctx);
+                auto ctx = GetFencedCommandContext(CommandContextType(i));
+                TracyVkCollect(trctx, ctx->Raw());
+                Submit(ctx);
 
-            queueLastSubmit[i] = prevQueueSubmitFrame;
-        }
+                queueLastSubmit[i] = prevQueueSubmitFrame;
+            }
 #endif
 
-        frameBeginQueue.Flush();
+            frameBeginQueue.Flush();
+        } catch (const vk::DeviceLostError &err) {
+            Errorf("Device lost! BeginFrame() %s", err.what());
+            deviceResetRequired = true;
+            return false;
+        }
         return true;
     }
 
@@ -899,9 +913,12 @@ namespace sp::vulkan {
         submitInfo.pCommandBuffers = cmdBufs.data();
 
         queueLastSubmit[queue] = frameCounter;
-        {
+        try {
             ZoneScopedN("VkQueueSubmit");
             queues[queue].submit({submitInfo}, fence);
+        } catch (const vk::DeviceLostError &err) {
+            Errorf("Device lost! queue.submit() %s", err.what());
+            deviceResetRequired = true;
         }
 
         for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {

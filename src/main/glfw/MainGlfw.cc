@@ -78,7 +78,10 @@ namespace sp {
 
         switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
+    #ifdef TRACY_ENABLE_GRAPHICS
+            // Ignore Tracy timer query errors
             if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+    #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
                 string_view::npos)

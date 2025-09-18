@@ -52,6 +52,9 @@ namespace sp {
         virtual void SwapBuffers() = 0;
         virtual void EndFrame() = 0;
         virtual void WaitIdle() {}
+        virtual bool RequiresReset() const {
+            return false;
+        }
 
         void AttachView(ecs::Entity e) {
             activeView = e;

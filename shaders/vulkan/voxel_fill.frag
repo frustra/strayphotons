@@ -84,7 +84,13 @@ void main() {
 
         vec3 indirectDiffuse = vec3(0);
         for (int i = 0; i < 6; i++) {
-            vec4 sampleValue = texelFetch(voxelLayersIn[i], ivec3(voxelPos + voxelNormal), 0);
+            ivec3 samplePos = ivec3(voxelPos + voxelNormal);
+            vec4 sampleValue;
+            if (clamp(samplePos, ivec3(0), voxelInfo.gridSize - 1) == samplePos) {
+                sampleValue = texelFetch(voxelLayersIn[i], samplePos, 0);
+            } else {
+                sampleValue = vec4(0, 0, 0, 1);
+            }
             indirectDiffuse += sampleValue.rgb * step(0, dot(AxisDirections[i], voxelNormal));
         }
         vec3 directDiffuseColor = baseColor.rgb * (1 - metalness);

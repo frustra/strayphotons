@@ -58,7 +58,6 @@ namespace sp {
             ImGui::SetNextWindowPos(viewportPos);
             break;
         }
-        ImGui::SetNextWindowFocus();
         ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, -1.0f), ImVec2(viewportSize.x, viewportSize.y));
         return true;
     }

@@ -9,7 +9,6 @@
 
 #include "assets/Gltf.hh"
 #include "common/Async.hh"
-#include "common/DispatchQueue.hh"
 #include "common/Hashing.hh"
 #include "common/PreservingMap.hh"
 #include "ecs/components/View.hh"
@@ -82,7 +81,6 @@ namespace sp::vulkan {
     class GPUScene {
     private:
         DeviceContext &device;
-        DispatchQueue workQueue;
 
     public:
         GPUScene(DeviceContext &device);

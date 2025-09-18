@@ -13,7 +13,8 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan {
-    TextureSet::TextureSet(DeviceContext &device, DispatchQueue &workQueue) : device(device), workQueue(workQueue) {
+    TextureSet::TextureSet(DeviceContext &device)
+        : device(device), workQueue("TextureSet", 0, std::chrono::milliseconds(1)) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
         textures[0] = CreateSinglePixel(ERROR_COLOR);
@@ -217,6 +218,7 @@ namespace sp::vulkan {
     }
 
     void TextureSet::Flush() {
+        workQueue.Flush();
         texturesPendingDelete.clear();
 
         for (auto it = textureCache.begin(); it != textureCache.end();) {
