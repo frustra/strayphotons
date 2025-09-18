@@ -119,7 +119,7 @@ namespace sp::vulkan::render_graph {
         auto &target = images[res.id];
         if (!target) {
             if (res.imageDesc.usage == vk::ImageUsageFlagBits::eTransferDst) {
-                Tracef("Image resource never accessed: %s", resourceNames[id]);
+                Debugf("Image resource never accessed: %s", resourceNames[id]);
                 return nullptr;
             }
             target = GetImageFromPool(res.imageDesc);

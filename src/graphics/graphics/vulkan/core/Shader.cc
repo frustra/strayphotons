@@ -31,9 +31,9 @@ namespace sp::vulkan {
             auto &set = descriptorSets.emplace_back(Shader::DescriptorSet{descriptorSet->set, {}});
             for (uint32 bindingIndex = 0; bindingIndex < descriptorSet->binding_count; bindingIndex++) {
                 auto &binding = descriptorSet->bindings[bindingIndex];
-                std::string bindingName = binding->name;
+                std::string bindingName = binding->name ? binding->name : "";
                 if (bindingName.empty() && binding->type_description) {
-                    bindingName = binding->type_description->type_name;
+                    bindingName = binding->type_description->type_name ? binding->type_description->type_name : "";
                 }
 
                 set.bindings.emplace_back(Shader::DescriptorSetBinding{
@@ -66,7 +66,7 @@ namespace sp::vulkan {
         InlineVector<Shader::SpecConstant, MAX_SPEC_CONSTANTS> specConstants;
         for (auto *specConstant : reflectBuffer) {
             specConstants.emplace_back(Shader::SpecConstant{
-                specConstant->name,
+                specConstant->name ? specConstant->name : "",
                 specConstant->constant_id,
             });
         }

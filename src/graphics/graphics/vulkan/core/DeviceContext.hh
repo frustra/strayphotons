@@ -85,7 +85,11 @@ namespace sp::vulkan {
         void SwapBuffers() override;
         void EndFrame() override;
         void WaitIdle() override {
-            device->waitIdle();
+            ZoneScoped;
+            if (!deviceResetRequired) device->waitIdle();
+        }
+        bool RequiresReset() const override {
+            return deviceResetRequired;
         }
 
         void InitRenderer(Game &game) override;
@@ -263,7 +267,6 @@ namespace sp::vulkan {
         std::thread::id renderThread;
 
         vk::Instance instance;
-        DeferredFunc instanceDestroy;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
         vk::PhysicalDevice physicalDevice;
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
@@ -271,7 +274,6 @@ namespace sp::vulkan {
         vk::UniqueDevice device;
         unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         vk::SurfaceKHR surface;
-        DeferredFunc surfaceDestroy;
 
         unique_ptr<PerfTimer> perfTimer;
         shared_ptr<ProfilerGui> profilerGui;
@@ -369,6 +371,8 @@ namespace sp::vulkan {
         robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
         std::atomic_bool reloadShaders;
+
+        bool deviceResetRequired = false;
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 

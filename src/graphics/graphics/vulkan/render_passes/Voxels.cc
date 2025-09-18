@@ -361,6 +361,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetViewportArray(viewports);
                 cmd.SetScissorArray(scissors);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
+                cmd.SetDepthTest(false, false);
 
                 cmd.SetUniformBuffer("VoxelStateUniform", resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer("LightData", "LightState");
@@ -588,16 +589,20 @@ namespace sp::vulkan::renderer {
 
                     for (auto &voxelLayer : VoxelLayers[0]) {
                         auto layerView = resources.GetImageView(voxelLayer.name);
-                        cmd.Raw().clearColorImage(*layerView->Image(),
-                            vk::ImageLayout::eTransferDstOptimal,
-                            clear,
-                            {range});
+                        if (layerView) {
+                            cmd.Raw().clearColorImage(*layerView->Image(),
+                                vk::ImageLayout::eTransferDstOptimal,
+                                clear,
+                                {range});
+                        }
 
                         auto layerView2 = resources.GetImageView(voxelLayer.preBlurName);
-                        cmd.Raw().clearColorImage(*layerView2->Image(),
-                            vk::ImageLayout::eTransferDstOptimal,
-                            clear,
-                            {range});
+                        if (layerView2) {
+                            cmd.Raw().clearColorImage(*layerView2->Image(),
+                                vk::ImageLayout::eTransferDstOptimal,
+                                clear,
+                                {range});
+                        }
                     }
                 }
 

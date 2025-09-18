@@ -60,7 +60,12 @@ void main() {
                 ivec3 samplePos = voxelPos + tangentAxisA * i + tangentAxisB * j;
 
                 vec4 frontSample = alphaSamples[i + 1][j + 1] * vec4(vec3(0.707), 1);
-                vec4 backSample = texelFetch(voxelLayerIn[axis], samplePos, 0);
+                vec4 backSample;
+                if (clamp(samplePos, ivec3(0), gridSize - 1) == samplePos) {
+                    backSample = texelFetch(voxelLayerIn[axis], samplePos, 0);
+                } else {
+                    backSample = vec4(0, 0, 0, 1);
+                }
                 if (LAYER_INDEX == 1) {
                     backSample /= max(1, backSample.a);
                 }

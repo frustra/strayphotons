@@ -46,7 +46,7 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
 
 target_compile_definitions(${PROJECT_GRAPHICS_CORE_LIB} PUBLIC
     SP_GRAPHICS_SUPPORT
-        "$<IF:$<BOOL:${TRACY_ENABLE}>,TRACY_ENABLE_GRAPHICS,>"
+    "$<IF:$<BOOL:${TRACY_ENABLE}>,TRACY_ENABLE_GRAPHICS,>"
 )
 target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     PUBLIC

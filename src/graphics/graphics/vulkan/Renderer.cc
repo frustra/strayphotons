@@ -75,7 +75,7 @@ namespace sp::vulkan {
     }
 
     Renderer::~Renderer() {
-        device->waitIdle();
+        if (!device.RequiresReset()) device->waitIdle();
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();

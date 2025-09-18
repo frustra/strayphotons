@@ -15,7 +15,7 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
 namespace sp::vulkan {
-    GPUScene::GPUScene(DeviceContext &device) : device(device), workQueue("", 0), textures(device, workQueue) {
+    GPUScene::GPUScene(DeviceContext &device) : device(device), textures(device) {
         indexBuffer = device.AllocateBuffer({sizeof(uint32), 64 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
@@ -43,7 +43,6 @@ namespace sp::vulkan {
     }
 
     void GPUScene::Flush() {
-        workQueue.Flush();
         textures.Flush();
         FlushMeshes();
     }

@@ -35,8 +35,18 @@ void main() {
         int stride = 1; // << max(0, int(LAYER_INDEX) - 1);
         ivec3 layerOffset = ivec3(AxisDirections[i]) * stride;
 
-        vec4 frontSample = texelFetch(voxelLayerIn[i], voxelPos, 0);
-        vec4 backSample = texelFetch(voxelLayerIn[i], voxelPos + layerOffset, 0);
+        vec4 frontSample;
+        if (clamp(voxelPos, ivec3(0), voxelInfo.gridSize - 1) == voxelPos) {
+            frontSample = texelFetch(voxelLayerIn[i], voxelPos, 0);
+        } else {
+            frontSample = vec4(0, 0, 0, 1);
+        }
+        vec4 backSample;
+        if (clamp(voxelPos + layerOffset, ivec3(0), voxelInfo.gridSize - 1) == voxelPos + layerOffset) {
+            backSample = texelFetch(voxelLayerIn[i], voxelPos + layerOffset, 0);
+        } else {
+            backSample = vec4(0, 0, 0, 1);
+        }
         if (LAYER_INDEX == 1) {
             // Alpha acts as voxel fill count on first layer
             frontSample /= max(1, frontSample.a);

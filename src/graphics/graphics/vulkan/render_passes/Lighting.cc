@@ -585,6 +585,7 @@ namespace sp::vulkan::renderer {
                 } else {
                     cmd.SetShaders("screen_cover.vert", "lighting.frag");
                 }
+                cmd.SetShaderConstant(ShaderStage::Vertex, "DRAW_DEPTH", 1.0f);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "LIGHTING_MODE", CVarLightingMode.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "VOXEL_LAYERS", voxelLayerCount);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
@@ -593,8 +594,11 @@ namespace sp::vulkan::renderer {
                     "ENABLE_SPECULAR_TRACING",
                     CVarEnableSpecularTracing.Get());
 
+                // Only run the fragment shader if the depth was written to
+                cmd.SetDepthTest(true, false);
+                cmd.SetDepthCompareOp(vk::CompareOp::eNotEqual);
+                // Enable stencil cutout for VR
                 cmd.SetStencilTest(true);
-                cmd.SetDepthTest(false, false);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
