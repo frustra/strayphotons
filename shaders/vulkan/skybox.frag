@@ -32,7 +32,8 @@ layout(push_constant) uniform PushConstants {
 };
 
 const vec3[3] colorTints = vec3[](vec3(255, 182, 119) / 255, vec3(255, 252, 246) / 255, vec3(188, 210, 255) / 255);
-// const vec3[4] dustColors = vec3[](vec3(81, 30, 30) / 255, vec3(226, 158, 56) / 255, vec3(85, 131, 185) / 255, vec3(219, 216, 220) / 255);
+// const vec3[4] dustColors = vec3[](vec3(81, 30, 30) / 255, vec3(226, 158, 56) / 255, vec3(85, 131, 185) / 255,
+// vec3(219, 216, 220) / 255);
 
 void main() {
     ViewState view = views[gl_ViewID_OVR];
