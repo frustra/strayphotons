@@ -28,6 +28,7 @@ namespace sp::scripts {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
+            ZoneScoped;
             Assertf(ent.Has<Name>(lock), "WallPrefab root has no name: %s", ToString(lock, ent));
             auto prefixName = ent.Get<Name>(lock);
 

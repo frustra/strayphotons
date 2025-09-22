@@ -75,7 +75,10 @@ namespace sp::scripts {
         std::string modelName;
         std::vector<std::string> templates = {"interactive"};
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Read<Name, SceneInfo, EventInput, TransformSnapshot>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<Name, SceneInfo>(lock)) return;
             Transform relativeTransform;
             auto target = targetEntity.Get(lock);
@@ -141,7 +144,7 @@ namespace sp::scripts {
         glm::vec3 rotationAxis = glm::vec3(0);
         float rotationSpeedRpm;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<Write<TransformTree>> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock) || rotationAxis == glm::vec3(0) || rotationSpeedRpm == 0.0f) return;
 
             auto &transform = ent.Get<TransformTree>(lock);
@@ -162,7 +165,7 @@ namespace sp::scripts {
     struct RotateToEntity {
         EntityRef targetEntityRef, upEntityRef;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<Write<TransformTree>> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             auto targetEnt = targetEntityRef.Get(lock);
@@ -462,4 +465,57 @@ namespace sp::scripts {
         StructField::New("names", &TimerSignal::names));
     LogicScript<TimerSignal> timerScript("timer", MetadataTimerSignal);
     PhysicsScript<TimerSignal> physicsTimerScript("physics_timer", MetadataTimerSignal);
+
+    struct VoxelController {
+        float voxelScale = 0.1f;
+        float voxelStride = 1.0f;
+        glm::vec3 voxelOffset = glm::vec3(0);
+        EntityRef alignmentEntity, followEntity;
+        std::optional<glm::vec3> alignment;
+
+        void OnTick(ScriptState &state,
+            Lock<Write<TransformTree>, Read<TransformSnapshot, VoxelArea>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            if (!ent.Has<TransformTree, VoxelArea>(lock) || voxelScale == 0.0f || voxelStride < 1.0f) return;
+
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto &voxelArea = ent.Get<VoxelArea>(lock);
+            auto voxelRotation = transform.GetGlobalRotation(lock);
+
+            glm::vec3 offset = voxelOffset * glm::vec3(voxelArea.extents) * voxelScale;
+            auto alignmentTarget = alignmentEntity.Get(lock);
+            if (alignmentTarget.Has<TransformSnapshot>(lock)) {
+                glm::vec3 alignmentOffset = glm::vec3(0);
+                auto &alignmentTargetPos = alignmentTarget.Get<TransformSnapshot>(lock).globalPose.GetPosition();
+                if (alignment) {
+                    alignmentOffset = alignmentTargetPos - alignment.value();
+                } else {
+                    alignment = alignmentTargetPos;
+                }
+                offset += glm::mod(alignmentOffset, voxelStride * voxelScale);
+            }
+
+            auto followPosition = glm::vec3(0);
+            auto followTarget = followEntity.Get(lock);
+            if (followTarget.Has<TransformSnapshot>(lock)) {
+                followPosition = followTarget.Get<TransformSnapshot>(lock).globalPose.GetPosition();
+            }
+
+            followPosition = voxelRotation * followPosition;
+            followPosition = glm::floor(followPosition / voxelStride / voxelScale) * voxelScale * voxelStride;
+            transform.pose.SetPosition(glm::inverse(voxelRotation) * (followPosition + offset));
+            transform.pose.SetScale(glm::vec3(voxelScale));
+        }
+    };
+    StructMetadata MetadataVoxelController(typeid(VoxelController),
+        sizeof(VoxelController),
+        "VoxelController",
+        "",
+        StructField::New("voxel_scale", &VoxelController::voxelScale),
+        StructField::New("voxel_stride", &VoxelController::voxelStride),
+        StructField::New("voxel_offset", &VoxelController::voxelOffset),
+        StructField::New("alignment_target", &VoxelController::alignmentEntity),
+        StructField::New("follow_target", &VoxelController::followEntity));
+    LogicScript<VoxelController> voxelController("voxel_controller", MetadataVoxelController);
 } // namespace sp::scripts

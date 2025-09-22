@@ -224,15 +224,6 @@ The `magnetic_socket` script has no configurable parameters
 
 <div class="component_definition">
 
-## `physics_camera_view` Script
-
-The `physics_camera_view` script has no configurable parameters
-
-</div>
-
-
-<div class="component_definition">
-
 ## `physics_collapse_events` Script
 
 The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string&gt;
@@ -519,18 +510,6 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="component_definition">
 
 ## `rotate` Script
-
-| Parameter Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **axis** | vec3 | [0, 0, 0] | No description |
-| **speed** | float | 0 | No description |
-
-</div>
-
-
-<div class="component_definition">
-
-## `rotate_physics` Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|

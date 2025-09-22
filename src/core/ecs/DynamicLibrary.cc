@@ -227,10 +227,14 @@ namespace ecs {
         metadata.fields = dynamicDefinition.fields;
         switch (definition.type) {
         case ScriptType::LogicScript:
+            definition.initFunc = ScriptInitFunc(&Init);
+            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
+            definition.callback = LogicTickFunc(&OnTick);
+            break;
         case ScriptType::PhysicsScript:
             definition.initFunc = ScriptInitFunc(&Init);
             definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = OnTickFunc(&OnTick);
+            definition.callback = PhysicsTickFunc(&OnTick);
             break;
         case ScriptType::EventScript:
             definition.initFunc = ScriptInitFunc(&Init);

@@ -17,7 +17,7 @@ namespace sp::scripts {
     struct InitEvent {
         std::vector<std::string> outputs;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             state.definition.events.clear();
             state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
@@ -46,7 +46,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
@@ -116,7 +116,10 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Read<EventInput>, Write<Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");

@@ -44,12 +44,18 @@ struct ScriptHelloWorld {
         tecs_entity_t ent,
         uint64_t intervalNs) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
-        if (!Tecs_entity_has_renderable(lock, ent)) return;
+        if (!Tecs_entity_has_bitset(lock, ent, SP_ACCESS_RENDERABLE | SP_ACCESS_TRANSFORM_TREE)) return;
+
         sp_ecs_renderable_t *renderable = Tecs_entity_get_renderable(lock, ent);
         renderable->color_override.rgba[0] = sin(ctx->frameCount / 100.0f) * 0.5 + 0.5;
         renderable->color_override.rgba[1] = sin(ctx->frameCount / 100.0f + 1) * 0.5 + 0.5;
         renderable->color_override.rgba[2] = cos(ctx->frameCount / 100.0f) * 0.5 + 0.5;
         renderable->color_override.rgba[3] = 1;
+
+        sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, ent);
+        glm::vec3 newPos(std::sin(ctx->frameCount / 100.0f), 1, std::cos(ctx->frameCount / 100.0f));
+        sp_transform_set_position(&transformTree->transform, (const vec3_t *)&newPos);
+
         ctx->frameCount++;
     }
 
@@ -60,10 +66,8 @@ struct ScriptHelloWorld {
         uint64_t intervalNs) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
         if (!Tecs_entity_has_bitset(lock, ent, SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT)) return;
-        sp_ecs_transform_tree_t *transformTree = Tecs_entity_get_transform_tree(lock, ent);
+        const sp_ecs_transform_tree_t *transformTree = Tecs_entity_const_get_transform_tree(lock, ent);
         sp_ecs_transform_snapshot_t *transformSnapshot = Tecs_entity_get_transform_snapshot(lock, ent);
-        glm::vec3 newPos(std::sin(ctx->frameCount / 100.0f), 1, std::cos(ctx->frameCount / 100.0f));
-        sp_transform_set_position(&transformTree->transform, (const vec3_t *)&newPos);
         sp_ecs_transform_tree_get_global_transform(transformTree, lock, &transformSnapshot->transform);
         ctx->frameCount++;
     }

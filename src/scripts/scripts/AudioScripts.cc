@@ -19,7 +19,10 @@ namespace sp::scripts {
     struct SoundOcclusion {
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Read<TransformSnapshot>, Write<Audio, PhysicsQuery>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<Audio, PhysicsQuery, TransformSnapshot>(lock)) return;
 
             auto &constAudio = ent.Get<const Audio>(lock);
@@ -68,7 +71,10 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Write<Audio, Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<Audio>(lock)) return;
             auto &sounds = ent.Get<Audio>(lock).sounds;
             if (sounds.empty()) return;
@@ -107,7 +113,10 @@ namespace sp::scripts {
         int frames = 0;
         float avgSpeed = 0.0f;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<Read<TransformSnapshot>, SendEventsLock, Write<Audio>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot, Audio>(lock)) return;
             auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
             auto &audio = ent.Get<Audio>(lock);

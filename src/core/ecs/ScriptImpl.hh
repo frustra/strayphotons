@@ -16,12 +16,10 @@ namespace ecs {
     static inline ScriptDefinition CreateLogicScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
         auto wrapperFn = [callback = std::move(callback)](ecs::ScriptState &state,
-                             ecs::DynamicLock<ecs::ReadSignalsLock> lock,
+                             const ecs::LogicUpdateLock &lock,
                              ecs::Entity ent,
                              chrono_clock::duration interval) {
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "LogicScript invoked without lock permissions: %s", typeid(LockType).name());
-            return callback(state, *tryLock, ent, interval);
+            return callback(state, (LockType)lock, ent, interval);
         };
         return ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
     }
@@ -29,12 +27,10 @@ namespace ecs {
     static inline ScriptDefinition CreatePhysicsScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
         auto wrapperFn = [callback = std::move(callback)](ecs::ScriptState &state,
-                             ecs::DynamicLock<ecs::ReadSignalsLock> lock,
+                             const ecs::PhysicsUpdateLock &lock,
                              ecs::Entity ent,
                              chrono_clock::duration interval) {
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "PhysicsScript invoked without lock permissions: %s", typeid(LockType).name());
-            return callback(state, *tryLock, ent, interval);
+            return callback(state, (LockType)lock, ent, interval);
         };
         return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
     }
@@ -103,21 +99,25 @@ namespace ecs {
         }
 
         static void OnTick(ScriptState &state,
-            const DynamicLock<ReadSignalsLock> &lock,
+            const LogicUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.scriptData);
             if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "Failed to lock ontick script lock: %s", typeid(LockType).name());
-            ptr->OnTick(state, *tryLock, ent, interval);
+            ptr->OnTick(state, (LockType)lock, ent, interval);
         }
 
         LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::LogicScript, {}, false, savedPtr, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::LogicScript,
+                {},
+                false,
+                savedPtr,
+                ScriptInitFunc(&Init),
+                {},
+                LogicTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -131,7 +131,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                OnTickFunc(&OnTick)});
+                LogicTickFunc(&OnTick)});
         }
     };
 
@@ -167,21 +167,25 @@ namespace ecs {
         }
 
         static void OnTick(ScriptState &state,
-            const DynamicLock<ReadSignalsLock> &lock,
+            const PhysicsUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.scriptData);
             if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "Failed to lock ontick physics script lock: %s", typeid(LockType).name());
-            ptr->OnTick(state, *tryLock, ent, interval);
+            ptr->OnTick(state, (LockType)lock, ent, interval);
         }
 
         PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::PhysicsScript, {}, false, savedPtr, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::PhysicsScript,
+                {},
+                false,
+                savedPtr,
+                ScriptInitFunc(&Init),
+                {},
+                PhysicsTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -195,7 +199,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                OnTickFunc(&OnTick)});
+                PhysicsTickFunc(&OnTick)});
         }
     };
 

@@ -82,14 +82,18 @@ namespace sp::vulkan::renderer {
 
         AddBufferReadback(graph, "LightSensorValues", 0, {}, [data](BufferPtr buffer) {
             auto illuminanceValues = (glm::vec4 *)buffer->Mapped();
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::LightSensor>>();
-            for (int i = 0; i < data->gpu.sensorCount; i++) {
-                auto entity = data->entities[i];
-                if (entity.Has<ecs::LightSensor>(lock)) {
-                    auto &sensor = entity.Get<ecs::LightSensor>(lock);
-                    sensor.illuminance = illuminanceValues[i];
+            InlineVector<glm::vec4, MAX_LIGHT_SENSORS> sensorValues(data->gpu.sensorCount);
+            InlineVector<ecs::Entity, MAX_LIGHT_SENSORS> sensorEntities(data->gpu.sensorCount);
+            std::copy_n(illuminanceValues, data->gpu.sensorCount, sensorValues.data());
+            std::copy_n(data->entities, data->gpu.sensorCount, sensorEntities.data());
+            ecs::QueueTransaction<ecs::Write<ecs::LightSensor>>([sensorValues, sensorEntities](auto &lock) {
+                for (int i = 0; i < sensorValues.size(); i++) {
+                    if (sensorEntities[i].Has<ecs::LightSensor>(lock)) {
+                        auto &sensor = sensorEntities[i].Get<ecs::LightSensor>(lock);
+                        sensor.illuminance = sensorValues[i];
+                    }
                 }
-            }
+            });
         });
     }
 } // namespace sp::vulkan::renderer

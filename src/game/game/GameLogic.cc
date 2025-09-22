@@ -116,9 +116,10 @@ namespace sp {
     void GameLogic::Frame() {
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::WriteAll>();
+            ZoneScopedN("RunLogicUpdate");
+            auto lock = ecs::StartTransaction<ecs::LogicUpdateLock>();
             UpdateInputEvents(lock, windowInputQueue);
-            ecs::GetScriptManager().RunOnTick(lock, interval);
+            ecs::GetScriptManager().RunLogicUpdate(lock, interval);
         }
         {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();

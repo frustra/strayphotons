@@ -41,8 +41,8 @@ namespace sp::vulkan::renderer {
         9,
         "The number of fragments that can be written to a voxel.");
 
-    static CVar<uint32> CVarVoxelFragmentBucketSizeFactor("r.VoxelFragmentBucketSizeFactor",
-        1.75,
+    static CVar<float> CVarVoxelFragmentBucketSizeFactor("r.VoxelFragmentBucketSizeFactor",
+        1.75f,
         "Factor to decrease size of subsequent buckets");
 
     struct GPUVoxelState {
