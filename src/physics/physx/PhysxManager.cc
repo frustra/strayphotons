@@ -220,8 +220,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::Signals>,
-                ecs::PhysicsUpdateLock>();
+                    ecs::Signals>>();
 
             GameLogic::UpdateInputEvents(lock, windowInputQueue);
 
@@ -359,8 +358,13 @@ namespace sp {
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
+        }
 
-            ecs::GetScriptManager().RunOnPhysicsUpdate(lock, interval);
+        {
+            ZoneScopedN("RunPhysicsUpdate");
+            auto lock = ecs::StartTransaction<ecs::PhysicsUpdateLock>();
+
+            ecs::GetScriptManager().RunPhysicsUpdate(lock, interval);
         }
 
         { // Simulate 1 physics frame (blocking)

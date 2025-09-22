@@ -282,37 +282,35 @@ namespace sp {
 
         auto gltf = loadedGltfs.Load(name);
         if (!gltf) {
+            std::lock_guard lock(gltfMutex);
+            // Check again in case an inflight model just completed on another thread
+            gltf = loadedGltfs.Load(name);
+            if (gltf) return gltf;
+
+            AssetPath path;
             {
-                std::lock_guard lock(gltfMutex);
-                // Check again in case an inflight model just completed on another thread
-                gltf = loadedGltfs.Load(name);
-                if (gltf) return gltf;
-
-                AssetPath path;
-                {
-                    std::lock_guard lock2(externalGltfMutex);
-                    auto it = externalGltfPaths.find(name);
-                    if (it != externalGltfPaths.end()) path = it->second;
-                }
-
-                AsyncPtr<Asset> asset;
-                if (path.empty()) {
-                    path = FindGltfByName(name);
-                    if (!path.empty()) asset = Load(path, AssetType::Bundled);
-                } else {
-                    asset = Load(path, AssetType::External);
-                }
-
-                gltf = workQueue.Dispatch<Gltf>(asset, [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
-                    if (!asset) {
-                        Logf("Gltf not found: %s", name);
-                        return std::shared_ptr<Gltf>();
-                    }
-                    return std::make_shared<Gltf>(name, asset);
-                });
-                loadedGltfs.Register(name, gltf);
-                if (shutdown.load()) StartThread();
+                std::lock_guard lock2(externalGltfMutex);
+                auto it = externalGltfPaths.find(name);
+                if (it != externalGltfPaths.end()) path = it->second;
             }
+
+            AsyncPtr<Asset> asset;
+            if (path.empty()) {
+                path = FindGltfByName(name);
+                if (!path.empty()) asset = Load(path, AssetType::Bundled);
+            } else {
+                asset = Load(path, AssetType::External);
+            }
+
+            gltf = workQueue.Dispatch<Gltf>(asset, [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
+                if (!asset) {
+                    Logf("Gltf not found: %s", name);
+                    return std::shared_ptr<Gltf>();
+                }
+                return std::make_shared<Gltf>(name, asset);
+            });
+            loadedGltfs.Register(name, gltf);
+            if (shutdown.load()) StartThread();
         }
 
         return gltf;

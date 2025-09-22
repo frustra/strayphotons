@@ -15,6 +15,7 @@
 #include <variant>
 
 namespace ecs {
+    // TODO: Split into LaserPath and LaserProperties for Physics/Logic threads to access separately
     struct LaserLine {
         struct Line {
             std::vector<glm::vec3> points;

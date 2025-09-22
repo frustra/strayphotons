@@ -101,7 +101,7 @@ namespace sp {
                 auto dirEnt = scene->NewSystemEntity(lock, scene, entities::Direction.Name());
                 auto &dirTree = dirEnt.Set<ecs::TransformTree>(lock);
                 dirTree.parent = entities::Player;
-                auto dirUpdateScript = ecs::CreatePhysicsScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                auto dirUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &dirTree = ent.Get<ecs::TransformTree>(lock);

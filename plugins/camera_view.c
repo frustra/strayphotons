@@ -94,7 +94,7 @@ void camera_view_on_tick(void *context,
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         strncpy(output[0].name, "camera_view2", sizeof(output[0].name) - 1);
-        output[0].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
+        output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = true;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 1);
         strncpy(events[0], "/script/camera_rotate", sizeof(events[0]) - 1);

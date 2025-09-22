@@ -461,7 +461,7 @@ namespace sp::scripts {
         StructField::New("force_limit", &VrHandScript::forceLimit),
         StructField::New("torque_limit", &VrHandScript::torqueLimit),
         StructField::New("noclip_entity", &VrHandScript::noclipEntity));
-    PhysicsScript<VrHandScript> vrHandScript("vr_hand",
+    LogicScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
         INTERACT_EVENT_INTERACT_GRAB,

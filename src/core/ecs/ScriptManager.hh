@@ -149,8 +149,8 @@ namespace ecs {
 
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
         void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
-        void RunOnTick(const Lock<WriteAll> &Lock, const chrono_clock::duration &interval);
-        void RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
+        void RunLogicUpdate(const LogicUpdateLock &Lock, const chrono_clock::duration &interval);
+        void RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
 
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);

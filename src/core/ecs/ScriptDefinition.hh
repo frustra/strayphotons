@@ -20,22 +20,39 @@ namespace ecs {
     class ScriptState;
     class GuiRenderable;
 
+    using LogicUpdateLock = Lock<SendEventsLock,
+        Read<TransformSnapshot, VoxelArea, SceneInfo>,
+        Write<TransformTree,
+            ActiveScene,
+            Audio,
+            Renderable,
+            Light,
+            LightSensor,
+            LaserEmitter,
+            LaserLine,
+            Physics,
+            PhysicsQuery,
+            PhysicsJoints,
+            Signals>>;
+
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
-        Read<TransformSnapshot, SceneInfo>,
-        Write<TransformTree, OpticalElement, Physics, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
+        Read<TransformTree, Physics, SceneInfo>,
+        Write<TransformSnapshot, OpticalElement, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
     using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, Gui, Scripts>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
     using ScriptDestroyFunc = std::function<void(ScriptState &)>;
-    using OnTickFunc = std::function<
-        void(ScriptState &, const DynamicLock<ReadSignalsLock> &, Entity, chrono_clock::duration)>;
+    using LogicTickFunc = std::function<void(ScriptState &, const LogicUpdateLock &, Entity, chrono_clock::duration)>;
+    using PhysicsTickFunc = std::function<
+        void(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration)>;
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using GuiRenderableFunc = std::function<std::shared_ptr<GuiRenderable>(ScriptState &)>;
 
-    using ScriptCallback = std::variant<std::monostate, OnTickFunc, OnEventFunc, PrefabFunc, GuiRenderableFunc>;
+    using ScriptCallback = std::
+        variant<std::monostate, LogicTickFunc, PhysicsTickFunc, OnEventFunc, PrefabFunc, GuiRenderableFunc>;
 
     using ScriptName = sp::InlineString<63>;
 

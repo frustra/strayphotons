@@ -34,7 +34,12 @@ namespace sp::scripts {
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock,
+                Read<TransformTree, TransformSnapshot>,
+                Write<Renderable, Physics, PhysicsQuery, PhysicsJoints, Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot>(lock)) return;
 
             bool enableInteraction = !highlightOnly && !disabled;
@@ -149,7 +154,7 @@ namespace sp::scripts {
                         if (!event.source.Has<TransformSnapshot>(lock)) continue;
 
                         auto &input = event.data.vec2;
-                        auto &transform = event.source.Get<const TransformSnapshot>(lock).globalPose;
+                        auto &transform = event.source.Get<TransformSnapshot>(lock).globalPose;
 
                         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
                         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
@@ -250,7 +255,10 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<SendEventsLock, Read<TransformSnapshot>, Write<PhysicsQuery, PhysicsJoints>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;

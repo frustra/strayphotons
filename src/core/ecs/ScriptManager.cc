@@ -90,13 +90,13 @@ namespace ecs {
         auto &scriptSet = scripts[state.definition.type];
         switch (state.definition.type) {
         case ScriptType::LogicScript:
-            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: LogicScript != OnTick",
+            Assertf(std::holds_alternative<LogicTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: LogicScript != LogicTickFunc",
                 state.definition.name);
             break;
         case ScriptType::PhysicsScript:
-            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: PhysicsScript != OnTick",
+            Assertf(std::holds_alternative<PhysicsTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: PhysicsScript != PhysicsTickFunc",
                 state.definition.name);
             break;
         case ScriptType::EventScript:
@@ -307,14 +307,14 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RunOnTick(const Lock<WriteAll> &lock, const chrono_clock::duration &interval) {
+    void ScriptManager::RunLogicUpdate(const LogicUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
         auto &scriptSet = scripts[ScriptType::LogicScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
         for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            auto *callback = std::get_if<LogicTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnTick");
@@ -324,14 +324,14 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
+    void ScriptManager::RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
         auto &scriptSet = scripts[ScriptType::PhysicsScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
         for (auto &[ent, state] : scriptSet.scripts) {
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            auto *callback = std::get_if<PhysicsTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnPhysicsUpdate");

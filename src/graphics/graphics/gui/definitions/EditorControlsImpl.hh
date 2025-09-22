@@ -411,14 +411,14 @@ namespace sp {
             if (ImGui::Button("Add LogicScript")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, LogicTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Physics Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, OnTickFunc()});
+                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, PhysicsTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();

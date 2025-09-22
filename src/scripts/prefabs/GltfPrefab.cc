@@ -26,6 +26,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
+            ZoneScoped;
             auto asyncGltf = sp::Assets().LoadGltf(modelName);
             auto model = asyncGltf->Get();
             if (!model) {

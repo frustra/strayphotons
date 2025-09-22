@@ -23,7 +23,7 @@ namespace sp::scripts {
         bool alive = false;
         bool initialized = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
             if (!initialized) {
                 if (alive) EventBindings::SendEvent(lock, ent, Event{"/life/notify_neighbors", ent, alive});
                 initialized = true;
