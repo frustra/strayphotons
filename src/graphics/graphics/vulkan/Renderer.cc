@@ -676,7 +676,9 @@ namespace sp::vulkan {
         };
 
         auto loadModel = [&](auto lock, ecs::Entity ent) {
+            ZoneScopedN("LoadModel");
             auto &renderable = ent.Get<ecs::Renderable>(lock);
+            ZoneStr(renderable.modelName);
             if (renderable.modelName.empty()) {
                 setModel(lock, ent, nullptr);
                 return true;

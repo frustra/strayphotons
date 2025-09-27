@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <memory>
+#include <span>
 
 namespace sp {
     class Asset;
@@ -21,6 +22,7 @@ namespace sp {
     class Image : public NonCopyable {
     public:
         Image(std::shared_ptr<const Asset> asset);
+        Image(std::span<const unsigned char> bufferView);
 
         int GetWidth() const {
             return width;

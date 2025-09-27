@@ -60,6 +60,7 @@ namespace sp {
         };
         std::atomic<ThreadState> state;
         std::atomic_uint32_t measuredFps;
+        chrono_clock::time_point targetFrameEnd;
 
     private:
         std::thread thread;

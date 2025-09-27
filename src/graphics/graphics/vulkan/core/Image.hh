@@ -243,5 +243,5 @@ namespace sp::vulkan {
     bool FormatIsSRGB(vk::Format format);
     vk::Format FormatSRGBToUnorm(vk::Format format);
     uint32 CalculateMipmapLevels(vk::Extent3D extent);
-    vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
+    vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR = 0);
 } // namespace sp::vulkan

@@ -108,6 +108,10 @@ namespace sp::vulkan {
     }
 #endif
 
+    CVar<uint64_t> CVarTransferBufferRateLimit("r.TransferBufferRateLimit",
+        1 * 1024 * 1024, // 1 MiB / frame
+        "Buffer transfer rate throttle limit (bytes per frame)");
+
     DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
         : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
           frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
@@ -548,6 +552,16 @@ namespace sp::vulkan {
 #endif
     }
 
+    chrono_clock::duration DeviceContext::GetRemainingFrameTime() const {
+        auto duration = graphics.GetRemainingFrameTime();
+        // Logf("GetRemainingFrameTime: %lluus", duration.count() / 1000);
+        return duration;
+    }
+
+    chrono_clock::duration DeviceContext::GetFrameInterval() const {
+        return graphics.GetFrameInterval();
+    }
+
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
@@ -777,6 +791,17 @@ namespace sp::vulkan {
 
         frameEndQueue.Flush();
 
+        // Thread-safe clamping decrement of frameBandwidthCounter
+        uint64_t prevValue, newValue;
+        do {
+            prevValue = frameBandwidthCounter.load();
+            if (prevValue > CVarTransferBufferRateLimit.Get()) {
+                newValue = prevValue - CVarTransferBufferRateLimit.Get();
+            } else {
+                newValue = 0;
+            }
+        } while (!frameBandwidthCounter.compare_exchange_weak(prevValue, newValue));
+
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
         frameCounter++;
@@ -944,22 +969,24 @@ namespace sp::vulkan {
         return Thread().bufferPool->Get(desc);
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const AsyncPtr<InitialData> &asyncData,
         vk::BufferCreateInfo bufferInfo,
         VmaAllocationCreateInfo allocInfo) {
-        return allocatorQueue.Dispatch<Buffer>([=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(asyncData, [=, this](std::shared_ptr<InitialData> data) {
+            Assertf(data, "DeviceContext::CreateBuffer null initial buffer data");
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
-            buf->CopyFrom(data.data, data.dataSize);
+            buf->CopyFrom(data->data, data->dataSize);
             return buf;
         });
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const AsyncPtr<InitialData> &asyncData,
         vk::BufferUsageFlags usage,
         VmaMemoryUsage residency) {
-        return allocatorQueue.Dispatch<Buffer>([=, this]() {
-            auto buf = AllocateBuffer(data.dataSize, usage, residency);
-            buf->CopyFrom(data.data, data.dataSize);
+        return allocatorQueue.Dispatch<Buffer>(asyncData, [=, this](std::shared_ptr<InitialData> data) {
+            Assertf(data, "DeviceContext::CreateBuffer null initial buffer data");
+            auto buf = AllocateBuffer(data->dataSize, usage, residency);
+            buf->CopyFrom(data->data, data->dataSize);
             return buf;
         });
     }
@@ -967,6 +994,7 @@ namespace sp::vulkan {
     AsyncPtr<void> DeviceContext::TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch) {
         auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
 
+        size_t transferSize = 0;
         for (auto &transfer : batch) {
             vk::BufferCopy region;
             region.srcOffset = 0;
@@ -1001,10 +1029,20 @@ namespace sp::vulkan {
                 region.size,
                 dstSize);
 
+            transferSize += dstSize;
             transferCmd->Raw().copyBuffer(srcBuf, dstBuf, {region});
         }
 
-        return frameEndQueue.Dispatch<void>([this, transferCmd]() {
+        size_t sample = frameBandwidthCounter.fetch_add(transferSize);
+        if (sample > CVarTransferBufferRateLimit.Get()) {
+            auto delayFrames = sample / CVarTransferBufferRateLimit.Get();
+            // Logf("Throttling TransferBuffers %llu for %llu ms",
+            //     transferSize,
+            //     (delayFrames * graphics.interval).count() / 1000000);
+            std::this_thread::sleep_for(delayFrames * graphics.interval);
+        }
+
+        return frameEndQueue.Dispatch<void>([this, transferSize, transferCmd]() {
             auto cmd = transferCmd;
             Submit(cmd);
         });
@@ -1020,19 +1058,18 @@ namespace sp::vulkan {
         return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const InitialData &data) {
+    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<InitialData> &data) {
         ZoneScoped;
 
         bool genMipmap = createInfo.genMipmap;
         bool genFactor = !createInfo.factor.empty();
-        bool hasSrcData = data.data && data.dataSize;
         vk::ImageUsageFlags declaredUsage = createInfo.usage;
         vk::Format factorFormat = createInfo.format;
 
         if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
-        if (!hasSrcData) {
+        if (!data) {
             Assert(!genMipmap, "must pass initial data to generate a mipmap");
         } else {
             Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
@@ -1059,15 +1096,20 @@ namespace sp::vulkan {
 
             return AllocateImage(actualCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, declaredUsage);
         });
-        if (!hasSrcData) return futImage;
+        if (!data) return futImage;
 
-        vk::BufferCreateInfo bufferInfo;
-        bufferInfo.size = data.dataSize;
-        bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-        allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        auto futStagingBuf = CreateBuffer(data, bufferInfo, allocInfo);
+        auto futStagingBuf = allocatorQueue.Dispatch<Buffer>(data, [=, this](std::shared_ptr<InitialData> data) {
+            Assertf(data, "DeviceContext::CreateImage null initial buffer data");
+            vk::BufferCreateInfo bufferInfo;
+            bufferInfo.size = data->dataSize;
+            bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
+            VmaAllocationCreateInfo allocInfo = {};
+            allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+            auto buf = AllocateBuffer(bufferInfo, allocInfo);
+            buf->CopyFrom(data->data, data->dataSize);
+            return buf;
+        });
 
         return frameEndQueue.Dispatch<Image>(futImage, futStagingBuf, [=, this](ImagePtr image, BufferPtr stagingBuf) {
             ZoneScopedN("PrepareImage");
@@ -1350,7 +1392,7 @@ namespace sp::vulkan {
 
     AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
-        const InitialData &data) {
+        const AsyncPtr<InitialData> &data) {
         ZoneScoped;
         auto futImage = CreateImage(imageInfo, data);
 
@@ -1381,7 +1423,7 @@ namespace sp::vulkan {
         } else {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
-        return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+        return CreateImageAndView(createInfo, viewInfo, make_async<InitialData>(data, image->ByteSize(), image));
     }
 
     shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
@@ -1457,6 +1499,7 @@ namespace sp::vulkan {
     vk::Sampler DeviceContext::GetSampler(const vk::SamplerCreateInfo &info) {
         Assert(info.pNext == 0, "sampler info pNext can't be set");
 
+        std::lock_guard l(samplersMutex);
         SamplerKey key((const VkSamplerCreateInfo &)info);
         auto &sampler = adhocSamplers[key];
         if (sampler) return *sampler;

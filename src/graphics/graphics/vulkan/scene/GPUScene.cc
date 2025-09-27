@@ -8,6 +8,7 @@
 #include "GPUScene.hh"
 
 #include "assets/GltfImpl.hh"
+#include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -15,7 +16,15 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
 namespace sp::vulkan {
-    GPUScene::GPUScene(DeviceContext &device) : device(device), textures(device) {
+    static CVar<uint32_t> CVarReservedLoadTimeUs("r.ReservedLoadTime",
+        200,
+        "Amount of frame time reserved for loading meshes in microseconds");
+    static CVar<uint32_t> CVarNumMeshWorkers("r.NumMeshWorkers",
+        4,
+        "The number of concurrently loaded GPU mesh buffers");
+
+    GPUScene::GPUScene(DeviceContext &device)
+        : device(device), textures(device), workQueue("MeshWorker", CVarNumMeshWorkers.Get()) {
         indexBuffer = device.AllocateBuffer({sizeof(uint32), 64 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
@@ -248,24 +257,35 @@ namespace sp::vulkan {
         if (meshIndex >= model->meshes.size()) return nullptr;
         auto vkMesh = activeMeshes.Load(MeshKeyView{model->name, meshIndex});
         if (!vkMesh) {
-            meshesToLoad.emplace_back(model, meshIndex);
+            meshesToLoad.emplace(MeshKey{rg::ResourceName(model->name), meshIndex}, AsyncMesh(model));
         }
         return vkMesh;
     }
 
     void GPUScene::FlushMeshes() {
+        ZoneScoped;
         activeMeshes.Tick(std::chrono::milliseconds(33));
 
-        for (int i = (int)meshesToLoad.size() - 1; i >= 0; i--) {
-            auto &[model, meshIndex] = meshesToLoad[i];
-            if (activeMeshes.Contains(MeshKeyView{model->name, meshIndex})) {
-                meshesToLoad.pop_back();
+        auto loadStart = chrono_clock::now();
+        auto frameTimeout = device.GetRemainingFrameTime() + std::chrono::microseconds(CVarReservedLoadTimeUs.Get());
+        auto it = meshesToLoad.begin();
+        while (it != meshesToLoad.end() && chrono_clock::now() - loadStart < frameTimeout) {
+            if (activeMeshes.Contains(it->first)) {
+                it = meshesToLoad.erase(it);
                 continue;
             }
-
-            activeMeshes.Register(MeshKey{rg::ResourceName{model->name}, meshIndex},
-                make_shared<Mesh>(model, meshIndex, *this, device));
-            meshesToLoad.pop_back();
+            auto &mesh = it->second;
+            auto &meshIndex = it->first.meshIndex;
+            if (!mesh.async) {
+                mesh.async = workQueue.Dispatch<Mesh>([this, gltf = mesh.gltf, meshIndex]() {
+                    return std::make_shared<Mesh>(gltf, meshIndex, *this, device);
+                });
+            } else if (mesh.async->Ready()) {
+                activeMeshes.Register(MeshKey{rg::ResourceName{mesh.gltf->name}, meshIndex}, mesh.async->Get());
+                it = meshesToLoad.erase(it);
+                continue;
+            }
+            it++;
         }
     }
 

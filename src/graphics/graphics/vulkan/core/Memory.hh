@@ -9,6 +9,7 @@
 
 #include "common/Common.hh"
 #include "common/Hashing.hh"
+#include "common/LockFreeMutex.hh"
 #include "common/Tracing.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
@@ -232,6 +233,7 @@ namespace sp::vulkan {
         vk::BufferCreateInfo bufferInfo;
         vk::Buffer buffer;
 
+        LockFreeMutex mutex;
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 

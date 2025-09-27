@@ -10,6 +10,7 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
+#include "assets/Image.hh"
 #include "assets/JsonHelpers.hh"
 #include "common/Logging.hh"
 #include "common/Tracing.hh"
@@ -19,6 +20,14 @@
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <span>
+
+namespace tinygltf {
+    struct LoadImageDataOption {
+        bool preserve_channels{false};
+        bool as_is{false};
+    };
+} // namespace tinygltf
 
 namespace sp {
     namespace gltf {
@@ -111,6 +120,10 @@ namespace sp {
         }
     } // namespace gltf
 
+    static CVar<size_t> CVarNumGltfImageWorkers("r.NumGltfImageWorkers",
+        8u,
+        "The number of concurrently loaded Gltf images");
+
     Gltf::Gltf(std::string_view name, std::shared_ptr<const Asset> asset) : name(name), asset(asset) {
         Assertf(asset, "Gltf not found: %s", name);
 
@@ -148,10 +161,21 @@ namespace sp {
                     stream.read(reinterpret_cast<char *>(out->data()), fileSize);
                     return true;
                 },
-            .WriteWholeFile = nullptr,
+            .WriteWholeFile =
+                [](std::string *, const std::string &, const std::vector<unsigned char> &, void *) {
+                    Errorf("Tried to write gltf file");
+                    return false;
+                },
+            .GetFileSizeInBytes =
+                [](size_t *out, std::string *err, const std::string &absFilename, void *) {
+                    std::ifstream stream;
+                    return Assets().InputStream(absFilename, AssetType::Bundled, stream, out);
+                },
             .user_data = this,
         };
         gltfLoader.SetFsCallbacks(fsCallbacks);
+        gltfLoader.SetPreserveImageChannels(false);
+        gltfLoader.SetImagesAsIs(true);
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (asset->extension == "gltf") {
             ZoneScopedN("GltfLoadASCIIFromString");
@@ -174,6 +198,40 @@ namespace sp {
         }
 
         Assertf(ret && err.empty(), "Failed to parse glTF (%s): %s", name, err);
+
+        {
+            ZoneScopedN("GltfImageLoad");
+            static DispatchQueue workQueue("GltfImageLoader", CVarNumGltfImageWorkers.Get());
+            int img_index = 0;
+            std::vector<AsyncPtr<void>> futures;
+            futures.reserve(model->images.size());
+            for (auto &img : model->images) {
+                Assertf(img.as_is, "Expected input image to be as-is");
+                futures.emplace_back(workQueue.Dispatch<void>([&img, i = img_index++]() {
+                    std::string err, warn;
+                    std::vector<unsigned char> data = std::move(img.image);
+                    tinygltf::LoadImageDataOption option{
+                        .preserve_channels = false,
+                        .as_is = false,
+                    };
+                    bool ret = tinygltf::LoadImageData(&img, i, &err, &warn, 0, 0, data.data(), data.size(), &option);
+                    if (!warn.empty()) Warnf("Gltf material warning: %s", warn);
+                    if (!err.empty()) Warnf("Gltf material error: %s", err);
+                    if (!ret) {
+                        Errorf("Failed to load Gltf material image: %s", img.name);
+                        img.width = -1;
+                        img.height = -1;
+                        img.component = -1;
+                        img.image.clear();
+                    }
+                }));
+            }
+            workQueue.Flush(true);
+            for (auto &fut : futures) {
+                fut->Get();
+            }
+        }
+
         gltfModel = model;
         nodes.resize(model->nodes.size());
         skins.resize(model->skins.size());

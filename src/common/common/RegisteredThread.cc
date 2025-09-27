@@ -85,7 +85,7 @@ namespace sp {
 
             if (!ThreadInit()) return;
 
-            auto targetFrameEnd = chrono_clock::now() + this->interval;
+            targetFrameEnd = chrono_clock::now() + this->interval;
             uint32_t fpsCounter = 0;
             chrono_clock::time_point fpsTimer = chrono_clock::now();
 #ifdef CATCH_GLOBAL_EXCEPTIONS

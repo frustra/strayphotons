@@ -38,7 +38,7 @@ namespace sp::vulkan {
 
         TextureHandle Add(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo,
-            const InitialData &data);
+            const AsyncPtr<InitialData> &data);
         TextureHandle Add(const ImageViewPtr &ptr);
         TextureHandle Add(const AsyncPtr<ImageView> &asyncPtr);
 
@@ -72,7 +72,8 @@ namespace sp::vulkan {
         vector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
 
-        robin_hood::unordered_map<string, TextureHandle> textureCache;
+        LockFreeMutex mutex;
+        robin_hood::unordered_node_map<string, TextureHandle> textureCache;
         robin_hood::unordered_map<uint32_t, TextureIndex> singlePixelMap;
 
         DeviceContext &device;

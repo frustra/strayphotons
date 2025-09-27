@@ -54,6 +54,8 @@ namespace sp::vulkan {
         class Resources;
     }
 
+    extern CVar<uint64_t> CVarTransferBufferRateLimit;
+
     class DeviceContext final : public sp::GraphicsContext {
     public:
         DeviceContext(GraphicsManager &graphics, bool enableValidationLayers = false);
@@ -134,14 +136,17 @@ namespace sp::vulkan {
             return buf;
         }
 
-        AsyncPtr<Buffer> CreateBuffer(const InitialData &data,
+        AsyncPtr<Buffer> CreateBuffer(const AsyncPtr<InitialData> &data,
             vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo);
 
-        AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        AsyncPtr<Buffer> CreateBuffer(const AsyncPtr<InitialData> &data,
+            vk::BufferUsageFlags usage,
+            VmaMemoryUsage residency);
 
         BufferPtr GetBuffer(const BufferDesc &desc);
 
+        std::atomic_uint64_t frameBandwidthCounter = 0;
         struct BufferTransfer {
             BufferTransfer() {}
 
@@ -156,11 +161,11 @@ namespace sp::vulkan {
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const AsyncPtr<InitialData> &data = {});
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         AsyncPtr<ImageView> CreateImageAndView(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
-            const InitialData &data = {});
+            const AsyncPtr<InitialData> &data = {});
         ImageViewPtr SwapchainImageView();
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
@@ -251,6 +256,9 @@ namespace sp::vulkan {
         uint32_t GetMeasuredFPS() const override {
             return measuredFrameRate.load();
         }
+
+        chrono_clock::duration GetRemainingFrameTime() const;
+        chrono_clock::duration GetFrameInterval() const;
 
     private:
         void CreateSwapchain();
@@ -376,6 +384,7 @@ namespace sp::vulkan {
 
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 
+        LockFreeMutex samplersMutex;
         using SamplerKey = HashKey<VkSamplerCreateInfo>;
         robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
 

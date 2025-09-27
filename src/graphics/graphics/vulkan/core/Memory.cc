@@ -132,6 +132,7 @@ namespace sp::vulkan {
     }
 
     SubBufferPtr Buffer::ArrayAllocate(size_t elementCount) {
+        std::lock_guard l(mutex);
         Assertf(arrayStride > 0, "buffer is not an array");
 
         auto size = elementCount * arrayStride;
@@ -147,6 +148,7 @@ namespace sp::vulkan {
     }
 
     SubBufferPtr Buffer::SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment) {
+        std::lock_guard l(mutex);
         Assertf(arrayStride == 0, "buffer is an array");
 
         auto offsetBytes = SubAllocateRaw(size, alignment);

@@ -180,10 +180,20 @@ namespace sp::vulkan {
             }
         };
 
+        struct AsyncMesh {
+            std::shared_ptr<const sp::Gltf> gltf;
+            AsyncPtr<Mesh> async;
+
+            AsyncMesh(const std::shared_ptr<const sp::Gltf> &gltf, AsyncPtr<Mesh> async = nullptr)
+                : gltf(gltf), async(async) {}
+        };
+
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
-        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
+        robin_hood::unordered_flat_map<MeshKey, AsyncMesh, MeshKeyHash, MeshKeyEqual> meshesToLoad;
         vector<GPURenderableEntity> renderables;
         vector<std::pair<rg::ResourceName, size_t>> renderableTextureOverrides;
         vector<std::weak_ptr<Mesh>> meshes;
+
+        DispatchQueue workQueue;
     };
 } // namespace sp::vulkan

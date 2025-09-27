@@ -459,7 +459,7 @@ namespace sp {
                 ImGui::EndDisabled();
             }
             ImGui::SameLine();
-            if (ImGui::BeginCombo("##componentSelector", "...")) {
+            if (ImGui::BeginCombo("##componentSelector", selectedComponent ? selectedComponent->name.c_str() : "...")) {
                 for (auto *comp : missingComponents) {
                     bool isSelected = comp == selectedComponent;
                     if (ImGui::Selectable(comp->name.c_str(), isSelected)) {

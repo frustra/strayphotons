@@ -9,6 +9,7 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
+#include "common/Async.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
@@ -23,7 +24,7 @@ namespace sp::vulkan {
 
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
-        const InitialData &data) {
+        const AsyncPtr<InitialData> &data) {
         return Add(device.CreateImageAndView(imageInfo, viewInfo, data));
     }
 
@@ -32,6 +33,7 @@ namespace sp::vulkan {
         auto it = std::find(textures.begin(), textures.end(), ptr);
         if (it != textures.end()) return {(TextureIndex)(it - textures.begin()), {}};
 
+        std::lock_guard l(mutex);
         auto i = AllocateTextureIndex();
         textures[i] = ptr;
         texturesToFlush.push_back(i);
@@ -41,9 +43,11 @@ namespace sp::vulkan {
     TextureHandle TextureSet::Add(const AsyncPtr<ImageView> &asyncPtr) {
         if (asyncPtr->Ready()) return Add(asyncPtr->Get());
 
+        std::lock_guard l(mutex);
         auto i = AllocateTextureIndex();
         return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
                     DebugAssertf(view, "TextureSet::Add missing image view");
+                    std::lock_guard l(mutex);
                     textures[i] = view;
                     texturesToFlush.push_back(i);
                 })};
@@ -69,20 +73,27 @@ namespace sp::vulkan {
 
     TextureHandle TextureSet::LoadAssetImage(const string &name, bool genMipmap, bool srgb) {
         string key = "asset:" + name;
-        auto it = textureCache.find(key);
-        if (it != textureCache.end()) return it->second;
+        TextureHandle *newHandle = nullptr;
+        {
+            std::lock_guard l(mutex);
+            auto [it, isNew] = textureCache.emplace(key, TextureHandle{});
+            if (isNew) {
+                newHandle = &it->second;
+            } else {
+                return it->second;
+            }
+        }
 
         auto imageFut = Assets().LoadImage(name);
         auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
             if (!image) {
                 Warnf("Missing asset image: %s", name);
-                return make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
+                return std::make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
             }
             return device.LoadAssetImage(image, genMipmap, srgb);
         });
-        auto pending = Add(imageView);
-        textureCache[key] = pending;
-        return pending;
+        *newHandle = Add(imageView);
+        return *newHandle;
     }
 
     TextureHandle TextureSet::LoadGltfMaterial(const shared_ptr<const Gltf> &source,
@@ -141,8 +152,16 @@ namespace sp::vulkan {
             return {};
         }
 
-        auto cacheEntry = textureCache.find(name);
-        if (cacheEntry != textureCache.end()) return cacheEntry->second;
+        TextureHandle *newHandle = nullptr;
+        {
+            std::lock_guard l(mutex);
+            auto [it, isNew] = textureCache.emplace(name, TextureHandle{});
+            if (isNew) {
+                newHandle = &it->second;
+            } else {
+                return it->second;
+            }
+        }
 
         if (textureIndex < 0 || (size_t)textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
@@ -161,9 +180,8 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo;
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            auto pending = Add(imageInfo, viewInfo, {data->data(), data->size(), data});
-            textureCache[name] = pending;
-            return pending;
+            *newHandle = Add(imageInfo, viewInfo, make_async<InitialData>(data->data(), data->size(), data));
+            return *newHandle;
         }
 
         auto &texture = gltfModel.textures[textureIndex];
@@ -173,7 +191,7 @@ namespace sp::vulkan {
         }
         auto &img = gltfModel.images[texture.source];
 
-        ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo = {};
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
         imageInfo.format = FormatFromTraits(img.component, img.bits, srgb);
@@ -194,7 +212,7 @@ namespace sp::vulkan {
 
         imageInfo.extent = vk::Extent3D(img.width, img.height, 1);
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         if (texture.sampler < 0 || (size_t)texture.sampler >= gltfModel.samplers.size()) {
             viewInfo.defaultSampler = device.GetSampler(SamplerType::TrilinearTiled);
             imageInfo.genMipmap = true;
@@ -203,7 +221,7 @@ namespace sp::vulkan {
             int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
             int magFilter = sampler.magFilter > 0 ? sampler.magFilter : TINYGLTF_TEXTURE_FILTER_LINEAR;
 
-            auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT, sampler.wrapR);
+            auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT);
             if (samplerInfo.mipmapMode == vk::SamplerMipmapMode::eLinear) {
                 samplerInfo.anisotropyEnable = true;
                 samplerInfo.maxAnisotropy = 8.0f;
@@ -212,13 +230,15 @@ namespace sp::vulkan {
             imageInfo.genMipmap = (samplerInfo.maxLod > 0);
         }
 
-        auto pending = Add(imageInfo, viewInfo, {img.image.data(), img.image.size(), source});
-        textureCache[name] = pending;
-        return pending;
+        Assertf(!img.image.empty(), "Image input buffer is empty: %s", img.name);
+
+        *newHandle = Add(imageInfo, viewInfo, make_async<InitialData>(img.image.data(), img.image.size(), source));
+        return *newHandle;
     }
 
     void TextureSet::Flush() {
         workQueue.Flush();
+        std::lock_guard l(mutex);
         texturesPendingDelete.clear();
 
         for (auto it = textureCache.begin(); it != textureCache.end();) {
@@ -272,6 +292,8 @@ namespace sp::vulkan {
     TextureIndex TextureSet::GetSinglePixelIndex(glm::vec4 value) {
         glm::u8vec4 byteVec = glm::clamp(value, glm::vec4(0), glm::vec4(1)) * 255.0f;
         uint32_t byteValue = *(uint32_t *)&byteVec;
+
+        std::lock_guard l(mutex);
         auto it = singlePixelMap.find(byteValue);
         if (it != singlePixelMap.end()) return it->second;
 
@@ -299,7 +321,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo;
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
+        auto fut = device.CreateImageAndView(imageInfo, viewInfo, make_async<InitialData>(&value[0], sizeof(value)));
         device.FlushMainQueue();
         return fut->Get();
     }

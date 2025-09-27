@@ -70,7 +70,7 @@ namespace sp::vulkan {
 
         fontView = device.CreateImageAndView(fontImageInfo,
             fontViewInfo,
-            {fontData, size_t(fontWidth * fontHeight * 4)});
+            make_async<InitialData>(fontData, size_t(fontWidth * fontHeight * 4)));
 
         Tick();
     }

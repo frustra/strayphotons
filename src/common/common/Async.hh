@@ -48,4 +48,9 @@ namespace sp {
 
     template<typename T>
     using AsyncPtr = std::shared_ptr<Async<T>>;
+
+    template<typename T, typename... Args>
+    inline AsyncPtr<T> make_async(Args &&...args) {
+        return make_shared<Async<T>>(std::make_shared<T>(std::forward<Args>(args)...));
+    }
 } // namespace sp

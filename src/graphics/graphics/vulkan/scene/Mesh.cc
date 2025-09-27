@@ -31,6 +31,17 @@ namespace sp::vulkan {
             jointsCount += assetPrimitive.jointsBuffer.Count();
         }
 
+        size_t totalBufferSize = sizeof(uint32) * indexCount + sizeof(SceneVertex) * vertexCount +
+                                 sizeof(JointVertex) * jointsCount + sizeof(GPUMeshPrimitive) * primitives.size();
+        size_t sample = device.frameBandwidthCounter.fetch_add(totalBufferSize);
+        if (sample > CVarTransferBufferRateLimit.Get()) {
+            auto delayFrames = sample / CVarTransferBufferRateLimit.Get();
+            // Logf("Throttling Mesh %llu for %llu ms",
+            //     totalBufferSize,
+            //     (delayFrames * device.GetFrameInterval()).count() / 1000000);
+            std::this_thread::sleep_for(delayFrames * device.GetFrameInterval());
+        }
+
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);
         staging.indexBuffer = device.AllocateBuffer({sizeof(uint32), indexCount},
             vk::BufferUsageFlagBits::eTransferSrc,

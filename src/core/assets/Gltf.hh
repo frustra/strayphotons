@@ -125,7 +125,7 @@ namespace sp {
         const AssetName name;
 
         std::shared_ptr<const Asset> asset;
-        std::shared_ptr<const tinygltf::Model> gltfModel;
+        std::shared_ptr<tinygltf::Model> gltfModel;
         std::vector<std::optional<gltf::Node>> nodes;
         std::vector<std::optional<gltf::Skin>> skins;
         std::vector<std::optional<gltf::Mesh>> meshes;

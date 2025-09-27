@@ -52,6 +52,9 @@ namespace sp {
         bool HasActiveContext();
         bool InputFrame();
 
+        chrono_clock::duration GetRemainingFrameTime() const;
+        chrono_clock::duration GetFrameInterval() const;
+
         sp_window_handlers_t windowHandlers = {0};
 
         // Note: deconstruction order for the below fields is important.

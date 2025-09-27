@@ -6,9 +6,10 @@
 #
 
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "Disable TinyGLTF building examples" FORCE)
+set(TINYGLTF_HEADER_ONLY ON CACHE BOOL "Use TinyGLTF in header-only mode" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE BOOL "Disable TinyGLTF install" FORCE)
+set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "Disable TinyGLTF install" FORCE)
 add_subdirectory(tinygltf)
-
-add_library(tinygltf INTERFACE)
 
 target_compile_definitions(tinygltf INTERFACE TINYGLTF_NO_FS=1)
 

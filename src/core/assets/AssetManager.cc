@@ -26,7 +26,6 @@ extern "C" {
 #include <utility>
 
 #define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
 // Hacky defines to prevent tinygltf from including windows.h and polluting the namespace
 #ifdef _WIN32
     #define UNDEFINE_WIN32
