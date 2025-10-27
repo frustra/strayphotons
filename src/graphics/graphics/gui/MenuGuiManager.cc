@@ -143,7 +143,9 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            static int textureIndex = 0;
+            ImGui::SliderInt("Texture Index", &textureIndex, -1, 4096);
+            ImGui::Image((ImTextureID)(int64_t)textureIndex, logoSize); // logoTex->GetHandle(), logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);

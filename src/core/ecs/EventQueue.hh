@@ -13,6 +13,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
 
+#include <array>
 #include <atomic>
 #include <glm/glm.hpp>
 #include <iostream>
@@ -26,6 +27,7 @@ namespace ecs {
 
     using EventName = sp::InlineString<127>;
     using EventString = sp::InlineString<255>;
+    using EventBytes = std::array<uint8_t, 256>;
 
     enum class EventDataType {
         Bool = 0,
@@ -39,7 +41,8 @@ namespace ecs {
         Transform,
         NamedEntity,
         Entity,
-        String
+        String,
+        Bytes
     };
 
     struct EventData {
@@ -57,6 +60,7 @@ namespace ecs {
             NamedEntity namedEntity;
             Entity ent;
             EventString str;
+            EventBytes bytes;
         };
 
         EventData() : type(EventDataType::Bool), b(false) {}
@@ -72,6 +76,7 @@ namespace ecs {
         EventData(const NamedEntity &namedEntity) : type(EventDataType::NamedEntity), namedEntity(namedEntity) {}
         EventData(Entity ent) : type(EventDataType::Entity), ent(ent) {}
         EventData(const EventString &str) : type(EventDataType::String), str(str) {}
+        EventData(const EventBytes &bytes) : type(EventDataType::Bytes), bytes(bytes) {}
 
         template<typename T, typename EventT>
         static auto *TryGet(EventT &event) {
@@ -99,6 +104,8 @@ namespace ecs {
                 if (event.type == EventDataType::Entity) return &event.ent;
             } else if constexpr (std::is_same<T, EventString>()) {
                 if (event.type == EventDataType::String) return &event.str;
+            } else if constexpr (std::is_same<T, EventBytes>()) {
+                if (event.type == EventDataType::Bytes) return &event.bytes;
             } else {
                 static_assert(false, "Unexpected EventData type");
             }
@@ -139,6 +146,8 @@ namespace ecs {
                 return callable(event.ent);
             case EventDataType::String:
                 return callable(event.str);
+            case EventDataType::Bytes:
+                return callable(event.bytes);
             default:
                 Abortf("Unexpected EventData type: %s", event.type);
             }
@@ -156,6 +165,7 @@ namespace ecs {
         const EventData &operator=(NamedEntity newNamedEntity);
         const EventData &operator=(Entity newEntity);
         const EventData &operator=(EventString newString);
+        const EventData &operator=(EventBytes newBytes);
 
         bool operator==(const EventData &other) const;
     };
@@ -171,7 +181,8 @@ namespace ecs {
         Transform,
         NamedEntity,
         Tecs::Entity,
-        EventString>;
+        EventString,
+        EventBytes>;
 
     static StructMetadata MetadataEventData(typeid(EventData),
         sizeof(EventData),
@@ -190,7 +201,8 @@ namespace ecs {
         StructField::New("transform", &EventData::transform, FieldAction::None),
         StructField::New("namedEntity", &EventData::namedEntity, FieldAction::None),
         StructField::New("ent", &EventData::ent, FieldAction::None),
-        StructField::New("str", &EventData::str, FieldAction::None));
+        StructField::New("str", &EventData::str, FieldAction::None),
+        StructField::New("bytes", &EventData::bytes, FieldAction::None));
     template<>
     bool StructMetadata::Load<EventData>(EventData &dst, const picojson::value &src);
     template<>

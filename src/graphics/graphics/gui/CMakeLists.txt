@@ -10,7 +10,8 @@ target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
     GuiContext.cc
     MenuGuiManager.cc
     FlatViewGuiContext.cc
-    WorldGuiContext.cc
+    ScriptGuiManager.cc
+    WorldGuiManager.cc
 )
 
 add_subdirectory(definitions)

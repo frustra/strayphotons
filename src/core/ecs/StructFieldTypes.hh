@@ -39,6 +39,7 @@ namespace ecs {
         // ScriptName, // Duplicate of sp::InlineString<63>
         EventName,
         EventString,
+        EventBytes,
         size_t,
         VisibilityMask,
         sp::color_alpha_t,
@@ -90,6 +91,7 @@ namespace ecs {
         StructField,
         sp::SceneRef,
         TypeInfo,
+        ImDrawData,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
@@ -150,10 +152,12 @@ namespace ecs {
         void *(*)(const void *),
         void (*)(void *),
         void (*)(void *, ScriptState *),
-        void (*)(void *, ScriptState *),
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t),
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *),
-        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *)>;
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t), // OnTick
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
+        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
+        void (*)(void *, ScriptState *, DynamicLock<> *, Entity), // BeforeFrame
+        ImDrawData *(*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) // RenderGui
+        >;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>

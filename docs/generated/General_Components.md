@@ -153,6 +153,7 @@ The `event_bindings` component has type: map&lt;string (max 127 chars), vector&l
 | **namedEntity** | [NamedEntity](#NamedEntity-type) | {} | No description |
 | **ent** | [Entity](#Entity-type) | "" | No description |
 | **str** | string (max 255 chars) | "" | No description |
+| **bytes** | bytes (max 256) | null | No description |
 
 Stores a variety of possible data types for sending in events (JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).
 
@@ -180,6 +181,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 - "**NamedEntity**" - No description
 - "**Entity**" - No description
 - "**String**" - No description
+- "**Bytes**" - No description
 
 </div>
 

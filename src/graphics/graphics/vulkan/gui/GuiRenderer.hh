@@ -10,8 +10,10 @@
 #include "common/Async.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
 
 struct ImFontAtlas;
+struct ImDrawData;
 
 namespace sp {
     class GuiContext;
@@ -22,11 +24,13 @@ namespace sp::vulkan {
 
     class GuiRenderer : public NonCopyable {
     public:
-        GuiRenderer(DeviceContext &device);
+        GuiRenderer(DeviceContext &device, GPUScene &scene);
         void Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale);
+        void DrawGui(ImDrawData *drawData, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale);
         void Tick();
 
     private:
+        GPUScene &scene;
         double lastTime = 0.0, deltaTime;
 
         unique_ptr<VertexLayout> vertexLayout;

@@ -183,7 +183,7 @@ namespace ecs {
                 dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
                     &state,
                     &dynLock,
-                    (uint64_t)ent,
+                    ent,
                     std::chrono::nanoseconds(interval).count());
             }
         }
@@ -197,7 +197,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onEventFunc) {
                 ecs::DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, (uint64_t)ent, &event);
+                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, ent, &event);
             }
         }
     }
@@ -209,9 +209,40 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             if (dynamicScript->dynamicDefinition.prefabFunc) {
                 ecs::DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, (uint64_t)ent, &scene);
+                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, ent, &scene);
             }
         }
+    }
+
+    void DynamicScript::BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
+        ZoneScoped;
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
+            ZoneStr(dynamicScript->definition.name);
+            auto &ptr = dynamicScript->MaybeAllocContext(state);
+            if (dynamicScript->dynamicDefinition.beforeFrameFunc) {
+                ecs::DynamicLock<> dynLock = lock;
+                dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, &state, &dynLock, ent);
+            }
+        }
+    }
+
+    ImDrawData *DynamicScript::RenderGui(ScriptState &state,
+        Entity ent,
+        glm::vec2 displaySize,
+        glm::vec2 scale,
+        float deltaTime) {
+        ZoneScoped;
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
+            ZoneStr(dynamicScript->definition.name);
+            auto &ptr = dynamicScript->MaybeAllocContext(state);
+            if (dynamicScript->dynamicDefinition.renderGuiFunc) {
+                auto &renderGui = dynamicScript->dynamicDefinition.renderGuiFunc;
+                return renderGui(ptr.context, &state, ent, displaySize, scale, deltaTime);
+            }
+        }
+        return nullptr;
     }
 
     DynamicScript::DynamicScript(DynamicLibrary &library, const DynamicScriptDefinition &dynamicDefinition)
@@ -243,6 +274,11 @@ namespace ecs {
             break;
         case ScriptType::PrefabScript:
             definition.callback = PrefabFunc(&Prefab);
+            break;
+        case ScriptType::GuiScript:
+            definition.initFunc = ScriptInitFunc(&Init);
+            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
+            definition.callback = GuiRenderFuncs(&BeforeFrame, &RenderGui);
             break;
         default:
             Abortf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);
@@ -284,6 +320,15 @@ namespace ecs {
                 Warnf("%s(%s) PrefabScript defines unsupported sp_script_init()", library.name, definition.name);
             if (definition.destroyFunc)
                 Warnf("%s(%s) PrefabScript defines unsupported sp_script_destroy()", library.name, definition.name);
+            break;
+        case ScriptType::GuiScript:
+            if (!definition.renderGuiFunc) {
+                Errorf("Failed to load %s(%s), %s is missing sp_script_render_gui()",
+                    library.name,
+                    definition.name,
+                    definition.type);
+                return nullptr;
+            }
             break;
         default:
             Errorf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);

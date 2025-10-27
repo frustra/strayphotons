@@ -110,8 +110,8 @@ namespace ecs {
                 state.definition.name);
             break;
         case ScriptType::GuiScript:
-            Assertf(std::holds_alternative<GuiRenderableFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: GuiScript != GuiRenderable",
+            Assertf(std::holds_alternative<GuiRenderFuncs>(state.definition.callback),
+                "New script %s has mismatched callback type: GuiScript != GuiRender",
                 state.definition.name);
             break;
         default:

@@ -5,10 +5,14 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "assets/Asset.hh"
+#include "assets/AssetManager.hh"
+#include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/GuiContext.hh"
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 #include <iomanip>
 #include <sstream>
 
@@ -17,17 +21,57 @@ namespace sp::scripts {
 
     struct SignalDisplayGui {
         std::string suffix = "mW";
+        ImGuiContext *imCtx = nullptr;
+        shared_ptr<ImFontAtlas> fontAtlas;
 
         void Init(ScriptState &state) {
-            // Logf("Created signal display: %llu", state.GetInstanceId());
+            Logf("Created signal display: %llu", state.GetInstanceId());
+            state.definition.events.emplace_back("/gui/imgui_input");
+
+            imCtx = ImGui::CreateContext();
+            fontAtlas = make_shared<ImFontAtlas>();
+            fontAtlas->AddFontDefault(nullptr);
+
+            static const ImWchar glyphRanges[] = {
+                0x0020,
+                0x00FF, // Basic Latin + Latin Supplement
+                0x2100,
+                0x214F, // Letterlike Symbols
+                0,
+            };
+
+            for (auto &def : GetGuiFontList()) {
+                auto asset = Assets().Load("fonts/"s + def.name)->Get();
+                Assertf(asset, "Failed to load gui font %s", def.name);
+
+                ImFontConfig cfg = {};
+                cfg.FontData = (void *)asset->BufferPtr();
+                cfg.FontDataSize = asset->BufferSize();
+                cfg.FontDataOwnedByAtlas = false;
+                cfg.SizePixels = def.size;
+                cfg.GlyphRanges = &glyphRanges[0];
+                auto filename = asset->path.filename().string();
+                strncpy_s(cfg.Name,
+                    sizeof(cfg.Name),
+                    filename.c_str(),
+                    std::min(sizeof(cfg.Name) - 1, filename.length()));
+                // memcpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name), filename.length()));
+                fontAtlas->AddFont(&cfg);
+            }
+
+            uint8 *fontData;
+            int fontWidth, fontHeight;
+            fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
         }
 
         void Init(ScriptState &state, GuiRenderable &gui) {
-            // Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
+            Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
         }
 
         void Destroy(ScriptState &state) {
-            // Logf("Destroying signal display: %llu", state.GetInstanceId());
+            Logf("Destroying signal display: %llu", state.GetInstanceId());
+            ImGui::DestroyContext(imCtx);
+            imCtx = nullptr;
         }
 
         bool PreDefine(ScriptState &state, Entity ent) {
@@ -76,6 +120,56 @@ namespace sp::scripts {
             ImGui::PopFont();
             ImGui::PopStyleVar(2);
             ImGui::PopStyleColor();
+        }
+
+        void BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
+            Event event = {};
+            while (state.eventQueue && state.eventQueue->Poll(event, lock.GetTransactionId())) {
+                if (event.name == "/gui/imgui_input") {
+                    const auto &bytes = ecs::EventData::Get<EventBytes>(event.data);
+                    ImGuiInputEvent inputEvent = reinterpret_cast<const ImGuiInputEvent &>(bytes);
+                    inputEvent.EventId = imCtx->InputEventsNextEventId++;
+                    imCtx->InputEventsQueue.push_back(inputEvent);
+                }
+            }
+        }
+
+        ImDrawData *RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
+            ZoneScoped;
+            if (!imCtx) return nullptr;
+            ImGui::SetCurrentContext(imCtx);
+            ImGuiIO &io = ImGui::GetIO();
+            io.IniFilename = nullptr;
+            io.DisplaySize = ImVec2(displaySize.x, displaySize.y);
+            io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
+            io.DeltaTime = deltaTime;
+
+            auto lastFonts = io.Fonts;
+            io.Fonts = fontAtlas.get();
+            io.Fonts->TexID = ~(ImTextureID)0; // FONT_ATLAS_ID
+            Defer defer([&] {
+                io.Fonts = lastFonts;
+            });
+
+            ImGui::NewFrame();
+
+            // DefineWindows
+            // ecs::GetScriptManager().WithGuiScriptLock([&context] {
+            int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+
+            if (PreDefine(state, ent)) {
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+                ImGui::Begin("signal_display", nullptr, flags);
+                DefineContents(state, ent);
+                ImGui::End();
+                PostDefine(state, ent);
+            }
+            // });
+
+            ImGui::Render();
+
+            return ImGui::GetDrawData();
         }
     };
     StructMetadata MetadataSignalDisplay(typeid(SignalDisplayGui),

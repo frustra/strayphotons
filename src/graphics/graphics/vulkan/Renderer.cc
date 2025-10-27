@@ -12,7 +12,8 @@
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/WorldGuiContext.hh"
+#include "graphics/gui/ScriptGuiManager.hh"
+#include "graphics/gui/WorldGuiManager.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -54,7 +55,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device)
         : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
-          transparency(scene, voxels), emissive(scene), guiRenderer(new GuiRenderer(device)) {
+          transparency(scene, voxels), emissive(scene), guiRenderer(new GuiRenderer(device, scene)) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -506,15 +507,26 @@ namespace sp::vulkan {
     }
 
     void Renderer::AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts) {
-        auto window = CreateGuiWindow(gui, scripts).lock();
-        if (window) {
-            auto context = make_shared<WorldGuiContext>(ent, window->name);
-            context->Attach(window);
-            auto windowScale = CVarWindowScale.Get();
-            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-            guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
-        }
+        ecs::GetScriptManager().WithGuiScriptLock([&] {
+            auto window = LookupInternalGui(gui.windowName).lock();
+            if (window) {
+                auto context = make_shared<WorldGuiManager>(ent, window->name);
+                context->Attach(window);
+                auto windowScale = CVarWindowScale.Get();
+                if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
+            } else {
+                auto scriptState = LookupScriptGui(gui.windowName, scripts);
+                if (scriptState) {
+                    auto context = make_shared<ScriptGuiManager>(ent, gui.windowName, scriptState);
+                    auto windowScale = CVarWindowScale.Get();
+                    if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                    if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                    guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
+                }
+            }
+        });
     }
 
     void Renderer::AddWorldGuis(

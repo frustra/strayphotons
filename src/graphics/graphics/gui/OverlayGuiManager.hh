@@ -24,8 +24,6 @@ namespace sp {
         void DefineWindows() override;
 
     private:
-        void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
-
         std::shared_ptr<ConsoleGui> consoleGui;
         std::shared_ptr<FpsCounterGui> fpsCounterGui;
         ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;

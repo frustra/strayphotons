@@ -93,6 +93,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "event_name_t"s;
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             return "event_string_t"s;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            return "event_bytes_t"s;
         } else if constexpr (sp::is_inline_string<T>()) {
             return "string_" + std::to_string(T::max_size()) + "_t";
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -123,6 +125,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "tecs_entity_t"s;
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             return "tecs_lock_t"s;
+        } else if constexpr (std::is_same<T, ImDrawData>()) {
+            return "ImDrawData"s;
         } else if constexpr (std::is_pointer<T>()) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
@@ -582,10 +586,14 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             // Tecs built-in
+        } else if constexpr (std::is_same<T, ImDrawData>()) {
+            out << "typedef struct ImDrawData ImDrawData;" << std::endl;
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
             out << "typedef char " << LookupCTypeName(typeid(T)) << "[" << (T::max_size() + 1) << "];" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            out << "typedef uint8_t " << LookupCTypeName(typeid(T)) << "[" << std::tuple_size<T>() << "];" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef struct string_t { const uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
@@ -803,12 +811,16 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             // Tecs built-in
+        } else if constexpr (std::is_same<T, ImDrawData>()) {
+            // ImGui built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventName>()) {
             out << "typedef ecs::EventName event_name_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             out << "typedef ecs::EventString event_string_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            out << "typedef ecs::EventBytes event_bytes_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
             out << "typedef sp::InlineString<" << T::max_size() << "> string_" << T::max_size() << "_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {

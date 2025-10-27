@@ -15,6 +15,11 @@
 #include <vector>
 
 struct ImGuiContext;
+struct ImDrawData;
+
+namespace ecs {
+    class ScriptState;
+}
 
 namespace sp {
     enum class GuiFont {
@@ -37,10 +42,11 @@ namespace sp {
         virtual ~GuiContext();
         void Attach(const Ref &component);
         void Detach(const Ref &component);
-        void SetGuiContext();
 
+        virtual bool SetGuiContext();
         virtual void BeforeFrame();
         virtual void DefineWindows() = 0;
+        virtual ImDrawData *GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
 
         const std::string &Name() const {
             return name;
@@ -50,13 +56,12 @@ namespace sp {
 
     protected:
         std::vector<Ref> components;
-
-    private:
         ImGuiContext *imCtx = nullptr;
         std::string name;
     };
 
-    GuiContext::Ref CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts);
+    GuiContext::Ref LookupInternalGui(const std::string &windowName);
+    std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp

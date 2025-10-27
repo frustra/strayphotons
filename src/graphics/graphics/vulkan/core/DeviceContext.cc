@@ -1042,7 +1042,7 @@ namespace sp::vulkan {
             std::this_thread::sleep_for(delayFrames * graphics.interval);
         }
 
-        return frameEndQueue.Dispatch<void>([this, transferSize, transferCmd]() {
+        return frameEndQueue.Dispatch<void>([this, transferCmd]() {
             auto cmd = transferCmd;
             Submit(cmd);
         });

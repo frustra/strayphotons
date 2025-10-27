@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_CORE_LIB}
     PRIVATE
         microtar
         murmurhash
+        ImGui
 )
 
 if(WIN32)
