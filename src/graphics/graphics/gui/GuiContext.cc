@@ -54,12 +54,17 @@ namespace sp {
         imCtx = nullptr;
     }
 
-    void GuiContext::SetGuiContext() {
+    bool GuiContext::SetGuiContext() {
         ImGui::SetCurrentContext(imCtx);
+        return true;
     }
 
     void GuiContext::BeforeFrame() {
         SetGuiContext();
+    }
+
+    ImDrawData *GuiContext::GetDrawData(glm::vec2, glm::vec2, float) const {
+        return ImGui::GetDrawData();
     }
 
     void GuiContext::Attach(const Ref &component) {
@@ -71,33 +76,39 @@ namespace sp {
         if (it != components.end()) components.erase(it);
     }
 
-    GuiContext::Ref CreateGuiWindow(const ecs::Gui &gui, const ecs::Scripts *scripts) {
-        if (gui.windowName == "lobby") {
-            static const auto lobby = make_shared<LobbyGui>(gui.windowName);
+    GuiContext::Ref LookupInternalGui(const std::string &windowName) {
+        if (windowName == "lobby") {
+            static const auto lobby = make_shared<LobbyGui>(windowName);
             return lobby;
-        } else if (gui.windowName == "entity_picker") {
-            static const auto entityPicker = make_shared<EntityPickerGui>(gui.windowName);
+        } else if (windowName == "entity_picker") {
+            static const auto entityPicker = make_shared<EntityPickerGui>(windowName);
             return entityPicker;
-        } else if (gui.windowName == "inspector") {
-            static const auto inspector = make_shared<InspectorGui>(gui.windowName);
+        } else if (windowName == "inspector") {
+            static const auto inspector = make_shared<InspectorGui>(windowName);
             return inspector;
-        } else if (gui.windowName == "signal_display") {
-            static const auto signalDisplay = make_shared<SignalDisplayGui>(gui.windowName);
-            return signalDisplay;
-        } else if (gui.windowName.empty() && scripts) {
+            // } else if (windowName == "signal_display") {
+            //     static const auto signalDisplay = make_shared<SignalDisplayGui>(windowName);
+            //     return signalDisplay;
+        }
+        return std::weak_ptr<ecs::GuiRenderable>();
+    }
+
+    std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts) {
+        if (windowName.empty() && scripts) {
             for (auto &script : scripts->scripts) {
                 if (!script.state) continue;
                 ecs::ScriptState &state = *script.state;
                 if (state.definition.type == ecs::ScriptType::GuiScript) {
-                    Assertf(std::holds_alternative<ecs::GuiRenderableFunc>(state.definition.callback),
-                        "Gui script %s has invalid callback type: GuiScript != GuiRenderable",
-                        state.definition.name);
-                    auto &getGuiRenderable = std::get<ecs::GuiRenderableFunc>(state.definition.callback);
-                    return getGuiRenderable(state);
+                    if (std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback)) {
+                        return script.state;
+                    } else {
+                        Errorf("Gui script %s has invalid callback type: GuiScript != GuiRender",
+                            state.definition.name);
+                    }
                 }
             }
         }
-        if (!gui.windowName.empty()) Errorf("unknown gui window: %s", gui.windowName);
-        return std::weak_ptr<ecs::GuiRenderable>();
+        if (!windowName.empty()) Errorf("unknown gui window: %s", windowName);
+        return nullptr;
     }
 } // namespace sp

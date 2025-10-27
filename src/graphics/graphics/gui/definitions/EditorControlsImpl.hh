@@ -312,9 +312,7 @@ namespace sp {
                     "%s %s",
                     scriptType.c_str(),
                     scriptLabel.c_str())) {
-                if (IsLive(target) && (state.definition.type == ScriptType::PrefabScript ||
-                                          state.definition.type == ScriptType::GuiScript)) {
-                    // Don't allow editing live gui scripts (causes deadlock with editor)
+                if (IsLive(target) && state.definition.type == ScriptType::PrefabScript) {
                     ImGui::BeginDisabled();
                 } else if (IsStaging(target)) {
                     if (ImGui::Button("-", ImVec2(20, 0))) {
@@ -341,7 +339,7 @@ namespace sp {
                 }
 
                 auto ctx = state.definition.context.lock();
-                if (ctx && state.definition.type != ScriptType::GuiScript) {
+                if (ctx) {
                     std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
                     std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
                     void *dataPtr = ctx->AccessMut(state);
@@ -375,8 +373,7 @@ namespace sp {
                         ImGui::EndTable();
                     }
                 }
-                if (IsLive(target) && (state.definition.type == ScriptType::PrefabScript ||
-                                          state.definition.type == ScriptType::GuiScript)) {
+                if (IsLive(target) && state.definition.type == ScriptType::PrefabScript) {
                     ImGui::EndDisabled();
                 }
 

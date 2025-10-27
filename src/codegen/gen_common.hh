@@ -40,6 +40,8 @@ std::string TypeToString() {
             return "ecs::EventName";
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             return "ecs::EventString";
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            return "ecs::EventBytes";
         } else if constexpr (std::is_same<typename T::value_type, char>()) {
             return "sp::InlineString<" + std::to_string(T::max_size()) + ">";
         } else {

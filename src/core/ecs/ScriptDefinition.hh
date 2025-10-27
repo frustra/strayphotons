@@ -16,6 +16,8 @@
 #include <map>
 #include <variant>
 
+struct ImDrawData;
+
 namespace ecs {
     class ScriptState;
     class GuiRenderable;
@@ -49,10 +51,12 @@ namespace ecs {
         void(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration)>;
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using GuiRenderableFunc = std::function<std::shared_ptr<GuiRenderable>(ScriptState &)>;
+    using BeforeFrameFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity)>;
+    using RenderGuiFunc = std::function<ImDrawData *(ScriptState &, Entity, glm::vec2, glm::vec2, float)>;
+    using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
 
     using ScriptCallback = std::
-        variant<std::monostate, LogicTickFunc, PhysicsTickFunc, OnEventFunc, PrefabFunc, GuiRenderableFunc>;
+        variant<std::monostate, LogicTickFunc, PhysicsTickFunc, OnEventFunc, PrefabFunc, GuiRenderFuncs>;
 
     using ScriptName = sp::InlineString<63>;
 

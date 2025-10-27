@@ -12,14 +12,14 @@
 #include "graphics/gui/GuiContext.hh"
 
 namespace sp {
-    class WorldGuiContext : public GuiContext {
+    class WorldGuiManager : public GuiContext {
     public:
-        WorldGuiContext(ecs::Entity gui, const std::string &name);
+        WorldGuiManager(ecs::Entity gui, const std::string &name);
 
         void BeforeFrame() override;
         void DefineWindows() override;
 
-    private:
+    protected:
         ecs::EntityRef guiEntity;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();

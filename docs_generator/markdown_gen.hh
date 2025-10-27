@@ -50,6 +50,8 @@ private:
             return "string";
         } else if constexpr (sp::is_inline_string<T>()) {
             return "string (max " + std::to_string(T::max_size()) + " chars)";
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            return "bytes (max 256)";
         } else if constexpr (std::is_same<T, sp::color_t>()) {
             return "vec3 (red, green, blue)";
         } else if constexpr (std::is_same<T, sp::color_alpha_t>()) {
@@ -106,7 +108,7 @@ public:
                 auto &defaultValue = defaultPtr ? *reinterpret_cast<const T *>(defaultPtr) : defaultStruct;
 
                 picojson::value defaultJson;
-                if constexpr (!sp::is_optional<T>()) {
+                if constexpr (!sp::is_optional<T>() && !std::is_same<T, ecs::EventBytes>()) {
                     defaultJson = picojson::value(picojson::object());
                     sp::json::Save(ecs::EntityScope(), defaultJson, defaultValue);
                 }

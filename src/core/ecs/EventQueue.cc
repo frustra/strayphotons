@@ -89,6 +89,12 @@ namespace ecs {
         return *this;
     }
 
+    const EventData &EventData::operator=(EventBytes newBytes) {
+        type = EventDataType::Bytes;
+        bytes = newBytes;
+        return *this;
+    }
+
     bool EventData::operator==(const EventData &other) const {
         if (type != other.type) return false;
         return EventData::Visit(*this, [&other](auto &data) {

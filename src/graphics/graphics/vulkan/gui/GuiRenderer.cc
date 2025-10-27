@@ -22,7 +22,9 @@
 #include <imgui/imgui.h>
 
 namespace sp::vulkan {
-    GuiRenderer::GuiRenderer(DeviceContext &device) {
+    constexpr ImTextureID FONT_ATLAS_ID = ~(ImTextureID)0;
+
+    GuiRenderer::GuiRenderer(DeviceContext &device, GPUScene &scene) : scene(scene) {
         vertexLayout = make_unique<VertexLayout>(0, sizeof(ImDrawVert));
         vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
         vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
@@ -44,7 +46,7 @@ namespace sp::vulkan {
             auto asset = Assets().Load("fonts/"s + def.name)->Get();
             Assertf(asset, "Failed to load gui font %s", def.name);
 
-            ImFontConfig cfg;
+            ImFontConfig cfg = {};
             cfg.FontData = (void *)asset->BufferPtr();
             cfg.FontDataSize = asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
@@ -85,31 +87,46 @@ namespace sp::vulkan {
         if (!fontView->Ready()) return;
         ZoneScoped;
 
-        context.SetGuiContext();
-        ImGui::GetMainViewport()->PlatformHandleRaw = cmd.Device().Win32WindowHandle();
+        if (context.SetGuiContext()) {
+            ImGui::GetMainViewport()->PlatformHandleRaw = cmd.Device().Win32WindowHandle();
 
-        ImGuiIO &io = ImGui::GetIO();
-        io.IniFilename = nullptr;
-        io.DisplaySize = ImVec2(viewport.extent.width / scale.x, viewport.extent.height / scale.y);
-        io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
-        io.DeltaTime = deltaTime;
+            ImGuiIO &io = ImGui::GetIO();
+            io.IniFilename = nullptr;
+            io.DisplaySize = ImVec2(viewport.extent.width / scale.x, viewport.extent.height / scale.y);
+            io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
+            io.DeltaTime = deltaTime;
 
-        auto lastFonts = io.Fonts;
-        io.Fonts = fontAtlas.get();
-        io.Fonts->TexID = (ImTextureID)(fontView->Get()->GetHandle());
-        Defer defer([&] {
-            io.Fonts = lastFonts;
-        });
+            auto lastFonts = io.Fonts;
+            io.Fonts = fontAtlas.get();
+            io.Fonts->TexID = FONT_ATLAS_ID; //(ImTextureID)(fontView->Get()->GetHandle());
+            Defer defer([&] {
+                io.Fonts = lastFonts;
+            });
 
-        ImGui::NewFrame();
-        ecs::GetScriptManager().WithGuiScriptLock([&context] {
+            ImGui::NewFrame();
+            // ecs::GetScriptManager().WithGuiScriptLock([&context] {
             context.DefineWindows();
-        });
-        ImGui::Render();
+            // });
+            ImGui::Render();
 
-        auto drawData = ImGui::GetDrawData();
-        drawData->ScaleClipRects(io.DisplayFramebufferScale);
+            ImDrawData *drawData = ImGui::GetDrawData();
+            drawData->ScaleClipRects(io.DisplayFramebufferScale);
+            DrawGui(drawData, cmd, viewport, scale);
+        } else {
+            ecs::GetScriptManager().WithGuiScriptLock([&] {
+                ImDrawData *drawData = context.GetDrawData(
+                    glm::vec2(viewport.extent.width / scale.x, viewport.extent.height / scale.y),
+                    scale,
+                    deltaTime);
+                if (drawData) {
+                    drawData->ScaleClipRects(ImVec2(scale.x, scale.y));
+                    DrawGui(drawData, cmd, viewport, scale);
+                }
+            });
+        }
+    }
 
+    void GuiRenderer::DrawGui(ImDrawData *drawData, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale) {
         size_t totalVtxSize = 0, totalIdxSize = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++) {
             const auto cmdList = drawData->CmdLists[i];
@@ -164,31 +181,53 @@ namespace sp::vulkan {
         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
         uint32 idxOffset = 0, vtxOffset = 0;
+        // size_t totalCommands = 0, totalCallbacks = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++) {
             const auto cmdList = drawData->CmdLists[i];
 
             for (const auto &pcmd : cmdList->CmdBuffer) {
-                if (pcmd.UserCallback) {
-                    pcmd.UserCallback(cmdList, &pcmd);
+                Assertf(!pcmd.UserCallback, "ImGui UserCallback on render not supported");
+                // if (pcmd.UserCallback) {
+                //     pcmd.UserCallback(cmdList, &pcmd);
+                //     // totalCallbacks++;
+                // } else {
+                // auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
+                if (pcmd.TextureId == FONT_ATLAS_ID) {
+                    cmd.SetImageView("tex", fontView->Get());
+                } else if (pcmd.TextureId < scene.textures.Count()) {
+                    auto imgPtr = scene.textures.Get(pcmd.TextureId);
+                    if (imgPtr) {
+                        cmd.SetImageView("tex", imgPtr);
+                    } else {
+                        cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                    }
                 } else {
-                    auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
-                    cmd.SetImageView("tex", texture);
-
-                    auto clipRect = pcmd.ClipRect;
-                    clipRect.x -= drawData->DisplayPos.x;
-                    clipRect.y -= drawData->DisplayPos.y;
-                    clipRect.z -= drawData->DisplayPos.x;
-                    clipRect.w -= drawData->DisplayPos.y;
-
-                    cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
-                        {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
-
-                    cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
+                    cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
                 }
+
+                auto clipRect = pcmd.ClipRect;
+                clipRect.x -= drawData->DisplayPos.x;
+                clipRect.y -= drawData->DisplayPos.y;
+                clipRect.z -= drawData->DisplayPos.x;
+                clipRect.w -= drawData->DisplayPos.y;
+
+                cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
+                    {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+
+                cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
+                // totalCommands++;
+                // }
                 idxOffset += pcmd.ElemCount;
             }
             vtxOffset += cmdList->VtxBuffer.size();
         }
+
+        // Logf("GuiBuffer: %s callbacks: %llu vertex: %llu index: %llu commands: %llu",
+        //     context.Name(),
+        //     totalCallbacks,
+        //     totalVtxSize,
+        //     totalIdxSize,
+        //     totalCommands);
 
         cmd.ClearScissor();
     }

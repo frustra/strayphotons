@@ -163,10 +163,13 @@ namespace sp {
 
                 auto &gui = ctx.entity.Get<ecs::Gui>(lock);
                 if (!ctx.window.lock()) {
-                    const ecs::Scripts *scripts = nullptr;
-                    if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
-                    ctx.window = CreateGuiWindow(gui, scripts);
+                    ctx.window = LookupInternalGui(gui.windowName);
                 }
+                // if (!ctx.window.lock()) {
+                //     const ecs::Scripts *scripts = nullptr;
+                //     if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
+                //     ctx.window = LookupScriptGui(gui.windowName, scripts);
+                // }
                 if (gui.target == ecs::GuiTarget::Overlay) {
                     Attach(ctx.window);
                 } else {

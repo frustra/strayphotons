@@ -294,33 +294,25 @@ namespace ecs {
         }
     };
 
-    // Checks if the script has an Init(ScriptState &state, GuiRenderable &gui) function
+    // Checks if the script has an BeforeFrame() function
     template<typename T, typename = void>
-    struct script_has_gui_init_func : std::false_type {};
+    struct script_has_before_frame_func : std::false_type {};
     template<typename T>
-    struct script_has_gui_init_func<T,
-        std::void_t<decltype(std::declval<T>().Init(std::declval<ScriptState &>(), std::declval<GuiRenderable &>()))>>
-        : std::true_type {};
+    struct script_has_before_frame_func<T,
+        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<ScriptState &>(),
+            std::declval<const DynamicLock<SendEventsLock> &>(),
+            std::declval<Entity>()))>> : std::true_type {};
 
-    // Checks if the script has a PreDefine(), DefineContents(), or PostDefine() function
+    // Checks if the script has a RenderGui() function
     template<typename T, typename = void>
-    struct script_has_predefine_func : std::false_type {};
+    struct script_has_render_gui_func : std::false_type {};
     template<typename T>
-    struct script_has_predefine_func<T,
-        std::void_t<decltype(std::declval<T>().PreDefine(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
-    template<typename T, typename = void>
-    struct script_has_definecontents_func : std::false_type {};
-    template<typename T>
-    struct script_has_definecontents_func<T,
-        std::void_t<decltype(std::declval<T>().DefineContents(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
-    template<typename T, typename = void>
-    struct script_has_postdefine_func : std::false_type {};
-    template<typename T>
-    struct script_has_postdefine_func<T,
-        std::void_t<decltype(std::declval<T>().PostDefine(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
+    struct script_has_render_gui_func<T,
+        std::void_t<decltype(std::declval<T>().RenderGui(std::declval<ScriptState &>(),
+            std::declval<Entity>(),
+            std::declval<glm::vec2>(),
+            std::declval<glm::vec2>(),
+            std::declval<float>()))>> : std::true_type {};
 
     template<typename T>
     class ScriptGuiRenderable final : public GuiRenderable {
@@ -384,31 +376,59 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            return &ptr->scriptData;
+            auto *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            return ptr ? &ptr->scriptData : &defaultValue;
+            const auto *ptr = std::any_cast<T>(&state.scriptData);
+            return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            ptr->Init(state);
+            auto *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (ptr) ptr->Destroy(state);
+            if constexpr (script_has_destroy_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (ptr) ptr->Destroy(state);
+            } else {
+                (void)state;
+            }
         }
 
-        static std::shared_ptr<GuiRenderable> GetGuiRenderable(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            return ptr->GetGuiRenderable(state);
+        static void BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
+            if constexpr (script_has_before_frame_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                ptr->BeforeFrame(state, lock, ent);
+            } else {
+                (void)state;
+                (void)lock;
+                (void)ent;
+            }
+        }
+
+        static ImDrawData *RenderGui(ScriptState &state,
+            Entity ent,
+            glm::vec2 displaySize,
+            glm::vec2 scale,
+            float deltaTime) {
+            if constexpr (script_has_render_gui_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                return ptr->RenderGui(state, ent, displaySize, scale, deltaTime);
+            } else {
+                (void)state;
+                (void)ent;
+                (void)displaySize;
+                (void)scale;
+                return nullptr;
+            }
         }
 
         GuiScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
@@ -420,7 +440,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                GuiRenderableFunc(&GetGuiRenderable)});
+                GuiRenderFuncs(&BeforeFrame, &RenderGui)});
         }
     };
 } // namespace ecs
