@@ -64,6 +64,18 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 
 <div class="component_definition">
 
+## `csv_visualizer` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **filename** | string | "" | No description |
+| **current_time_ns** | size_t | 0 | No description |
+
+</div>
+
+
+<div class="component_definition">
+
 ## `debounce` Script
 
 | Parameter Name | Type | Default Value | Description |

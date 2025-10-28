@@ -35,7 +35,7 @@
 			},
 			"script": [
 				{
-					"onTick": "csv_visualizer",
+					"name": "csv_visualizer",
 					"parameters": {
 						"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
 					}
@@ -51,7 +51,7 @@
 				"scale": 10
 			},
 			"script": {
-				"prefab": "gltf",
+				"name": "prefab_gltf",
 				"parameters": {
 					"model": "s2000"
 				}
@@ -120,7 +120,7 @@
 				"visibility": "Transparent|LightingShadow"
 			},
 			"script": {
-				"onTick": "component_from_signal",
+				"name": "component_from_signal",
 				"parameters": {
 					"renderable.emissive": "visualizer/Brake"
 				}
@@ -135,7 +135,7 @@
 				"visibility": "Transparent|LightingShadow"
 			},
 			"script": {
-				"onTick": "component_from_signal",
+				"name": "component_from_signal",
 				"parameters": {
 					"renderable.emissive": "visualizer/Brake"
 				}
@@ -150,7 +150,7 @@
 				"visibility": "Transparent"
 			},
 			"script": {
-				"onTick": "component_from_signal",
+				"name": "component_from_signal",
 				"parameters": {
 					"renderable.emissive": "visualizer/Brake"
 				}
