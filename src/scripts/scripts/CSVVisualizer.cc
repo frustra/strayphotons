@@ -89,7 +89,10 @@ namespace sp::scripts {
         glm::vec3 lastPosition;
         glm::vec3 lastDir = glm::vec3(0, 0, -1);
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Write<TransformTree, Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!loadingRef) {
                 loadingRef = SignalRef(ent, "loading");
                 accelXRef = SignalRef(ent, "accel_x");
@@ -176,9 +179,10 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataCSVVisualizer(typeid(CSVVisualizer),
+        sizeof(CSVVisualizer),
         "CSVVisualizer",
         "",
         StructField::New("filename", &CSVVisualizer::filename),
         StructField::New("current_time_ns", &CSVVisualizer::currentTimeNs));
-    InternalScript<CSVVisualizer> csvVisualizer("csv_visualizer", MetadataCSVVisualizer);
+    LogicScript<CSVVisualizer> csvVisualizer("csv_visualizer", MetadataCSVVisualizer);
 } // namespace sp::scripts
