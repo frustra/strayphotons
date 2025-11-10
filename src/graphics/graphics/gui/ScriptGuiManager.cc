@@ -48,14 +48,16 @@ namespace sp {
             }
 
             if (scriptState) {
-                ecs::ScriptState &state = *scriptState;
-                if (state.definition.type == ecs::ScriptType::GuiScript) {
-                    Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback),
-                        "Gui script %s has invalid callback type: GuiScript != GuiRender",
-                        state.definition.name);
-                    auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
-                    return beforeFrame(state, lock, gui);
-                }
+                ecs::GetScriptManager().WithGuiScriptLock([&] {
+                    ecs::ScriptState &state = *scriptState;
+                    if (state.definition.type == ecs::ScriptType::GuiScript) {
+                        Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback),
+                            "Gui script %s has invalid callback type: GuiScript != GuiRender",
+                            state.definition.name);
+                        auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
+                        return beforeFrame(state, lock, gui);
+                    }
+                });
             }
 
             imCtx->InputEventsQueue.resize(0);
@@ -67,14 +69,17 @@ namespace sp {
     ImDrawData *ScriptGuiManager::GetDrawData(glm::vec2 displaySize, glm::vec2 scale, float deltaTime) const {
         ecs::Entity gui = guiEntity.GetLive();
         if (gui && scriptState) {
-            ecs::ScriptState &state = *scriptState;
-            if (state.definition.type == ecs::ScriptType::GuiScript) {
-                Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback),
-                    "Gui script %s has invalid callback type: GuiScript != GuiRender",
-                    state.definition.name);
-                auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
-                return renderGui(state, gui, displaySize, scale, deltaTime);
-            }
+            return ecs::GetScriptManager().WithGuiScriptLock([&] {
+                ecs::ScriptState &state = *scriptState;
+                if (state.definition.type == ecs::ScriptType::GuiScript) {
+                    Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback),
+                        "Gui script %s has invalid callback type: GuiScript != GuiRender",
+                        state.definition.name);
+                    auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
+                    return renderGui(state, gui, displaySize, scale, deltaTime);
+                }
+                return (ImDrawData *)nullptr;
+            });
         }
         return nullptr;
     }

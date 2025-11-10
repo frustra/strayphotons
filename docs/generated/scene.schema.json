@@ -418,22 +418,30 @@
 						"type": "object"
 					},
 					"event_input": {},
-					"gui": {
+					"gui_element": {
 						"properties": {
-							"target": {
-								"default": "World",
+							"anchor": {
+								"default": "Fullscreen",
 								"description": "No description",
 								"enum": [
-									"None",
-									"World",
-									"Overlay"
+									"Fullscreen",
+									"Top",
+									"Left",
+									"Right",
+									"Bottom",
+									"Floating"
 								],
 								"type": "string"
 							},
-							"window_name": {
-								"default": "",
+							"preferred_size": {
+								"default": [-1, -1],
 								"description": "No description",
-								"type": "string"
+								"items": {
+									"type": "integer"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
 							}
 						},
 						"type": "object"
@@ -733,6 +741,21 @@
 						]
 					},
 					"physics_query": {},
+					"render_output": {
+						"properties": {
+							"target": {
+								"default": "World",
+								"description": "No description",
+								"enum": [
+									"None",
+									"World",
+									"Overlay"
+								],
+								"type": "string"
+							}
+						},
+						"type": "object"
+					},
 					"renderable": {
 						"properties": {
 							"color_override": {

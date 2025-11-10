@@ -74,8 +74,8 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        std::shared_ptr<OverlayGuiManager> overlayGui;
-        std::shared_ptr<MenuGuiManager> menuGui;
+        // std::shared_ptr<OverlayGuiManager> overlayGui;
+        // std::shared_ptr<MenuGuiManager> menuGui;
 
         bool initialized = false;
     };

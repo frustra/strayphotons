@@ -7,9 +7,6 @@
 
 target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
     ConsoleGui.cc
-    EditorControls.cc
-    EntityPickerGui.cc
     FpsCounterGui.cc
-    InspectorGui.cc
     SignalDisplayGui.cc
 )

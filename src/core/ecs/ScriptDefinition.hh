@@ -20,7 +20,7 @@ struct ImDrawData;
 
 namespace ecs {
     class ScriptState;
-    class GuiRenderable;
+    struct GuiElement;
 
     using LogicUpdateLock = Lock<SendEventsLock,
         Read<TransformSnapshot, VoxelArea, SceneInfo>,
@@ -42,7 +42,7 @@ namespace ecs {
         Read<TransformTree, Physics, SceneInfo>,
         Write<TransformSnapshot, OpticalElement, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
 
-    using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, Gui, Scripts>>;
+    using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, RenderOutput, Scripts>>;
 
     using ScriptInitFunc = std::function<void(ScriptState &)>;
     using ScriptDestroyFunc = std::function<void(ScriptState &)>;
@@ -51,7 +51,7 @@ namespace ecs {
         void(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration)>;
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using BeforeFrameFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity)>;
+    using BeforeFrameFunc = std::function<void(ScriptState &, Entity)>;
     using RenderGuiFunc = std::function<ImDrawData *(ScriptState &, Entity, glm::vec2, glm::vec2, float)>;
     using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
 

@@ -8,10 +8,10 @@
 #pragma once
 
 #include "ecs/EntityRef.hh"
-#include "ecs/components/Gui.hh"
+#include "ecs/components/GuiElement.hh"
 
 namespace sp {
-    class SignalDisplayGui final : public ecs::GuiRenderable {
+    class SignalDisplayGui final : public ecs::GuiDefinition {
     public:
         SignalDisplayGui(const std::string &name);
         virtual ~SignalDisplayGui() {}

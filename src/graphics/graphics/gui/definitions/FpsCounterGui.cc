@@ -23,9 +23,7 @@ namespace sp {
 
     // Why is this window still resizable??
     FpsCounterGui::FpsCounterGui()
-        : ecs::GuiRenderable("fps_counter",
-              ecs::GuiLayoutAnchor::Floating,
-              {-1, -1},
+        : ecs::GuiDefinition("fps_counter",
               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
                   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
                   ImGuiWindowFlags_NoBringToFrontOnFocus) {}

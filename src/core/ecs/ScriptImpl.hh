@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/Gui.hh"
+#include "ecs/components/RenderOutput.hh"
 #include "ecs/components/Scripts.hh"
 
 namespace ecs {
@@ -299,9 +299,8 @@ namespace ecs {
     struct script_has_before_frame_func : std::false_type {};
     template<typename T>
     struct script_has_before_frame_func<T,
-        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<ScriptState &>(),
-            std::declval<const DynamicLock<SendEventsLock> &>(),
-            std::declval<Entity>()))>> : std::true_type {};
+        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<ScriptState &>(), std::declval<Entity>()))>>
+        : std::true_type {};
 
     // Checks if the script has a RenderGui() function
     template<typename T, typename = void>
@@ -313,59 +312,6 @@ namespace ecs {
             std::declval<glm::vec2>(),
             std::declval<glm::vec2>(),
             std::declval<float>()))>> : std::true_type {};
-
-    template<typename T>
-    class ScriptGuiRenderable final : public GuiRenderable {
-    public:
-        ScriptGuiRenderable(std::string_view name)
-            : GuiRenderable(name, GuiLayoutAnchor::Floating), scriptData({}), state(nullptr) {}
-
-        T scriptData;
-
-        void Init(ScriptState &state) {
-            this->state = &state;
-            if constexpr (script_has_init_func<T>()) scriptData.Init(state);
-            if constexpr (script_has_gui_init_func<T>()) scriptData.Init(state, *(GuiRenderable *)this);
-            savedPtr = std::shared_ptr<ScriptGuiRenderable<T>>(this, [](auto *) {});
-        }
-
-        void Destroy(ScriptState &state) {
-            Assertf(savedPtr.use_count() == 1,
-                "Destroying ScriptGuiRenderable that's in use: %s",
-                state.definition.name);
-            savedPtr.reset();
-            if constexpr (script_has_destroy_func<T>()) scriptData.Destroy(state);
-            this->state = nullptr;
-        }
-
-        bool PreDefine(Entity ent) override {
-            if (!state) return false;
-            if constexpr (script_has_predefine_func<T>()) {
-                return scriptData.PreDefine(*state, ent);
-            } else {
-                return true;
-            }
-        }
-
-        void DefineContents(Entity ent) override {
-            Assertf(state != nullptr, "ScriptGuiRenderable::DefineContents called without state init");
-            scriptData.DefineContents(*state, ent);
-        }
-
-        void PostDefine(Entity ent) override {
-            Assertf(state != nullptr, "ScriptGuiRenderable::PostDefine called without state init");
-            if constexpr (script_has_postdefine_func<T>()) scriptData.PostDefine(*state, ent);
-        }
-
-        std::shared_ptr<GuiRenderable> GetGuiRenderable(ScriptState &state) {
-            Assertf(savedPtr, "ScriptGuiRenderable::GetGuiRenderable called without state init");
-            return savedPtr;
-        }
-
-    private:
-        ScriptState *state = nullptr;
-        std::shared_ptr<ScriptGuiRenderable<T>> savedPtr;
-    };
 
     template<typename T>
     struct GuiScript final : public ScriptDefinitionBase {
@@ -401,14 +347,13 @@ namespace ecs {
             }
         }
 
-        static void BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
+        static void BeforeFrame(ScriptState &state, Entity ent) {
             if constexpr (script_has_before_frame_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
-                ptr->BeforeFrame(state, lock, ent);
+                ptr->BeforeFrame(state, ent);
             } else {
                 (void)state;
-                (void)lock;
                 (void)ent;
             }
         }

@@ -48,8 +48,10 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        void SetOverlayGui(GuiContext *gui);
-        void SetMenuGui(GuiContext *gui);
+        // void SetOverlayGui(GuiContext *gui);
+        // void SetMenuGui(GuiContext *gui);
+
+        GuiRenderer *GetGuiRenderer() const;
 
     private:
         Game &game;
@@ -63,14 +65,16 @@ namespace sp::vulkan {
         ecs::View AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock);
         void AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock);
 
-        void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
-        void AddWorldGuis(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name, ecs::Scripts>> lock);
-        void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
-        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+        void AddRenderOutput(ecs::Entity ent, const ecs::RenderOutput &gui, const ecs::Scripts *scripts);
+        // void AddWorldGuis(
+        //     ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::RenderOutput, ecs::Screen, ecs::Name, ecs::Scripts>>
+        //     lock);
+        // void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
+        void AddDeferredPasses(
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::RenderOutput, ecs::LaserLine>> lock,
             const ecs::View &view,
             chrono_clock::duration elapsedTime);
-        void AddMenuOverlay();
+        // void AddMenuOverlay();
 
         CFuncCollection funcs;
         vk::Format depthStencilFormat;
@@ -96,7 +100,7 @@ namespace sp::vulkan {
         GuiContext *overlayGui = nullptr, *menuGui = nullptr;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
+        ecs::ComponentAddRemoveObserver<ecs::RenderOutput> renderOutputObserver;
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 

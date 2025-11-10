@@ -58,7 +58,7 @@ Signal expressions support the following operations and functions:
   - `sin(x)`, `cos(x)`, `tan(x)` (Input in radians)
   - `floor(x)`, `ceil(x)`, `abs(x)`
   - `min(a, b)`, `max(a, b)`
-- **Focus functions**: (Possible focus layers: `Game`, `Menu`, `Overlay`)
+- **Focus functions**: (Possible focus layers: `Game`, `HUD`, `Menu`, `Overlay`)
   - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active, else `0.0`.
   - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active, else `0.0`.
 - **Entity signal access**:

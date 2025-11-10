@@ -15,7 +15,7 @@
 #include <sstream>
 
 namespace sp {
-    SignalDisplayGui::SignalDisplayGui(const string &name) : ecs::GuiRenderable(name, ecs::GuiLayoutAnchor::Floating) {}
+    SignalDisplayGui::SignalDisplayGui(const string &name) : ecs::GuiDefinition(name) {}
 
     bool SignalDisplayGui::PreDefine(ecs::Entity ent) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));

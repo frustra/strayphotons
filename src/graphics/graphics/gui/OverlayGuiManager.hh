@@ -9,14 +9,14 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/components/Events.hh"
-#include "graphics/gui/FlatViewGuiContext.hh"
+#include "graphics/gui/GuiContext.hh"
 
 namespace sp {
     class GraphicsContext;
     class ConsoleGui;
     class FpsCounterGui;
 
-    class OverlayGuiManager final : public FlatViewGuiContext {
+    class OverlayGuiManager final : public GuiContext {
     public:
         OverlayGuiManager();
 
@@ -26,14 +26,8 @@ namespace sp {
     private:
         std::shared_ptr<ConsoleGui> consoleGui;
         std::shared_ptr<FpsCounterGui> fpsCounterGui;
-        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
+        ecs::ComponentAddRemoveObserver<ecs::RenderOutput> renderOutputObserver;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();
-
-        struct GuiEntityContext {
-            ecs::Entity entity;
-            GuiContext::Ref window;
-        };
-        vector<GuiEntityContext> guis;
     };
 } // namespace sp

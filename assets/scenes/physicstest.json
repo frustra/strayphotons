@@ -35,11 +35,9 @@
 			"light": {
 				"tint": [1, 0.5, 0.5],
 				"intensity": 300,
-				"spot_angle": 30
-			},
-			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 50]
+				"spot_angle": 30,
+				"shadow_map_clip": [0.1, 50],
+				"shadow_map_size": 11
 			},
 			"transform": {
 				"translate": [0, 1, 0]
@@ -49,11 +47,9 @@
 			"light": {
 				"tint": [1, 1, 1],
 				"illuminance": 1,
-				"spot_angle": 80
-			},
-			"view": {
-				"extents": [2048, 2048],
-				"clip": [0.1, 500]
+				"spot_angle": 80,
+				"shadow_map_clip": [0.1, 500],
+				"shadow_map_size": 11
 			},
 			"transform": {
 				"translate": [0, 50, 0],

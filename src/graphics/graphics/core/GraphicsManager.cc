@@ -64,8 +64,8 @@ namespace sp {
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
 
-        overlayGui = std::make_shared<OverlayGuiManager>();
-        menuGui = std::make_shared<MenuGuiManager>(*this);
+        // overlayGui = std::make_shared<OverlayGuiManager>();
+        // menuGui = std::make_shared<MenuGuiManager>(*this);
     }
 
     void GraphicsManager::StartThread(bool startPaused) {
@@ -88,8 +88,8 @@ namespace sp {
         Assert(context, "Invalid vulkan context on init");
 
         context->InitRenderer(game);
-        context->SetOverlayGui(overlayGui.get());
-        context->SetMenuGui(menuGui.get());
+        // context->SetOverlayGui(overlayGui.get());
+        // context->SetMenuGui(menuGui.get());
 
         return true;
     }
@@ -146,8 +146,8 @@ namespace sp {
         ZoneScoped;
         if (!HasActiveContext()) return false;
         if (context->RequiresReset()) return false;
-        if (overlayGui) overlayGui->BeforeFrame();
-        if (menuGui) menuGui->BeforeFrame();
+        // if (overlayGui) overlayGui->BeforeFrame();
+        // if (menuGui) menuGui->BeforeFrame();
 
         return context->BeginFrame();
     }

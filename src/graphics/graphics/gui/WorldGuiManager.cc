@@ -122,10 +122,10 @@ namespace sp {
     void WorldGuiManager::DefineWindows() {
         ZoneScoped;
         ImGuiIO &io = ImGui::GetIO();
-        for (auto &componentWeak : components) {
+        for (auto &componentWeak : elements) {
             auto component = componentWeak.lock();
             if (!component) continue;
-            ecs::GuiRenderable &renderable = *component;
+            ecs::GuiElement &renderable = *component;
             ecs::Entity ent = guiEntity.GetLive();
 
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;

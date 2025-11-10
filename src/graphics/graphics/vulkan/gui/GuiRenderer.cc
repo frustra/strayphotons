@@ -104,14 +104,12 @@ namespace sp::vulkan {
             });
 
             ImGui::NewFrame();
-            // ecs::GetScriptManager().WithGuiScriptLock([&context] {
             context.DefineWindows();
-            // });
             ImGui::Render();
 
             ImDrawData *drawData = ImGui::GetDrawData();
             drawData->ScaleClipRects(io.DisplayFramebufferScale);
-            DrawGui(drawData, cmd, viewport, scale);
+            DrawGui(drawData, cmd, viewport, scale, true);
         } else {
             ecs::GetScriptManager().WithGuiScriptLock([&] {
                 ImDrawData *drawData = context.GetDrawData(
@@ -120,13 +118,17 @@ namespace sp::vulkan {
                     deltaTime);
                 if (drawData) {
                     drawData->ScaleClipRects(ImVec2(scale.x, scale.y));
-                    DrawGui(drawData, cmd, viewport, scale);
+                    DrawGui(drawData, cmd, viewport, scale, false);
                 }
             });
         }
     }
 
-    void GuiRenderer::DrawGui(ImDrawData *drawData, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale) {
+    void GuiRenderer::DrawGui(ImDrawData *drawData,
+        CommandContext &cmd,
+        vk::Rect2D viewport,
+        glm::vec2 scale,
+        bool allowCallbacks) {
         size_t totalVtxSize = 0, totalIdxSize = 0;
         for (int i = 0; i < drawData->CmdListsCount; i++) {
             const auto cmdList = drawData->CmdLists[i];
@@ -186,37 +188,37 @@ namespace sp::vulkan {
             const auto cmdList = drawData->CmdLists[i];
 
             for (const auto &pcmd : cmdList->CmdBuffer) {
-                Assertf(!pcmd.UserCallback, "ImGui UserCallback on render not supported");
-                // if (pcmd.UserCallback) {
-                //     pcmd.UserCallback(cmdList, &pcmd);
-                //     // totalCallbacks++;
-                // } else {
-                // auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
-                if (pcmd.TextureId == FONT_ATLAS_ID) {
-                    cmd.SetImageView("tex", fontView->Get());
-                } else if (pcmd.TextureId < scene.textures.Count()) {
-                    auto imgPtr = scene.textures.Get(pcmd.TextureId);
-                    if (imgPtr) {
-                        cmd.SetImageView("tex", imgPtr);
+                Assertf(allowCallbacks || !pcmd.UserCallback, "ImGui UserCallback on render not allowed");
+                if (allowCallbacks && pcmd.UserCallback) {
+                    pcmd.UserCallback(cmdList, &pcmd);
+                    // totalCallbacks++;
+                } else {
+                    // auto texture = ImageView::FromHandle((uintptr_t)pcmd.TextureId);
+                    if (pcmd.TextureId == FONT_ATLAS_ID) {
+                        cmd.SetImageView("tex", fontView->Get());
+                    } else if (pcmd.TextureId < scene.textures.Count()) {
+                        auto imgPtr = scene.textures.Get(pcmd.TextureId);
+                        if (imgPtr) {
+                            cmd.SetImageView("tex", imgPtr);
+                        } else {
+                            cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                        }
                     } else {
                         cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
                     }
-                } else {
-                    cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+
+                    auto clipRect = pcmd.ClipRect;
+                    clipRect.x -= drawData->DisplayPos.x;
+                    clipRect.y -= drawData->DisplayPos.y;
+                    clipRect.z -= drawData->DisplayPos.x;
+                    clipRect.w -= drawData->DisplayPos.y;
+
+                    cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
+                        {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+
+                    cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
+                    // totalCommands++;
                 }
-
-                auto clipRect = pcmd.ClipRect;
-                clipRect.x -= drawData->DisplayPos.x;
-                clipRect.y -= drawData->DisplayPos.y;
-                clipRect.z -= drawData->DisplayPos.x;
-                clipRect.w -= drawData->DisplayPos.y;
-
-                cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
-                    {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
-
-                cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
-                // totalCommands++;
-                // }
                 idxOffset += pcmd.ElemCount;
             }
             vtxOffset += cmdList->VtxBuffer.size();
