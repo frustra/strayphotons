@@ -10,6 +10,7 @@
 #include "common/InlineString.hh"
 #include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
 
 #include <imgui/imgui.h>
@@ -75,7 +76,7 @@ namespace ecs {
         void (*onTickFunc)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t) = nullptr;
         void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
         void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
-        void (*beforeFrameFunc)(void *, ScriptState *, DynamicLock<> *, Entity) = nullptr;
+        void (*beforeFrameFunc)(void *, ScriptState *, Entity) = nullptr;
         ImDrawData *(*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) = nullptr;
     };
 
@@ -134,7 +135,7 @@ namespace ecs {
             chrono_clock::duration interval);
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
-        static void BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent);
+        static void BeforeFrame(ScriptState &state, Entity ent);
         static ImDrawData *RenderGui(ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
@@ -143,5 +144,17 @@ namespace ecs {
 
         friend class DynamicScriptContext;
         friend class DynamicLibrary;
+    };
+
+    class DynamicScriptGui final : public GuiDefinition {
+    public:
+        DynamicScriptGui(std::string_view name);
+
+        bool PreDefine(Entity ent) override;
+        void DefineContents(Entity ent) override;
+        void PostDefine(Entity ent) override;
+
+        std::weak_ptr<ScriptState> state;
+        // std::weak_ptr<sp::vulkan::Renderer> renderer;
     };
 } // namespace ecs

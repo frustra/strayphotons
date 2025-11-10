@@ -9,8 +9,8 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "editor/EditorControls.hh"
 #include "editor/EditorSystem.hh"
-#include "graphics/gui/definitions/EditorControls.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
@@ -18,10 +18,7 @@
 
 namespace sp {
     InspectorGui::InspectorGui(const string &name)
-        : ecs::GuiRenderable(name,
-              ecs::GuiLayoutAnchor::Right,
-              {400, -1},
-              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
+        : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {

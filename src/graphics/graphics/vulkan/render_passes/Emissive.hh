@@ -16,7 +16,7 @@ namespace sp::vulkan::renderer {
     public:
         Emissive(GPUScene &scene) : scene(scene) {}
         void AddPass(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock,
+            ecs::Lock<ecs::Read<ecs::Screen, ecs::RenderOutput, ecs::LaserLine, ecs::TransformSnapshot>> lock,
             chrono_clock::duration elapsedTime);
 
     private:

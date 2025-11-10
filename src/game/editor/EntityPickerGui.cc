@@ -9,9 +9,9 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "editor/EditorControls.hh"
 #include "editor/EditorSystem.hh"
 #include "game/SceneManager.hh"
-#include "graphics/gui/definitions/EditorControls.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
@@ -19,10 +19,7 @@
 
 namespace sp {
     EntityPickerGui::EntityPickerGui(const string &name)
-        : ecs::GuiRenderable(name,
-              ecs::GuiLayoutAnchor::Left,
-              {400, -1},
-              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
+        : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {

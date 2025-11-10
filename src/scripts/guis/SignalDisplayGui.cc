@@ -26,7 +26,6 @@ namespace sp::scripts {
 
         void Init(ScriptState &state) {
             Logf("Created signal display: %llu", state.GetInstanceId());
-            state.definition.events.emplace_back("/gui/imgui_input");
 
             imCtx = ImGui::CreateContext();
             fontAtlas = make_shared<ImFontAtlas>();
@@ -64,9 +63,9 @@ namespace sp::scripts {
             fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
         }
 
-        void Init(ScriptState &state, GuiRenderable &gui) {
-            Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
-        }
+        // void Init(ScriptState &state, GuiDefinition &gui) {
+        //     Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
+        // }
 
         void Destroy(ScriptState &state) {
             Logf("Destroying signal display: %llu", state.GetInstanceId());
@@ -122,17 +121,7 @@ namespace sp::scripts {
             ImGui::PopStyleColor();
         }
 
-        void BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
-            Event event = {};
-            while (state.eventQueue && state.eventQueue->Poll(event, lock.GetTransactionId())) {
-                if (event.name == "/gui/imgui_input") {
-                    const auto &bytes = ecs::EventData::Get<EventBytes>(event.data);
-                    ImGuiInputEvent inputEvent = reinterpret_cast<const ImGuiInputEvent &>(bytes);
-                    inputEvent.EventId = imCtx->InputEventsNextEventId++;
-                    imCtx->InputEventsQueue.push_back(inputEvent);
-                }
-            }
-        }
+        void BeforeFrame(ScriptState &state, Entity ent) {}
 
         ImDrawData *RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
             ZoneScoped;

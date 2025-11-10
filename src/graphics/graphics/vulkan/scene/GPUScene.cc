@@ -366,6 +366,7 @@ namespace sp::vulkan {
             })
             .Execute([this, viewMask, viewPosition, bufferIDs, instanceCount, reverseSort](rg::Resources &resources,
                          CommandContext &cmd) {
+                ZoneScopedN("GenerateSortedDrawsForView");
                 static InlineVector<VkDrawIndexedIndirectCommand, 256 * 1024> drawCommands;
                 static InlineVector<GPUDrawParams, 256 * 1024> drawParams;
                 static InlineVector<float, 256 * 1024> primitiveDepth;
@@ -404,17 +405,19 @@ namespace sp::vulkan {
                         primitiveDepth.push_back(glm::length(relPos));
                     }
                 }
-
-                if (reverseSort) {
-                    // Sort primitives farthest first
-                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
-                        return primitiveDepth[a.firstInstance] > primitiveDepth[b.firstInstance];
-                    });
-                } else {
-                    // Sort primitives nearest first
-                    std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
-                        return primitiveDepth[a.firstInstance] < primitiveDepth[b.firstInstance];
-                    });
+                {
+                    ZoneScopedN("SortedDrawCommands");
+                    if (reverseSort) {
+                        // Sort primitives farthest first
+                        std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                            return primitiveDepth[a.firstInstance] > primitiveDepth[b.firstInstance];
+                        });
+                    } else {
+                        // Sort primitives nearest first
+                        std::sort(drawCommands.begin(), drawCommands.end(), [&](auto a, auto b) {
+                            return primitiveDepth[a.firstInstance] < primitiveDepth[b.firstInstance];
+                        });
+                    }
                 }
 
                 auto commandsBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);

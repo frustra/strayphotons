@@ -26,7 +26,11 @@ namespace sp::vulkan {
     public:
         GuiRenderer(DeviceContext &device, GPUScene &scene);
         void Render(GuiContext &context, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale);
-        void DrawGui(ImDrawData *drawData, CommandContext &cmd, vk::Rect2D viewport, glm::vec2 scale);
+        void DrawGui(ImDrawData *drawData,
+            CommandContext &cmd,
+            vk::Rect2D viewport,
+            glm::vec2 scale,
+            bool allowCallbacks);
         void Tick();
 
     private:

@@ -16,9 +16,7 @@ namespace sp {
     };
 
     ConsoleGui::ConsoleGui()
-        : ecs::GuiRenderable("console",
-              ecs::GuiLayoutAnchor::Top,
-              {-1, 300},
+        : ecs::GuiDefinition("console",
               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar) {}
 
     bool ConsoleGui::PreDefine(ecs::Entity ent) {

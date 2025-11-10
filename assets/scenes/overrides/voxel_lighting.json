@@ -1,0 +1,22 @@
+{
+	"priority": "System",
+	"entities": [
+		{
+			"name": "voxel_grid",
+			"transform": {},
+			"voxel_area": {
+				"extents": [200, 200, 36]
+			},
+			"script": {
+				"name": "voxel_controller",
+				"parameters": {
+					"alignment_target": "global:voxel_lighting",
+					"follow_target": "player:player",
+					"voxel_offset": [-0.5, -0.5, -0.5],
+					"voxel_scale": 0.5,
+					"voxel_stride": 1
+				}
+			}
+		}
+	]
+}

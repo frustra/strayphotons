@@ -37,7 +37,7 @@ namespace ecs {
     struct EventInput;
     class EventBindings;
     class FocusLock;
-    struct Gui;
+    struct GuiElement;
     struct LaserEmitter;
     struct LaserLine;
     struct LaserSensor;
@@ -48,6 +48,7 @@ namespace ecs {
     struct PhysicsJoints;
     struct PhysicsQuery;
     struct Renderable;
+    struct RenderOutput;
     struct SceneConnection;
     struct SceneInfo;
     struct SceneProperties;
@@ -78,7 +79,7 @@ namespace ecs {
         Audio,
         CharacterController,
         FocusLock,
-        Gui,
+        GuiElement,
         LaserEmitter,
         LaserLine,
         LaserSensor,
@@ -87,6 +88,7 @@ namespace ecs {
         OpticalElement,
         PhysicsJoints,
         PhysicsQuery,
+        RenderOutput,
         SceneConnection,
         Screen,
         TriggerArea,
@@ -230,7 +232,7 @@ TECS_NAME_COMPONENT(ecs::CharacterController, "CharacterController");
 TECS_NAME_COMPONENT(ecs::EventInput, "EventInput");
 TECS_NAME_COMPONENT(ecs::EventBindings, "EventBindings");
 TECS_NAME_COMPONENT(ecs::FocusLock, "FocusLock");
-TECS_NAME_COMPONENT(ecs::Gui, "Gui");
+TECS_NAME_COMPONENT(ecs::GuiElement, "GuiElement");
 TECS_NAME_COMPONENT(ecs::LaserEmitter, "LaserEmitter");
 TECS_NAME_COMPONENT(ecs::LaserLine, "LaserLine");
 TECS_NAME_COMPONENT(ecs::LaserSensor, "LaserSensor");
@@ -241,6 +243,7 @@ TECS_NAME_COMPONENT(ecs::Physics, "Physics");
 TECS_NAME_COMPONENT(ecs::PhysicsJoints, "PhysicsJoints");
 TECS_NAME_COMPONENT(ecs::PhysicsQuery, "PhysicsQuery");
 TECS_NAME_COMPONENT(ecs::Renderable, "Renderable");
+TECS_NAME_COMPONENT(ecs::RenderOutput, "RenderOutput");
 TECS_NAME_COMPONENT(ecs::SceneConnection, "SceneConnection");
 TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::SceneProperties, "SceneProperties");

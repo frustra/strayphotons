@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/components/Gui.hh"
+#include "ecs/components/GuiElement.hh"
 #include "graphics/core/Histogram.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
@@ -15,7 +15,7 @@
 #include <sstream>
 
 namespace sp::vulkan {
-    class ProfilerGui final : public ecs::GuiRenderable {
+    class ProfilerGui final : public ecs::GuiDefinition {
     public:
         enum class Mode {
             CPU,
@@ -23,11 +23,7 @@ namespace sp::vulkan {
         };
 
         ProfilerGui(PerfTimer &timer)
-            : ecs::GuiRenderable("profiler",
-                  ecs::GuiLayoutAnchor::Floating,
-                  {-1, -1},
-                  ImGuiWindowFlags_AlwaysAutoResize),
-              timer(timer), msWindowSize(1000) {}
+            : ecs::GuiDefinition("profiler", ImGuiWindowFlags_AlwaysAutoResize), timer(timer), msWindowSize(1000) {}
         virtual ~ProfilerGui() {}
 
         static float GetHistogramValue(void *data, int index) {

@@ -15,7 +15,7 @@
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock,
+        ecs::Lock<ecs::Read<ecs::Screen, ecs::RenderOutput, ecs::LaserLine, ecs::TransformSnapshot>> lock,
         chrono_clock::duration elapsedTime) {
         screens.clear();
 
@@ -73,8 +73,8 @@ namespace sp::vulkan::renderer {
                     ResourceName textureName;
                     if (!screenComp.textureName.empty()) {
                         textureName = screenComp.textureName;
-                    } else if (ent.Has<ecs::Gui>(lock)) {
-                        auto &gui = ent.Get<ecs::Gui>(lock);
+                    } else if (ent.Has<ecs::RenderOutput>(lock)) {
+                        auto &gui = ent.Get<ecs::RenderOutput>(lock);
                         if (gui.target != ecs::GuiTarget::World) continue;
                         ecs::EntityRef ref(ent);
                         textureName = ResourceName("gui:") + ref.Name().String();

@@ -8,6 +8,7 @@
 #include "OverlayGuiManager.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/components/GuiElement.hh"
 #include "graphics/gui/definitions/ConsoleGui.hh"
 #include "graphics/gui/definitions/FpsCounterGui.hh"
 #include "input/BindingNames.hh"
@@ -15,9 +16,9 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    OverlayGuiManager::OverlayGuiManager() : FlatViewGuiContext("overlay") {
+    OverlayGuiManager::OverlayGuiManager() : GuiContext("overlay") {
         consoleGui = std::make_shared<ConsoleGui>();
-        Attach(consoleGui);
+        Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-1, 300});
         fpsCounterGui = std::make_shared<FpsCounterGui>();
         Attach(fpsCounterGui);
 
@@ -29,9 +30,9 @@ namespace sp {
         auto &eventInput = gui.Get<ecs::EventInput>(lock);
         eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
 
-        guiObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Gui>>();
+        renderOutputObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::RenderOutput>>();
 
-        for (auto &ent : lock.EntitiesWith<ecs::Gui>()) {
+        for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
             guis.emplace_back(GuiEntityContext{ent});
         }
     }
@@ -59,7 +60,7 @@ namespace sp {
         for (auto &componentWeak : components) {
             auto component = componentWeak.lock();
             if (!component) continue;
-            ecs::GuiRenderable &renderable = *component;
+            ecs::GuiElement &renderable = *component;
             ecs::Entity ent = guiEntity.GetLive();
 
             if (renderable.PreDefine(ent)) {
@@ -127,7 +128,7 @@ namespace sp {
         bool focusChanged = false;
         {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::EventInput, ecs::Gui, ecs::Scripts>>();
+                ecs::Read<ecs::EventInput, ecs::RenderOutput, ecs::Scripts>>();
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
@@ -141,35 +142,35 @@ namespace sp {
                 }
             }
 
-            ecs::ComponentAddRemoveEvent<ecs::Gui> guiEvent;
-            while (guiObserver.Poll(lock, guiEvent)) {
-                auto &eventEntity = guiEvent.entity;
+            ecs::ComponentAddRemoveEvent<ecs::RenderOutput> renderOutputEvent;
+            while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
+                auto &eventEntity = renderOutputEvent.entity;
 
-                if (guiEvent.type == Tecs::EventType::REMOVED) {
+                if (renderOutputEvent.type == Tecs::EventType::REMOVED) {
                     for (auto it = guis.begin(); it != guis.end(); it++) {
                         if (it->entity == eventEntity) {
                             guis.erase(it);
                             break;
                         }
                     }
-                } else if (guiEvent.type == Tecs::EventType::ADDED) {
-                    if (!eventEntity.Has<ecs::Gui>(lock)) continue;
+                } else if (renderOutputEvent.type == Tecs::EventType::ADDED) {
+                    if (!eventEntity.Has<ecs::RenderOutput>(lock)) continue;
                     guis.emplace_back(GuiEntityContext{eventEntity});
                 }
             }
 
             for (auto &ctx : guis) {
-                Assert(ctx.entity.Has<ecs::Gui>(lock), "gui entity must have a gui component");
+                Assert(ctx.entity.Has<ecs::RenderOutput>(lock), "gui entity must have a gui component");
 
-                auto &gui = ctx.entity.Get<ecs::Gui>(lock);
+                auto &gui = ctx.entity.Get<ecs::RenderOutput>(lock);
                 if (!ctx.window.lock()) {
                     ctx.window = LookupInternalGui(gui.windowName);
                 }
-                // if (!ctx.window.lock()) {
-                //     const ecs::Scripts *scripts = nullptr;
-                //     if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
-                //     ctx.window = LookupScriptGui(gui.windowName, scripts);
-                // }
+                if (!ctx.window.lock()) {
+                    const ecs::Scripts *scripts = nullptr;
+                    if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
+                    ctx.window = LookupScriptGui(gui.windowName, scripts);
+                }
                 if (gui.target == ecs::GuiTarget::Overlay) {
                     Attach(ctx.window);
                 } else {

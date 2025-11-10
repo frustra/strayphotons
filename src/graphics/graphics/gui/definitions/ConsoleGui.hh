@@ -8,12 +8,12 @@
 #pragma once
 
 #include "console/Console.hh"
-#include "ecs/components/Gui.hh"
+#include "ecs/components/GuiElement.hh"
 
 #include <imgui/imgui.h>
 
 namespace sp {
-    class ConsoleGui final : public ecs::GuiRenderable {
+    class ConsoleGui final : public ecs::GuiDefinition {
     public:
         ConsoleGui();
 

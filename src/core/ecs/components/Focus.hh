@@ -15,6 +15,7 @@ namespace ecs {
     enum class FocusLayer {
         Never = 0,
         Game,
+        HUD,
         Menu,
         Overlay,
         Always,

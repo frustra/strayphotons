@@ -145,7 +145,8 @@ namespace sp {
 
             static int textureIndex = 0;
             ImGui::SliderInt("Texture Index", &textureIndex, -1, 4096);
-            ImGui::Image((ImTextureID)(int64_t)textureIndex, logoSize); // logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)(int64_t)textureIndex, logoSize);
+            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);

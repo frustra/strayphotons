@@ -35,7 +35,8 @@ static const CommonTypes generalCommonTypes = {
 
 static const CompList renderingComponents = {
     "renderable",
-    "gui",
+    "render_output",
+    "gui_element",
     "laser_line",
     "light_sensor",
     "light",

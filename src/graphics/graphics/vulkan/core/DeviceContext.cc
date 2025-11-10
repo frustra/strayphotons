@@ -642,23 +642,27 @@ namespace sp::vulkan {
         vkRenderer = make_shared<vulkan::Renderer>(game, *this);
     }
 
+    std::shared_ptr<Renderer> DeviceContext::GetRenderer() const {
+        return vkRenderer;
+    }
+
     void DeviceContext::RenderFrame(chrono_clock::duration elapsedTime) {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
 
-    void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
-        auto *perfTimer = GetPerfTimer();
-        if (perfTimer) {
-            if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
-            overlayGui->Attach(profilerGui);
-        }
+    // void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
+    //     auto *perfTimer = GetPerfTimer();
+    //     if (perfTimer) {
+    //         if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
+    //         overlayGui->Attach(profilerGui);
+    //     }
 
-        if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
-    }
+    //     if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
+    // }
 
-    void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {
-        if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
-    }
+    // void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {
+    //     if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
+    // }
 
     bool DeviceContext::BeginFrame() {
         ZoneScoped;
