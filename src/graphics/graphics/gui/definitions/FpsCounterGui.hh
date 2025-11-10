@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "ecs/components/Gui.hh"
+#include "ecs/components/GuiElement.hh"
 
 namespace sp {
-    class FpsCounterGui final : public ecs::GuiRenderable {
+    class FpsCounterGui final : public ecs::GuiDefinition {
     public:
         FpsCounterGui();
         virtual ~FpsCounterGui() {}

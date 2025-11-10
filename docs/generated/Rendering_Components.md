@@ -39,11 +39,10 @@ Enum flag names:
 
 <div class="component_definition">
 
-## `gui` Component
+## `render_output` Component
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **window_name** | string | "" | No description |
 | **target** | enum [GuiTarget](#GuiTarget-type) | "World" | No description |
 
 <div class="type_definition">
@@ -53,6 +52,31 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 - "**None**" - No description
 - "**World**" - No description
 - "**Overlay**" - No description
+
+</div>
+
+</div>
+
+
+<div class="component_definition">
+
+## `gui_element` Component
+
+| Field Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **anchor** | enum [GuiLayoutAnchor](#GuiLayoutAnchor-type) | "Fullscreen" | No description |
+| **preferred_size** | ivec2 | [-1, -1] | No description |
+
+<div class="type_definition">
+
+### `GuiLayoutAnchor` Type
+This is an **enum** type, and can be one of the following case-sensitive values:
+- "**Fullscreen**" - No description
+- "**Top**" - No description
+- "**Left**" - No description
+- "**Right**" - No description
+- "**Bottom**" - No description
+- "**Floating**" - No description
 
 </div>
 

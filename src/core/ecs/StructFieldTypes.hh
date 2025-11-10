@@ -122,6 +122,7 @@ namespace ecs {
         // Enums
         FieldAction,
         FocusLayer,
+        GuiLayoutAnchor,
         GuiTarget,
         InterpolationMode,
         PhysicsGroup,
@@ -155,7 +156,7 @@ namespace ecs {
         void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t), // OnTick
         void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
         void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity), // BeforeFrame
+        void (*)(void *, ScriptState *, Entity), // BeforeFrame
         ImDrawData *(*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) // RenderGui
         >;
 

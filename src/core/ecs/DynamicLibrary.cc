@@ -214,15 +214,14 @@ namespace ecs {
         }
     }
 
-    void DynamicScript::BeforeFrame(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent) {
+    void DynamicScript::BeforeFrame(ScriptState &state, Entity ent) {
         ZoneScoped;
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.beforeFrameFunc) {
-                ecs::DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, &state, &dynLock, ent);
+                dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, &state, ent);
             }
         }
     }
@@ -345,4 +344,47 @@ namespace ecs {
     void DynamicScript::Register() const {
         GetScriptDefinitions().RegisterScript(ScriptDefinition(definition));
     }
+
+    DynamicScriptGui::DynamicScriptGui(std::string_view name) : GuiDefinition(name) {}
+
+    bool DynamicScriptGui::PreDefine(Entity ent) {
+        // if (!state || !renderer) return false;
+        // const auto &definition = state->definition;
+        // if (definition.type != ecs::ScriptType::GuiScript) return false;
+        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        //     "DynamicScriptGui has invalid callback type: %s",
+        //     definition.callback.index());
+        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // if (beforeFrame && renderGui) {
+        //     beforeFrame(*state, ent);
+        //     return true;
+        // }
+        return false;
+    }
+
+    void DynamicScriptGui::DefineContents(Entity ent) {
+        // Assertf(state != nullptr, "DynamicScriptGui::DefineContents called without state init");
+        // Assertf(renderer != nullptr, "DynamicScriptGui::DefineContents called without renderer init");
+
+        // const auto &definition = state->definition;
+        // Assertf(definition.type == ecs::ScriptType::GuiScript, "DynamicScriptGui script is wrong type");
+        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        //     "DynamicScriptGui has invalid callback type");
+
+        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // if (beforeFrame && renderGui) {
+        //     auto &io = ImGui::GetIO();
+        //     ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
+        //     Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
+        //     glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
+        //     glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};
+        //     ImDrawData *drawData = renderGui(*state, ent, displaySize, scale, io.DeltaTime);
+        //     if (drawData) {
+        //         drawData->ScaleClipRects(io.DisplayFramebufferScale);
+        //         // renderer->DrawGui
+        //     }
+        // }
+    }
+
+    void DynamicScriptGui::PostDefine(Entity ent) {}
 } // namespace ecs

@@ -12,9 +12,9 @@
 #include <imgui/imgui.h>
 
 namespace sp {
-    class LobbyGui final : public ecs::GuiRenderable {
+    class LobbyGui final : public ecs::GuiDefinition {
     public:
-        LobbyGui(const string &name) : ecs::GuiRenderable(name, ecs::GuiLayoutAnchor::Fullscreen) {}
+        LobbyGui(const string &name) : ecs::GuiDefinition(name, ecs::GuiLayoutAnchor::Fullscreen) {}
         virtual ~LobbyGui() {}
 
         enum class State { Initial, Page1 };

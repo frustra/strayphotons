@@ -10,6 +10,8 @@
 #include "common/Tracing.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "editor/EntityPickerGui.hh"
+#include "editor/InspectorGui.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
@@ -42,11 +44,17 @@ namespace sp {
             "editor",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto picker = scene->NewSystemEntity(lock, scene, pickerEntity.Name());
-                picker.Set<ecs::Gui>(lock, "entity_picker", ecs::GuiTarget::None);
+                picker.Set<ecs::GuiElement>(lock,
+                    make_shared<EntityPickerGui>("entity_picker"),
+                    ecs::GuiLayoutAnchor::Left,
+                    glm::ivec2(400, -1));
                 picker.Set<ecs::EventInput>(lock);
 
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
-                inspector.Set<ecs::Gui>(lock, "inspector", ecs::GuiTarget::None);
+                inspector.Set<ecs::GuiElement>(lock,
+                    make_shared<InspectorGui>("inspector"),
+                    ecs::GuiLayoutAnchor::Right,
+                    glm::ivec2(400, -1));
                 auto &screen = inspector.Set<ecs::Screen>(lock);
                 screen.resolution = glm::ivec2(800, 1000);
                 inspector.Set<ecs::EventInput>(lock);
@@ -65,13 +73,13 @@ namespace sp {
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
         auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
-            ecs::Write<ecs::Gui, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
+            ecs::Write<ecs::RenderOutput, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
 
         auto picker = pickerEntity.Get(lock);
         auto inspector = inspectorEntity.Get(lock);
 
-        if (!picker.Has<ecs::Gui>(lock)) return;
-        if (!inspector.Has<ecs::TransformTree, ecs::Gui, ecs::Physics>(lock)) return;
+        if (!picker.Has<ecs::RenderOutput>(lock)) return;
+        if (!inspector.Has<ecs::TransformTree, ecs::RenderOutput, ecs::Physics>(lock)) return;
 
         ecs::Entity target;
         if (targetName.empty()) {
@@ -91,8 +99,8 @@ namespace sp {
             target = ref.Get(lock);
         }
 
-        auto &pickerGui = picker.Get<ecs::Gui>(lock);
-        auto &gui = inspector.Get<ecs::Gui>(lock);
+        auto &pickerGui = picker.Get<ecs::RenderOutput>(lock);
+        auto &gui = inspector.Get<ecs::RenderOutput>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
         auto &focusLock = lock.Get<ecs::FocusLock>();
 

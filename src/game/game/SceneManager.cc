@@ -640,7 +640,7 @@ namespace sp {
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                 if (sceneInfo.scene != scene) continue;
 
-                if (sceneInfo.prefabStagingId) scene->RemovePrefabEntity(lock, e);
+                if (sceneInfo.prefabStagingId) scene->RemoveEntity(lock, e);
             }
             auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : lock.EntitiesWith<ecs::Scripts>()) {

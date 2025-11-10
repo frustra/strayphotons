@@ -172,12 +172,11 @@ namespace sp {
         return entity;
     }
 
-    void Scene::RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent) {
-        Assertf(ecs::IsStaging(stagingLock), "Scene::RemovePrefabEntity must be called with a staging lock");
-        Assertf(ecs::IsStaging(ent), "Scene::RemovePrefabEntity must be called with a staging entity");
+    void Scene::RemoveEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent) {
+        Assertf(ecs::IsStaging(stagingLock), "Scene::RemoveEntity must be called with a staging lock");
+        Assertf(ecs::IsStaging(ent), "Scene::RemoveEntity must be called with a staging entity");
         if (!ent.Has<ecs::SceneInfo>(stagingLock)) return;
         auto &stagingInfo = ent.Get<ecs::SceneInfo>(stagingLock);
-        Assertf(stagingInfo.prefabStagingId, "Scene::RemovePrefabEntity must be called with a prefab entity");
 
         if (!stagingInfo.rootStagingId.Has<ecs::SceneInfo>(stagingLock)) {
             ent.Destroy(stagingLock);

@@ -8,7 +8,8 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/Gui.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/components/GuiElement.hh"
 
 #include <memory>
 #include <string>
@@ -19,7 +20,8 @@ struct ImDrawData;
 
 namespace ecs {
     class ScriptState;
-}
+    class GuiInstance;
+} // namespace ecs
 
 namespace sp {
     enum class GuiFont {
@@ -36,35 +38,46 @@ namespace sp {
 
     class GuiContext {
     public:
-        using Ref = std::weak_ptr<ecs::GuiRenderable>;
-
         GuiContext(const std::string &name);
         virtual ~GuiContext();
-        void Attach(const Ref &component);
-        void Detach(const Ref &component);
+        void Attach(ecs::Entity guiElementEntity,
+            ecs::GuiLayoutAnchor anchor = ecs::GuiLayoutAnchor::Floating,
+            glm::ivec2 preferredSize = {-1, -1});
+        void Detach(ecs::Entity guiElementEntity);
 
         virtual bool SetGuiContext();
         virtual void BeforeFrame();
-        virtual void DefineWindows() = 0;
+        virtual void DefineWindows();
         virtual ImDrawData *GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
 
         static void PushFont(GuiFont fontType, float fontSize);
 
     protected:
-        std::vector<Ref> components;
-        ImGuiContext *imCtx = nullptr;
+        struct GuiElementInfo {
+            ecs::Entity ent;
+            ecs::GuiLayoutAnchor anchor;
+            glm::ivec2 preferredSize;
+            std::shared_ptr<ecs::GuiDefinition> definition;
+        };
+
         std::string name;
+        std::vector<GuiElementInfo> elements;
+        ImGuiContext *imCtx = nullptr;
+
+        ecs::EntityRef guiEntity;
+        ecs::EventQueueRef events = ecs::EventQueue::New();
+
+        struct PointingState {
+            ecs::Entity sourceEntity;
+            glm::vec2 mousePos;
+            bool mouseDown = false;
+        };
+
+        vector<PointingState> pointingStack;
     };
 
-    GuiContext::Ref LookupInternalGui(const std::string &windowName);
-    std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts);
+    // ecs::EntityRef LookupInternalGui(const std::string &windowName);
+    // std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp
-
-namespace std {
-    // Thread-safe equality check without weak_ptr::lock()
-    inline bool operator==(const sp::GuiContext::Ref &a, const sp::GuiContext::Ref &b) {
-        return !a.owner_before(b) && !b.owner_before(a);
-    }
-} // namespace std
