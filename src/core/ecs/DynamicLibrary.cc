@@ -151,7 +151,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
-                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ecs::ScriptState));
+                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ScriptState));
                 dynamicScript->dynamicDefinition.initFunc(ptr.context, &state);
             }
         }
@@ -179,7 +179,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onTickFunc) {
-                ecs::DynamicLock<> dynLock = lock;
+                DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
                     &state,
                     &dynLock,
@@ -196,7 +196,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onEventFunc) {
-                ecs::DynamicLock<> dynLock = lock;
+                DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, ent, &event);
             }
         }
@@ -208,7 +208,7 @@ namespace ecs {
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             if (dynamicScript->dynamicDefinition.prefabFunc) {
-                ecs::DynamicLock<> dynLock = lock;
+                DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, ent, &scene);
             }
         }
@@ -350,11 +350,11 @@ namespace ecs {
     bool DynamicScriptGui::PreDefine(Entity ent) {
         // if (!state || !renderer) return false;
         // const auto &definition = state->definition;
-        // if (definition.type != ecs::ScriptType::GuiScript) return false;
-        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        // if (definition.type != ScriptType::GuiScript) return false;
+        // Assertf(std::holds_alternative<GuiRenderFuncs>(definition.callback),
         //     "DynamicScriptGui has invalid callback type: %s",
         //     definition.callback.index());
-        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // auto &[beforeFrame, renderGui] = std::get<GuiRenderFuncs>(definition.callback);
         // if (beforeFrame && renderGui) {
         //     beforeFrame(*state, ent);
         //     return true;
@@ -367,11 +367,11 @@ namespace ecs {
         // Assertf(renderer != nullptr, "DynamicScriptGui::DefineContents called without renderer init");
 
         // const auto &definition = state->definition;
-        // Assertf(definition.type == ecs::ScriptType::GuiScript, "DynamicScriptGui script is wrong type");
-        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        // Assertf(definition.type == ScriptType::GuiScript, "DynamicScriptGui script is wrong type");
+        // Assertf(std::holds_alternative<GuiRenderFuncs>(definition.callback),
         //     "DynamicScriptGui has invalid callback type");
 
-        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // auto &[beforeFrame, renderGui] = std::get<GuiRenderFuncs>(definition.callback);
         // if (beforeFrame && renderGui) {
         //     auto &io = ImGui::GetIO();
         //     ImGuiViewport *imguiViewport = ImGui::GetMainViewport();

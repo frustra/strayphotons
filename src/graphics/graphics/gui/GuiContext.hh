@@ -39,7 +39,7 @@ namespace sp {
     class GuiContext : public NonCopyable {
     public:
         GuiContext(const ecs::EntityRef &guiEntity);
-        GuiContext(GuiContext &&) = default;
+        GuiContext(GuiContext &&other);
         virtual ~GuiContext();
 
         void ClearEntities();
@@ -56,10 +56,6 @@ namespace sp {
         virtual bool BeforeFrame();
         virtual void DefineWindows();
         virtual ImDrawData *GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
-
-        const ecs::Name &Name() const {
-            return guiEntity.Name();
-        }
 
         static void PushFont(GuiFont fontType, float fontSize);
 

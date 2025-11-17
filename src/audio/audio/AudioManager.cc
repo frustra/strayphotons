@@ -176,7 +176,7 @@ namespace sp {
         auto globalVolumeChanged = CVarVolume.Changed();
         auto globalVolume = std::min(10.0f, CVarVolume.Get(true));
 
-        for (auto &ent : lock.EntitiesWith<ecs::Audio>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Audio>()) {
             InlineVector<size_t, 128> *soundIDs;
 
             auto &sources = ent.Get<ecs::Audio>(lock);

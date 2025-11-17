@@ -20,7 +20,7 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "console",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
+                ecs::Entity ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
                 auto eventScript = ecs::CreateLogicScript<ecs::Lock<ecs::Read<ecs::EventInput>>>(

@@ -299,7 +299,7 @@ namespace ecs {
                 //                 return std::shared_ptr<EventData>(); // Event filtered asynchronously
                 //             }
 
-                //             auto lock = ecs::StartTransaction<ReadAll>();
+                //             auto lock = StartTransaction<ReadAll>();
                 //             if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
                 //                 return input;
                 //             } else {
@@ -333,7 +333,7 @@ namespace ecs {
                 //             return std::make_shared<EventData>(); // Event filtered asynchronously
                 //         }
 
-                //         auto lock = ecs::StartTransaction<ReadAll>();
+                //         auto lock = StartTransaction<ReadAll>();
                 //         EventData modified = *output;
                 //         modifyEvent(lock, modified, *input, binding);
                 //         return std::make_shared<EventData>(modified);

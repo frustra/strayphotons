@@ -21,7 +21,7 @@ namespace sp {
 
     void PhysicsQuerySystem::Frame(ecs::Lock<ecs::Read<ecs::TransformSnapshot>, ecs::Write<ecs::PhysicsQuery>> lock) {
         ZoneScoped;
-        for (auto &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::PhysicsQuery>()) {
             auto &query = entity.Get<ecs::PhysicsQuery>(lock);
             for (auto &subQuery : query.queries) {
                 std::visit(

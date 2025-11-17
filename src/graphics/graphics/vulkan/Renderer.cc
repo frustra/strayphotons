@@ -320,7 +320,7 @@ namespace sp::vulkan {
         glm::ivec2 viewExtents = glm::ivec2(0);
         sp::EnumArray<ecs::View, ecs::XrEye> viewsByEye;
 
-        for (auto &ent : xrViews) {
+        for (const ecs::Entity &ent : xrViews) {
             if (!ent.Has<ecs::View>(lock)) continue;
             auto &view = ent.Get<ecs::View>(lock);
 
@@ -514,7 +514,7 @@ namespace sp::vulkan {
             return existingOutputs.count(ent) > 0;
         };
 
-        for (auto &ent : renderOutputEntities) {
+        for (const ecs::Entity &ent : renderOutputEntities) {
             ecs::EntityRef ref(ent);
             auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
             if (!renderOutput.guiContext && !renderOutput.guiElements.empty()) {

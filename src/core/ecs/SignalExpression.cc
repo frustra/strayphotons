@@ -577,7 +577,7 @@ namespace ecs {
                 Warnf("SignalExpression can't convert %s from %s to EventData", node.text, identNode.field.type.name());
                 return 0.0;
             }
-            return ecs::ReadStructField(&ctx.input, identNode.field);
+            return ReadStructField(&ctx.input, identNode.field);
         };
     }
 
@@ -607,12 +607,12 @@ namespace ecs {
                     return 0.0;
                 } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
                     auto &component = ent.Get<const T>(ctx.lock);
-                    return ecs::ReadStructField(&component, componentNode.field);
+                    return ReadStructField(&component, componentNode.field);
                 } else {
                     auto tryLock = ctx.lock.TryLock<Read<T>>();
                     if (tryLock) {
                         auto &component = ent.Get<const T>(*tryLock);
-                        return ecs::ReadStructField(&component, componentNode.field);
+                        return ReadStructField(&component, componentNode.field);
                     } else {
                         Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
                             componentNode.path,
@@ -1012,7 +1012,7 @@ namespace ecs {
     template<>
     bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src) {
         if (src.is<std::string>()) {
-            dst = ecs::SignalExpression(src.get<std::string>());
+            dst = SignalExpression(src.get<std::string>());
             return dst.rootNode != nullptr;
         } else {
             Errorf("Invalid signal expression: %s", src.to_str());

@@ -164,7 +164,7 @@ namespace sp {
 
     void CharacterControlSystem::RegisterEvents() {
         auto lock = ecs::StartTransaction<ecs::Write<ecs::CharacterController, ecs::EventInput>>();
-        for (auto &ent : lock.EntitiesWith<ecs::CharacterController>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!ent.Has<ecs::CharacterController, ecs::EventInput>(lock)) continue;
             auto &readController = ent.Get<const ecs::CharacterController>(lock);
             if (!readController.eventQueue) {
@@ -245,7 +245,7 @@ namespace sp {
 
         float dt = (float)(manager.interval.count() / 1e9);
 
-        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
 
             auto &controller = entity.Get<ecs::CharacterController>(lock);

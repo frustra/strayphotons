@@ -175,7 +175,7 @@ namespace sp {
         ecs::Lock<ecs::Read<ecs::TransformTree, ecs::CharacterController, ecs::Physics, ecs::SceneProperties>,
             ecs::Write<ecs::PhysicsJoints>> lock) {
         ZoneScoped;
-        for (auto &entity : lock.EntitiesWith<ecs::Physics>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::Physics>()) {
             if (!entity.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
             if (manager.actors.count(entity) == 0) continue;
 
@@ -190,7 +190,7 @@ namespace sp {
                 if (dynamic) dynamic->addForce(GlmVec3ToPxVec3(rotation * physics.constantForce));
             }
         }
-        for (auto &entity : lock.EntitiesWith<ecs::CharacterController>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;
 
             auto &controller = entity.Get<ecs::CharacterController>(lock);

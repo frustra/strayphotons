@@ -76,11 +76,11 @@ namespace sp {
 
         static std::vector<LaserStart> emitterQueue;
 
-        for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
             sensor.illuminance = glm::vec3(0);
         }
-        for (auto &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LaserEmitter>()) {
             if (!entity.Has<ecs::TransformSnapshot, ecs::LaserLine>(lock)) continue;
 
             auto &emitter = entity.Get<ecs::LaserEmitter>(lock);
@@ -225,7 +225,7 @@ namespace sp {
                 }
             }
         }
-        for (auto &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LaserSensor>()) {
             auto &sensor = entity.Get<ecs::LaserSensor>(lock);
             ecs::SignalRef(entity, "light_value_r").SetValue(lock, sensor.illuminance.r);
             ecs::SignalRef(entity, "light_value_g").SetValue(lock, sensor.illuminance.g);

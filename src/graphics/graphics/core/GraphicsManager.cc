@@ -122,7 +122,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
 
-            for (auto &ent : lock.EntitiesWith<ecs::View>()) {
+            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::View>()) {
                 if (!ent.Has<ecs::Name>(lock)) continue;
                 auto &name = ent.Get<ecs::Name>(lock);
                 if (name == flatviewName) {

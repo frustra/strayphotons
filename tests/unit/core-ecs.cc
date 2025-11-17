@@ -51,12 +51,12 @@ namespace CoreEcsTests {
             AssertTrue(entFuture->Ready(), "Expected result of first transaction to be available");
             auto entPtr = entFuture->Get();
             AssertTrue(entPtr != nullptr, "Expected future to contain a value");
-            auto ent = *entPtr;
+            ecs::Entity ent = *entPtr;
             AssertTrue(ent.Exists(lock), "Expected entity to be available in second transaction");
             ent.Set<ecs::Name>(lock, "test", "entity");
         });
         auto result = ecs::QueueTransaction<ecs::AddRemove>([entFuture](auto &lock) {
-            auto ent = *entFuture->Get();
+            ecs::Entity ent = *entFuture->Get();
             AssertTrue(ent.Exists(lock), "Expected entity to be available in third transaction");
             ent.Destroy(lock);
         });
@@ -65,7 +65,7 @@ namespace CoreEcsTests {
 
         {
             auto lock = ecs::StartTransaction<>();
-            auto ent = *entFuture->Get();
+            ecs::Entity ent = *entFuture->Get();
             AssertTrue((bool)ent, "Expected entity to be available in third transaction");
             AssertTrue(!ent.Exists(lock), "Expected entity to removed after third transaction");
         }

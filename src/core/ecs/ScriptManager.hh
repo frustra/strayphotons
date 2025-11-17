@@ -97,7 +97,7 @@ namespace ecs {
 
         EntityScope scope;
         ScriptDefinition definition;
-        ecs::EventQueueRef eventQueue;
+        EventQueueRef eventQueue;
 
         std::any scriptData;
 

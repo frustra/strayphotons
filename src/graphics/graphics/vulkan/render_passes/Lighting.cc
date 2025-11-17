@@ -64,7 +64,7 @@ namespace sp::vulkan::renderer {
         ZoneScoped;
         lights.clear();
 
-        for (auto entity : lock.EntitiesWith<ecs::Light>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);

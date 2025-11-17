@@ -101,7 +101,7 @@ namespace sp::xr {
                     vrControllerLeftEntity,
                     vrControllerRightEntity};
                 for (auto &namedEntity : specialEntities) {
-                    auto ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
+                    ecs::Entity ent = scene->NewSystemEntity(lock, scene, namedEntity.Name());
                     ent.Set<ecs::TransformTree>(lock);
                     ent.Set<ecs::EventBindings>(lock);
                 }
@@ -117,7 +117,7 @@ namespace sp::xr {
                 for (size_t i = 0; i < views.size(); i++) {
                     auto eye = (ecs::XrEye)i;
 
-                    auto ent = scene->NewSystemEntity(lock, scene, views[eye].Name());
+                    ecs::Entity ent = scene->NewSystemEntity(lock, scene, views[eye].Name());
                     ent.Set<ecs::XrView>(lock, eye);
 
                     auto &transform = ent.Set<ecs::TransformTree>(lock);
@@ -293,7 +293,7 @@ namespace sp::xr {
             ZoneScopedN("OpenVRSystem Sync to ECS");
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::TransformTree>>();
 
-            for (auto entityRef : trackedDevices) {
+            for (const auto *entityRef : trackedDevices) {
                 if (entityRef && !entityRef->Get(lock).Exists(lock)) {
                     missingEntities = true;
                     break;
@@ -319,7 +319,7 @@ namespace sp::xr {
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto *entityRef : trackedDevices) {
                         if (entityRef && !scene->GetStagingEntity(entityRef->Name())) {
-                            auto ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
+                            ecs::Entity ent = scene->NewSystemEntity(lock, scene, entityRef->Name());
                             ent.Set<ecs::TransformTree>(lock);
                             ent.Set<ecs::EventBindings>(lock);
                         }

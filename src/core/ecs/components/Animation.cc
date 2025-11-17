@@ -39,7 +39,7 @@ namespace ecs {
     }
 
     void Animation::UpdateTransform(
-        Lock<ReadSignalsLock, Read<Animation, ecs::LightSensor, ecs::LaserSensor>, Write<TransformTree>> lock,
+        Lock<ReadSignalsLock, Read<Animation, LightSensor, LaserSensor>, Write<TransformTree>> lock,
         Entity ent) {
         if (!ent.Has<Animation, TransformTree>(lock)) return;
 

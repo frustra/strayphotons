@@ -17,7 +17,7 @@
 template<typename Callback>
 void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
     auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot>>();
-    auto entity = entityRef.Get(lock);
+    ecs::Entity entity = entityRef.Get(lock);
     if (!entity.Exists(lock)) {
         Errorf("Entity does not exist: %s", entityRef.Name().String());
     } else if (!entity.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) {

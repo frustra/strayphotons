@@ -20,7 +20,7 @@ namespace ecs::detail {
     template<typename T>
     std::optional<StructField> GetVectorSubfield(std::string_view subField) {
         if (subField.empty()) {
-            return StructField::New<T>("", "", 0, ecs::FieldAction::None, StructField::AsFunctionPointer<T>());
+            return StructField::New<T>("", "", 0, FieldAction::None, StructField::AsFunctionPointer<T>());
         }
         if (subField.size() > (size_t)T::length()) {
             Errorf("GetVectorSubfield invalid subfield: %s '%s'", typeid(T).name(), std::string(subField));
@@ -108,7 +108,7 @@ namespace ecs::detail {
     bool AccessStructField(BaseType *basePtr, const StructField &field, Fn &&accessor) {
         Assertf(basePtr != nullptr, "AccessStructField was provided nullptr: %s '%s'", field.type.name(), field.name);
 
-        return ecs::GetFieldType(field.type, [&](auto *typePtr) {
+        return GetFieldType(field.type, [&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             if constexpr (sp::is_glm_vec<T>::value || std::is_same_v<T, sp::color_t> ||

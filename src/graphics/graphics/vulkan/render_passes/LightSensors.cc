@@ -41,7 +41,7 @@ namespace sp::vulkan::renderer {
 
         shared_ptr<LightSensorData> data;
 
-        for (auto &entity : lock.EntitiesWith<ecs::LightSensor>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LightSensor>()) {
             if (!entity.Has<ecs::LightSensor, ecs::TransformSnapshot>(lock)) continue;
 
             auto &sensor = entity.Get<ecs::LightSensor>(lock);

@@ -456,7 +456,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::SceneConnection>>();
 
-            for (auto &ent : lock.EntitiesWith<ecs::SceneConnection>()) {
+            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::SceneConnection>()) {
                 auto &connection = ent.Get<ecs::SceneConnection>(lock);
                 for (auto &[scenePath, signals] : connection.scenes) {
                     for (auto &expr : signals) {

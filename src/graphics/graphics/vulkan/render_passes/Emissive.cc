@@ -20,7 +20,7 @@ namespace sp::vulkan::renderer {
         screens.clear();
 
         lasers.resize(0);
-        for (auto entity : lock.EntitiesWith<ecs::LaserLine>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LaserLine>()) {
             auto &laser = entity.Get<ecs::LaserLine>(lock);
 
             ecs::Transform transform;
@@ -65,7 +65,7 @@ namespace sp::vulkan::renderer {
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
 
-                for (auto ent : lock.EntitiesWith<ecs::Screen>()) {
+                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
                     if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
                     auto &screenComp = ent.Get<ecs::Screen>(lock);

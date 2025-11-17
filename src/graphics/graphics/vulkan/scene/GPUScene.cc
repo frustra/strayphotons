@@ -68,7 +68,7 @@ namespace sp::vulkan {
         primitiveCount = 0;
         vertexCount = 0;
 
-        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);
@@ -158,7 +158,7 @@ namespace sp::vulkan {
         bool complete = true;
         auto &textureCache = ecs::IsLive(lock) ? liveTextureCache : stagingTextureCache;
         textureCache.clear();
-        auto addTexture = [&](const auto &ent, const auto &str) {
+        auto addTexture = [&](const auto &str) {
             if (str.empty()) return;
             if (str.length() > 6 && starts_with(str, "asset:")) {
                 auto it = textureCache.find(str);
@@ -187,17 +187,17 @@ namespace sp::vulkan {
             }
         };
 
-        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            addTexture(ent, ent.Get<ecs::Renderable>(lock).textureOverrideName);
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            addTexture(ent.Get<ecs::Renderable>(lock).textureOverrideName);
         }
-        for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
-            addTexture(ent, ent.Get<ecs::Light>(lock).filterName);
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Light>()) {
+            addTexture(ent.Get<ecs::Light>(lock).filterName);
         }
-        for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
-            addTexture(ent, ent.Get<ecs::RenderOutput>(lock).sourceName);
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
+            addTexture(ent.Get<ecs::RenderOutput>(lock).sourceName);
         }
-        for (auto &ent : lock.EntitiesWith<ecs::Screen>()) {
-            addTexture(ent, ent.Get<ecs::Screen>(lock).textureName);
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
+            addTexture(ent.Get<ecs::Screen>(lock).textureName);
         }
         return complete;
     }

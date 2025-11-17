@@ -35,7 +35,7 @@ namespace sp {
     InspectorGui::~InspectorGui() {
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
             [inspectorEntity = this->inspectorEntity, events = this->events](auto &lock) {
-                auto ent = inspectorEntity.Get(lock);
+                ecs::Entity ent = inspectorEntity.Get(lock);
                 if (ent.Has<ecs::EventInput>(lock)) {
                     auto &eventInput = ent.Get<ecs::EventInput>(lock);
                     eventInput.Unregister(events, EDITOR_EVENT_EDIT_TARGET);

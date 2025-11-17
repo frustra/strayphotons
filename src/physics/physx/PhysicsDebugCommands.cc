@@ -29,7 +29,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         "Sets an entity's position to the specified coordinates (set_position <entity> <x> <y> <z>)",
         [](ecs::EntityRef entityRef, glm::vec3 position) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot>>();
-            auto entity = entityRef.Get(lock);
+            ecs::Entity entity = entityRef.Get(lock);
             if (!entity.Exists(lock)) {
                 Abortf("Entity does not exist: %s", entityRef.Name().String());
             } else if (!entity.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
@@ -44,7 +44,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         "Sets an entity's velocity to the specified value in world-space (set_velocity <entity> <dx> <dy> <dz>)",
         [this](ecs::EntityRef entityRef, glm::vec3 velocity) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::Physics>>();
-            auto entity = entityRef.Get(lock);
+            ecs::Entity entity = entityRef.Get(lock);
             if (!entity.Exists(lock)) {
                 Abortf("Entity does not exist: %s", entityRef.Name().String());
             } else if (actors.count(entity) == 0) {
@@ -64,7 +64,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         "Asserts an entity is located at the specified position in world-space (assert_position <entity> <x> <y> <z>)",
         [](ecs::EntityRef entityRef, glm::vec3 expected) {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformTree>>();
-            auto entity = entityRef.Get(lock);
+            ecs::Entity entity = entityRef.Get(lock);
             if (!entity.Exists(lock)) {
                 Abortf("Entity does not exist: %s", entityRef.Name().String());
             } else if (!entity.Has<ecs::TransformTree>(lock)) {
@@ -78,7 +78,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         "Asserts an entity's local scale matches a specified value (assert_scale <entity> <x> <y> <z>)",
         [](ecs::EntityRef entityRef, glm::vec3 expected) {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformTree>>();
-            auto entity = entityRef.Get(lock);
+            ecs::Entity entity = entityRef.Get(lock);
             if (!entity.Exists(lock)) {
                 Abortf("Entity does not exist: %s", entityRef.Name().String());
             } else if (!entity.Has<ecs::TransformTree>(lock)) {
@@ -92,7 +92,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
         "Asserts an entity's velocity is equal to the value in world-space (assert_velocity <entity> <dx> <dy> <dz>)",
         [this](ecs::EntityRef entityRef, glm::vec3 expected) {
             auto lock = ecs::StartTransaction<>();
-            auto entity = entityRef.Get(lock);
+            ecs::Entity entity = entityRef.Get(lock);
             if (!entity.Exists(lock)) {
                 Abortf("Entity does not exist: %s", entityRef.Name().String());
             } else if (!entity.Has<ecs::Physics>(lock)) {

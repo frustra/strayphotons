@@ -35,7 +35,7 @@ namespace sp {
     EntityPickerGui::~EntityPickerGui() {
         ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
             [pickerEntity = this->pickerEntity, events = this->events](auto &lock) {
-                auto ent = pickerEntity.Get(lock);
+                ecs::Entity ent = pickerEntity.Get(lock);
                 if (ent.Has<ecs::EventInput>(lock)) {
                     auto &eventInput = ent.Get<ecs::EventInput>(lock);
                     eventInput.Unregister(events, EDITOR_EVENT_EDIT_TARGET);
