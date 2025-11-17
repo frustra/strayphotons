@@ -3,6 +3,10 @@
         "event_bindings": {
             "/mouse/scroll": [
                 {
+                    "outputs": "player:flatview/action/menu/scroll",
+                    "filter": "is_focused(HUD)"
+                },
+                {
                     "outputs": "gui:menu/action/menu/scroll",
                     "filter": "is_focused(Menu)"
                 },
@@ -30,6 +34,10 @@
             ],
             "/mouse/pos": [
                 {
+                    "outputs": "player:flatview/action/menu/cursor",
+                    "filter": "is_focused(HUD)"
+                },
+                {
                     "outputs": "gui:menu/action/menu/cursor",
                     "filter": "is_focused(Menu)"
                 },
@@ -44,6 +52,10 @@
                     "filter": "is_focused(Game)"
                 },
                 {
+                    "outputs": "player:flatview/action/menu/primary_trigger",
+                    "filter": "is_focused(HUD)"
+                },
+                {
                     "outputs": "gui:menu/action/menu/primary_trigger",
                     "filter": "is_focused(Menu)"
                 },
@@ -53,6 +65,10 @@
                 }
             ],
             "/mouse/right_click": [
+                {
+                    "outputs": "player:flatview/action/menu/secondary_trigger",
+                    "filter": "is_focused(HUD)"
+                },
                 {
                     "outputs": "gui:menu/action/menu/secondary_trigger",
                     "filter": "is_focused(Menu)"
@@ -95,11 +111,21 @@
                 "outputs": "gui:overlay/action/console/toggle",
                 "filter": "event"
             },
-            "/keyboard/characters": {
-                "outputs": "gui:overlay/action/menu/text_input",
-                "filter": "is_focused(Overlay)"
-            },
+            "/keyboard/characters": [
+                {
+                    "outputs": "player:flatview/action/menu/text_input",
+                    "filter": "is_focused(HUD)"
+                },
+                {
+                    "outputs": "gui:overlay/action/menu/text_input",
+                    "filter": "is_focused(Overlay)"
+                }
+            ],
             "/keyboard/key_down": [
+                {
+                    "outputs": "player:flatview/action/menu/key_down",
+                    "filter": "is_focused(HUD)"
+                },
                 {
                     "outputs": "gui:menu/action/menu/key_down",
                     "filter": "is_focused(Menu)"
@@ -110,6 +136,10 @@
                 }
             ],
             "/keyboard/key_up": [
+                {
+                    "outputs": "player:flatview/action/menu/key_up",
+                    "filter": "is_focused(HUD)"
+                },
                 {
                     "outputs": "gui:menu/action/menu/key_up",
                     "filter": "is_focused(Menu)"
@@ -122,7 +152,7 @@
             "/keyboard/key/escape": [
                 {
                     "outputs": "gui:menu/action/menu/open",
-                    "filter": "is_focused(Game) && event"
+                    "filter": "(is_focused(Game) || is_focused(HUD)) && event"
                 },
                 {
                     "outputs": "gui:menu/action/menu/back",
@@ -160,21 +190,6 @@
                 "outputs": "console:input/action/run_command",
                 "filter": "is_focused(Game) && event",
                 "set_value": "togglesignal player:player/move_noclip"
-            },
-            "/keyboard/key/g": {
-                "outputs": "console:input/action/run_command",
-                "filter": "is_focused(Game) && event",
-                "set_value": "toggle r.VoxelDebug 0 1 2 3"
-            },
-            "/keyboard/key/z": {
-                "outputs": "console:input/action/run_command",
-                "filter": "is_focused(Game) && event",
-                "set_value": "togglesignal menu:articulating_arm.arm.Knob/value 0.5 1"
-            },
-            "/keyboard/key/b": {
-                "outputs": "console:input/action/run_command",
-                "filter": "is_focused(Game) && event",
-                "set_value": "togglesignal menu:articulating_arm_1.arm.Knob/value 0.5 1"
             }
         }
     },

@@ -19,7 +19,7 @@
 namespace sp {
     OverlayGuiManager::OverlayGuiManager(const ecs::EntityRef &guiEntity) : GuiContext(guiEntity) {
         consoleGui = std::make_shared<ConsoleGui>();
-        Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-1, 300});
+        Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-100, -40});
         fpsCounterGui = std::make_shared<FpsCounterGui>();
         Attach(fpsCounterGui);
 

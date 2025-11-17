@@ -75,13 +75,14 @@ namespace sp::vulkan {
         if (it != textureCache.end()) return it->second;
 
         auto imageFut = Assets().LoadImage(name);
-        auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
-            if (!image) {
-                Warnf("Missing asset image: %s", name);
-                return make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
-            }
-            return device.LoadAssetImage(image, genMipmap, srgb);
-        });
+        auto imageView = workQueue.Dispatch<ImageView>(imageFut,
+            [this, name = std::string(name), genMipmap, srgb](shared_ptr<sp::Image> image) {
+                if (!image) {
+                    Warnf("Missing asset image: %s", name);
+                    return std::make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
+                }
+                return device.LoadAssetImage(image, genMipmap, srgb);
+            });
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;

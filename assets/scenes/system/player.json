@@ -5,8 +5,7 @@
 		{
 			"name": "gui:overlay",
 			"render_output": {
-				"source": "ent:gui:menu",
-				"gui_elements": ["editor:entity_picker"]
+				"source": "ent:gui:menu"
 			}
 		},
 		{
@@ -41,7 +40,7 @@
 			},
 			"event_input": {},
 			"render_output": {
-				"gui_elements": ["editor:inspector"]
+				"gui_elements": ["editor:entity_picker", "editor:inspector"]
 			}
 		},
 		{

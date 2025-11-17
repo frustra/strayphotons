@@ -176,6 +176,12 @@ namespace sp {
         return ImGui::InputText(name.c_str(), &value);
     }
     template<>
+    bool EditorContext::AddImGuiElement(const std::string &name, InlineString<127> &value) {
+        bool changed = ImGui::InputText(name.c_str(), value.data(), value.max_size());
+        if (changed) value = InlineString<127>(value.data()); // Update size byte at end
+        return changed;
+    }
+    template<>
     bool EditorContext::AddImGuiElement(const std::string &name, SignalExpression &value) {
         bool borderEnable = !value && !value.IsNull();
         if (borderEnable) {

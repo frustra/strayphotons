@@ -439,7 +439,7 @@
 								"type": "boolean"
 							},
 							"preferred_size": {
-								"default": [-1, -1],
+								"default": [-100, -100],
 								"description": "No description",
 								"items": {
 									"type": "integer"
