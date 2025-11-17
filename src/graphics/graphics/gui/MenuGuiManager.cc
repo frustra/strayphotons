@@ -47,7 +47,7 @@ namespace sp {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
                 [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    auto ent = guiEntity.Get(lock);
+                    ecs::Entity ent = guiEntity.Get(lock);
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
@@ -61,7 +61,7 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "gui",
             [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto ent = scene->NewSystemEntity(lock, scene, name);
+                ecs::Entity ent = scene->NewSystemEntity(lock, scene, name);
                 ent.Set<ecs::EventInput>(lock);
                 ent.Set<ecs::RenderOutput>(lock);
             });
@@ -71,7 +71,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
 
-            auto ent = ref.Get(lock);
+            ecs::Entity ent = ref.Get(lock);
             Assert(ent.Has<ecs::RenderOutput>(lock), "Expected menu gui to start with a RenderOutput");
 
             ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;

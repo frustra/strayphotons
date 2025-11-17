@@ -39,7 +39,7 @@ namespace sp {
     class GuiContext : public NonCopyable {
     public:
         GuiContext(const ecs::EntityRef &guiEntity);
-        GuiContext(GuiContext &&) = default;
+        GuiContext(GuiContext &&other);
         virtual ~GuiContext();
 
         void ClearEntities();
