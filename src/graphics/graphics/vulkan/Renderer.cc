@@ -235,7 +235,7 @@ namespace sp::vulkan {
                 desc.format = swapchainImage->Format();
                 builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
             })
-            .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([sourceID](rg::Resources &resources, CommandContext &cmd) {
                 if (sourceID != rg::InvalidResource) {
                     auto source = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(source);
@@ -730,6 +730,7 @@ namespace sp::vulkan {
         if (CVarSMAA.Get()) smaa.AddPass(graph);
     }
 
+    // TODO: Covert to blur effect for render_output
     // void Renderer::AddMenuOverlay() {
     //     MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
     //     if (!menuManager || !menuManager->MenuOpen()) return;
@@ -837,34 +838,9 @@ namespace sp::vulkan {
             return complete;
         });
 
-        bool anyTexturesChanged = false;
         bool renderOutputsChanged = false;
         {
-            auto lock = ecs::StartTransaction<
-                ecs::Read<ecs::Name, ecs::Light, ecs::Renderable, ecs::Screen, ecs::RenderOutput>>();
-            ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
-            while (renderableObserver.Poll(lock, renderableEvent)) {
-                // std::string modelName = "";
-                // if (renderableEvent.Has<ecs::Renderable>(lock)) {
-                //     modelName = renderableEvent.Get<ecs::Renderable>(lock).modelName;
-                // }
-                // Logf("Renderable entity changed: %s %s", ecs::ToString(lock, renderableEvent), modelName);
-                if (renderableEvent.Has<ecs::Renderable>(lock)) {
-                    loadModel(lock, renderableEvent);
-                }
-                anyTexturesChanged = true;
-            }
-
-            ecs::ComponentModifiedEvent<ecs::Light> lightEvent;
-            while (lightObserver.Poll(lock, lightEvent)) {
-                // std::string filterName = "";
-                // if (lightEvent.Has<ecs::Light>(lock)) {
-                //     filterName = lightEvent.Get<ecs::Light>(lock).filterName;
-                // }
-                // Logf("Light entity changed: %s %s", ecs::ToString(lock, lightEvent), filterName);
-                anyTexturesChanged = true;
-            }
-
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::RenderOutput>>();
             ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
             while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
                 // std::string sourceName = "";
@@ -872,10 +848,8 @@ namespace sp::vulkan {
                 //     sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
                 // }
                 // Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
-                anyTexturesChanged = true;
                 renderOutputsChanged = true;
             }
-            // if (anyTexturesChanged) scene.PreloadTextures(lock);
         }
         if (renderOutputsChanged) {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>>();
