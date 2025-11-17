@@ -96,7 +96,6 @@ namespace sp::vulkan {
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
         vector<RenderOutputInfo> renderOutputs;
-        GuiContext *overlayGui = nullptr, *menuGui = nullptr;
         AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;
