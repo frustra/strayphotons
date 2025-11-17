@@ -6,7 +6,6 @@
  */
 
 #include "SignalDisplayGui.hh"
-
 #include "ecs/EcsImpl.hh"
 #include "graphics/gui/GuiContext.hh"
 
