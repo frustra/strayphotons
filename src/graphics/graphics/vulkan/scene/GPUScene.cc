@@ -154,19 +154,26 @@ namespace sp::vulkan {
 
     bool GPUScene::PreloadTextures(
         ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>> lock) {
+        ZoneScoped;
         bool complete = true;
+        auto &textureCache = ecs::IsLive(lock) ? liveTextureCache : stagingTextureCache;
         textureCache.clear();
-        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            auto &renderable = ent.Get<ecs::Renderable>(lock);
-            if (renderable.textureOverrideName.empty()) continue;
-            if (renderable.textureOverrideName.length() > 6 && starts_with(renderable.textureOverrideName, "graph:")) {
-                textureCache[renderable.textureOverrideName] = {};
-            } else if (renderable.textureOverrideName.length() > 6 &&
-                       starts_with(renderable.textureOverrideName, "asset:")) {
-                auto it = textureCache.find(renderable.textureOverrideName);
+        auto addTexture = [&](const auto &ent, const auto &str) {
+            if (str.empty()) return;
+            if (str.length() > 6 && starts_with(str, "asset:")) {
+                auto it = textureCache.find(str);
                 if (it == textureCache.end()) {
-                    auto handle = textures.LoadAssetImage(renderable.textureOverrideName.substr(6), true);
-                    textureCache[renderable.textureOverrideName] = handle;
+                    if (IsLive(lock)) {
+                        auto it2 = stagingTextureCache.find(str);
+                        if (it2 != stagingTextureCache.end()) {
+                            auto &handle = it2->second;
+                            textureCache[str] = handle;
+                            if (!handle.Ready()) complete = false;
+                            return;
+                        }
+                    }
+                    auto handle = textures.LoadAssetImage(str.substr(6), true);
+                    textureCache[str] = handle;
 
                     if (!handle.Ready()) complete = false;
                 } else {
@@ -174,72 +181,23 @@ namespace sp::vulkan {
                     if (!handle.Ready()) complete = false;
                 }
             } else {
-                Warnf("Entity %s has unknown override texture: %s",
-                    ecs::ToString(lock, ent),
-                    renderable.textureOverrideName);
+                // "graph:" and "ent:" prefix
+                // TODO: Fix render_outputs are referenced by graph:ent:
+                textureCache[str] = {};
             }
+        };
+
+        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
+            addTexture(ent, ent.Get<ecs::Renderable>(lock).textureOverrideName);
         }
         for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
-            auto &light = ent.Get<ecs::Light>(lock);
-            if (light.filterName.empty() || starts_with(light.filterName, "ent:")) continue;
-            if (light.filterName.length() > 6 && starts_with(light.filterName, "graph:")) {
-                textureCache[light.filterName] = {};
-            } else if (light.filterName.length() > 6 && starts_with(light.filterName, "asset:")) {
-                auto it = textureCache.find(light.filterName);
-                if (it == textureCache.end()) {
-                    auto handle = textures.LoadAssetImage(light.filterName.substr(6), true);
-                    textureCache[light.filterName] = handle;
-
-                    if (!handle.Ready()) complete = false;
-                } else {
-                    auto &handle = it->second;
-                    if (!handle.Ready()) complete = false;
-                }
-            } else {
-                Warnf("Entity %s has unknown filter texture: %s", ecs::ToString(lock, ent), light.filterName);
-            }
+            addTexture(ent, ent.Get<ecs::Light>(lock).filterName);
         }
         for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
-            auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
-            if (renderOutput.sourceName.empty() || starts_with(renderOutput.sourceName, "ent:")) continue;
-            if (renderOutput.sourceName.length() > 6 && starts_with(renderOutput.sourceName, "graph:")) {
-                textureCache[renderOutput.sourceName] = {};
-            } else if (renderOutput.sourceName.length() > 6 && starts_with(renderOutput.sourceName, "asset:")) {
-                auto it = textureCache.find(renderOutput.sourceName);
-                if (it == textureCache.end()) {
-                    auto handle = textures.LoadAssetImage(renderOutput.sourceName.substr(6), true);
-                    textureCache[renderOutput.sourceName] = handle;
-
-                    if (!handle.Ready()) complete = false;
-                } else {
-                    auto &handle = it->second;
-                    if (!handle.Ready()) complete = false;
-                }
-            } else {
-                Warnf("Entity %s has unknown render output texture: %s",
-                    ecs::ToString(lock, ent),
-                    renderOutput.sourceName);
-            }
+            addTexture(ent, ent.Get<ecs::RenderOutput>(lock).sourceName);
         }
         for (auto &ent : lock.EntitiesWith<ecs::Screen>()) {
-            auto &screen = ent.Get<ecs::Screen>(lock);
-            if (screen.textureName.empty() || starts_with(screen.textureName, "ent:")) continue;
-            if (screen.textureName.length() > 6 && starts_with(screen.textureName, "graph:")) {
-                textureCache[screen.textureName] = {};
-            } else if (screen.textureName.length() > 6 && starts_with(screen.textureName, "asset:")) {
-                auto it = textureCache.find(screen.textureName);
-                if (it == textureCache.end()) {
-                    auto handle = textures.LoadAssetImage(screen.textureName.substr(6), true);
-                    textureCache[screen.textureName] = handle;
-
-                    if (!handle.Ready()) complete = false;
-                } else {
-                    auto &handle = it->second;
-                    if (!handle.Ready()) complete = false;
-                }
-            } else {
-                Warnf("Entity %s has unknown screen texture: %s", ecs::ToString(lock, ent), screen.textureName);
-            }
+            addTexture(ent, ent.Get<ecs::Screen>(lock).textureName);
         }
         return complete;
     }
@@ -248,8 +206,8 @@ namespace sp::vulkan {
         InlineVector<std::pair<rg::ResourceName, rg::ResourceID>, 128> newGraphTextures;
         graph.AddPass("AddGraphTextures")
             .Build([&](rg::PassBuilder &builder) {
-                for (auto &tex : textureCache) {
-                    if (starts_with(tex.first, "graph:")) {
+                for (auto &tex : liveTextureCache) {
+                    if (tex.first.length() > 6 && starts_with(tex.first, "graph:")) {
                         auto id = builder.ReadPreviousFrame(tex.first.substr(6), Access::FragmentShaderSampleImage);
                         if (id != rg::InvalidResource) {
                             newGraphTextures.emplace_back(tex.first, id);
@@ -262,13 +220,13 @@ namespace sp::vulkan {
                 for (auto &tex : newGraphTextures) {
                     auto imageView = resources.GetImageView(tex.second);
                     if (imageView) {
-                        textureCache[tex.first] = textures.Add(imageView);
+                        liveTextureCache[tex.first] = textures.Add(imageView);
                     }
                 }
                 textures.Flush();
                 for (auto &overridePair : renderableTextureOverrides) {
-                    auto cacheEntry = textureCache.find(overridePair.first);
-                    if (cacheEntry != textureCache.end()) {
+                    auto cacheEntry = liveTextureCache.find(overridePair.first);
+                    if (cacheEntry != liveTextureCache.end()) {
                         renderables[overridePair.second].baseColorOverrideID = cacheEntry->second.index;
                     }
                 }

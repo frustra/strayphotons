@@ -70,7 +70,7 @@ namespace sp::vulkan::renderer {
             auto &light = entity.Get<ecs::Light>(lock);
             auto &filterName = light.filterName;
 
-            if (!filterName.empty() && scene.textureCache.find(filterName) == scene.textureCache.end()) {
+            if (!filterName.empty() && scene.liveTextureCache.find(filterName) == scene.liveTextureCache.end()) {
                 // cull lights that don't have their filter texture loaded yet
                 continue;
             }
@@ -116,7 +116,7 @@ namespace sp::vulkan::renderer {
                     glm::vec2(1, 0),
                 };
                 vLight.filterName = filterName;
-                vLight.filterTexture = scene.textureCache[filterName].index;
+                vLight.filterTexture = scene.liveTextureCache[filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -239,7 +239,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 vLight.filterName = light.filterName;
-                vLight.filterTexture = scene.textureCache[light.filterName].index;
+                vLight.filterTexture = scene.liveTextureCache[light.filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -322,7 +322,7 @@ namespace sp::vulkan::renderer {
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].filterTexture.has_value()) {
                         if (starts_with(lights[i].filterName, "graph:")) {
-                            gpuData.lights[i].filterId = scene.textureCache[lights[i].filterName].index;
+                            gpuData.lights[i].filterId = scene.liveTextureCache[lights[i].filterName].index;
                         } else {
                             gpuData.lights[i].filterId = lights[i].filterTexture.value();
                         }

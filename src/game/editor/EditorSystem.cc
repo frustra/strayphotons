@@ -47,7 +47,7 @@ namespace sp {
                 picker.Set<ecs::GuiElement>(lock,
                     make_shared<EntityPickerGui>("entity_picker"),
                     ecs::GuiLayoutAnchor::Left,
-                    glm::ivec2(400, -1),
+                    glm::ivec2(-40, -100),
                     false);
                 picker.Set<ecs::EventInput>(lock);
 
@@ -55,7 +55,7 @@ namespace sp {
                 inspector.Set<ecs::GuiElement>(lock,
                     make_shared<InspectorGui>("inspector"),
                     ecs::GuiLayoutAnchor::Right,
-                    glm::ivec2(400, -1),
+                    glm::ivec2(-40, -100),
                     false);
                 auto &screen = inspector.Set<ecs::Screen>(lock);
                 screen.resolution = glm::ivec2(800, 1000);
@@ -104,12 +104,12 @@ namespace sp {
         auto &pickerGui = picker.Get<ecs::GuiElement>(lock);
         auto &gui = inspector.Get<ecs::GuiElement>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
-        // auto &focusLock = lock.Get<ecs::FocusLock>();
+        auto &focusLock = lock.Get<ecs::FocusLock>();
 
         bool shouldClose = gui.enabled && (!target || target == previousTarget);
         previousTarget = target;
         if (shouldClose) {
-            // if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            focusLock.ReleaseFocus(ecs::FocusLayer::HUD);
             gui.enabled = false;
             pickerGui.enabled = false;
             physics.shapes.clear();
@@ -119,12 +119,12 @@ namespace sp {
         ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspector, target});
 
         if (flatMode) {
-            // if (gui.target != ecs::GuiTarget::Overlay) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
+            focusLock.AcquireFocus(ecs::FocusLayer::HUD);
             gui.enabled = true;
             pickerGui.enabled = true;
             physics.shapes.clear();
         } else {
-            // if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            focusLock.ReleaseFocus(ecs::FocusLayer::HUD);
             gui.enabled = true;
             pickerGui.enabled = true;
             physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};

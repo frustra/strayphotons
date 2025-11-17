@@ -46,10 +46,10 @@ namespace sp {
         void AddEntity(ecs::Entity guiElementEntity,
             std::shared_ptr<ecs::GuiDefinition> definition,
             ecs::GuiLayoutAnchor anchor = ecs::GuiLayoutAnchor::Floating,
-            glm::ivec2 preferredSize = {-1, -1});
+            glm::ivec2 preferredSize = {-100, -100});
         void Attach(std::shared_ptr<ecs::GuiDefinition> definition,
             ecs::GuiLayoutAnchor anchor = ecs::GuiLayoutAnchor::Floating,
-            glm::ivec2 preferredSize = {-1, -1});
+            glm::ivec2 preferredSize = {-100, -100});
         void Detach(std::shared_ptr<ecs::GuiDefinition> definition);
 
         virtual bool SetGuiContext();

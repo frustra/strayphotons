@@ -79,7 +79,7 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
 |------------|------|---------------|-------------|
 | **enabled** | bool | true | No description |
 | **anchor** | enum [GuiLayoutAnchor](#GuiLayoutAnchor-type) | "Fullscreen" | No description |
-| **preferred_size** | ivec2 | [-1, -1] | No description |
+| **preferred_size** | ivec2 | [-100, -100] | No description |
 
 <div class="type_definition">
 

@@ -140,7 +140,8 @@ namespace sp::vulkan {
         uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
         TextureSet textures;
-        robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> textureCache;
+        robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> liveTextureCache;
+        robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> stagingTextureCache;
 
     private:
         void FlushMeshes();

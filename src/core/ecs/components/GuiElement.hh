@@ -39,16 +39,16 @@ namespace ecs {
 
     struct GuiElement {
         GuiLayoutAnchor anchor = GuiLayoutAnchor::Fullscreen;
-        glm::ivec2 preferredSize = {-1, -1};
+        glm::ivec2 preferredSize = {-100, -100};
         bool enabled = true;
         std::shared_ptr<GuiDefinition> definition;
 
         GuiElement() = default;
-        GuiElement(GuiLayoutAnchor anchor, glm::ivec2 preferredSize = {-1, -1}, bool enabled = false)
+        GuiElement(GuiLayoutAnchor anchor, glm::ivec2 preferredSize = {-100, -100}, bool enabled = false)
             : anchor(anchor), preferredSize(preferredSize), enabled(enabled) {}
         GuiElement(std::shared_ptr<GuiDefinition> definition,
             GuiLayoutAnchor anchor,
-            glm::ivec2 preferredSize = {-1, -1},
+            glm::ivec2 preferredSize = {-100, -100},
             bool enabled = true)
             : anchor(anchor), preferredSize(preferredSize), enabled(enabled), definition(definition) {}
     };
