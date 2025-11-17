@@ -22,13 +22,25 @@ namespace sp {
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
+        GetSceneManager().QueueAction([pickerEntity = this->pickerEntity, events = this->events] {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
             ecs::Entity picker = pickerEntity.Get(lock);
             if (!picker.Has<ecs::EventInput>(lock)) return;
 
             auto &eventInput = picker.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
         });
+    }
+
+    EntityPickerGui::~EntityPickerGui() {
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            [pickerEntity = this->pickerEntity, events = this->events](auto &lock) {
+                auto ent = pickerEntity.Get(lock);
+                if (ent.Has<ecs::EventInput>(lock)) {
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Unregister(events, EDITOR_EVENT_EDIT_TARGET);
+                }
+            });
     }
 
     bool EntityPickerGui::PreDefine(ecs::Entity ent) {

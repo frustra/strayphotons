@@ -21,7 +21,7 @@ namespace sp {
     class InspectorGui final : public ecs::GuiDefinition {
     public:
         InspectorGui(const std::string &name);
-        virtual ~InspectorGui() {}
+        virtual ~InspectorGui();
 
         bool PreDefine(ecs::Entity ent) override;
         void DefineContents(ecs::Entity ent) override;

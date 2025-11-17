@@ -40,19 +40,25 @@ namespace ecs {
     struct GuiElement {
         GuiLayoutAnchor anchor = GuiLayoutAnchor::Fullscreen;
         glm::ivec2 preferredSize = {-1, -1};
+        bool enabled = true;
         std::shared_ptr<GuiDefinition> definition;
 
         GuiElement() = default;
-        GuiElement(GuiLayoutAnchor anchor, glm::ivec2 preferredSize = {-1, -1})
-            : anchor(anchor), preferredSize(preferredSize) {}
+        GuiElement(GuiLayoutAnchor anchor, glm::ivec2 preferredSize = {-1, -1}, bool enabled = false)
+            : anchor(anchor), preferredSize(preferredSize), enabled(enabled) {}
         GuiElement(std::shared_ptr<GuiDefinition> definition,
             GuiLayoutAnchor anchor,
-            glm::ivec2 preferredSize = {-1, -1})
-            : anchor(anchor), preferredSize(preferredSize), definition(definition) {}
+            glm::ivec2 preferredSize = {-1, -1},
+            bool enabled = true)
+            : anchor(anchor), preferredSize(preferredSize), enabled(enabled), definition(definition) {}
     };
 
     static EntityComponent<GuiElement> ComponentGuiElement("gui_element",
         "",
+        StructField::New("enabled", &GuiElement::enabled),
         StructField::New("anchor", &GuiElement::anchor),
         StructField::New("preferred_size", &GuiElement::preferredSize));
+
+    template<>
+    void EntityComponent<GuiElement>::Apply(GuiElement &dst, const GuiElement &src, bool liveTarget);
 } // namespace ecs

@@ -352,14 +352,11 @@ namespace sp::vulkan {
             }
         }
 
-        void SetBlendFunc(vk::BlendFactor srcFactor, vk::BlendFactor dstFactor) {
-            SetBlendFuncSeparate(srcFactor, dstFactor, srcFactor, dstFactor);
-        }
-
-        void SetBlendFuncSeparate(vk::BlendFactor srcRGB,
+        void SetBlendFunc(vk::BlendFactor srcRGB,
             vk::BlendFactor dstRGB,
             vk::BlendFactor srcAlpha,
             vk::BlendFactor dstAlpha) {
+            // TODO: This is a noop input for BlendOp::eMin or BlendOp::eMax
             if (srcRGB != pipelineInput.state.srcBlendFactor || dstRGB != pipelineInput.state.dstBlendFactor ||
                 srcAlpha != pipelineInput.state.srcAlphaBlendFactor ||
                 dstAlpha != pipelineInput.state.dstAlphaBlendFactor) {

@@ -87,7 +87,8 @@ namespace sp::vulkan {
         void Flush();
         void LoadState(rg::RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock);
-        bool PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::Screen>> lock);
+        bool PreloadTextures(
+            ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>> lock);
         void AddGraphTextures(rg::RenderGraph &graph);
         shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 

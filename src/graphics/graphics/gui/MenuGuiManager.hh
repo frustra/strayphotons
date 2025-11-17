@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/EventQueue.hh"
-#include "graphics/gui/FlatViewGuiContext.hh"
+#include "graphics/gui/GuiContext.hh"
 
 namespace sp {
     class GraphicsManager;
@@ -16,11 +16,14 @@ namespace sp {
 
     enum class MenuScreen { Main, Options, SceneSelect, SaveSelect };
 
-    class MenuGuiManager final : public FlatViewGuiContext {
+    class MenuGuiManager final : public GuiContext {
     public:
-        MenuGuiManager(GraphicsManager &graphics);
+        MenuGuiManager(MenuGuiManager &&) = default;
+        virtual ~MenuGuiManager();
 
-        void BeforeFrame() override;
+        static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName, GraphicsManager &graphics);
+
+        bool BeforeFrame() override;
         void DefineWindows() override;
 
         bool MenuOpen() const;
@@ -28,6 +31,8 @@ namespace sp {
         void RefreshSaveList();
 
     private:
+        MenuGuiManager(const ecs::EntityRef &guiEntity, GraphicsManager &graphics);
+
         GraphicsManager &graphics;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();

@@ -12,6 +12,8 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <string>
+
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device)
         : device(device), workQueue("TextureSet", 0, std::chrono::milliseconds(1)) {
@@ -67,7 +69,7 @@ namespace sp::vulkan {
         texturesToFlush.push_back(i);
     }
 
-    TextureHandle TextureSet::LoadAssetImage(const string &name, bool genMipmap, bool srgb) {
+    TextureHandle TextureSet::LoadAssetImage(std::string_view name, bool genMipmap, bool srgb) {
         string key = "asset:" + name;
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;

@@ -32,8 +32,8 @@ namespace sp::winit {
 namespace sp {
     class Game;
     class GraphicsContext;
-    class OverlayGuiManager;
-    class MenuGuiManager;
+    class GuiContext;
+    class ProfilerGui;
 
     class GraphicsManager : public RegisteredThread {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
@@ -74,8 +74,8 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        // std::shared_ptr<OverlayGuiManager> overlayGui;
-        // std::shared_ptr<MenuGuiManager> menuGui;
+        std::shared_ptr<GuiContext> overlayGui, menuGui;
+        shared_ptr<ProfilerGui> profilerGui;
 
         bool initialized = false;
     };

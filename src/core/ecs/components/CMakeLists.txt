@@ -9,6 +9,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Animation.cc
     Events.cc
     Focus.cc
+    GuiElement.cc
     LaserLine.cc
     Light.cc
     Name.cc

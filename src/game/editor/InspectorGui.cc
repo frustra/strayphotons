@@ -11,6 +11,7 @@
 #include "ecs/StructFieldTypes.hh"
 #include "editor/EditorControls.hh"
 #include "editor/EditorSystem.hh"
+#include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
@@ -21,13 +22,25 @@ namespace sp {
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = make_shared<EditorContext>();
 
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
+        GetSceneManager().QueueAction([inspectorEntity = this->inspectorEntity, events = this->events] {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
             ecs::Entity inspector = inspectorEntity.Get(lock);
             if (!inspector.Has<ecs::EventInput>(lock)) return;
 
             auto &eventInput = inspector.Get<ecs::EventInput>(lock);
             eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
         });
+    }
+
+    InspectorGui::~InspectorGui() {
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            [inspectorEntity = this->inspectorEntity, events = this->events](auto &lock) {
+                auto ent = inspectorEntity.Get(lock);
+                if (ent.Has<ecs::EventInput>(lock)) {
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Unregister(events, EDITOR_EVENT_EDIT_TARGET);
+                }
+            });
     }
 
     bool InspectorGui::PreDefine(ecs::Entity ent) {

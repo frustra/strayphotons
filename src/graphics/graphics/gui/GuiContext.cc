@@ -10,10 +10,6 @@
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/gui/ImGuiKeyCodes.hh"
-// #include "graphics/gui/definitions/EntityPickerGui.hh"
-// #include "graphics/gui/definitions/InspectorGui.hh"
-// #include "graphics/gui/definitions/LobbyGui.hh"
-// #include "graphics/gui/definitions/SignalDisplayGui.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
 
@@ -27,47 +23,52 @@ namespace sp {
         GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
     };
 
-    GuiContext::GuiContext(const std::string &name) : name(name), guiEntity(ecs::Name("gui", name)) {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "gui",
-            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto ent = scene->NewSystemEntity(lock, scene, guiEntity.Name());
-                ent.Set<ecs::EventInput>(lock);
-            });
-
-        {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
-            auto gui = guiEntity.Get(lock);
-            Assertf(gui.Has<ecs::EventInput>(lock),
-                "System Gui entity has no EventInput: %s",
-                guiEntity.Name().String());
-            auto &eventInput = gui.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_DOWN);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_UP);
-            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
-            eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
+    GuiContext::GuiContext(const ecs::EntityRef &guiEntity) : guiEntity(guiEntity) {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    auto ent = guiEntity.Get(lock);
+                    Assertf(ent.Has<ecs::EventInput>(lock),
+                        "GuiContext entity has no EventInput: %s",
+                        guiEntity.Name().String());
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_DOWN);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_UP);
+                    eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
+                    eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
+                });
         }
 
         imCtx = ImGui::CreateContext();
-        SetGuiContext();
     }
 
     GuiContext::~GuiContext() {
-        SetGuiContext();
         ImGui::DestroyContext(imCtx);
         imCtx = nullptr;
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
-            "gui",
-            [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                // TODO: Unregister from event input (or clean up weak ptrs automatically?)
-                scene->RemoveEntity(lock, guiEntity.Get(lock));
-            });
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    auto ent = guiEntity.Get(lock);
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_SCROLL);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_CURSOR);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_TEXT_INPUT);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_KEY_DOWN);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_KEY_UP);
+                        eventInput.Unregister(events, INTERACT_EVENT_INTERACT_POINT);
+                        eventInput.Unregister(events, INTERACT_EVENT_INTERACT_PRESS);
+                    }
+                });
+        }
     }
 
     bool GuiContext::SetGuiContext() {
@@ -75,10 +76,14 @@ namespace sp {
         return true;
     }
 
-    void GuiContext::BeforeFrame() {
+    bool GuiContext::BeforeFrame() {
         ZoneScoped;
         SetGuiContext();
+
+        ImGui::StyleColorsClassic();
+
         ImGuiIO &io = ImGui::GetIO();
+        io.MouseDrawCursor = false;
 
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
@@ -91,43 +96,79 @@ namespace sp {
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
+                auto existingState = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
+                    return state.sourceEntity == event.source;
+                });
+
                 if (event.name == INPUT_EVENT_MENU_SCROLL) {
                     if (event.data.type != ecs::EventDataType::Vec2) {
-                        Warnf("System GUI received unexpected event data: %s, expected vec2", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected vec2", event.ToString());
                         continue;
                     }
                     auto &scroll = event.data.vec2;
+                    io.AddMousePosEvent(existingState->mousePos.x, existingState->mousePos.y);
                     io.AddMouseWheelEvent(scroll.x, scroll.y);
                 } else if (event.name == INPUT_EVENT_MENU_CURSOR) {
-                    if (event.data.type != ecs::EventDataType::Vec2) {
-                        Warnf("System GUI received unexpected event data: %s, expected vec2", event.ToString());
-                        continue;
+                    if (event.data.type == ecs::EventDataType::Vec2) {
+                        glm::vec2 &mousePos = event.data.vec2;
+                        mousePos.x /= io.DisplayFramebufferScale.x;
+                        mousePos.y /= io.DisplayFramebufferScale.y;
+                        if (existingState != pointingStack.end()) {
+                            existingState->mousePos = mousePos;
+                        } else {
+                            pointingStack.emplace_back(PointingState{event.source, mousePos});
+                        }
+                    } else if (event.data.type == ecs::EventDataType::Bool) {
+                        if (existingState != pointingStack.end()) {
+                            if (existingState->mouseDown) {
+                                // Keep state if mouse was dragged off screen
+                                existingState->mousePos = {-FLT_MAX, -FLT_MAX};
+                            } else {
+                                pointingStack.erase(existingState);
+                            }
+                        }
+                    } else {
+                        Warnf("GuiContext received unexpected event data: %s, expected vec2", event.ToString());
                     }
-                    auto &pos = event.data.vec2;
-                    io.AddMousePosEvent(pos.x / io.DisplayFramebufferScale.x, pos.y / io.DisplayFramebufferScale.y);
                 } else if (event.name == INPUT_EVENT_MENU_PRIMARY_TRIGGER) {
                     if (event.data.type != ecs::EventDataType::Bool) {
-                        Warnf("System GUI received unexpected event data: %s, expected bool", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected bool", event.ToString());
                         continue;
                     }
-                    auto &down = event.data.b;
-                    io.AddMouseButtonEvent(ImGuiMouseButton_Left, down);
+                    bool mouseDown = event.data.b;
+                    if (existingState != pointingStack.end()) {
+                        if (mouseDown != existingState->mouseDown) {
+                            // Send previous mouse event immediately so fast clicks aren't missed
+                            io.AddMousePosEvent(existingState->mousePos.x, existingState->mousePos.y);
+                            io.AddMouseButtonEvent(ImGuiMouseButton_Left, existingState->mouseDown);
+                            existingState->mouseDown = mouseDown;
+                        }
+                        if (!mouseDown && existingState->mousePos == glm::vec2(-FLT_MAX, -FLT_MAX)) {
+                            // Remove the state if the mouse is released off screen
+                            pointingStack.erase(existingState);
+                        }
+                    } else {
+                        Warnf("Entity %s sent primary trigger event to gui %s without cursor event",
+                            std::to_string(event.source),
+                            guiEntity.Name().String());
+                    }
                 } else if (event.name == INPUT_EVENT_MENU_SECONDARY_TRIGGER) {
                     if (event.data.type != ecs::EventDataType::Bool) {
-                        Warnf("System GUI received unexpected event data: %s, expected bool", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected bool", event.ToString());
                         continue;
                     }
                     auto &down = event.data.b;
+                    io.AddMousePosEvent(existingState->mousePos.x, existingState->mousePos.y);
                     io.AddMouseButtonEvent(ImGuiMouseButton_Right, down);
                 } else if (event.name == INPUT_EVENT_MENU_TEXT_INPUT) {
                     if (event.data.type != ecs::EventDataType::Uint) {
-                        Warnf("System GUI received unexpected event data: %s, expected uint", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected uint", event.ToString());
                         continue;
                     }
                     io.AddInputCharacter(event.data.ui);
                 } else if (event.name == INPUT_EVENT_MENU_KEY_DOWN) {
                     if (event.data.type != ecs::EventDataType::Int) {
-                        Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected int", event.ToString());
                         continue;
                     }
                     KeyCode keyCode = (KeyCode)event.data.i;
@@ -146,7 +187,7 @@ namespace sp {
                     }
                 } else if (event.name == INPUT_EVENT_MENU_KEY_UP) {
                     if (event.data.type != ecs::EventDataType::Int) {
-                        Warnf("System GUI received unexpected event data: %s, expected int", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected int", event.ToString());
                         continue;
                     }
                     KeyCode keyCode = (KeyCode)event.data.i;
@@ -164,10 +205,6 @@ namespace sp {
                         io.AddKeyEvent(imguiKey->second, false);
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_POINT) {
-                    auto existingState = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
-                        return state.sourceEntity == event.source;
-                    });
-
                     if (event.data.type == ecs::EventDataType::Transform) {
                         auto &pointWorld = event.data.transform.GetPosition();
                         auto pointOnScreen = screenInverseTransform * glm::vec4(pointWorld, 1);
@@ -204,10 +241,6 @@ namespace sp {
                             event.ToString());
                     }
                 } else if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
-                    auto existingState = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
-                        return state.sourceEntity == event.source;
-                    });
-
                     if (event.data.type == ecs::EventDataType::Bool) {
                         bool mouseDown = event.data.b;
                         if (existingState != pointingStack.end()) {
@@ -222,12 +255,12 @@ namespace sp {
                                 pointingStack.erase(existingState);
                             }
                         } else {
-                            Warnf("Entity %s sent press event to world gui %s without point event",
+                            Warnf("Entity %s sent press event to gui %s without point event",
                                 std::to_string(event.source),
                                 guiEntity.Name().String());
                         }
                     } else {
-                        Warnf("World GUI received unexpected event data: %s, expected bool", event.ToString());
+                        Warnf("GuiContext received unexpected event data: %s, expected bool", event.ToString());
                         continue;
                     }
                 }
@@ -242,6 +275,7 @@ namespace sp {
                 io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
             }
         }
+        return true;
     }
 
     // flatview#window -> overlay#render_output -> menu#render_output -> hud#render_output -> flatview#view
@@ -273,6 +307,11 @@ namespace sp {
     void GuiContext::DefineWindows() {
         ZoneScoped;
         SetGuiContext();
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
         std::sort(elements.begin(), elements.end(), [](const auto &lhs, const auto &rhs) {
             return lhs.anchor < rhs.anchor;
@@ -330,28 +369,51 @@ namespace sp {
                     Abortf("Unexpected GuiLayoutAnchor: %s", element.anchor);
                 }
 
+                // int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+                // flags |= element.definition->windowFlags;
+
                 ImGui::Begin(element.definition->name.c_str(), nullptr, element.definition->windowFlags);
                 element.definition->DefineContents(ent);
                 ImGui::End();
                 element.definition->PostDefine(ent);
             }
         }
+
+        ImGui::PopStyleVar();
+        ImGui::PopStyleColor(4);
     }
 
     ImDrawData *GuiContext::GetDrawData(glm::vec2, glm::vec2, float) const {
         return ImGui::GetDrawData();
     }
 
-    void GuiContext::Attach(ecs::Entity guiElementEntity, ecs::GuiLayoutAnchor anchor, glm::ivec2 preferredSize) {
-        auto it = std::find_if(elements.begin(), elements.end(), [&](auto &info) {
-            return info.ent == guiElementEntity;
+    void GuiContext::ClearEntities() {
+        erase_if(elements, [](auto &info) {
+            return info.ent;
         });
-        if (it == elements.end()) elements.emplace_back(guiElementEntity, anchor, preferredSize);
     }
 
-    void GuiContext::Detach(ecs::Entity guiElementEntity) {
+    void GuiContext::AddEntity(ecs::Entity guiElementEntity,
+        std::shared_ptr<ecs::GuiDefinition> definition,
+        ecs::GuiLayoutAnchor anchor,
+        glm::ivec2 preferredSize) {
+        Assertf(guiElementEntity, "GuiContext::AddEntity called with null entity");
+        Assertf(definition, "GuiContext::AddEntity called with null definition");
+        elements.emplace_back(guiElementEntity, anchor, preferredSize, definition);
+    }
+
+    void GuiContext::Attach(std::shared_ptr<ecs::GuiDefinition> definition,
+        ecs::GuiLayoutAnchor anchor,
+        glm::ivec2 preferredSize) {
         auto it = std::find_if(elements.begin(), elements.end(), [&](auto &info) {
-            return info.ent == guiElementEntity;
+            return info.definition == definition;
+        });
+        if (it == elements.end()) elements.emplace_back(ecs::Entity(), anchor, preferredSize, definition);
+    }
+
+    void GuiContext::Detach(std::shared_ptr<ecs::GuiDefinition> definition) {
+        auto it = std::find_if(elements.begin(), elements.end(), [&](auto &info) {
+            return info.definition == definition;
         });
         if (it != elements.end()) elements.erase(it);
     }

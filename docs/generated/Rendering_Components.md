@@ -43,15 +43,28 @@ Enum flag names:
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **target** | enum [GuiTarget](#GuiTarget-type) | "World" | No description |
+| **source** | string (max 127 chars) | "" | No description |
+| **output_size** | ivec2 | [-1, -1] | No description |
+| **scale** | vec2 | [-1, -1] | No description |
+| **gui_elements** | vector&lt;[EntityRef](#EntityRef-type)&gt; | [] | No description |
 
 <div class="type_definition">
 
-### `GuiTarget` Type
-This is an **enum** type, and can be one of the following case-sensitive values:
-- "**None**" - No description
-- "**World**" - No description
-- "**Overlay**" - No description
+### `EntityRef` Type
+
+An `EntityRef` is a stable reference to an entity via a string name. 
+
+Referenced entities do not need to exist at the point an `EntityRef` is defined.
+The reference will be automatically tracked and updated once the referenced entity is created.
+
+Reference names are defined the same as the `name` component:  
+`"<scene_name>:<entity_name>"`
+
+References can also be defined relative to their entity scope, the same as a `name` component.
+If just a relative name is provided, the reference will be expanded based on the scope root:  
+`"<scene_name>:<root_name>.<relative_name>"`
+
+The special `"scoperoot"` alias can be used to reference the parent entity during template generation.
 
 </div>
 
@@ -64,6 +77,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
+| **enabled** | bool | true | No description |
 | **anchor** | enum [GuiLayoutAnchor](#GuiLayoutAnchor-type) | "Fullscreen" | No description |
 | **preferred_size** | ivec2 | [-1, -1] | No description |
 
