@@ -329,10 +329,14 @@ namespace sp {
             if (element.definition->PreDefine(ent)) {
                 ImVec2 windowSize(element.preferredSize.x, element.preferredSize.y);
                 if (element.anchor != ecs::GuiLayoutAnchor::Floating) {
-                    windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
-                    windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
-                    if (windowSize.x <= 0) windowSize.x = viewportSize.x;
-                    if (windowSize.y <= 0) windowSize.y = viewportSize.y;
+                    windowSize.x = std::min(windowSize.x, viewportSize.x);
+                    windowSize.y = std::min(windowSize.y, viewportSize.y);
+                    if (windowSize.x < 0) {
+                        windowSize.x = imguiViewport->WorkSize.x * std::clamp(windowSize.x / -100.0f, 0.0f, 1.0f);
+                    }
+                    if (windowSize.y < 0) {
+                        windowSize.y = imguiViewport->WorkSize.y * std::clamp(windowSize.y / -100.0f, 0.0f, 1.0f);
+                    }
                     ImGui::SetNextWindowSize(windowSize);
                 }
 

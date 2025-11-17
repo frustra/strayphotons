@@ -148,6 +148,7 @@ namespace sp::vulkan {
             ecs::VoxelArea,
             ecs::XrView>>();
 
+        scene.PreloadTextures(lock);
         scene.LoadState(graph, lock);
         lighting.LoadState(graph, lock);
         voxels.LoadState(graph, lock);
@@ -497,7 +498,7 @@ namespace sp::vulkan {
     }
 
     void Renderer::UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock) {
-        renderOutputs.clear(); // TODO: Reuse previous ephemeral gui contexts
+        renderOutputs.clear();
         auto renderOutputEntities = lock.EntitiesWith<ecs::RenderOutput>();
         robin_hood::unordered_set<ecs::Entity> existingOutputs;
         std::vector<RenderOutputInfo> unresolvedDependencies;
@@ -638,7 +639,8 @@ namespace sp::vulkan {
                             if (inheritExtent) outputDesc.extent = derivedDesc.extent;
                             outputDesc.sampler = derivedDesc.sampler;
                         }
-                    } else if (auto it = scene.textureCache.find(output.sourceName); it != scene.textureCache.end()) {
+                    } else if (auto it = scene.liveTextureCache.find(output.sourceName);
+                        it != scene.liveTextureCache.end()) {
                         if (starts_with(it->first, "graph:")) {
                             auto resourceID = builder.GetID(output.sourceName.substr(6), false);
                             if (resourceID != rg::InvalidResource) {
@@ -648,10 +650,13 @@ namespace sp::vulkan {
                                     Access::FragmentShaderSampleImage);
                             }
                             if (resourceID != rg::InvalidResource) {
-                                output.sourceTexture = resourceID;
-                                auto derivedDesc = builder.DeriveImage(resourceID);
-                                if (inheritExtent) outputDesc.extent = derivedDesc.extent;
-                                outputDesc.sampler = derivedDesc.sampler;
+                                auto resource = builder.GetResource(resourceID);
+                                if (resource.type == rg::Resource::Type::Image) {
+                                    output.sourceTexture = resourceID;
+                                    auto derivedDesc = builder.DeriveImage(resourceID);
+                                    if (inheritExtent) outputDesc.extent = derivedDesc.extent;
+                                    outputDesc.sampler = derivedDesc.sampler;
+                                }
                             }
                         } else if (it->second.Ready()) {
                             output.sourceTexture = it->second.index;
@@ -860,15 +865,15 @@ namespace sp::vulkan {
 
             ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
             while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
-                std::string sourceName = "";
-                if (renderOutputEvent.Has<ecs::RenderOutput>(lock)) {
-                    sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
-                }
-                Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
+                // std::string sourceName = "";
+                // if (renderOutputEvent.Has<ecs::RenderOutput>(lock)) {
+                //     sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
+                // }
+                // Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
                 anyTexturesChanged = true;
                 renderOutputsChanged = true;
             }
-            if (anyTexturesChanged) scene.PreloadTextures(lock);
+            // if (anyTexturesChanged) scene.PreloadTextures(lock);
         }
         if (renderOutputsChanged) {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>>();
