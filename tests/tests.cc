@@ -42,10 +42,10 @@ int main(int argc, char **argv) {
                 // Reset the ECS between tests
                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                 auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
-                for (auto &ent : stagingLock.Entities()) {
+                for (const ecs::Entity &ent : stagingLock.Entities()) {
                     ent.Destroy(stagingLock);
                 }
-                for (auto &ent : liveLock.Entities()) {
+                for (const ecs::Entity &ent : liveLock.Entities()) {
                     ent.Destroy(liveLock);
                 }
                 stagingLock.Unset<ecs::Signals>();

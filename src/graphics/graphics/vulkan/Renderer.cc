@@ -328,7 +328,7 @@ namespace sp::vulkan {
         glm::ivec2 viewExtents = glm::ivec2(0);
         sp::EnumArray<ecs::View, ecs::XrEye> viewsByEye;
 
-        for (auto &ent : xrViews) {
+        for (const ecs::Entity &ent : xrViews) {
             if (!ent.Has<ecs::View>(lock)) continue;
             auto &view = ent.Get<ecs::View>(lock);
 

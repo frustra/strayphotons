@@ -13,7 +13,7 @@ namespace sp {
         entityTree.clear();
 
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
-        for (auto &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
             auto &name = ent.Get<ecs::Name>(lock);
             auto &tree = ent.Get<ecs::TransformTree>(lock);
             entityTree[name].hasParent = (bool)tree.parent;
@@ -569,7 +569,7 @@ namespace sp {
             if (ImGui::CollapsingHeader("Scene Entities", ImGuiTreeNodeFlags_DefaultOpen)) {
                 if (ImGui::BeginListBox("##scene_entities", ImVec2(-FLT_MIN, -FLT_MIN))) {
                     auto entityNames = ecs::GetEntityRefs().GetNames(entitySearch);
-                    for (auto &ent : lock.EntitiesWith<ecs::SceneInfo>()) {
+                    for (const ecs::Entity &ent : lock.EntitiesWith<ecs::SceneInfo>()) {
                         if (!ent.Has<ecs::SceneInfo, ecs::Name>(lock)) continue;
                         auto &sceneInfo = ent.Get<ecs::SceneInfo>(lock);
                         if (sceneInfo.scene != this->scene) continue;

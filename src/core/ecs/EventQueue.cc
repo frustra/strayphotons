@@ -106,7 +106,7 @@ namespace ecs {
         } else if (src.is<std::string>()) {
             auto &str = src.get<std::string>();
             if (str.starts_with("entity:")) {
-                data = NamedEntity(Name(str.substr(7), ecs::EntityScope()));
+                data = NamedEntity(Name(str.substr(7), EntityScope()));
             } else {
                 data = str;
             }
@@ -164,15 +164,15 @@ namespace ecs {
     }
 
     size_t Event::Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event) {
-        return ecs::EventBindings::SendEvent(lock, target, event);
+        return EventBindings::SendEvent(lock, target, event);
     }
 
     size_t Event::SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event) {
-        return ecs::EventBindings::SendEvent(lock, target, event);
+        return EventBindings::SendEvent(lock, target, event);
     }
 
     size_t Event::SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event) {
-        return ecs::EventBindings::SendEvent(lock, target, event);
+        return EventBindings::SendEvent(lock, target, event);
     }
 
     std::string Event::ToString() const {

@@ -21,7 +21,7 @@ namespace sp {
         ecs::Write<ecs::Signals, ecs::TransformTree>> lock) {
         ZoneScoped;
         double frameInterval = manager.interval.count() / 1e9;
-        for (auto ent : lock.EntitiesWith<ecs::Animation>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Animation>()) {
             if (!ent.Has<ecs::Animation>(lock)) continue;
             auto &animation = ent.Get<ecs::Animation>(lock);
             if (animation.states.empty()) continue;

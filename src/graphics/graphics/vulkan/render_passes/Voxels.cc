@@ -77,7 +77,7 @@ namespace sp::vulkan::renderer {
 
     void Voxels::LoadState(RenderGraph &graph, ecs::Lock<ecs::Read<ecs::VoxelArea, ecs::TransformSnapshot>> lock) {
         voxelGridSize = glm::ivec3(0);
-        for (auto entity : lock.EntitiesWith<ecs::VoxelArea>()) {
+        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::VoxelArea>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &area = entity.Get<ecs::VoxelArea>(lock);

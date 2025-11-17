@@ -151,7 +151,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
-                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ecs::ScriptState));
+                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ScriptState));
                 dynamicScript->dynamicDefinition.initFunc(ptr.context, &state);
             }
         }
@@ -179,7 +179,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onTickFunc) {
-                ecs::DynamicLock<> dynLock = lock;
+                DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
                     &state,
                     &dynLock,
@@ -196,8 +196,8 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onEventFunc) {
-                ecs::DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, (uint64_t)ent, &event);
+                DynamicLock<> dynLock = lock;
+                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, ent, &event);
             }
         }
     }
@@ -208,8 +208,8 @@ namespace ecs {
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             if (dynamicScript->dynamicDefinition.prefabFunc) {
-                ecs::DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, (uint64_t)ent, &scene);
+                DynamicLock<> dynLock = lock;
+                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, ent, &scene);
             }
         }
     }

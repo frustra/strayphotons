@@ -64,7 +64,7 @@ namespace sp::scripts {
                             if (grabEntities.empty() && !attachedSocketEntity && !socketEntities.empty()) {
                                 Entity nearestSocket;
                                 float nearestDist = -1;
-                                for (auto &entity : socketEntities) {
+                                for (const ecs::Entity &entity : socketEntities) {
                                     if (!entity.Has<TransformSnapshot>(lock)) continue;
 
                                     auto &socketTransform = entity.Get<const TransformSnapshot>(lock).globalPose;

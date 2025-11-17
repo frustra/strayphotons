@@ -115,7 +115,7 @@ namespace ecs {
         });
         if (!refsToFree.empty()) {
             ZoneScopedN("FreeSignals");
-            auto lock = ecs::StartTransaction<Write<Signals>>();
+            auto lock = StartTransaction<Write<Signals>>();
             auto &signals = lock.Get<Signals>();
             for (auto &refPtr : refsToFree) {
                 signals.FreeSignal(lock, refPtr->index);
@@ -135,14 +135,13 @@ namespace ecs {
         });
         if (!refsToFree.empty()) {
             ZoneScopedN("FreeSignals");
-            ecs::QueueTransaction<ecs::Write<ecs::Signals>>(
-                [refsToFree](const ecs::Lock<ecs::Write<ecs::Signals>> &lock) {
-                    auto &signals = lock.Get<Signals>();
-                    for (auto &refPtr : refsToFree) {
-                        signals.FreeSignal(lock, refPtr->index);
-                        refPtr->index = std::numeric_limits<size_t>::max();
-                    }
-                });
+            QueueTransaction<Write<Signals>>([refsToFree](const Lock<Write<Signals>> &lock) {
+                auto &signals = lock.Get<Signals>();
+                for (auto &refPtr : refsToFree) {
+                    signals.FreeSignal(lock, refPtr->index);
+                    refPtr->index = std::numeric_limits<size_t>::max();
+                }
+            });
         }
         return refsToFree.size();
     }

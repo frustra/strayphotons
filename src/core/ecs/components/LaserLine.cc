@@ -23,7 +23,7 @@ namespace ecs {
             return false;
         }
 
-        ecs::LaserLine::Line line;
+        LaserLine::Line line;
         for (auto &param : src.get<picojson::object>()) {
             if (param.first == "color") {
                 if (!sp::json::Load(line.color, param.second)) {

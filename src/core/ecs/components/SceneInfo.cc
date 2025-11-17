@@ -47,8 +47,8 @@ namespace ecs {
 
             // Update the root staging id in each entry
             auto nextId = lastStagingInfo->nextStagingId;
-            while (nextId.Has<ecs::SceneInfo>(staging)) {
-                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+            while (nextId.Has<SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
                 nextSceneInfo.rootStagingId = newStagingInfo.rootStagingId;
                 nextId = nextSceneInfo.nextStagingId;
             }
@@ -67,8 +67,8 @@ namespace ecs {
 
             // Update the root staging id in the new entries
             nextId = newSceneInfo.rootStagingId;
-            while (nextId.Has<ecs::SceneInfo>(staging)) {
-                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+            while (nextId.Has<SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
                 nextSceneInfo.rootStagingId = this->rootStagingId;
                 nextId = nextSceneInfo.nextStagingId;
             }
@@ -82,8 +82,8 @@ namespace ecs {
         Assert(this->rootStagingId.Has<SceneInfo>(staging), "SceneInfo::SetLiveId called on an invalid SceneInfo");
 
         auto nextId = this->rootStagingId;
-        while (nextId.Has<ecs::SceneInfo>(staging)) {
-            auto &sceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+        while (nextId.Has<SceneInfo>(staging)) {
+            auto &sceneInfo = nextId.Get<SceneInfo>(staging);
             sceneInfo.liveId = liveId;
             nextId = sceneInfo.nextStagingId;
         }
@@ -99,8 +99,8 @@ namespace ecs {
 
             // Remove the linked-list root node
             auto nextId = stagingInfo.nextStagingId;
-            while (nextId.Has<ecs::SceneInfo>(staging)) {
-                auto &nextSceneInfo = nextId.Get<ecs::SceneInfo>(staging);
+            while (nextId.Has<SceneInfo>(staging)) {
+                auto &nextSceneInfo = nextId.Get<SceneInfo>(staging);
                 nextSceneInfo.rootStagingId = stagingInfo.nextStagingId;
                 nextId = nextSceneInfo.nextStagingId;
             }

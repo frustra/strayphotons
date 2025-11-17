@@ -90,7 +90,7 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        static const ecs::Transform defaultTransform = {};
+        static const Transform defaultTransform = {};
         static const auto defaultRotation = defaultTransform.GetRotation();
         static const auto defaultScale = defaultTransform.GetScale();
 

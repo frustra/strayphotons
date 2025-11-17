@@ -29,7 +29,7 @@ namespace ecs {
     struct CharacterController {
         EntityRef head;
 
-        ecs::EventQueueRef eventQueue;
+        EventQueueRef eventQueue;
         physx::PxCapsuleController *pxController = nullptr;
     };
 
