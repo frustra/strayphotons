@@ -15,7 +15,7 @@
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Screen, ecs::RenderOutput, ecs::LaserLine, ecs::TransformSnapshot>> lock,
+        ecs::Lock<ecs::Read<ecs::Screen, ecs::LaserLine, ecs::TransformSnapshot>> lock,
         chrono_clock::duration elapsedTime) {
         screens.clear();
 
@@ -74,10 +74,8 @@ namespace sp::vulkan::renderer {
                     if (!screenComp.textureName.empty()) {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::RenderOutput>(lock)) {
-                        auto &gui = ent.Get<ecs::RenderOutput>(lock);
-                        if (gui.target != ecs::GuiTarget::World) continue;
                         ecs::EntityRef ref(ent);
-                        textureName = ResourceName("gui:") + ref.Name().String();
+                        textureName = ResourceName("ent:") + ref.Name().String();
                     } else {
                         continue;
                     }
@@ -87,7 +85,7 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
-                    if (starts_with(textureName, "gui:")) {
+                    if (starts_with(textureName, "ent:")) {
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
@@ -118,7 +116,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetBlending(true);
-                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
+                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha,
+                    vk::BlendFactor::eOne,
+                    vk::BlendFactor::eOne,
+                    vk::BlendFactor::eOneMinusSrcAlpha);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
 
                 {

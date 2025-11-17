@@ -11,9 +11,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
-#include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/ScriptGuiManager.hh"
-#include "graphics/gui/WorldGuiManager.hh"
+#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -37,7 +35,7 @@
 #include <assets/AssetManager.hh>
 
 namespace sp::vulkan {
-    static const std::string defaultWindowViewTarget = "FlatView.LastOutput";
+    static const std::string defaultWindowViewTarget = "ent:gui:overlay";
     static const std::string defaultXrViewTarget = "XrView.LastOutput";
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
@@ -61,15 +59,11 @@ namespace sp::vulkan {
         });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        renderOutputObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::RenderOutput>>();
+        renderOutputObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::RenderOutput>>();
         renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
         lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
 
-        for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
-            const ecs::Scripts *scripts = nullptr;
-            if (ent.Has<ecs::Scripts>(lock)) scripts = &ent.Get<ecs::Scripts>(lock);
-            AddRenderOutput(ent, ent.Get<const ecs::RenderOutput>(lock), scripts);
-        }
+        UpdateRenderOutputs(lock);
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
             {vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16UnormS8Uint});
@@ -94,8 +88,12 @@ namespace sp::vulkan {
 
         if (game.xr) game.xr->WaitFrame();
 
-        for (auto &gui : guis) {
-            if (gui.contextShared) gui.contextShared->BeforeFrame();
+        for (auto &output : renderOutputs) {
+            if (output.guiContext) {
+                output.enableGui = output.guiContext->BeforeFrame();
+            } else {
+                output.enableGui = false;
+            }
         }
 
         BuildFrameGraph(elapsedTime);
@@ -135,19 +133,20 @@ namespace sp::vulkan {
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
         auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
-            ecs::TransformSnapshot,
+            ecs::FocusLock,
+            ecs::GuiElement,
             ecs::LaserLine,
             ecs::Light,
             ecs::LightSensor,
-            ecs::VoxelArea,
-            ecs::Renderable,
-            ecs::View,
-            ecs::XrView,
             ecs::OpticalElement,
+            ecs::Renderable,
             ecs::RenderOutput,
             ecs::Screen,
             ecs::Scripts,
-            ecs::FocusLock>>();
+            ecs::TransformSnapshot,
+            ecs::View,
+            ecs::VoxelArea,
+            ecs::XrView>>();
 
         scene.LoadState(graph, lock);
         lighting.LoadState(graph, lock);
@@ -155,8 +154,6 @@ namespace sp::vulkan {
 
         scene.AddGeometryWarp(graph);
         lighting.AddShadowPasses(graph);
-        // AddWorldGuis(lock);
-        // AddMenuGui(lock);
         scene.AddGraphTextures(graph);
         lighting.SetLightTextures(graph);
         voxels.AddVoxelizationInit(graph, lighting);
@@ -174,34 +171,27 @@ namespace sp::vulkan {
         }
 
         {
-            auto scope = graph.Scope("FlatView");
-            auto view = AddFlatView(lock);
-            if (graph.HasResource("GBuffer0") && view) {
-                AddDeferredPasses(lock, view, elapsedTime);
-                renderer::AddCrosshair(graph);
-            } else {
-                if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
-                graph.AddPass("LogoOverlay")
-                    .Build([](rg::PassBuilder &builder) {
-                        rg::ImageDesc desc;
-                        auto windowSize = CVarWindowSize.Get();
-                        auto windowScale = CVarWindowScale.Get();
-                        if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-                        if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-                        desc.extent = vk::Extent3D(windowSize.x / windowScale.x, windowSize.y / windowScale.y, 1);
-                        desc.format = vk::Format::eR8G8B8A8Srgb;
-                        builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
-                    })
-                    .Execute([&](rg::Resources &resources, CommandContext &cmd) {
-                        cmd.DrawScreenCover(scene.textures.GetSinglePixel(glm::vec4(0, 0, 0, 1)));
-                        if (logoTex->Ready()) {
-                            cmd.SetBlending(true);
-                            cmd.DrawScreenCover(logoTex->Get());
-                        }
-                    });
-            }
-            // if (lock.Get<ecs::FocusLock>().HasFocus(ecs::FocusLayer::Menu)) AddMenuOverlay();
+            if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
+            graph.AddPass("LogoOverlay")
+                .Build([](rg::PassBuilder &builder) {
+                    rg::ImageDesc desc;
+                    auto windowSize = CVarWindowSize.Get();
+                    auto windowScale = CVarWindowScale.Get();
+                    if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+                    if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                    desc.extent = vk::Extent3D(windowSize.x / windowScale.x, windowSize.y / windowScale.y, 1);
+                    desc.format = vk::Format::eR8G8B8A8Srgb;
+                    builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
+                })
+                .Execute([&](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.DrawScreenCover(scene.textures.GetSinglePixel(glm::vec4(0, 0, 0, 1)));
+                    if (logoTex->Ready()) {
+                        cmd.SetBlending(true);
+                        cmd.DrawScreenCover(logoTex->Get());
+                    }
+                });
         }
+        AddOutputPasses(lock, elapsedTime);
         screenshots.AddPass(graph);
         AddWindowOutput();
 
@@ -250,6 +240,7 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(source);
                 }
 
+                // TODO: use overlay/window render output source instead of r.WindowView cvar so console stays on top
                 // if (overlayGui) {
                 //     auto windowScale = CVarWindowScale.Get();
                 //     if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
@@ -263,14 +254,12 @@ namespace sp::vulkan {
         graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
     }
 
-    ecs::View Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock) {
-        ecs::Entity windowEntity = device.GetActiveView();
+    ecs::View Renderer::AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock, ecs::Entity ent) {
+        if (!ent || !ent.Has<ecs::View>(lock)) return {};
 
-        if (!windowEntity || !windowEntity.Has<ecs::View>(lock)) return {};
-
-        auto view = windowEntity.Get<ecs::View>(lock);
+        auto view = ent.Get<ecs::View>(lock);
         if (!view) return {};
-        view.UpdateViewMatrix(lock, windowEntity);
+        view.UpdateViewMatrix(lock, ent);
 
         GPUScene::DrawBufferIDs drawIDs;
         if (CVarSortedDraw.Get()) {
@@ -507,123 +496,219 @@ namespace sp::vulkan {
             });
     }
 
-    void Renderer::AddRenderOutput(ecs::Entity ent,
-        const ecs::RenderOutput &renderOutput,
-        const ecs::Scripts *scripts) {
-        (void)ent;
-        (void)renderOutput;
-        (void)scripts;
-        // ecs::GetScriptManager().WithGuiScriptLock([&] {
-        //     auto window = LookupInternalGui(gui.windowName).lock();
-        //     if (window) {
-        //         auto context = make_shared<WorldGuiManager>(ent, window->name);
-        //         context->Attach(window);
-        //         auto windowScale = CVarWindowScale.Get();
-        //         if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-        //         if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-        //         guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
-        //     } else {
-        //         auto scriptState = LookupScriptGui(gui.windowName, scripts);
-        //         if (scriptState) {
-        //             auto context = make_shared<ScriptGuiManager>(ent, gui.windowName, scriptState);
-        //             auto windowScale = CVarWindowScale.Get();
-        //             if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-        //             if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-        //             guis.emplace_back(RenderableGui{ent, windowScale, context.get(), context});
-        //         }
-        //     }
-        // });
+    void Renderer::UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock) {
+        renderOutputs.clear(); // TODO: Reuse previous ephemeral gui contexts
+        auto renderOutputEntities = lock.EntitiesWith<ecs::RenderOutput>();
+        robin_hood::unordered_set<ecs::Entity> existingOutputs;
+        std::vector<RenderOutputInfo> unresolvedDependencies;
+        unresolvedDependencies.reserve(renderOutputEntities.size());
+        renderOutputs.reserve(renderOutputEntities.size());
+        existingOutputs.reserve(renderOutputEntities.size());
+
+        auto dependencyResolved = [&lock, &existingOutputs](const RenderOutputInfo &info) {
+            if (!starts_with(info.sourceName, "ent:")) return true;
+            ecs::EntityRef ref = ecs::Name(info.sourceName.substr(4), ecs::EntityScope());
+            ecs::Entity ent = ref.Get(lock);
+            if (!ent || ent == info.entity) return true;
+            return existingOutputs.count(ent) > 0;
+        };
+
+        for (auto &ent : renderOutputEntities) {
+            ecs::EntityRef ref(ent);
+            auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
+            if (!renderOutput.guiContext && !renderOutput.guiElements.empty()) {
+                ent.Get<ecs::RenderOutput>(lock).guiContext = std::make_shared<GuiContext>(ref);
+            }
+
+            auto windowScale = renderOutput.scale;
+            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = CVarWindowScale.Get();
+            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+            RenderOutputInfo info = {ref.Name(),
+                ent,
+                renderOutput.outputSize,
+                windowScale,
+                renderOutput.guiContext,
+                true,
+                renderOutput.guiElements,
+                renderOutput.sourceName};
+            if (dependencyResolved(info)) {
+                existingOutputs.emplace(info.entity);
+                renderOutputs.push_back(std::move(info));
+            } else {
+                unresolvedDependencies.push_back(std::move(info));
+            }
+        }
+        bool makingProgress = true;
+        while (!unresolvedDependencies.empty() && makingProgress) {
+            makingProgress = false;
+            auto it = unresolvedDependencies.rbegin();
+            while (it != unresolvedDependencies.rend()) {
+                auto &info = *it;
+                if (dependencyResolved(info)) {
+                    existingOutputs.emplace(info.entity);
+                    renderOutputs.push_back(std::move(info));
+                    // reverse_iterator -> iterator -> reverse_iterator
+                    it = std::reverse_iterator(unresolvedDependencies.erase(std::next(it).base()));
+                    makingProgress = true;
+                } else {
+                    it++;
+                }
+            }
+        }
+        if (!unresolvedDependencies.empty()) {
+            Errorf("Unable to resolve render output source dependencies:");
+            for (auto &info : unresolvedDependencies) {
+                Errorf("    %s: source %s", info.entityName, info.sourceName);
+            }
+        }
     }
 
-    // void Renderer::AddWorldGuis(
-    //     ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::RenderOutput, ecs::Screen, ecs::Name, ecs::Scripts>> lock) {
-    //     ecs::ComponentAddRemoveEvent<ecs::RenderOutput> renderOutputEvent;
-    //     while (renderOutputObserver.Poll(lock, guiEvent)) {
-    //         auto &eventEntity = renderOutputEvent.entity;
+    void Renderer::AddOutputPasses(
+        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::Screen, ecs::LaserLine, ecs::GuiElement>> lock,
+        chrono_clock::duration elapsedTime) {
+        ZoneScoped;
+        for (auto &output : renderOutputs) {
+            // TODO:
+            // - Add gui elements from referenced entities
+            // - Handle scaling background / passing through aspect ratio
+            // - Add effect shader options (menu blur)
+            // - Improve asset / render output / graph string references
+            // - Remove extents from View and use RenderOutput instead
+            // - Remove "cached" matrices from View and keep them in Renderer
 
-    //         if (renderOutputEvent.type == Tecs::EventType::REMOVED) {
-    //             for (auto it = guis.begin(); it != guis.end(); it++) {
-    //                 if (it->entity == eventEntity) {
-    //                     guis.erase(it);
-    //                     break;
-    //                 }
-    //             }
-    //         } else if (renderOutputEvent.type == Tecs::EventType::ADDED) {
-    //             if (!eventEntity.Has<ecs::RenderOutput>(lock)) continue;
-    //             const ecs::Scripts *scripts = nullptr;
-    //             if (eventEntity.Has<ecs::Scripts>(lock)) scripts = &eventEntity.Get<ecs::Scripts>(lock);
-    //             AddGui(eventEntity, eventEntity.Get<ecs::RenderOutput>(lock), scripts);
-    //         }
-    //     }
+            rg::ResourceID viewOutput = rg::InvalidResource;
+            glm::ivec2 viewExtents = {-1, -1};
+            if (output.entity.Has<ecs::View>(lock)) {
+                auto scope = graph.Scope("FlatView");
+                auto view = AddFlatView(lock, output.entity);
+                if (graph.HasResource("GBuffer0") && view) {
+                    AddDeferredPasses(lock, view, elapsedTime);
+                    renderer::AddCrosshair(graph);
+                    viewOutput = graph.LastOutputID();
+                    viewExtents = view.extents;
+                }
+            }
 
-    //     for (auto &gui : guis) {
-    //         if (!gui.entity.Has<ecs::RenderOutput, ecs::Screen, ecs::TransformSnapshot, ecs::Name>(lock)) continue;
-    //         if (gui.entity.Get<ecs::RenderOutput>(lock).target != ecs::GuiTarget::World) continue;
+            if (output.guiContext) {
+                output.guiContext->ClearEntities();
+                if (output.enableGui) {
+                    for (auto &elementRef : output.guiElements) {
+                        ecs::Entity ent = elementRef.Get(lock);
+                        if (ent && ent.Has<ecs::GuiElement>(lock)) {
+                            auto &guiElement = ent.Get<ecs::GuiElement>(lock);
+                            if (guiElement.enabled && guiElement.definition) {
+                                output.guiContext->AddEntity(ent,
+                                    guiElement.definition,
+                                    guiElement.anchor, // TODO: Move archor and preferred size to render output listing
+                                    guiElement.preferredSize);
+                            }
+                        }
+                    }
+                }
+            }
 
-    //         auto &screen = gui.entity.Get<ecs::Screen>(lock);
-    //         gui.scale = screen.scale;
+            rg::ImageDesc outputDesc;
+            graph.AddPass("RenderOutput")
+                .Build([&](rg::PassBuilder &builder) {
+                    bool inheritExtent = false;
+                    outputDesc.format = vk::Format::eR8G8B8A8Srgb;
+                    outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
-    //         graph.AddPass("Gui")
-    //             .Build([&](rg::PassBuilder &builder) {
-    //                 rg::ImageDesc desc;
-    //                 desc.format = vk::Format::eR8G8B8A8Srgb;
-    //                 desc.extent = vk::Extent3D(std::max(1, screen.resolution.x), std::max(1, screen.resolution.y),
-    //                 1); desc.mipLevels = CalculateMipmapLevels(desc.extent); desc.sampler =
-    //                 SamplerType::TrilinearClampEdge;
+                    if (output.outputSize.x > 0 && output.outputSize.y > 0) {
+                        outputDesc.extent = vk::Extent3D(output.outputSize.x, output.outputSize.y, 1);
+                    } else if (viewExtents.x > 0 && viewExtents.y > 0) {
+                        outputDesc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
+                    } else {
+                        inheritExtent = true;
+                    }
 
-    //                 auto name = "gui:" + gui.entity.Get<ecs::Name>(lock).String();
-    //                 auto target = builder.OutputColorAttachment(0, name, desc, {LoadOp::Clear, StoreOp::Store});
-    //                 gui.renderGraphID = target.id;
-    //             })
-    //             .Execute([this, gui](rg::Resources &resources, CommandContext &cmd) {
-    //                 auto extent = resources.GetImageView(gui.renderGraphID)->Extent();
-    //                 vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-    //                 guiRenderer->Render(*gui.context, cmd, viewport, gui.scale);
-    //             });
+                    if (viewOutput != rg::InvalidResource) {
+                        builder.Read(viewOutput, Access::FragmentShaderSampleImage);
+                    }
 
-    //         renderer::AddMipmap(graph, gui.renderGraphID);
-    //     }
-    // }
+                    output.sourceTexture = rg::InvalidResource;
 
-    // void Renderer::AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock) {
-    //     MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
-    //     if (!menuManager || !menuManager->MenuOpen()) return;
+                    if (starts_with(output.sourceName, "ent:")) {
+                        auto resourceID = builder.GetID(output.sourceName, false);
+                        if (resourceID != rg::InvalidResource) {
+                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                            output.sourceTexture = resourceID;
+                            auto derivedDesc = builder.DeriveImage(resourceID);
+                            if (inheritExtent) outputDesc.extent = derivedDesc.extent;
+                            outputDesc.sampler = derivedDesc.sampler;
+                        }
+                    } else if (auto it = scene.textureCache.find(output.sourceName); it != scene.textureCache.end()) {
+                        if (starts_with(it->first, "graph:")) {
+                            auto resourceID = builder.GetID(output.sourceName.substr(6), false);
+                            if (resourceID != rg::InvalidResource) {
+                                builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                            } else {
+                                resourceID = builder.ReadPreviousFrame(output.sourceName.substr(6),
+                                    Access::FragmentShaderSampleImage);
+                            }
+                            if (resourceID != rg::InvalidResource) {
+                                output.sourceTexture = resourceID;
+                                auto derivedDesc = builder.DeriveImage(resourceID);
+                                if (inheritExtent) outputDesc.extent = derivedDesc.extent;
+                                outputDesc.sampler = derivedDesc.sampler;
+                            }
+                        } else if (it->second.Ready()) {
+                            output.sourceTexture = it->second.index;
+                            if (inheritExtent) {
+                                auto sourceView = scene.textures.Get(it->second.index);
+                                if (sourceView) outputDesc.extent = sourceView->Extent();
+                            }
+                        }
+                    }
 
-    //     rg::ResourceID mipmapID = rg::InvalidResource;
+                    outputDesc.extent = vk::Extent3D(std::max(1u, outputDesc.extent.width),
+                        std::max(1u, outputDesc.extent.height),
+                        1);
+                    outputDesc.mipLevels = CalculateMipmapLevels(outputDesc.extent);
 
-    //     graph.AddPass("MenuGui")
-    //         .Build([&](rg::PassBuilder &builder) {
-    //             rg::ImageDesc desc;
-    //             auto windowSize = CVarWindowSize.Get();
-    //             desc.extent = vk::Extent3D(windowSize.x, windowSize.y, 1);
-    //             desc.format = vk::Format::eR8G8B8A8Srgb;
+                    auto name = "ent:" + output.entityName.String();
+                    auto target = builder.OutputColorAttachment(0, name, outputDesc, {LoadOp::Clear, StoreOp::Store});
+                    output.renderGraphID = target.id;
+                })
+                .Execute([this, outputDesc, output, viewOutput](rg::Resources &resources, CommandContext &cmd) {
+                    if (viewOutput != rg::InvalidResource) {
+                        cmd.DrawScreenCover(resources.GetImageView(viewOutput));
+                    }
+                    cmd.SetBlending(true);
 
-    //             ecs::Entity windowEntity = device.GetActiveView();
-    //             if (windowEntity && windowEntity.Has<ecs::View>(lock)) {
-    //                 auto view = windowEntity.Get<ecs::View>(lock);
-    //                 desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
-    //             }
-    //             desc.sampler = SamplerType::BilinearClampEdge;
+                    ImageViewPtr sourceImgView;
+                    if (std::holds_alternative<rg::ResourceID>(output.sourceTexture)) {
+                        auto &resourceID = std::get<rg::ResourceID>(output.sourceTexture);
+                        if (resourceID != rg::InvalidResource) {
+                            sourceImgView = resources.GetImageView(resourceID);
+                            if (!sourceImgView) {
+                                sourceImgView = scene.textures.GetSinglePixel(ERROR_COLOR);
+                            }
+                        }
+                    } else {
+                        sourceImgView = scene.textures.Get(std::get<TextureIndex>(output.sourceTexture));
+                        if (!sourceImgView) {
+                            sourceImgView = scene.textures.GetSinglePixel(ERROR_COLOR);
+                        }
+                    }
+                    if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
 
-    //             auto res = builder.OutputColorAttachment(0, "menu_gui", desc, {LoadOp::Clear, StoreOp::Store});
+                    // TODO: Add effects here and separate GUI pass
 
-    //             if (desc.mipLevels > 1) mipmapID = res.id;
-    //         })
-    //         .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-    //             auto extent = resources.GetImageView("menu_gui")->Extent();
-    //             vk::Rect2D viewport = {{}, {extent.width, extent.height}};
-    //             auto windowScale = CVarWindowScale.Get();
-    //             if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-    //             if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+                    if (output.guiContext && output.enableGui) {
+                        vk::Rect2D viewport = {{}, {outputDesc.extent.width, outputDesc.extent.height}};
+                        guiRenderer->Render(*output.guiContext, cmd, viewport, output.scale);
+                    }
+                });
 
-    //             guiRenderer->Render(*menuGui, cmd, viewport, windowScale);
-    //         });
+            if (outputDesc.mipLevels > 1) {
+                renderer::AddMipmap(graph, output.renderGraphID);
+            }
+        }
+    }
 
-    //     if (mipmapID != rg::InvalidResource) renderer::AddMipmap(graph, mipmapID);
-    // }
-
-    void Renderer::AddDeferredPasses(
-        ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::RenderOutput, ecs::LaserLine>> lock,
+    void Renderer::AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock,
         const ecs::View &view,
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
@@ -747,9 +832,11 @@ namespace sp::vulkan {
             return complete;
         });
 
+        bool anyTexturesChanged = false;
+        bool renderOutputsChanged = false;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::Light, ecs::Renderable, ecs::Screen>>();
-            bool anyTexturesChanged = false;
+            auto lock = ecs::StartTransaction<
+                ecs::Read<ecs::Name, ecs::Light, ecs::Renderable, ecs::Screen, ecs::RenderOutput>>();
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableEvent;
             while (renderableObserver.Poll(lock, renderableEvent)) {
                 // std::string modelName = "";
@@ -772,19 +859,26 @@ namespace sp::vulkan {
                 // Logf("Light entity changed: %s %s", ecs::ToString(lock, lightEvent), filterName);
                 anyTexturesChanged = true;
             }
+
+            ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
+            while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
+                std::string sourceName = "";
+                if (renderOutputEvent.Has<ecs::RenderOutput>(lock)) {
+                    sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
+                }
+                Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
+                anyTexturesChanged = true;
+                renderOutputsChanged = true;
+            }
             if (anyTexturesChanged) scene.PreloadTextures(lock);
+        }
+        if (renderOutputsChanged) {
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>>();
+            UpdateRenderOutputs(lock);
         }
 
         scene.Flush();
     }
-
-    // void Renderer::SetOverlayGui(GuiContext *gui) {
-    //     overlayGui = gui;
-    // }
-
-    // void Renderer::SetMenuGui(GuiContext *gui) {
-    //     menuGui = gui;
-    // }
 
     GuiRenderer *Renderer::GetGuiRenderer() const {
         return guiRenderer.get();

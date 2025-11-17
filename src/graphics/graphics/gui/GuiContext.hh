@@ -36,27 +36,39 @@ namespace sp {
         float size;
     };
 
-    class GuiContext {
+    class GuiContext : public NonCopyable {
     public:
-        GuiContext(const std::string &name);
+        GuiContext(const ecs::EntityRef &guiEntity);
+        GuiContext(GuiContext &&) = default;
         virtual ~GuiContext();
-        void Attach(ecs::Entity guiElementEntity,
+
+        void ClearEntities();
+        void AddEntity(ecs::Entity guiElementEntity,
+            std::shared_ptr<ecs::GuiDefinition> definition,
             ecs::GuiLayoutAnchor anchor = ecs::GuiLayoutAnchor::Floating,
             glm::ivec2 preferredSize = {-1, -1});
-        void Detach(ecs::Entity guiElementEntity);
+        void Attach(std::shared_ptr<ecs::GuiDefinition> definition,
+            ecs::GuiLayoutAnchor anchor = ecs::GuiLayoutAnchor::Floating,
+            glm::ivec2 preferredSize = {-1, -1});
+        void Detach(std::shared_ptr<ecs::GuiDefinition> definition);
 
         virtual bool SetGuiContext();
-        virtual void BeforeFrame();
+        virtual bool BeforeFrame();
         virtual void DefineWindows();
         virtual ImDrawData *GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
 
-        const std::string &Name() const {
-            return name;
+        const ecs::Name &Name() const {
+            return guiEntity.Name();
         }
 
         static void PushFont(GuiFont fontType, float fontSize);
 
     protected:
+        ImGuiContext *imCtx = nullptr;
+
+        ecs::EntityRef guiEntity;
+        ecs::EventQueueRef events = ecs::EventQueue::New();
+
         struct GuiElementInfo {
             ecs::Entity ent;
             ecs::GuiLayoutAnchor anchor;
@@ -64,12 +76,7 @@ namespace sp {
             std::shared_ptr<ecs::GuiDefinition> definition;
         };
 
-        std::string name;
         std::vector<GuiElementInfo> elements;
-        ImGuiContext *imCtx = nullptr;
-
-        ecs::EntityRef guiEntity;
-        ecs::EventQueueRef events = ecs::EventQueue::New();
 
         struct PointingState {
             ecs::Entity sourceEntity;

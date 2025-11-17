@@ -47,14 +47,16 @@ namespace sp {
                 picker.Set<ecs::GuiElement>(lock,
                     make_shared<EntityPickerGui>("entity_picker"),
                     ecs::GuiLayoutAnchor::Left,
-                    glm::ivec2(400, -1));
+                    glm::ivec2(400, -1),
+                    false);
                 picker.Set<ecs::EventInput>(lock);
 
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::GuiElement>(lock,
                     make_shared<InspectorGui>("inspector"),
                     ecs::GuiLayoutAnchor::Right,
-                    glm::ivec2(400, -1));
+                    glm::ivec2(400, -1),
+                    false);
                 auto &screen = inspector.Set<ecs::Screen>(lock);
                 screen.resolution = glm::ivec2(800, 1000);
                 inspector.Set<ecs::EventInput>(lock);
@@ -73,13 +75,13 @@ namespace sp {
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
         auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
-            ecs::Write<ecs::RenderOutput, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
+            ecs::Write<ecs::GuiElement, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
 
         auto picker = pickerEntity.Get(lock);
         auto inspector = inspectorEntity.Get(lock);
 
-        if (!picker.Has<ecs::RenderOutput>(lock)) return;
-        if (!inspector.Has<ecs::TransformTree, ecs::RenderOutput, ecs::Physics>(lock)) return;
+        if (!picker.Has<ecs::GuiElement>(lock)) return;
+        if (!inspector.Has<ecs::TransformTree, ecs::GuiElement, ecs::Physics>(lock)) return;
 
         ecs::Entity target;
         if (targetName.empty()) {
@@ -99,17 +101,17 @@ namespace sp {
             target = ref.Get(lock);
         }
 
-        auto &pickerGui = picker.Get<ecs::RenderOutput>(lock);
-        auto &gui = inspector.Get<ecs::RenderOutput>(lock);
+        auto &pickerGui = picker.Get<ecs::GuiElement>(lock);
+        auto &gui = inspector.Get<ecs::GuiElement>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
-        auto &focusLock = lock.Get<ecs::FocusLock>();
+        // auto &focusLock = lock.Get<ecs::FocusLock>();
 
-        bool shouldClose = gui.target != ecs::GuiTarget::None && (!target || target == previousTarget);
+        bool shouldClose = gui.enabled && (!target || target == previousTarget);
         previousTarget = target;
         if (shouldClose) {
-            if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
-            gui.target = ecs::GuiTarget::None;
-            pickerGui.target = ecs::GuiTarget::None;
+            // if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            gui.enabled = false;
+            pickerGui.enabled = false;
             physics.shapes.clear();
             return;
         }
@@ -117,14 +119,14 @@ namespace sp {
         ecs::EventBindings::SendEvent(lock, inspectorEntity, ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspector, target});
 
         if (flatMode) {
-            if (gui.target != ecs::GuiTarget::Overlay) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
-            gui.target = ecs::GuiTarget::Overlay;
-            pickerGui.target = ecs::GuiTarget::Overlay;
+            // if (gui.target != ecs::GuiTarget::Overlay) focusLock.AcquireFocus(ecs::FocusLayer::Overlay);
+            gui.enabled = true;
+            pickerGui.enabled = true;
             physics.shapes.clear();
         } else {
-            if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
-            gui.target = ecs::GuiTarget::World;
-            pickerGui.target = ecs::GuiTarget::None; // TODO: Support this in-world somehow
+            // if (gui.target == ecs::GuiTarget::Overlay) focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
+            gui.enabled = true;
+            pickerGui.enabled = true;
             physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};
 
             auto &transform = inspector.Get<ecs::TransformTree>(lock);

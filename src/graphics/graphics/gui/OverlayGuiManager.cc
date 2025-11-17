@@ -7,34 +7,69 @@
 
 #include "OverlayGuiManager.hh"
 
+#include "console/ConsoleGui.hh"
+#include "console/FpsCounterGui.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
-#include "graphics/gui/definitions/ConsoleGui.hh"
-#include "graphics/gui/definitions/FpsCounterGui.hh"
+#include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
 #include <imgui/imgui.h>
 
 namespace sp {
-    OverlayGuiManager::OverlayGuiManager() : GuiContext("overlay") {
+    OverlayGuiManager::OverlayGuiManager(const ecs::EntityRef &guiEntity) : GuiContext(guiEntity) {
         consoleGui = std::make_shared<ConsoleGui>();
         Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-1, 300});
         fpsCounterGui = std::make_shared<FpsCounterGui>();
         Attach(fpsCounterGui);
 
-        auto lock = ecs::StartTransaction<ecs::AddRemove>();
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    auto ent = guiEntity.Get(lock);
+                    Assertf(ent.Has<ecs::EventInput>(lock),
+                        "Expected overlay gui to start with an EventInput: %s",
+                        guiEntity.Name().String());
 
-        auto gui = guiEntity.Get(lock);
-        Assert(gui.Has<ecs::EventInput>(lock), "Expected overlay gui to start with an EventInput");
-
-        auto &eventInput = gui.Get<ecs::EventInput>(lock);
-        eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
-
-        renderOutputObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::RenderOutput>>();
-
-        for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
-            guis.emplace_back(GuiEntityContext{ent});
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
+                });
         }
+    }
+
+    OverlayGuiManager::~OverlayGuiManager() {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    auto ent = guiEntity.Get(lock);
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Unregister(events, INPUT_EVENT_TOGGLE_CONSOLE);
+                    }
+                });
+        }
+    }
+
+    std::shared_ptr<GuiContext> OverlayGuiManager::CreateContext(const ecs::Name &guiName) {
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "gui",
+            [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto ent = scene->NewSystemEntity(lock, scene, name);
+                ent.Set<ecs::EventInput>(lock);
+                ent.Set<ecs::RenderOutput>(lock);
+            });
+
+        ecs::EntityRef ref(guiName);
+        auto guiContext = std::shared_ptr<OverlayGuiManager>(new OverlayGuiManager(ref));
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
+
+            auto ent = ref.Get(lock);
+            Assert(ent.Has<ecs::RenderOutput>(lock), "Expected overlay gui to start with a RenderOutput");
+
+            ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
+        }
+        return guiContext;
     }
 
     void OverlayGuiManager::DefineWindows() {
@@ -46,89 +81,18 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.95f, 0.95f, 0.95f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-        std::sort(components.begin(), components.end(), [](const Ref &lhsWeak, const Ref &rhsWeak) {
-            auto lhs = lhsWeak.lock();
-            auto rhs = rhsWeak.lock();
-            if (!lhs || !rhs) return lhs < rhs;
-            return lhs->anchor < rhs->anchor;
-        });
-
-        ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
-        Assertf(imguiViewport, "ImGui::GetMainViewport() returned null");
-        ImVec2 viewportPos = imguiViewport->WorkPos;
-        ImVec2 viewportSize = imguiViewport->WorkSize;
-        for (auto &componentWeak : components) {
-            auto component = componentWeak.lock();
-            if (!component) continue;
-            ecs::GuiElement &renderable = *component;
-            ecs::Entity ent = guiEntity.GetLive();
-
-            if (renderable.PreDefine(ent)) {
-                ImVec2 windowSize(renderable.preferredSize.x, renderable.preferredSize.y);
-                if (renderable.anchor != ecs::GuiLayoutAnchor::Floating) {
-                    windowSize.x = std::min(windowSize.x, std::min(viewportSize.x, imguiViewport->WorkSize.x * 0.4f));
-                    windowSize.y = std::min(windowSize.y, std::min(viewportSize.y, imguiViewport->WorkSize.y * 0.4f));
-                    if (windowSize.x <= 0) windowSize.x = viewportSize.x;
-                    if (windowSize.y <= 0) windowSize.y = viewportSize.y;
-                    ImGui::SetNextWindowSize(windowSize);
-                }
-
-                switch (renderable.anchor) {
-                case ecs::GuiLayoutAnchor::Fullscreen:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    break;
-                case ecs::GuiLayoutAnchor::Left:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    viewportPos.x += windowSize.x;
-                    viewportSize.x -= windowSize.x;
-                    break;
-                case ecs::GuiLayoutAnchor::Top:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    viewportPos.y += windowSize.y;
-                    viewportSize.y -= windowSize.y;
-                    break;
-                case ecs::GuiLayoutAnchor::Right:
-                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x + viewportSize.x, viewportPos.y),
-                        ImGuiCond_None,
-                        ImVec2(1, 0));
-                    viewportSize.x -= windowSize.x;
-                    break;
-                case ecs::GuiLayoutAnchor::Bottom:
-                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y),
-                        ImGuiCond_None,
-                        ImVec2(0, 1));
-                    viewportSize.y -= windowSize.y;
-                    break;
-                case ecs::GuiLayoutAnchor::Floating:
-                    // Noop
-                    break;
-                default:
-                    Abortf("Unexpected GuiLayoutAnchor: %s", renderable.anchor);
-                }
-
-                ImGui::Begin(renderable.name.c_str(), nullptr, renderable.windowFlags);
-                renderable.DefineContents(ent);
-                ImGui::End();
-                renderable.PostDefine(ent);
-            }
-        }
+        GuiContext::DefineWindows();
 
         ImGui::PopStyleVar();
         ImGui::PopStyleColor(4);
     }
 
-    void OverlayGuiManager::BeforeFrame() {
-        FlatViewGuiContext::BeforeFrame();
-
-        ImGui::StyleColorsClassic();
-
-        ImGuiIO &io = ImGui::GetIO();
-        io.MouseDrawCursor = false;
+    bool OverlayGuiManager::BeforeFrame() {
+        GuiContext::BeforeFrame();
 
         bool focusChanged = false;
         {
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock,
-                ecs::Read<ecs::EventInput, ecs::RenderOutput, ecs::Scripts>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock>>();
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {
@@ -141,42 +105,6 @@ namespace sp {
                     }
                 }
             }
-
-            ecs::ComponentAddRemoveEvent<ecs::RenderOutput> renderOutputEvent;
-            while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
-                auto &eventEntity = renderOutputEvent.entity;
-
-                if (renderOutputEvent.type == Tecs::EventType::REMOVED) {
-                    for (auto it = guis.begin(); it != guis.end(); it++) {
-                        if (it->entity == eventEntity) {
-                            guis.erase(it);
-                            break;
-                        }
-                    }
-                } else if (renderOutputEvent.type == Tecs::EventType::ADDED) {
-                    if (!eventEntity.Has<ecs::RenderOutput>(lock)) continue;
-                    guis.emplace_back(GuiEntityContext{eventEntity});
-                }
-            }
-
-            for (auto &ctx : guis) {
-                Assert(ctx.entity.Has<ecs::RenderOutput>(lock), "gui entity must have a gui component");
-
-                auto &gui = ctx.entity.Get<ecs::RenderOutput>(lock);
-                if (!ctx.window.lock()) {
-                    ctx.window = LookupInternalGui(gui.windowName);
-                }
-                if (!ctx.window.lock()) {
-                    const ecs::Scripts *scripts = nullptr;
-                    if (ctx.entity.Has<ecs::Scripts>(lock)) scripts = &ctx.entity.Get<ecs::Scripts>(lock);
-                    ctx.window = LookupScriptGui(gui.windowName, scripts);
-                }
-                if (gui.target == ecs::GuiTarget::Overlay) {
-                    Attach(ctx.window);
-                } else {
-                    Detach(ctx.window);
-                }
-            }
         }
         if (focusChanged) {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::FocusLock>>();
@@ -187,5 +115,6 @@ namespace sp {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             }
         }
+        return true;
     }
 } // namespace sp

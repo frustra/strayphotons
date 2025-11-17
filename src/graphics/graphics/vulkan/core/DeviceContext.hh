@@ -94,12 +94,11 @@ namespace sp::vulkan {
             return deviceResetRequired;
         }
 
+        void AttachOverlay(GuiContext &overlayContext) override;
+
         void InitRenderer(Game &game) override;
         std::shared_ptr<Renderer> GetRenderer() const;
         void RenderFrame(chrono_clock::duration elapsedTime) override;
-
-        // void SetOverlayGui(OverlayGuiManager *overlayGui) override;
-        // void SetMenuGui(MenuGuiManager *menuGui) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.

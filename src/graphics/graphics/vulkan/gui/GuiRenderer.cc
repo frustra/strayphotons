@@ -171,8 +171,7 @@ namespace sp::vulkan {
         cmd.SetVertexLayout(*vertexLayout);
         cmd.SetCullMode(vk::CullModeFlagBits::eNone);
         cmd.SetDepthTest(false, false);
-        cmd.SetBlending(true, vk::BlendOp::eAdd);
-        cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
+        cmd.SetBlending(true);
 
         cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 

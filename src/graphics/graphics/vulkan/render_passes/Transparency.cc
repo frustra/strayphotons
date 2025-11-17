@@ -62,7 +62,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
 
                 cmd.SetBlending(true);
-                cmd.SetBlendFuncSeparate(vk::BlendFactor::eOne,
+                cmd.SetBlendFunc(vk::BlendFactor::eOne,
                     vk::BlendFactor::eSrc1Color,
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);

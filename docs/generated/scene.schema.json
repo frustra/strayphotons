@@ -433,6 +433,11 @@
 								],
 								"type": "string"
 							},
+							"enabled": {
+								"default": true,
+								"description": "No description",
+								"type": "boolean"
+							},
 							"preferred_size": {
 								"default": [-1, -1],
 								"description": "No description",
@@ -743,14 +748,47 @@
 					"physics_query": {},
 					"render_output": {
 						"properties": {
-							"target": {
-								"default": "World",
-								"description": "No description",
-								"enum": [
-									"None",
-									"World",
-									"Overlay"
+							"gui_elements": {
+								"anyOf": [
+									{
+										"description": "An entity name in the form `<scene_name>:<entity_name>`",
+										"type": "string"
+									},
+									{
+										"items": {
+											"description": "An entity name in the form `<scene_name>:<entity_name>`",
+											"type": "string"
+										},
+										"type": "array"
+									}
 								],
+								"default": [],
+								"description": "No description"
+							},
+							"output_size": {
+								"default": [-1, -1],
+								"description": "No description",
+								"items": {
+									"type": "integer"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"scale": {
+								"default": [-1, -1],
+								"description": "No description",
+								"items": {
+									"type": "number"
+								},
+								"maxItems": 2,
+								"minItems": 2,
+								"type": "array"
+							},
+							"source": {
+								"default": "",
+								"description": "No description",
+								"maxLength": 127,
 								"type": "string"
 							}
 						},

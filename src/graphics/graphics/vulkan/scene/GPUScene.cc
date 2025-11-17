@@ -152,7 +152,8 @@ namespace sp::vulkan {
             });
     }
 
-    bool GPUScene::PreloadTextures(ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::Screen>> lock) {
+    bool GPUScene::PreloadTextures(
+        ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>> lock) {
         bool complete = true;
         textureCache.clear();
         for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
@@ -180,7 +181,7 @@ namespace sp::vulkan {
         }
         for (auto &ent : lock.EntitiesWith<ecs::Light>()) {
             auto &light = ent.Get<ecs::Light>(lock);
-            if (light.filterName.empty() || starts_with(light.filterName, "gui:")) continue;
+            if (light.filterName.empty() || starts_with(light.filterName, "ent:")) continue;
             if (light.filterName.length() > 6 && starts_with(light.filterName, "graph:")) {
                 textureCache[light.filterName] = {};
             } else if (light.filterName.length() > 6 && starts_with(light.filterName, "asset:")) {
@@ -198,9 +199,31 @@ namespace sp::vulkan {
                 Warnf("Entity %s has unknown filter texture: %s", ecs::ToString(lock, ent), light.filterName);
             }
         }
+        for (auto &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
+            auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
+            if (renderOutput.sourceName.empty() || starts_with(renderOutput.sourceName, "ent:")) continue;
+            if (renderOutput.sourceName.length() > 6 && starts_with(renderOutput.sourceName, "graph:")) {
+                textureCache[renderOutput.sourceName] = {};
+            } else if (renderOutput.sourceName.length() > 6 && starts_with(renderOutput.sourceName, "asset:")) {
+                auto it = textureCache.find(renderOutput.sourceName);
+                if (it == textureCache.end()) {
+                    auto handle = textures.LoadAssetImage(renderOutput.sourceName.substr(6), true);
+                    textureCache[renderOutput.sourceName] = handle;
+
+                    if (!handle.Ready()) complete = false;
+                } else {
+                    auto &handle = it->second;
+                    if (!handle.Ready()) complete = false;
+                }
+            } else {
+                Warnf("Entity %s has unknown render output texture: %s",
+                    ecs::ToString(lock, ent),
+                    renderOutput.sourceName);
+            }
+        }
         for (auto &ent : lock.EntitiesWith<ecs::Screen>()) {
             auto &screen = ent.Get<ecs::Screen>(lock);
-            if (screen.textureName.empty() || starts_with(screen.textureName, "gui:")) continue;
+            if (screen.textureName.empty() || starts_with(screen.textureName, "ent:")) continue;
             if (screen.textureName.length() > 6 && starts_with(screen.textureName, "graph:")) {
                 textureCache[screen.textureName] = {};
             } else if (screen.textureName.length() > 6 && starts_with(screen.textureName, "asset:")) {
