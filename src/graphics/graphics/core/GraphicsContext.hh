@@ -31,11 +31,12 @@ namespace sp::vulkan {
 } // namespace sp::vulkan
 
 namespace sp {
-    class GpuTexture;
-    class Image;
-    class OverlayGuiManager;
-    class MenuGuiManager;
     class Game;
+    class GpuTexture;
+    class GuiContext;
+    class Image;
+    class MenuGuiManager;
+    class OverlayGuiManager;
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;
@@ -60,15 +61,14 @@ namespace sp {
             activeView = e;
         }
 
+        virtual void AttachOverlay(GuiContext &overlayContext) = 0;
+
         const ecs::Entity &GetActiveView() const {
             return activeView;
         }
 
         virtual void InitRenderer(Game &game) = 0;
         virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
-
-        // virtual void SetOverlayGui(OverlayGuiManager *overlayGui) = 0;
-        // virtual void SetMenuGui(MenuGuiManager *menuGui) = 0;
 
         virtual const std::vector<glm::ivec2> &MonitorModes() {
             return monitorModes;

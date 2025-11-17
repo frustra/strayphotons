@@ -123,7 +123,6 @@ namespace ecs {
         FieldAction,
         FocusLayer,
         GuiLayoutAnchor,
-        GuiTarget,
         InterpolationMode,
         PhysicsGroup,
         PhysicsActorType,

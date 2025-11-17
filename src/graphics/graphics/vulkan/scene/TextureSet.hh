@@ -15,6 +15,8 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
+#include <string_view>
+
 namespace sp::vulkan {
     typedef uint16 TextureIndex;
 
@@ -33,7 +35,7 @@ namespace sp::vulkan {
     public:
         TextureSet(DeviceContext &device);
 
-        TextureHandle LoadAssetImage(const string &name, bool genMipmap = false, bool srgb = true);
+        TextureHandle LoadAssetImage(std::string_view name, bool genMipmap = false, bool srgb = true);
         TextureHandle LoadGltfMaterial(const shared_ptr<const Gltf> &source, int materialIndex, TextureType type);
 
         TextureHandle Add(const ImageCreateInfo &imageInfo,

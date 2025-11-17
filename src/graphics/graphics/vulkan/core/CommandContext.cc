@@ -28,7 +28,10 @@ namespace sp::vulkan {
         SetDepthRange(0.0f, 1.0f);
         SetStencilTest(false);
         SetBlending(false);
-        SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
+        SetBlendFunc(vk::BlendFactor::eSrcAlpha,
+            vk::BlendFactor::eOneMinusSrcAlpha,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eOneMinusSrcAlpha);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
         SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);

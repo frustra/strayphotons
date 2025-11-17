@@ -636,19 +636,13 @@ namespace sp::vulkan {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
 
-    // void DeviceContext::SetOverlayGui(OverlayGuiManager *overlayGui) {
-    //     auto *perfTimer = GetPerfTimer();
-    //     if (perfTimer) {
-    //         if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
-    //         overlayGui->Attach(profilerGui);
-    //     }
-
-    //     if (vkRenderer) vkRenderer->SetOverlayGui(overlayGui);
-    // }
-
-    // void DeviceContext::SetMenuGui(MenuGuiManager *menuGui) {
-    //     if (vkRenderer) vkRenderer->SetMenuGui(menuGui);
-    // }
+    void DeviceContext::AttachOverlay(GuiContext &overlayContext) {
+        auto *perfTimer = GetPerfTimer();
+        if (perfTimer) {
+            if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
+            overlayContext.Attach(profilerGui);
+        }
+    }
 
     bool DeviceContext::BeginFrame() {
         ZoneScoped;

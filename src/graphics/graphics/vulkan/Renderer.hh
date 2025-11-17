@@ -48,9 +48,6 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        // void SetOverlayGui(GuiContext *gui);
-        // void SetMenuGui(GuiContext *gui);
-
         GuiRenderer *GetGuiRenderer() const;
 
     private:
@@ -59,22 +56,19 @@ namespace sp::vulkan {
         rg::RenderGraph graph;
 
         void BuildFrameGraph(chrono_clock::duration elapsedTime);
-        ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
+        ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock, ecs::Entity ent);
         void AddWindowOutput();
 
         ecs::View AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock);
         void AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock);
 
-        void AddRenderOutput(ecs::Entity ent, const ecs::RenderOutput &gui, const ecs::Scripts *scripts);
-        // void AddWorldGuis(
-        //     ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::RenderOutput, ecs::Screen, ecs::Name, ecs::Scripts>>
-        //     lock);
-        // void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
-        void AddDeferredPasses(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::RenderOutput, ecs::LaserLine>> lock,
+        void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock);
+        void AddOutputPasses(
+            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::Screen, ecs::LaserLine, ecs::GuiElement>> lock,
+            chrono_clock::duration elapsedTime);
+        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock,
             const ecs::View &view,
             chrono_clock::duration elapsedTime);
-        // void AddMenuOverlay();
 
         CFuncCollection funcs;
         vk::Format depthStencilFormat;
@@ -89,18 +83,23 @@ namespace sp::vulkan {
         renderer::Screenshots screenshots;
 
         unique_ptr<GuiRenderer> guiRenderer;
-        struct RenderableGui {
+        struct RenderOutputInfo {
+            ecs::Name entityName;
             ecs::Entity entity;
+            glm::ivec2 outputSize;
             glm::vec2 scale;
-            GuiContext *context;
-            shared_ptr<GuiContext> contextShared;
+            std::shared_ptr<GuiContext> guiContext;
+            bool enableGui;
+            std::vector<ecs::EntityRef> guiElements;
+            rg::ResourceName sourceName;
+            std::variant<rg::ResourceID, TextureIndex> sourceTexture = rg::InvalidResource;
             rg::ResourceID renderGraphID = rg::InvalidResource;
         };
-        vector<RenderableGui> guis;
+        vector<RenderOutputInfo> renderOutputs;
         GuiContext *overlayGui = nullptr, *menuGui = nullptr;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentAddRemoveObserver<ecs::RenderOutput> renderOutputObserver;
+        ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 

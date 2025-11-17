@@ -12,6 +12,7 @@
 #include "console/CVar.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
@@ -25,25 +26,61 @@ namespace sp {
     static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : FlatViewGuiContext("menu"), graphics(graphics) {
-        {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
+    MenuGuiManager::MenuGuiManager(const ecs::EntityRef &guiEntity, GraphicsManager &graphics)
+        : GuiContext(guiEntity), graphics(graphics) {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    ecs::Entity ent = guiEntity.Get(lock);
+                    Assertf(ent.Has<ecs::EventInput>(lock),
+                        "Expected menu gui to start with an EventInput: %s",
+                        guiEntity.Name().String());
 
-            ecs::Entity gui = guiEntity.Get(lock);
-            Assertf(gui.Has<ecs::EventInput>(lock),
-                "Expected menu gui to start with an EventInput: %s",
-                guiEntity.Name().String());
-
-            auto &eventInput = gui.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                });
         }
     }
 
-    void MenuGuiManager::BeforeFrame() {
-        FlatViewGuiContext::BeforeFrame();
+    MenuGuiManager::~MenuGuiManager() {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    auto ent = guiEntity.Get(lock);
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_BACK);
+                    }
+                });
+        }
+    }
 
-        ImGui::StyleColorsClassic();
+    std::shared_ptr<GuiContext> MenuGuiManager::CreateContext(const ecs::Name &guiName, GraphicsManager &graphics) {
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "gui",
+            [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                auto ent = scene->NewSystemEntity(lock, scene, name);
+                ent.Set<ecs::EventInput>(lock);
+                ent.Set<ecs::RenderOutput>(lock);
+            });
+
+        ecs::EntityRef ref(guiName);
+        auto guiContext = std::shared_ptr<MenuGuiManager>(new MenuGuiManager(ref, graphics));
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
+
+            auto ent = ref.Get(lock);
+            Assert(ent.Has<ecs::RenderOutput>(lock), "Expected menu gui to start with a RenderOutput");
+
+            ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
+        }
+        return guiContext;
+    }
+
+    bool MenuGuiManager::BeforeFrame() {
+        GuiContext::BeforeFrame();
 
         ImGuiIO &io = ImGui::GetIO();
 
@@ -80,6 +117,7 @@ namespace sp {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
             }
         }
+        return MenuOpen();
     }
 
     static bool StringVectorGetter(void *data, int idx, const char **out_text) {
@@ -133,8 +171,9 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        if (!logoTex) logoTex = graphics.context->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
-        ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
+        // if (!logoTex) logoTex = graphics.context->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
+        // ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
+        ImVec2 logoSize(512, 128);
 
         ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, -1.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y));
         if (selectedScreen == MenuScreen::Main) {
@@ -184,7 +223,8 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)0, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -216,7 +256,8 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSaveSelect", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)0, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -248,7 +289,8 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)0, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 

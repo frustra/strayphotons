@@ -7,26 +7,30 @@
 
 #pragma once
 
-#include "ecs/Ecs.hh"
-#include "ecs/components/Events.hh"
+#include "ecs/EventQueue.hh"
 #include "graphics/gui/GuiContext.hh"
 
+#include <memory>
+
 namespace sp {
-    class GraphicsContext;
     class ConsoleGui;
     class FpsCounterGui;
 
     class OverlayGuiManager final : public GuiContext {
     public:
-        OverlayGuiManager();
+        OverlayGuiManager(OverlayGuiManager &&) = default;
+        virtual ~OverlayGuiManager();
 
-        void BeforeFrame() override;
+        static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName);
+
+        bool BeforeFrame() override;
         void DefineWindows() override;
 
     private:
+        OverlayGuiManager(const ecs::EntityRef &guiEntity);
+
         std::shared_ptr<ConsoleGui> consoleGui;
         std::shared_ptr<FpsCounterGui> fpsCounterGui;
-        ecs::ComponentAddRemoveObserver<ecs::RenderOutput> renderOutputObserver;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();
     };
