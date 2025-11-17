@@ -27,7 +27,7 @@ namespace sp {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
                 [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    auto ent = guiEntity.Get(lock);
+                    ecs::Entity ent = guiEntity.Get(lock);
                     Assertf(ent.Has<ecs::EventInput>(lock),
                         "GuiContext entity has no EventInput: %s",
                         guiEntity.Name().String());
@@ -47,6 +47,14 @@ namespace sp {
         imCtx = ImGui::CreateContext();
     }
 
+    GuiContext::GuiContext(GuiContext &&other) {
+        imCtx = std::move(other.imCtx);
+        guiEntity = std::move(other.guiEntity);
+        events = std::move(other.events);
+        elements = std::move(other.elements);
+        pointingStack = std::move(other.pointingStack);
+    }
+
     GuiContext::~GuiContext() {
         ImGui::DestroyContext(imCtx);
         imCtx = nullptr;
@@ -54,7 +62,7 @@ namespace sp {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
                 [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    auto ent = guiEntity.Get(lock);
+                    ecs::Entity ent = guiEntity.Get(lock);
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Unregister(events, INPUT_EVENT_MENU_SCROLL);
@@ -88,7 +96,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
 
-            auto ent = guiEntity.Get(lock);
+            ecs::Entity ent = guiEntity.Get(lock);
             ecs::Transform screenInverseTransform;
             if (ent.Has<ecs::TransformSnapshot>(lock)) {
                 screenInverseTransform = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse();

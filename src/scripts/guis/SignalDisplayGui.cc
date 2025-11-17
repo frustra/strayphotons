@@ -50,11 +50,7 @@ namespace sp::scripts {
                 cfg.SizePixels = def.size;
                 cfg.GlyphRanges = &glyphRanges[0];
                 auto filename = asset->path.filename().string();
-                strncpy_s(cfg.Name,
-                    sizeof(cfg.Name),
-                    filename.c_str(),
-                    std::min(sizeof(cfg.Name) - 1, filename.length()));
-                // memcpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name), filename.length()));
+                strncpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name) - 1, filename.length()));
                 fontAtlas->AddFont(&cfg);
             }
 

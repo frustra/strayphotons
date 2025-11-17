@@ -350,11 +350,11 @@ namespace ecs {
     bool DynamicScriptGui::PreDefine(Entity ent) {
         // if (!state || !renderer) return false;
         // const auto &definition = state->definition;
-        // if (definition.type != ecs::ScriptType::GuiScript) return false;
-        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        // if (definition.type != ScriptType::GuiScript) return false;
+        // Assertf(std::holds_alternative<GuiRenderFuncs>(definition.callback),
         //     "DynamicScriptGui has invalid callback type: %s",
         //     definition.callback.index());
-        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // auto &[beforeFrame, renderGui] = std::get<GuiRenderFuncs>(definition.callback);
         // if (beforeFrame && renderGui) {
         //     beforeFrame(*state, ent);
         //     return true;
@@ -367,11 +367,11 @@ namespace ecs {
         // Assertf(renderer != nullptr, "DynamicScriptGui::DefineContents called without renderer init");
 
         // const auto &definition = state->definition;
-        // Assertf(definition.type == ecs::ScriptType::GuiScript, "DynamicScriptGui script is wrong type");
-        // Assertf(std::holds_alternative<ecs::GuiRenderFuncs>(definition.callback),
+        // Assertf(definition.type == ScriptType::GuiScript, "DynamicScriptGui script is wrong type");
+        // Assertf(std::holds_alternative<GuiRenderFuncs>(definition.callback),
         //     "DynamicScriptGui has invalid callback type");
 
-        // auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(definition.callback);
+        // auto &[beforeFrame, renderGui] = std::get<GuiRenderFuncs>(definition.callback);
         // if (beforeFrame && renderGui) {
         //     auto &io = ImGui::GetIO();
         //     ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
