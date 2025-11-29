@@ -283,7 +283,16 @@ namespace sp {
                 io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
             }
         }
-        return true;
+
+        bool anyEnabled = false;
+        for (auto &element : elements) {
+            if (!element.definition) continue;
+            ecs::Entity ent = guiEntity.GetLive();
+            if (!ent) continue;
+            element.enabled = element.definition->BeforeFrame(ent);
+            anyEnabled |= element.enabled;
+        }
+        return anyEnabled;
     }
 
     // flatview#window -> overlay#render_output -> menu#render_output -> hud#render_output -> flatview#view
@@ -330,65 +339,67 @@ namespace sp {
         ImVec2 viewportPos = imguiViewport->WorkPos;
         ImVec2 viewportSize = imguiViewport->WorkSize;
         for (auto &element : elements) {
-            if (!element.definition) continue;
+            if (!element.definition || !element.enabled) continue;
 
             ecs::Entity ent = guiEntity.GetLive();
+            if (!ent) continue;
 
-            if (element.definition->PreDefine(ent)) {
-                ImVec2 windowSize(element.preferredSize.x, element.preferredSize.y);
-                if (element.anchor != ecs::GuiLayoutAnchor::Floating) {
-                    windowSize.x = std::min(windowSize.x, viewportSize.x);
-                    windowSize.y = std::min(windowSize.y, viewportSize.y);
-                    if (windowSize.x < 0) {
-                        windowSize.x = imguiViewport->WorkSize.x * std::clamp(windowSize.x / -100.0f, 0.0f, 1.0f);
-                    }
-                    if (windowSize.y < 0) {
-                        windowSize.y = imguiViewport->WorkSize.y * std::clamp(windowSize.y / -100.0f, 0.0f, 1.0f);
-                    }
-                    ImGui::SetNextWindowSize(windowSize);
+            element.definition->PreDefine(ent);
+
+            ImVec2 windowSize(element.preferredSize.x, element.preferredSize.y);
+            if (element.anchor != ecs::GuiLayoutAnchor::Floating) {
+                windowSize.x = std::min(windowSize.x, viewportSize.x);
+                windowSize.y = std::min(windowSize.y, viewportSize.y);
+                if (windowSize.x < 0) {
+                    windowSize.x = imguiViewport->WorkSize.x * std::clamp(windowSize.x / -100.0f, 0.0f, 1.0f);
                 }
-
-                switch (element.anchor) {
-                case ecs::GuiLayoutAnchor::Fullscreen:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    break;
-                case ecs::GuiLayoutAnchor::Left:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    viewportPos.x += windowSize.x;
-                    viewportSize.x -= windowSize.x;
-                    break;
-                case ecs::GuiLayoutAnchor::Top:
-                    ImGui::SetNextWindowPos(viewportPos);
-                    viewportPos.y += windowSize.y;
-                    viewportSize.y -= windowSize.y;
-                    break;
-                case ecs::GuiLayoutAnchor::Right:
-                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x + viewportSize.x, viewportPos.y),
-                        ImGuiCond_None,
-                        ImVec2(1, 0));
-                    viewportSize.x -= windowSize.x;
-                    break;
-                case ecs::GuiLayoutAnchor::Bottom:
-                    ImGui::SetNextWindowPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y),
-                        ImGuiCond_None,
-                        ImVec2(0, 1));
-                    viewportSize.y -= windowSize.y;
-                    break;
-                case ecs::GuiLayoutAnchor::Floating:
-                    // Noop
-                    break;
-                default:
-                    Abortf("Unexpected GuiLayoutAnchor: %s", element.anchor);
+                if (windowSize.y < 0) {
+                    windowSize.y = imguiViewport->WorkSize.y * std::clamp(windowSize.y / -100.0f, 0.0f, 1.0f);
                 }
-
-                // int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
-                // flags |= element.definition->windowFlags;
-
-                ImGui::Begin(element.definition->name.c_str(), nullptr, element.definition->windowFlags);
-                element.definition->DefineContents(ent);
-                ImGui::End();
-                element.definition->PostDefine(ent);
+                ImGui::SetNextWindowSize(windowSize);
             }
+
+            switch (element.anchor) {
+            case ecs::GuiLayoutAnchor::Fullscreen:
+                ImGui::SetNextWindowPos(viewportPos);
+                break;
+            case ecs::GuiLayoutAnchor::Left:
+                ImGui::SetNextWindowPos(viewportPos);
+                viewportPos.x += windowSize.x;
+                viewportSize.x -= windowSize.x;
+                break;
+            case ecs::GuiLayoutAnchor::Top:
+                ImGui::SetNextWindowPos(viewportPos);
+                viewportPos.y += windowSize.y;
+                viewportSize.y -= windowSize.y;
+                break;
+            case ecs::GuiLayoutAnchor::Right:
+                ImGui::SetNextWindowPos(ImVec2(viewportPos.x + viewportSize.x, viewportPos.y),
+                    ImGuiCond_None,
+                    ImVec2(1, 0));
+                viewportSize.x -= windowSize.x;
+                break;
+            case ecs::GuiLayoutAnchor::Bottom:
+                ImGui::SetNextWindowPos(ImVec2(viewportPos.x, viewportPos.y + viewportSize.y),
+                    ImGuiCond_None,
+                    ImVec2(0, 1));
+                viewportSize.y -= windowSize.y;
+                break;
+            case ecs::GuiLayoutAnchor::Floating:
+                // Noop
+                break;
+            default:
+                Abortf("Unexpected GuiLayoutAnchor: %s", element.anchor);
+            }
+
+            // int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
+            // flags |= element.definition->windowFlags;
+
+            ImGui::Begin(element.definition->name.c_str(), nullptr, element.definition->windowFlags);
+            element.definition->DefineContents(ent);
+            ImGui::End();
+
+            element.definition->PostDefine(ent);
         }
 
         ImGui::PopStyleVar();
@@ -411,7 +422,7 @@ namespace sp {
         glm::ivec2 preferredSize) {
         Assertf(guiElementEntity, "GuiContext::AddEntity called with null entity");
         Assertf(definition, "GuiContext::AddEntity called with null definition");
-        elements.emplace_back(guiElementEntity, anchor, preferredSize, definition);
+        elements.emplace_back(guiElementEntity, anchor, preferredSize, definition, true);
     }
 
     void GuiContext::Attach(std::shared_ptr<ecs::GuiDefinition> definition,
@@ -420,7 +431,7 @@ namespace sp {
         auto it = std::find_if(elements.begin(), elements.end(), [&](auto &info) {
             return info.definition == definition;
         });
-        if (it == elements.end()) elements.emplace_back(ecs::Entity(), anchor, preferredSize, definition);
+        if (it == elements.end()) elements.emplace_back(ecs::Entity(), anchor, preferredSize, definition, true);
     }
 
     void GuiContext::Detach(std::shared_ptr<ecs::GuiDefinition> definition) {

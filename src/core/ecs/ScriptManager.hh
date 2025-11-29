@@ -147,8 +147,8 @@ namespace ecs {
         void ReloadDynamicLibraries();
         std::vector<std::string> GetDynamicLibraries() const;
 
-        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
-        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
+        void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock);
+        void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock, const Entity &ent);
         void RunLogicUpdate(const LogicUpdateLock &Lock, const chrono_clock::duration &interval);
         void RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
 
@@ -165,9 +165,9 @@ namespace ecs {
         }
 
     private:
-        void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
+        void internalRegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock,
             const Entity &ent,
-            ScriptState &state);
+            std::shared_ptr<ScriptState> instance);
 
         sp::CFuncCollection funcs;
         sp::EnumArray<ScriptSet, ScriptType> scripts = {};

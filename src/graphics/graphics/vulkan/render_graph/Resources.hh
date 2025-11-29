@@ -99,6 +99,7 @@ namespace sp::vulkan::render_graph {
 
         const Resource &GetResource(string_view name) const;
         const Resource &GetResource(ResourceID id) const;
+        const ResourceName &GetName(ResourceID id) const;
         ResourceID GetID(string_view name, bool assertExists = true, uint32 framesAgo = 0) const;
 
         ResourceID LastOutputID() const {

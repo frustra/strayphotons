@@ -27,8 +27,11 @@ namespace sp {
                   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
                   ImGuiWindowFlags_NoBringToFrontOnFocus) {}
 
-    bool FpsCounterGui::PreDefine(ecs::Entity ent) {
-        if (!CVarShowFPS.Get()) return false;
+    bool FpsCounterGui::BeforeFrame(ecs::Entity ent) {
+        return CVarShowFPS.Get();
+    }
+
+    void FpsCounterGui::PreDefine(ecs::Entity ent) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.5f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
 
@@ -56,7 +59,6 @@ namespace sp {
             break;
         }
         ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, -1.0f), ImVec2(viewportSize.x, viewportSize.y));
-        return true;
     }
 
     void FpsCounterGui::PostDefine(ecs::Entity ent) {

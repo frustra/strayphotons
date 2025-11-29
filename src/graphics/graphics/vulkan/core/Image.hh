@@ -223,14 +223,6 @@ namespace sp::vulkan {
             return extent.height;
         }
 
-        virtual uintptr_t GetHandle() const override {
-            return reinterpret_cast<uintptr_t>(this);
-        }
-
-        static ImageView *FromHandle(uintptr_t handle) {
-            return reinterpret_cast<ImageView *>(handle);
-        }
-
     private:
         ImageViewCreateInfo info;
         vk::Extent3D extent;

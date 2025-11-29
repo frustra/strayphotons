@@ -17,13 +17,13 @@
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/gui/OverlayGuiManager.hh"
+#include "graphics/vulkan/ProfilerGui.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
-#include "graphics/vulkan/gui/ProfilerGui.hh"
 
 #include <algorithm>
 #include <iostream>

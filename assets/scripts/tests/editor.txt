@@ -1,16 +1,16 @@
 screenshot empty-state.png
 stepgraphics
 editinworld player:flathead
-screenshot editor1.png gui:editor:inspector
+screenshot editor1.png ent:editor:inspector
 stepgraphics
 # Click on "Entity View" tab and move mouse away
 sendevent editor:inspector/interact/point 125 20
 sendevent editor:inspector/interact/press true
 sendevent editor:inspector/interact/press false
 sendevent editor:inspector/interact/point -1 -1
-screenshot editor2.png gui:editor:inspector
+screenshot editor2.png ent:editor:inspector
 stepgraphics
-screenshot editor3.png gui:editor:inspector
+screenshot editor3.png ent:editor:inspector
 stepgraphics
-screenshot editor4.png gui:editor:inspector
+screenshot editor4.png ent:editor:inspector
 stepgraphics
