@@ -43,7 +43,7 @@ namespace sp {
             });
     }
 
-    bool InspectorGui::PreDefine(ecs::Entity ent) {
+    bool InspectorGui::BeforeFrame(ecs::Entity ent) {
         if (!context) return false;
         ZoneScoped;
         {
@@ -74,13 +74,18 @@ namespace sp {
             }
             if (!targetEntity) return false;
         }
+        return true;
+    }
+
+    void InspectorGui::PreDefine(ecs::Entity ent) {
+        if (!context) return;
+        ZoneScoped;
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.96f));
         ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.01f, 0.01f, 0.01f, 0.96f));
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.10f, 0.15f, 0.40f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
         ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
-        return true;
     }
 
     void InspectorGui::PostDefine(ecs::Entity ent) {

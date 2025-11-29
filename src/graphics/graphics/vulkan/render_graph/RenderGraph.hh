@@ -145,6 +145,9 @@ namespace sp::vulkan::render_graph {
         Resource LastOutput() const {
             return resources.LastOutput();
         }
+        const ResourceName &LastOutputName() const {
+            return resources.GetName(resources.lastOutputID);
+        }
 
         bool HasResource(string_view name) const {
             return resources.GetID(name, false) != InvalidResource;

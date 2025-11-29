@@ -10,6 +10,7 @@
 #include "common/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
@@ -35,9 +36,6 @@ namespace sp::xr {
 }
 
 namespace sp::vulkan {
-    class Mesh;
-    class GuiRenderer;
-
     extern CVar<string> CVarWindowViewTarget;
 
     class Renderer {
@@ -48,24 +46,26 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        GuiRenderer *GetGuiRenderer() const;
-
     private:
         Game &game;
         DeviceContext &device;
         rg::RenderGraph graph;
 
         void BuildFrameGraph(chrono_clock::duration elapsedTime);
+        void AddViewOutputs(ecs::Lock<ecs::Read<ecs::Name,
+                                ecs::TransformSnapshot,
+                                ecs::View,
+                                ecs::Screen,
+                                ecs::LaserLine,
+                                ecs::GuiElement,
+                                ecs::XrView>> lock,
+            chrono_clock::duration elapsedTime);
         ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock, ecs::Entity ent);
         void AddWindowOutput();
 
         ecs::View AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock);
         void AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock);
 
-        void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock);
-        void AddOutputPasses(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::Screen, ecs::LaserLine, ecs::GuiElement>> lock,
-            chrono_clock::duration elapsedTime);
         void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock,
             const ecs::View &view,
             chrono_clock::duration elapsedTime);
@@ -82,20 +82,7 @@ namespace sp::vulkan {
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
 
-        unique_ptr<GuiRenderer> guiRenderer;
-        struct RenderOutputInfo {
-            ecs::Name entityName;
-            ecs::Entity entity;
-            glm::ivec2 outputSize;
-            glm::vec2 scale;
-            std::shared_ptr<GuiContext> guiContext;
-            bool enableGui;
-            std::vector<ecs::EntityRef> guiElements;
-            rg::ResourceName sourceName;
-            std::variant<rg::ResourceID, TextureIndex> sourceTexture = rg::InvalidResource;
-            rg::ResourceID renderGraphID = rg::InvalidResource;
-        };
-        vector<RenderOutputInfo> renderOutputs;
+        Compositor compositor;
         AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;
@@ -107,5 +94,7 @@ namespace sp::vulkan {
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;
+
+        friend class Compositor;
     };
 } // namespace sp::vulkan

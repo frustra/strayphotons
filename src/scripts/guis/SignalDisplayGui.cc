@@ -59,10 +59,6 @@ namespace sp::scripts {
             fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
         }
 
-        // void Init(ScriptState &state, GuiDefinition &gui) {
-        //     Logf("Created signal display gui: %llu, %s %s", state.GetInstanceId(), gui.name, gui.anchor);
-        // }
-
         void Destroy(ScriptState &state) {
             Logf("Destroying signal display: %llu", state.GetInstanceId());
             ImGui::DestroyContext(imCtx);
@@ -117,7 +113,9 @@ namespace sp::scripts {
             ImGui::PopStyleColor();
         }
 
-        void BeforeFrame(ScriptState &state, Entity ent) {}
+        bool BeforeFrame(ScriptState &state, Entity ent) {
+            return true;
+        }
 
         ImDrawData *RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
             ZoneScoped;
@@ -131,7 +129,7 @@ namespace sp::scripts {
 
             auto lastFonts = io.Fonts;
             io.Fonts = fontAtlas.get();
-            io.Fonts->TexID = ~(ImTextureID)0; // FONT_ATLAS_ID
+            io.Fonts->TexID = 1ull << 16; // FONT_ATLAS_ID
             Defer defer([&] {
                 io.Fonts = lastFonts;
             });

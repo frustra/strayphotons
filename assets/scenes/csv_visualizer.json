@@ -218,6 +218,10 @@
 				"translate": [0.185, -0.046, -0.210]
 			},
 			"gui_element": {},
+			"render_output": {
+				"output_size": [120, 50],
+				"gui_elements": ["gear_display"]
+			},
 			"screen": {
 				"luminance": [3, 3, 3],
 				"resolution": [120, 50]
@@ -245,6 +249,10 @@
 				"translate": [0.175, -0.073, -0.210]
 			},
 			"gui_element": {},
+			"render_output": {
+				"output_size": [160, 50],
+				"gui_elements": ["speed_display"]
+			},
 			"screen": {
 				"luminance": [3, 3, 3],
 				"resolution": [160, 50]
@@ -270,6 +278,10 @@
 				"translate": [0.16, -0.1, -0.210]
 			},
 			"gui_element": {},
+			"render_output": {
+				"output_size": [220, 50],
+				"gui_elements": ["tps_display"]
+			},
 			"screen": {
 				"luminance": [3, 3, 3],
 				"resolution": [220, 50]
@@ -298,7 +310,12 @@
 				"translate": [0.0, 0.0, -0.210]
 			},
 			"gui_element": {},
+			"render_output": {
+				"output_size": [480, 320],
+				"gui_elements": ["graph_display"]
+			},
 			"screen": {
+				"texture": "ent:csv_visualizer:graph_display",
 				"luminance": [3, 3, 3],
 				"resolution": [480, 320]
 			},

@@ -12,6 +12,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     EntityRef.cc
     EntityReferenceManager.cc
     EventQueue.cc
+    ScriptGuiDefinition.cc
     ScriptManager.cc
     SignalExpression.cc
     SignalManager.cc

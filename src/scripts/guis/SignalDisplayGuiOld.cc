@@ -16,12 +16,11 @@
 namespace sp {
     SignalDisplayGui::SignalDisplayGui(const string &name) : ecs::GuiDefinition(name) {}
 
-    bool SignalDisplayGui::PreDefine(ecs::Entity ent) {
+    void SignalDisplayGui::PreDefine(ecs::Entity ent) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         GuiContext::PushFont(GuiFont::Monospace, 32);
-        return true;
     }
 
     void SignalDisplayGui::PostDefine(ecs::Entity ent) {

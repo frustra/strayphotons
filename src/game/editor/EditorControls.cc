@@ -12,15 +12,16 @@ namespace sp {
         ZoneScoped;
         entityTree.clear();
 
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>();
-        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
-            auto &name = ent.Get<ecs::Name>(lock);
-            auto &tree = ent.Get<ecs::TransformTree>(lock);
-            entityTree[name].hasParent = (bool)tree.parent;
-            if (tree.parent) {
-                entityTree[tree.parent.Name()].children.emplace_back(name);
+        ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>([this](auto &lock) {
+            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                auto &name = ent.Get<ecs::Name>(lock);
+                auto &tree = ent.Get<ecs::TransformTree>(lock);
+                entityTree[name].hasParent = (bool)tree.parent;
+                if (tree.parent) {
+                    entityTree[tree.parent.Name()].children.emplace_back(name);
+                }
             }
-        }
+        });
     }
 
     bool EditorContext::ShowEntityTree(ecs::EntityRef &selected, ecs::Name root) {

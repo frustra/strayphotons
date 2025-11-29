@@ -16,7 +16,7 @@ namespace sp {
         SignalDisplayGui(const std::string &name);
         virtual ~SignalDisplayGui() {}
 
-        bool PreDefine(ecs::Entity ent) override;
+        void PreDefine(ecs::Entity ent) override;
         void DefineContents(ecs::Entity ent) override;
         void PostDefine(ecs::Entity ent) override;
     };

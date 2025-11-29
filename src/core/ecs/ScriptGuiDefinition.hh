@@ -1,0 +1,29 @@
+/*
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#pragma once
+
+#include "ecs/Ecs.hh"
+#include "ecs/ScriptManager.hh"
+#include "ecs/components/GuiElement.hh"
+
+#include <memory>
+
+namespace ecs {
+    class ScriptGuiDefinition final : public GuiDefinition {
+    public:
+        ScriptGuiDefinition(std::shared_ptr<ScriptState> state);
+
+        bool BeforeFrame(Entity ent) override;
+        void DefineContents(Entity ent) override;
+
+        std::weak_ptr<ScriptState> weakState;
+        ImDrawData *drawData = nullptr;
+    };
+
+    using DrawGuiFunc = std::function<void(ImDrawData *)>;
+} // namespace ecs

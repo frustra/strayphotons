@@ -347,14 +347,15 @@ namespace ecs {
             }
         }
 
-        static void BeforeFrame(ScriptState &state, Entity ent) {
+        static bool BeforeFrame(ScriptState &state, Entity ent) {
             if constexpr (script_has_before_frame_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
-                ptr->BeforeFrame(state, ent);
+                return ptr->BeforeFrame(state, ent);
             } else {
                 (void)state;
                 (void)ent;
+                return false;
             }
         }
 

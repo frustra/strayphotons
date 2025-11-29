@@ -27,9 +27,11 @@ namespace ecs {
         GuiDefinition(std::string_view name, int windowFlags = 0) : name(name), windowFlags(windowFlags) {}
         virtual ~GuiDefinition() {}
 
-        virtual bool PreDefine(Entity ent) {
+        virtual bool BeforeFrame(Entity ent) {
             return true;
         }
+
+        virtual void PreDefine(Entity ent) {}
         virtual void DefineContents(Entity ent) = 0;
         virtual void PostDefine(Entity ent) {}
 
