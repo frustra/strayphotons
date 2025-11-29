@@ -304,7 +304,7 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        ecs::GetScriptManager().RegisterEvents(live);
+        ecs::GetScriptManager().RegisterActive(live);
         {
             ZoneScopedN("TransformSnapshot");
             for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {
@@ -375,7 +375,7 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        ecs::GetScriptManager().RegisterEvents(live);
+        ecs::GetScriptManager().RegisterActive(live);
 
         active = false;
     }

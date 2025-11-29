@@ -57,6 +57,9 @@ namespace sp {
                     ecs::GuiLayoutAnchor::Right,
                     glm::ivec2(-40, -100),
                     false);
+                auto &renderOutput = inspector.Set<ecs::RenderOutput>(lock);
+                renderOutput.guiElements.emplace_back(inspector);
+                renderOutput.outputSize = glm::ivec2(800, 1000);
                 auto &screen = inspector.Set<ecs::Screen>(lock);
                 screen.resolution = glm::ivec2(800, 1000);
                 inspector.Set<ecs::EventInput>(lock);
@@ -75,7 +78,7 @@ namespace sp {
     void EditorSystem::OpenEditor(std::string targetName, bool flatMode) {
         auto lock = ecs::StartTransaction<ecs::ReadAll,
             ecs::SendEventsLock,
-            ecs::Write<ecs::GuiElement, ecs::FocusLock, ecs::TransformTree, ecs::Physics>>();
+            ecs::Write<ecs::GuiElement, ecs::FocusLock, ecs::TransformTree, ecs::Physics, ecs::RenderOutput>>();
 
         auto picker = pickerEntity.Get(lock);
         auto inspector = inspectorEntity.Get(lock);
@@ -102,15 +105,16 @@ namespace sp {
         }
 
         auto &pickerGui = picker.Get<ecs::GuiElement>(lock);
-        auto &gui = inspector.Get<ecs::GuiElement>(lock);
+        auto &inspectorGui = inspector.Get<ecs::GuiElement>(lock);
         auto &physics = inspector.Get<ecs::Physics>(lock);
+        auto &renderOutput = inspector.Get<ecs::RenderOutput>(lock);
         auto &focusLock = lock.Get<ecs::FocusLock>();
 
-        bool shouldClose = gui.enabled && (!target || target == previousTarget);
+        bool shouldClose = inspectorGui.enabled && (!target || target == previousTarget);
         previousTarget = target;
         if (shouldClose) {
             focusLock.ReleaseFocus(ecs::FocusLayer::HUD);
-            gui.enabled = false;
+            inspectorGui.enabled = false;
             pickerGui.enabled = false;
             physics.shapes.clear();
             return;
@@ -120,14 +124,16 @@ namespace sp {
 
         if (flatMode) {
             focusLock.AcquireFocus(ecs::FocusLayer::HUD);
-            gui.enabled = true;
+            inspectorGui.enabled = true;
             pickerGui.enabled = true;
             physics.shapes.clear();
+            renderOutput.guiElements.clear();
         } else {
             focusLock.ReleaseFocus(ecs::FocusLayer::HUD);
-            gui.enabled = true;
+            inspectorGui.enabled = true;
             pickerGui.enabled = true;
             physics.shapes = {ecs::PhysicsShape::Box(glm::vec3(1, 1, 0.01))};
+            renderOutput.guiElements = {inspectorEntity};
 
             auto &transform = inspector.Get<ecs::TransformTree>(lock);
 

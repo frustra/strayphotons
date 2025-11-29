@@ -86,13 +86,14 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
                     if (starts_with(textureName, "ent:")) {
+                        // TODO: Combine this with render_output dependency sorting
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
                         }
                     } else if (auto it = scene.liveTextureCache.find(textureName); it != scene.liveTextureCache.end()) {
-                        if (starts_with(it->first, "graph:")) {
+                        if (it->first.length() > 6 && starts_with(it->first, "graph:")) {
                             auto resourceID = builder.ReadPreviousFrame(textureName.substr(6),
                                 Access::FragmentShaderSampleImage);
                             if (resourceID != InvalidResource) {

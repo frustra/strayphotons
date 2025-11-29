@@ -475,7 +475,7 @@ namespace sp {
                     void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
                     if constexpr (std::is_same<T, std::vector<ScriptInstance>>()) {
-                        GetScriptManager().RegisterEvents(lock);
+                        GetScriptManager().RegisterActive(lock);
                     }
                 });
             } else if (scene) {

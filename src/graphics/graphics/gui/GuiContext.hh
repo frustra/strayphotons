@@ -70,6 +70,7 @@ namespace sp {
             ecs::GuiLayoutAnchor anchor;
             glm::ivec2 preferredSize;
             std::shared_ptr<ecs::GuiDefinition> definition;
+            bool enabled;
         };
 
         std::vector<GuiElementInfo> elements;

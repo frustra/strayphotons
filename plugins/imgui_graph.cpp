@@ -117,7 +117,7 @@ public:
         ImGuiIO &io = ImGui::GetIO(ctx->imCtx);
         ctx->originalAtlas = io.Fonts;
         io.Fonts = ctx->fontAtlas.get();
-        io.Fonts->TexID = ~(ImTextureID)0; // FONT_ATLAS_ID
+        io.Fonts->TexID = 1ull < 16; // FONT_ATLAS_ID
         io.IniFilename = nullptr;
     }
 

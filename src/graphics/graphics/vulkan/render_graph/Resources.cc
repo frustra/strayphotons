@@ -158,11 +158,17 @@ namespace sp::vulkan::render_graph {
         return invalidResource;
     }
 
+    const ResourceName &Resources::GetName(ResourceID id) const {
+        if (id < resourceNames.size()) return resourceNames[id];
+        static ResourceName invalidResourceName = "InvalidResource";
+        return invalidResourceName;
+    }
+
     ResourceID Resources::GetID(string_view name, bool assertExists, uint32 framesAgo) const {
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
-        if (name.find(':') == string_view::npos && name.find('.') != string_view::npos) {
+        if (/* name.find(':') == string_view::npos && */ name.find('.') != string_view::npos) {
             // Any resource name with a dot is assumed to be fully qualified.
             auto lastDot = name.rfind('.');
             auto scopeName = name.substr(0, lastDot);

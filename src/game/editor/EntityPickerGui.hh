@@ -23,7 +23,8 @@ namespace sp {
         EntityPickerGui(const std::string &name);
         virtual ~EntityPickerGui();
 
-        bool PreDefine(ecs::Entity ent) override;
+        bool BeforeFrame(ecs::Entity ent) override;
+        void PreDefine(ecs::Entity ent) override;
         void DefineContents(ecs::Entity ent) override;
         void PostDefine(ecs::Entity ent) override;
 

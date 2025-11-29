@@ -331,8 +331,13 @@
 				"scale": [0.12, 0.05, 1],
 				"translate": [4.94, 1.35, 2.35]
 			},
-			"gui": {},
+			"gui_element": {},
+			"render_output": {
+				"gui_elements": ["airlock_in_signal_display"],
+				"output_size": [120, 50]
+			},
 			"screen": {
+				"texture": "graph:ent:menu:airlock_in_signal_display",
 				"luminance": [3, 3, 3],
 				"resolution": [120, 50]
 			},
@@ -349,7 +354,7 @@
 					"name": "prefab_template"
 				},
 				{
-					"name": "signal_display2",
+					"name": "signal_display",
 					"parameters": {
 						"suffix": "mW"
 					}
