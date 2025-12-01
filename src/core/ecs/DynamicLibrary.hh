@@ -77,7 +77,7 @@ namespace ecs {
         void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
         void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
         bool (*beforeFrameFunc)(void *, ScriptState *, Entity) = nullptr;
-        ImDrawData *(*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) = nullptr;
+        sp::GuiDrawData (*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) = nullptr;
     };
 
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
@@ -136,7 +136,7 @@ namespace ecs {
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
         static bool BeforeFrame(ScriptState &state, Entity ent);
-        static ImDrawData *RenderGui(ScriptState &state,
+        static sp::GuiDrawData RenderGui(ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
             glm::vec2 scale,

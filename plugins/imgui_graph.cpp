@@ -171,7 +171,9 @@ public:
 
         ImGui::Render();
 
-        return ImGui::GetDrawData();
+        auto *drawData = ImGui::GetDrawData();
+        drawData->ScaleClipRects(io.DisplayFramebufferScale);
+        return drawData;
     }
 
 private:
@@ -393,7 +395,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].init_func = &ScriptGuiContext<SignalDisplayGui>::Init;
         output[0].destroy_func = &ScriptGuiContext<SignalDisplayGui>::Destroy;
         // output[0].before_frame_func = &ScriptGuiContext<SignalDisplayGui>::BeforeFrame;
-        output[0].render_gui_func = &ScriptGuiContext<SignalDisplayGui>::RenderGui;
+        // output[0].render_gui_func = &ScriptGuiContext<SignalDisplayGui>::RenderGui;
 
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
         sp_string_set(&fields[0].name, "prefix");
@@ -416,7 +418,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[1].init_func = &ScriptGuiContext<GraphDisplayGui>::Init;
         output[1].destroy_func = &ScriptGuiContext<GraphDisplayGui>::Destroy;
         // output[1].before_frame_func = &ScriptGuiContext<GraphDisplayGui>::BeforeFrame;
-        output[1].render_gui_func = &ScriptGuiContext<GraphDisplayGui>::RenderGui;
+        // output[1].render_gui_func = &ScriptGuiContext<GraphDisplayGui>::RenderGui;
         output[1].filter_on_event = false;
         event_name_t *events = sp_event_name_vector_resize(&output[1].events, 2);
         std::strncpy(events[0], "/csv/column_metadata", sizeof(events[0]) - 1);

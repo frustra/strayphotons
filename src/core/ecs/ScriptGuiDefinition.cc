@@ -13,11 +13,18 @@
 
 namespace ecs {
     ScriptGuiDefinition::ScriptGuiDefinition(std::shared_ptr<ScriptState> state)
-        : GuiDefinition(state->definition.name), weakState(state) {}
+        : GuiDefinition(state->definition.name,
+              ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground),
+          weakState(state) {}
+
+    ScriptGuiDefinition::~ScriptGuiDefinition() {
+        context = {};
+    }
 
     bool ScriptGuiDefinition::BeforeFrame(Entity ent) {
         ZoneScoped;
-        drawData = nullptr;
+        context = {};
         return ecs::GetScriptManager().WithGuiScriptLock([&] {
             auto activeState = weakState.lock();
             if (!activeState) return false;
@@ -35,51 +42,47 @@ namespace ecs {
             if (beforeFrame && renderGui && beforeFrame(state, ent)) {
                 auto &io = ImGui::GetIO();
                 ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
+                // TODO: Viewport is one frame behind here, and undefined on first frame.
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
                 glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
                 glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};
-                drawData = renderGui(state, ent, displaySize, scale, io.DeltaTime);
-                return drawData != nullptr;
+                context.drawData = renderGui(state, ent, displaySize, scale, io.DeltaTime);
+                return !context.drawData.drawCommands.empty();
             }
             return false;
         });
     }
 
+    void ScriptGuiDefinition::PreDefine(Entity ent) {
+        // ImGui::SetNextWindowSizeConstraints
+    }
+
     void ScriptGuiDefinition::DefineContents(Entity ent) {
-        ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
-        ImGui::Dummy(imguiViewport->WorkSize);
+        ImGui::Dummy(ImGui::GetContentRegionAvail());
 
         auto &io = ImGui::GetIO();
         sp::GenericCompositor *compositor = (sp::GenericCompositor *)io.UserData;
-        if (drawData && compositor) {
-            drawData->ScaleClipRects(io.DisplayFramebufferScale);
-
-            // TODO: Make a copy of ImDrawData here
-            struct CallbackContext {
-                ImDrawData *drawData;
-                sp::GenericCompositor *compositor;
-                glm::ivec4 viewport;
-                glm::vec2 scale;
-            } context = {drawData,
-                compositor,
-                glm::ivec4(imguiViewport->WorkPos.x,
-                    imguiViewport->WorkPos.y,
-                    imguiViewport->WorkSize.x,
-                    imguiViewport->WorkSize.y),
-                glm::vec2(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y)};
+        if (!context.drawData.drawCommands.empty() && compositor) {
+            context.compositor = compositor;
+            auto minPos = ImGui::GetItemRectMin();
+            auto maxPos = ImGui::GetItemRectMax();
+            context.viewport = glm::vec4(minPos.x, minPos.y, maxPos.x - minPos.x, maxPos.y - minPos.y);
+            context.scale = glm::vec2(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
+            context.viewport.x *= context.scale.x;
+            context.viewport.y *= context.scale.y;
+            context.viewport.z *= context.scale.x;
+            context.viewport.w *= context.scale.y;
 
             ImDrawList *drawList = ImGui::GetForegroundDrawList();
             drawList->AddCallback(
                 [](const ImDrawList *drawList, const ImDrawCmd *cmd) {
-                    if (cmd && cmd->UserCallbackData && cmd->UserCallbackDataSize == sizeof(CallbackContext)) {
+                    if (cmd && cmd->UserCallbackData) {
                         CallbackContext *context = static_cast<CallbackContext *>(cmd->UserCallbackData);
-                        Assertf(context->drawData && context->compositor,
-                            "Compositor::DrawGui ImGui callback called with invalid context");
-                        context->compositor->DrawGui(context->drawData, context->viewport, context->scale);
+                        if (!context->compositor) return;
+                        context->compositor->DrawGui(context->drawData, (glm::ivec4)context->viewport, context->scale);
                     }
                 },
-                &context,
-                sizeof(context));
+                &context);
         }
     }
 } // namespace ecs

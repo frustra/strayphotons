@@ -10,13 +10,13 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/components/GuiElement.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <memory>
 #include <string>
 #include <vector>
 
 struct ImGuiContext;
-struct ImDrawData;
 
 namespace ecs {
     class ScriptState;
@@ -55,7 +55,7 @@ namespace sp {
         virtual bool SetGuiContext();
         virtual bool BeforeFrame();
         virtual void DefineWindows();
-        virtual ImDrawData *GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
+        virtual GuiDrawData GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
 
         static void PushFont(GuiFont fontType, float fontSize);
 
