@@ -120,12 +120,9 @@ namespace sp {
         return MenuOpen();
     }
 
-    static bool StringVectorGetter(void *data, int idx, const char **out_text) {
-        auto vec = (vector<string> *)data;
-        if (out_text) {
-            *out_text = vec->at(idx).c_str();
-        }
-        return true;
+    static const char *StringVectorGetter(void *data, int idx) {
+        auto *vec = (vector<string> *)data;
+        return vec->at(idx).c_str();
     }
 
     static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes) {
@@ -330,7 +327,7 @@ namespace sp {
                 vector<string> resLabels = MakeResolutionLabels(modes);
 
                 ImGui::PushItemWidth(300.0f);
-                if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size())) {
+                if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, (int)modes.size())) {
                     CVarWindowSize.Set(modes[resIndex]);
                 }
                 ImGui::PopItemWidth();

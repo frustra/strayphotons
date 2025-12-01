@@ -66,7 +66,7 @@ namespace sp {
 
     void ScriptGuiManager::DefineWindows() {}
 
-    ImDrawData *ScriptGuiManager::GetDrawData(glm::vec2 displaySize, glm::vec2 scale, float deltaTime) const {
+    GuiDrawData ScriptGuiManager::GetDrawData(glm::vec2 displaySize, glm::vec2 scale, float deltaTime) const {
         ecs::Entity gui = guiEntity.GetLive();
         if (gui && scriptState) {
             return ecs::GetScriptManager().WithGuiScriptLock([&] {
@@ -78,10 +78,10 @@ namespace sp {
                     auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
                     return renderGui(state, gui, displaySize, scale, deltaTime);
                 }
-                return (ImDrawData *)nullptr;
+                return GuiDrawData{};
             });
         }
-        return nullptr;
+        return {};
     }
 
 } // namespace sp

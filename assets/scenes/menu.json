@@ -334,7 +334,8 @@
 			"gui_element": {},
 			"render_output": {
 				"gui_elements": ["airlock_in_signal_display"],
-				"output_size": [120, 50]
+				"output_size": [120, 50],
+				"scale": [1, 1]
 			},
 			"screen": {
 				"texture": "graph:ent:menu:airlock_in_signal_display",

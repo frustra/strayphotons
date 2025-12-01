@@ -28,7 +28,7 @@ namespace sp::vulkan {
     public:
         Compositor(DeviceContext &device, Renderer &renderer);
 
-        void DrawGui(ImDrawData *drawData, glm::ivec4 viewport, glm::vec2 scale) override;
+        void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) override;
 
         void BeforeFrame();
         void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock);
@@ -36,6 +36,7 @@ namespace sp::vulkan {
         void EndFrame();
 
     private:
+        void internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale, bool allowUserCallback);
         void internalDrawGui(ImDrawData *drawData, vk::Rect2D viewport, glm::vec2 scale, bool allowUserCallback);
 
         Renderer &renderer;

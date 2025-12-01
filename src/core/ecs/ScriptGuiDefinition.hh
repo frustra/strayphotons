@@ -17,13 +17,19 @@ namespace ecs {
     class ScriptGuiDefinition final : public GuiDefinition {
     public:
         ScriptGuiDefinition(std::shared_ptr<ScriptState> state);
+        ~ScriptGuiDefinition();
 
         bool BeforeFrame(Entity ent) override;
+        void PreDefine(Entity ent) override;
         void DefineContents(Entity ent) override;
 
         std::weak_ptr<ScriptState> weakState;
-        ImDrawData *drawData = nullptr;
-    };
 
-    using DrawGuiFunc = std::function<void(ImDrawData *)>;
+        struct CallbackContext {
+            sp::GuiDrawData drawData;
+            sp::GenericCompositor *compositor = nullptr;
+            glm::vec4 viewport;
+            glm::vec2 scale;
+        } context = {};
+    };
 } // namespace ecs

@@ -392,9 +392,6 @@ namespace sp {
                 Abortf("Unexpected GuiLayoutAnchor: %s", element.anchor);
             }
 
-            // int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
-            // flags |= element.definition->windowFlags;
-
             ImGui::Begin(element.definition->name.c_str(), nullptr, element.definition->windowFlags);
             element.definition->DefineContents(ent);
             ImGui::End();
@@ -406,7 +403,7 @@ namespace sp {
         ImGui::PopStyleColor(4);
     }
 
-    ImDrawData *GuiContext::GetDrawData(glm::vec2, glm::vec2, float) const {
+    GuiDrawData GuiContext::GetDrawData(glm::vec2, glm::vec2, float) const {
         return ImGui::GetDrawData();
     }
 

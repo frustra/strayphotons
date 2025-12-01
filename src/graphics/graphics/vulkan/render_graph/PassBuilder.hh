@@ -66,6 +66,9 @@ namespace sp::vulkan::render_graph {
         Resource LastOutput() const {
             return resources.LastOutput();
         }
+        const ResourceName &LastOutputName() const {
+            return resources.GetName(resources.lastOutputID);
+        }
 
         // Indicates pending command buffers should be submitted before Execute is called
         void FlushCommands() {

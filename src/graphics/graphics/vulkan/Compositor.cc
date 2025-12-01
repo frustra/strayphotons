@@ -82,7 +82,7 @@ namespace sp::vulkan {
         EndFrame();
     }
 
-    void Compositor::DrawGui(ImDrawData *drawData, glm::ivec4 viewport, glm::vec2 scale) {
+    void Compositor::DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) {
         Assertf(viewport.z > 0 && viewport.w > 0,
             "Compositor::DrawGui called with invalid viewport: %s",
             glm::to_string(viewport));
@@ -92,6 +92,103 @@ namespace sp::vulkan {
             false);
     }
 
+    void Compositor::internalDrawGui(const GuiDrawData &drawData,
+        vk::Rect2D viewport,
+        glm::vec2 scale,
+        bool allowUserCallback) {
+        if (drawData.drawCommands.empty()) return;
+        graph.AddPass("GuiRender")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
+            })
+            .Execute([this, drawData, viewport, scale, allowUserCallback](rg::Resources &resources,
+                         CommandContext &cmd) {
+                size_t totalVtxSize = CeilToPowerOfTwo(drawData.vertexBuffer.size() * sizeof(GuiDrawVertex));
+                size_t totalIdxSize = CeilToPowerOfTwo(drawData.indexBuffer.size() * sizeof(GuiDrawIndex));
+                if (totalVtxSize == 0 || totalIdxSize == 0) return;
+
+                BufferDesc vtxDesc;
+                vtxDesc.layout = totalVtxSize;
+                vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+                vtxDesc.residency = Residency::CPU_TO_GPU;
+                auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
+
+                BufferDesc idxDesc;
+                idxDesc.layout = totalIdxSize;
+                idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
+                idxDesc.residency = Residency::CPU_TO_GPU;
+                auto indexBuffer = cmd.Device().GetBuffer(idxDesc);
+
+                GuiDrawVertex *vtxData;
+                GuiDrawIndex *idxData;
+                vertexBuffer->Map((void **)&vtxData);
+                indexBuffer->Map((void **)&idxData);
+                std::copy(drawData.vertexBuffer.begin(), drawData.vertexBuffer.end(), vtxData);
+                std::copy(drawData.indexBuffer.begin(), drawData.indexBuffer.end(), idxData);
+                indexBuffer->Unmap();
+                vertexBuffer->Unmap();
+
+                auto flippedViewport = viewport;
+                flippedViewport.offset.y = resources.LastOutput().ImageExtents().height - viewport.extent.height -
+                                           viewport.offset.y;
+                cmd.SetViewport(flippedViewport);
+                cmd.SetVertexLayout(*vertexLayout);
+                cmd.SetCullMode(vk::CullModeFlagBits::eNone);
+                cmd.SetDepthTest(false, false);
+                cmd.SetBlending(true);
+
+                cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
+
+                glm::mat4 proj = MakeOrthographicProjection(viewport, scale);
+                cmd.PushConstants(proj);
+
+                const vk::IndexType idxType = sizeof(GuiDrawIndex) == 2 ? vk::IndexType::eUint16
+                                                                        : vk::IndexType::eUint32;
+                cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
+                cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+
+                uint32 idxOffset = 0;
+                for (const auto &pcmd : drawData.drawCommands) {
+                    if (pcmd.textureId == FONT_ATLAS_ID) {
+                        cmd.SetImageView("tex", fontView->Get());
+                    } else if (pcmd.textureId < scene.textures.Count()) {
+                        auto imgPtr = scene.textures.Get(pcmd.textureId);
+                        if (imgPtr) {
+                            cmd.SetImageView("tex", imgPtr);
+                        } else {
+                            cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                        }
+                    } else if ((pcmd.textureId >> 32) == 0xFFFFFFFF) {
+                        rg::ResourceID resourceID = pcmd.textureId & (1ull << (sizeof(rg::ResourceID) * 8)) - 1;
+                        if (resourceID != rg::InvalidResource) {
+                            cmd.SetImageView("tex", resourceID);
+                        } else {
+                            cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                        }
+                    } else {
+                        cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                    }
+
+                    glm::ivec2 clipOffset(pcmd.clipRect.x, pcmd.clipRect.y);
+                    glm::uvec2 clipExtents(pcmd.clipRect.z - pcmd.clipRect.x, pcmd.clipRect.w - pcmd.clipRect.y);
+                    glm::uvec2 viewportExtents(viewport.extent.width, viewport.extent.height);
+                    clipOffset = glm::clamp(clipOffset + glm::ivec2(flippedViewport.offset.x, flippedViewport.offset.y),
+                        glm::ivec2(0),
+                        glm::ivec2(viewportExtents) - 1);
+                    clipExtents = glm::clamp(clipExtents, glm::uvec2(0), viewportExtents - glm::uvec2(clipOffset));
+                    clipOffset.y = resources.LastOutput().ImageExtents().height - clipExtents.y - clipOffset.y;
+
+                    cmd.SetScissor(vk::Rect2D{{(int32)clipOffset.x, (int32)clipOffset.y},
+                        {(uint32)clipExtents.x, (uint32)clipExtents.y}});
+
+                    cmd.DrawIndexed(pcmd.indexCount, 1, idxOffset, pcmd.vertexOffset, 0);
+                    idxOffset += pcmd.indexCount;
+                }
+
+                cmd.ClearScissor();
+            });
+    }
+
     void Compositor::internalDrawGui(ImDrawData *drawData,
         vk::Rect2D viewport,
         glm::vec2 scale,
@@ -99,13 +196,20 @@ namespace sp::vulkan {
         if (!drawData) return;
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
+                for (const auto &cmdList : drawData->CmdLists) {
+                    for (const auto &pcmd : cmdList->CmdBuffer) {
+                        if (pcmd.UserCallback) {
+                            Assertf(allowUserCallback, "ImGui UserCallback on render not allowed");
+                            pcmd.UserCallback(cmdList, &pcmd);
+                        }
+                    }
+                }
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
             .Execute([this, drawData, viewport, scale, allowUserCallback](rg::Resources &resources,
                          CommandContext &cmd) {
                 size_t totalVtxSize = 0, totalIdxSize = 0;
-                for (int i = 0; i < drawData->CmdListsCount; i++) {
-                    const auto cmdList = drawData->CmdLists[i];
+                for (const auto &cmdList : drawData->CmdLists) {
                     totalVtxSize += cmdList->VtxBuffer.size_in_bytes();
                     totalIdxSize += cmdList->IdxBuffer.size_in_bytes();
                 }
@@ -130,8 +234,7 @@ namespace sp::vulkan {
                 ImDrawIdx *idxData;
                 vertexBuffer->Map((void **)&vtxData);
                 indexBuffer->Map((void **)&idxData);
-                for (int i = 0; i < drawData->CmdListsCount; i++) {
-                    const auto cmdList = drawData->CmdLists[i];
+                for (const auto &cmdList : drawData->CmdLists) {
                     std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
                     vtxData += cmdList->VtxBuffer.size();
                     std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
@@ -156,46 +259,40 @@ namespace sp::vulkan {
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
                 uint32 idxOffset = 0, vtxOffset = 0;
-                for (int i = 0; i < drawData->CmdListsCount; i++) {
-                    const auto *cmdList = drawData->CmdLists[i];
-
+                for (const auto &cmdList : drawData->CmdLists) {
                     for (const auto &pcmd : cmdList->CmdBuffer) {
-                        if (pcmd.UserCallback) {
-                            Assertf(allowUserCallback, "ImGui UserCallback on render not allowed");
-                            pcmd.UserCallback(cmdList, &pcmd);
-                        } else {
-                            if (pcmd.TextureId == FONT_ATLAS_ID) {
-                                cmd.SetImageView("tex", fontView->Get());
-                            } else if (pcmd.TextureId < scene.textures.Count()) {
-                                auto imgPtr = scene.textures.Get(pcmd.TextureId);
-                                if (imgPtr) {
-                                    cmd.SetImageView("tex", imgPtr);
-                                } else {
-                                    cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
-                                }
-                            } else if ((pcmd.TextureId >> 32) == 0xFFFFFFFF) {
-                                rg::ResourceID resourceID = pcmd.TextureId & (1ull << (sizeof(rg::ResourceID) * 8)) - 1;
-                                if (resourceID != rg::InvalidResource) {
-                                    cmd.SetImageView("tex", resourceID);
-                                } else {
-                                    cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
-                                }
+                        if (pcmd.UserCallback) continue;
+                        if (pcmd.TextureId == FONT_ATLAS_ID) {
+                            cmd.SetImageView("tex", fontView->Get());
+                        } else if (pcmd.TextureId < scene.textures.Count()) {
+                            auto imgPtr = scene.textures.Get(pcmd.TextureId);
+                            if (imgPtr) {
+                                cmd.SetImageView("tex", imgPtr);
                             } else {
                                 cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
                             }
-
-                            auto clipRect = pcmd.ClipRect;
-                            clipRect.x -= drawData->DisplayPos.x;
-                            clipRect.y -= drawData->DisplayPos.y;
-                            clipRect.z -= drawData->DisplayPos.x;
-                            clipRect.w -= drawData->DisplayPos.y;
-                            // TODO: Clamp to viewport
-
-                            cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
-                                {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
-
-                            cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
+                        } else if ((pcmd.TextureId >> 32) == 0xFFFFFFFF) {
+                            rg::ResourceID resourceID = pcmd.TextureId & (1ull << (sizeof(rg::ResourceID) * 8)) - 1;
+                            if (resourceID != rg::InvalidResource) {
+                                cmd.SetImageView("tex", resourceID);
+                            } else {
+                                cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                            }
+                        } else {
+                            cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
                         }
+
+                        auto clipRect = pcmd.ClipRect;
+                        clipRect.x -= drawData->DisplayPos.x;
+                        clipRect.y -= drawData->DisplayPos.y;
+                        clipRect.z -= drawData->DisplayPos.x;
+                        clipRect.w -= drawData->DisplayPos.y;
+                        // TODO: Clamp to viewport
+
+                        cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
+                            {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+
+                        cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
                         idxOffset += pcmd.ElemCount;
                     }
                     vtxOffset += cmdList->VtxBuffer.size();
@@ -225,6 +322,7 @@ namespace sp::vulkan {
                     }
                 }
 
+                ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
                 output.enableGui = output.guiContext->BeforeFrame();
             } else {
                 output.enableGui = false;
@@ -408,6 +506,7 @@ namespace sp::vulkan {
             }
             // TODO: Add effects passes
 
+            ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
             if (output.guiContext && output.enableGui && fontView->Ready()) {
                 GuiContext &context = *output.guiContext;
 
@@ -441,11 +540,10 @@ namespace sp::vulkan {
                     drawData->ScaleClipRects(io.DisplayFramebufferScale);
                     internalDrawGui(drawData, viewport, output.scale, true);
                 } else {
-                    ImDrawData *drawData = context.GetDrawData(
+                    GuiDrawData drawData = context.GetDrawData(
                         glm::vec2(viewport.extent.width / output.scale.x, viewport.extent.height / output.scale.y),
                         output.scale,
                         deltaTime);
-                    drawData->ScaleClipRects(ImVec2(output.scale.x, output.scale.y));
                     internalDrawGui(drawData, viewport, output.scale, false);
                 }
             }

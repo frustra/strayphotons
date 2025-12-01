@@ -227,7 +227,7 @@ namespace ecs {
         return false;
     }
 
-    ImDrawData *DynamicScript::RenderGui(ScriptState &state,
+    sp::GuiDrawData DynamicScript::RenderGui(ScriptState &state,
         Entity ent,
         glm::vec2 displaySize,
         glm::vec2 scale,
@@ -242,7 +242,7 @@ namespace ecs {
                 return renderGui(ptr.context, &state, ent, displaySize, scale, deltaTime);
             }
         }
-        return nullptr;
+        return {};
     }
 
     DynamicScript::DynamicScript(DynamicLibrary &library, const DynamicScriptDefinition &dynamicDefinition)

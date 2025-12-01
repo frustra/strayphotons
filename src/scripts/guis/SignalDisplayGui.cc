@@ -117,7 +117,7 @@ namespace sp::scripts {
             return true;
         }
 
-        ImDrawData *RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
+        GuiDrawData RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
             ZoneScoped;
             if (!imCtx) return nullptr;
             ImGui::SetCurrentContext(imCtx);
@@ -152,7 +152,9 @@ namespace sp::scripts {
 
             ImGui::Render();
 
-            return ImGui::GetDrawData();
+            auto *drawData = ImGui::GetDrawData();
+            drawData->ScaleClipRects(io.DisplayFramebufferScale);
+            return drawData;
         }
     };
     StructMetadata MetadataSignalDisplay(typeid(SignalDisplayGui),

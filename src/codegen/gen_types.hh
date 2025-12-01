@@ -77,6 +77,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "bool"s;
         } else if constexpr (std::is_same<T, char>()) {
             return "char"s;
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            return "uint16_t"s;
         } else if constexpr (std::is_same<T, int32_t>()) {
             return "int32_t"s;
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -125,8 +127,6 @@ std::string LookupCTypeName(std::type_index type) {
             return "tecs_entity_t"s;
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             return "tecs_lock_t"s;
-        } else if constexpr (std::is_same<T, ImDrawData>()) {
-            return "ImDrawData"s;
         } else if constexpr (std::is_pointer<T>()) {
             if constexpr (std::is_function<std::remove_pointer_t<T>>()) {
                 T funcPtr = nullptr;
@@ -572,6 +572,8 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -586,8 +588,6 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             // Tecs built-in
-        } else if constexpr (std::is_same<T, ImDrawData>()) {
-            out << "typedef struct ImDrawData ImDrawData;" << std::endl;
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
@@ -797,6 +797,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -811,8 +813,6 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Tecs built-in
         } else if constexpr (Tecs::is_lock<T>() || Tecs::is_dynamic_lock<T>()) {
             // Tecs built-in
-        } else if constexpr (std::is_same<T, ImDrawData>()) {
-            // ImGui built-in
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             out << "typedef sp::angle_t sp_angle_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventName>()) {

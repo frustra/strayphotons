@@ -359,7 +359,7 @@ namespace ecs {
             }
         }
 
-        static ImDrawData *RenderGui(ScriptState &state,
+        static sp::GuiDrawData RenderGui(ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
             glm::vec2 scale,

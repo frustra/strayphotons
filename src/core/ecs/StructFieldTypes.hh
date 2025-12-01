@@ -15,6 +15,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
@@ -51,6 +52,7 @@ namespace ecs {
         // Basic types
         bool,
         char,
+        uint16_t,
         int32_t,
         uint32_t,
         sp::angle_t,
@@ -89,9 +91,11 @@ namespace ecs {
         SignalRef,
         Sound,
         StructField,
+        sp::GuiDrawData,
+        sp::GuiDrawCommand,
+        sp::GuiDrawVertex,
         sp::SceneRef,
         TypeInfo,
-        ImDrawData,
         std::vector<float>,
         std::vector<glm::vec2>,
         std::vector<std::string>,
@@ -99,6 +103,9 @@ namespace ecs {
         std::vector<EventName>,
         std::vector<EventDest>,
         std::vector<EventBinding>,
+        std::vector<sp::GuiDrawCommand>,
+        std::vector<sp::GuiDrawIndex>,
+        std::vector<sp::GuiDrawVertex>,
         std::vector<AnimationState>,
         std::vector<PhysicsJoint>,
         std::vector<PhysicsShape>,
@@ -156,7 +163,7 @@ namespace ecs {
         void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
         void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
         bool (*)(void *, ScriptState *, Entity), // BeforeFrame
-        ImDrawData *(*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) // RenderGui
+        sp::GuiDrawData (*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) // RenderGui
         >;
 
     namespace detail {
