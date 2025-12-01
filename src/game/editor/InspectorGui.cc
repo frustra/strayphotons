@@ -88,10 +88,6 @@ namespace sp {
         ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(0.10f, 0.10f, 0.35f, 1.0f));
     }
 
-    void InspectorGui::PostDefine(ecs::Entity ent) {
-        ImGui::PopStyleColor(5);
-    }
-
     void InspectorGui::DefineContents(ecs::Entity ent) {
         ZoneScoped;
 
@@ -150,5 +146,9 @@ namespace sp {
             }
             ImGui::EndTabBar();
         }
+    }
+
+    void InspectorGui::PostDefine(ecs::Entity ent) {
+        ImGui::PopStyleColor(5);
     }
 } // namespace sp

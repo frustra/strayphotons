@@ -35,6 +35,7 @@ namespace sp {
         float lastScrollMaxY = 0.0f;
         char inputBuf[1024] = {};
         bool skipEditCheck = false;
+        int windowFlags;
 
         ImVec2 popupPos;
         CompletionMode completionMode = COMPLETION_NONE;

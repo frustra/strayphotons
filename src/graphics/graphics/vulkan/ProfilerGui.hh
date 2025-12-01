@@ -111,9 +111,9 @@ namespace sp::vulkan {
                 ImVec2(0, 100));
 
             ImGui::Text("%6.3f", drawHistogram.min / 1000000.0);
-            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x / 2 - ImGui::GetItemRectSize().x / 2);
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x / 2 - ImGui::GetItemRectSize().x / 2);
             ImGui::Text("%6.3f", ((drawHistogram.max - drawHistogram.min) / 2 + drawHistogram.min) / 1000000.0);
-            ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - ImGui::GetItemRectSize().x);
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::GetItemRectSize().x);
             ImGui::Text("%6.3f", drawHistogram.max / 1000000.0);
 
             if (drawHistogramMode == Mode::CPU) {
@@ -182,14 +182,7 @@ namespace sp::vulkan {
 
                 ImGui::Text("%s%s", SpacePadding(depth * 2 - 1), scope.name.data());
 
-                auto windowX = ImGui::GetWindowPos().x;
                 auto rowMin = ImGui::GetItemRectMin();
-                rowMin.x = ImGui::GetWindowContentRegionMin().x + windowX;
-                auto rowMax = ImGui::GetItemRectMax();
-                rowMax.x = ImGui::GetWindowContentRegionMax().x + windowX;
-                if (drawHistogramIndex != offset && ImGui::IsMouseHoveringRect(rowMin, rowMax, false)) {
-                    if (!histogramLocked || ImGui::IsMouseClicked(0)) drawHistogramIndex = offset;
-                }
 
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.cpu.avg / 1000000.0);
@@ -210,6 +203,11 @@ namespace sp::vulkan {
                 ImGui::TableNextColumn();
                 ImGui::Text("%.2f", stats.gpu.max / 1000000.0);
                 HandleMouse(Mode::GPU);
+
+                auto rowMax = ImGui::GetItemRectMax();
+                if (drawHistogramIndex != offset && ImGui::IsMouseHoveringRect(rowMin, rowMax, false)) {
+                    if (!histogramLocked || ImGui::IsMouseClicked(0)) drawHistogramIndex = offset;
+                }
 
                 offset = AddResults(offset + 1, scope.depth + 1);
             }

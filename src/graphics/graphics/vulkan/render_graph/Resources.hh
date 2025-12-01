@@ -108,6 +108,9 @@ namespace sp::vulkan::render_graph {
         const Resource &LastOutput() const {
             return GetResource(lastOutputID);
         }
+        const ResourceName &LastOutputName() const {
+            return GetName(lastOutputID);
+        }
 
     private:
         friend class RenderGraph;

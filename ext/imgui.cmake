@@ -14,4 +14,11 @@ add_library(ImGui STATIC
     imconfig.cpp
 )
 
-target_include_directories(ImGui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+target_include_directories(ImGui PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/imgui
+)
+
+target_link_libraries(ImGui PUBLIC glm)
+
+target_compile_definitions(ImGui PUBLIC IMGUI_USER_CONFIG="custom_imconfig.h")
