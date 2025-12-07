@@ -14,7 +14,6 @@ endif()
 
 # Add rust source files here, and in build.rs
 set(RUST_SOURCE_FILES
-    src/api.rs
     src/lib.rs
     src/wasm.rs
 )
@@ -23,8 +22,6 @@ set(CXXBRIDGE_WASM_SP_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo/cxxbridge/sp-rs-was
 add_custom_command(COMMENT "Run wasm cxxbridge codegen"
     OUTPUT
         "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}"
-        "${CXXBRIDGE_WASM_SP_DIR}/api.rs.cc"
-        "${CXXBRIDGE_WASM_SP_DIR}/api.rs.h"
         "${CXXBRIDGE_WASM_SP_DIR}/wasm.rs.cc"
         "${CXXBRIDGE_WASM_SP_DIR}/wasm.rs.h"
     DEPENDS ${RUST_SOURCE_FILES} build.rs Cargo.toml
@@ -34,12 +31,11 @@ add_custom_command(COMMENT "Run wasm cxxbridge codegen"
         CARGO_TARGET_DIR=${CMAKE_CURRENT_BINARY_DIR}/cargo/
         CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         RUST_INCLUDES="$<TARGET_PROPERTY:sp-rs-wasm,INTERFACE_INCLUDE_DIRECTORIES>"
-        ${CARGO_CMD} --no-default-features --features "sp-rs-wasm/api,sp-rs-wasm/wasm"
+        ${CARGO_CMD} --no-default-features --features "sp-rs-wasm/wasm"
 )
 
 add_custom_target(sp-rs-wasm-build DEPENDS
     "${CXXBRIDGE_WASM_DIR}/${RUST_OUTPUT_LIB}"
-    "${CXXBRIDGE_WASM_SP_DIR}/api.rs.h"
     "${CXXBRIDGE_WASM_SP_DIR}/wasm.rs.h"
 )
 add_library(sp-rs-wasm INTERFACE)
