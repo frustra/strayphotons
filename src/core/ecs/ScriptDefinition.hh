@@ -11,7 +11,7 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
 #include "game/SceneRef.hh"
-#include "graphics/GenericCompositor.hh"
+#include "gui/GuiDrawData.hh"
 
 #include <functional>
 #include <map>
@@ -51,7 +51,7 @@ namespace ecs {
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using BeforeFrameFunc = std::function<bool(ScriptState &, Entity)>;
-    using RenderGuiFunc = std::function<sp::GuiDrawData(ScriptState &, Entity, glm::vec2, glm::vec2, float)>;
+    using RenderGuiFunc = std::function<void(ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
     using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
 
     using ScriptCallback = std::

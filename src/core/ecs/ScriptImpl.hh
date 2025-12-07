@@ -311,7 +311,8 @@ namespace ecs {
             std::declval<Entity>(),
             std::declval<glm::vec2>(),
             std::declval<glm::vec2>(),
-            std::declval<float>()))>> : std::true_type {};
+            std::declval<float>(),
+            std::declval<sp::GuiDrawData &>()))>> : std::true_type {};
 
     template<typename T>
     struct GuiScript final : public ScriptDefinitionBase {
@@ -338,42 +339,33 @@ namespace ecs {
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void Destroy(ScriptState &state) {
+        static void Destroy([[maybe_unused]] ScriptState &state) {
             if constexpr (script_has_destroy_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (ptr) ptr->Destroy(state);
-            } else {
-                (void)state;
             }
         }
 
-        static bool BeforeFrame(ScriptState &state, Entity ent) {
+        static bool BeforeFrame([[maybe_unused]] ScriptState &state, [[maybe_unused]] Entity ent) {
             if constexpr (script_has_before_frame_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
                 return ptr->BeforeFrame(state, ent);
             } else {
-                (void)state;
-                (void)ent;
                 return false;
             }
         }
 
-        static sp::GuiDrawData RenderGui(ScriptState &state,
-            Entity ent,
-            glm::vec2 displaySize,
-            glm::vec2 scale,
-            float deltaTime) {
+        static void RenderGui([[maybe_unused]] ScriptState &state,
+            [[maybe_unused]] Entity ent,
+            [[maybe_unused]] glm::vec2 displaySize,
+            [[maybe_unused]] glm::vec2 scale,
+            [[maybe_unused]] float deltaTime,
+            [[maybe_unused]] sp::GuiDrawData &result) {
             if constexpr (script_has_render_gui_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
-                return ptr->RenderGui(state, ent, displaySize, scale, deltaTime);
-            } else {
-                (void)state;
-                (void)ent;
-                (void)displaySize;
-                (void)scale;
-                return nullptr;
+                ptr->RenderGui(state, ent, displaySize, scale, deltaTime, result);
             }
         }
 

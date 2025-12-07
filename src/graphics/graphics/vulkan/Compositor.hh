@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -36,7 +36,7 @@ namespace sp::vulkan {
         void EndFrame();
 
     private:
-        void internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale, bool allowUserCallback);
+        void internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale);
         void internalDrawGui(ImDrawData *drawData, vk::Rect2D viewport, glm::vec2 scale, bool allowUserCallback);
 
         Renderer &renderer;

@@ -12,9 +12,9 @@
 #include "graphics/vulkan/core/VertexLayout.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
-#include <SPIRV-Reflect/spirv_reflect.h>
 #include <bitset>
 #include <robin_hood.h>
+#include <spirv_reflect.h>
 
 namespace sp::vulkan {
     class Model;

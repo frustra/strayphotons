@@ -13,8 +13,11 @@
 #include <common/Logging.hh>
 #include <fstream>
 #include <glm/glm.hpp>
+#include <gui/ImGuiHelpers.hh>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <implot.h>
+#include <implot_internal.h>
 #include <strayphotons/components.h>
 #include <vector>
 
@@ -80,6 +83,7 @@ public:
         std::strncpy(events[eventIndex], "/gui/imgui_input", sizeof(events[eventIndex]) - 1);
 
         ctx->imCtx = ImGui::CreateContext();
+        ctx->imPlot = ImPlot::CreateContext();
         ctx->fontAtlas = make_shared<ImFontAtlas>();
         ctx->fontAtlas->AddFontDefault(nullptr);
 
@@ -117,38 +121,35 @@ public:
         ImGuiIO &io = ImGui::GetIO(ctx->imCtx);
         ctx->originalAtlas = io.Fonts;
         io.Fonts = ctx->fontAtlas.get();
-        io.Fonts->TexID = 1ull < 16; // FONT_ATLAS_ID
+        io.Fonts->TexID = 1ull << 16; // FONT_ATLAS_ID
         io.IniFilename = nullptr;
+        io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     }
 
     static void Destroy(void *context, sp_script_state_t *state) {
         ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
         ImGui::GetIO(ctx->imCtx).Fonts = ctx->originalAtlas;
+        ImPlot::DestroyContext(ctx->imPlot);
         ImGui::DestroyContext(ctx->imCtx);
         ctx->imCtx = nullptr;
     }
 
-    // static void BeforeFrame(void *context, sp_script_state_t *state, tecs_entity_t ent) {
-    //     ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
-    //     sp_event_t *event;
-    //     while ((event = sp_script_state_poll_event(state, lock))) {
-    //         if (strcmp(event->name, "/gui/imgui_input") != 0) continue;
-    //         if (event->data.type != SP_EVENT_DATA_TYPE_BYTES) continue;
+    static bool BeforeFrameStatic(void *context, sp_script_state_t *state, tecs_entity_t ent) {
+        ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
+        if (!ctx->imCtx) return false;
 
-    //         ImGuiInputEvent inputEvent = reinterpret_cast<const ImGuiInputEvent &>(event->data.bytes);
-    //         inputEvent.EventId = ctx->imCtx->InputEventsNextEventId++;
-    //         ctx->imCtx->InputEventsQueue.push_back(inputEvent);
-    //     }
-    // }
+        return ctx->BeforeFrame(state, ent);
+    }
 
-    static ImDrawData *RenderGui(void *context,
+    static void RenderGui(void *context,
         sp_script_state_t *state,
         tecs_entity_t ent,
         vec2_t displaySize,
         vec2_t scale,
-        float deltaTime) {
+        float deltaTime,
+        sp_gui_draw_data_t *result) {
         ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
-        if (!ctx->imCtx) return nullptr;
+        if (!ctx->imCtx) return;
         ImGui::SetCurrentContext(ctx->imCtx);
         ImGuiIO &io = ImGui::GetIO();
         io.DisplaySize = ImVec2(displaySize.v[0], displaySize.v[1]);
@@ -160,24 +161,26 @@ public:
         // DefineWindows
         int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
-        if (ctx->PreDefine(state, ent)) {
-            ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-            ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
-            ImGui::Begin("signal_display", nullptr, flags);
-            ctx->DefineContents(state, ent);
-            ImGui::End();
-            ctx->PostDefine(state, ent);
-        }
+        ctx->PreDefine(state, ent);
+        // static bool open = true;
+        // ImPlot::ShowDemoWindow(&open);
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
+        ImGui::Begin("signal_display", nullptr, flags);
+        ctx->DefineContents(state, ent);
+        ImGui::End();
+        ctx->PostDefine(state, ent);
 
         ImGui::Render();
 
         auto *drawData = ImGui::GetDrawData();
         drawData->ScaleClipRects(io.DisplayFramebufferScale);
-        return drawData;
+        sp::ConvertImDrawData(drawData, result);
     }
 
 private:
     ImGuiContext *imCtx = nullptr;
+    ImPlotContext *imPlot = nullptr;
     shared_ptr<ImFontAtlas> fontAtlas;
     ImFontAtlas *originalAtlas = nullptr;
 };
@@ -187,12 +190,15 @@ struct SignalDisplayGui {
     std::string suffix = "mW";
     std::streamsize precision = 2;
 
-    bool PreDefine(sp_script_state_t *state, tecs_entity_t ent) {
+    bool BeforeFrame(sp_script_state_t *state, tecs_entity_t ent) {
+        return true;
+    }
+
+    void PreDefine(sp_script_state_t *state, tecs_entity_t ent) {
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         PushFont(sp::GuiFont::Monospace, 32);
-        return true;
     }
 
     void DefineContents(sp_script_state_t *state, tecs_entity_t ent) {
@@ -261,32 +267,60 @@ struct SignalDisplayGui {
 };
 
 struct ColumnData : public ColumnMetadata {
-    std::vector<float> data;
+    std::vector<MinMaxSample> data;
 
     ColumnData(const ColumnMetadata &metadata) : ColumnMetadata(metadata) {}
 };
 
 struct GraphDisplayGui {
+    sp_entity_ref_t guiDefinitionEntityRef = {};
     sp_entity_ref_t dataEntityRef = {};
-    uint32_t selectedColumn = 0;
-    uint64_t rangeStart, rangeSize;
+    int32_t selectedColumn = 0;
+    uint64_t rangeStart, rangeSize, rangeResolution;
 
     uint64_t viewStart = 0, viewSize = 0;
+    size_t viewResolution = 1000;
+    int loadingProgress = 0;
     bool columnsLoaded = false;
+    bool reloadingColumns = false;
+    int32_t reloadingColumn = 0;
+    bool awaitingResponse = false;
     std::vector<ColumnData> columns;
 
-    bool PreDefine(sp_script_state_t *state, tecs_entity_t ent) {
-        if (viewStart != rangeStart || viewSize != rangeSize) {
-            if (selectedColumn < columns.size()) columns[selectedColumn].data.clear();
-            viewStart = rangeStart;
-            viewSize = rangeSize;
+    bool draggingView = false;
+    ImVec2 dragStartPos;
+
+    bool BeforeFrame(sp_script_state_t *state, tecs_entity_t ent) {
+        tecs_lock_t *lock = Tecs_ecs_start_transaction(sp_get_live_ecs(), 1 | SP_ACCESS_FOCUS_LOCK, 0);
+        const sp_ecs_focus_lock_t *focusLock = sp_ecs_get_const_focus_lock(lock);
+        bool hasFocus = sp_ecs_focus_lock_has_focus(focusLock, SP_FOCUS_LAYER_HUD);
+        Tecs_lock_release(lock);
+
+        return hasFocus;
+    }
+
+    void PreDefine(sp_script_state_t *state, tecs_entity_t ent) {
+        if (rangeStart != viewStart || rangeSize != viewSize) {
+            if (reloadingColumn < 0) reloadingColumn = selectedColumn;
+            rangeStart = viewStart;
+            rangeSize = viewSize;
+        }
+        if (rangeResolution != viewResolution) {
+            for (auto &column : columns) {
+                column.data.clear();
+                column.data.resize(viewResolution, {NAN, NAN});
+            }
+            rangeStart = viewStart;
+            rangeSize = viewSize;
+            rangeResolution = viewResolution;
+            reloadingColumn = 0;
+            reloadingColumns = true;
         }
 
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         PushFont(sp::GuiFont::Primary, 16);
-        return true;
     }
 
     void DefineContents(sp_script_state_t *state, tecs_entity_t ent) {
@@ -304,15 +338,27 @@ struct GraphDisplayGui {
 
         sp_event_t *event;
         while ((event = sp_script_state_poll_event(state, lock))) {
-            if (strcmp(event->name, "/csv/column_metadata") == 0) {
+            if (strcmp(event->name, "/csv/loading_progress") == 0) {
+                awaitingResponse = false;
+                if (event->data.type == SP_EVENT_DATA_TYPE_INT) {
+                    loadingProgress = event->data.i;
+                }
+            } else if (strcmp(event->name, "/csv/column_metadata") == 0) {
+                awaitingResponse = false;
                 if (event->data.type == SP_EVENT_DATA_TYPE_BOOL) {
-                    columnsLoaded = true;
+                    if (event->data.b) {
+                        columnsLoaded = true;
+                        reloadingColumn = 0;
+                        reloadingColumns = true;
+                    }
                 } else if (event->data.type == SP_EVENT_DATA_TYPE_BYTES) {
                     const ColumnMetadata *metadata = (const ColumnMetadata *)&event->data.bytes[0];
                     if (metadata->columnIndex == columns.size()) {
                         columns.push_back(*metadata);
+                        columns.back().data.resize(rangeResolution);
                     } else if (metadata->columnIndex < columns.size()) {
                         columns[metadata->columnIndex] = *metadata; // Clears existing data
+                        columns[metadata->columnIndex].data.resize(rangeResolution);
                     } else {
                         Warnf("Invalid column metadata index: %s %u", event->name, metadata->columnIndex);
                     }
@@ -320,17 +366,37 @@ struct GraphDisplayGui {
                     Warnf("Invalid event type: %s %s", event->name, event->data.type);
                 }
             } else if (strcmp(event->name, "/csv/column_range") == 0) {
-                if (event->data.type == SP_EVENT_DATA_TYPE_BYTES) {
+                if (event->data.type == SP_EVENT_DATA_TYPE_BOOL) {
+                    awaitingResponse = false;
+                    if (reloadingColumns) {
+                        if (reloadingColumn >= columns.size()) {
+                            reloadingColumn = -1;
+                            reloadingColumns = false;
+                        } else {
+                            reloadingColumn++;
+                        }
+                    } else if (reloadingColumn >= 0) {
+                        reloadingColumn = -1;
+                    }
+                } else if (event->data.type == SP_EVENT_DATA_TYPE_BYTES) {
                     const ColumnRange *colRange = (const ColumnRange *)&event->data.bytes[0];
-                    if (colRange->columnIndex == selectedColumn && selectedColumn < columns.size()) {
-                        auto &colData = columns[selectedColumn].data;
-                        size_t dstStart = colRange->rangeStart < viewStart ? 0 : colRange->rangeStart - viewStart;
-                        size_t dstEnd = colRange->rangeEnd < viewStart ? 0 : colRange->rangeEnd - viewStart;
-                        if (dstEnd > dstStart) {
-                            if (dstEnd > colData.size()) colData.resize(dstEnd);
-                            std::copy_n(colRange->begin(), dstEnd - dstStart, colData.data() + dstStart);
+                    if (colRange->columnIndex >= 0 && colRange->columnIndex < columns.size()) {
+                        auto &colData = columns[colRange->columnIndex].data;
+                        if (colRange->sampleOffset < colData.size()) {
+                            std::copy_n(colRange->begin(),
+                                std::min((size_t)colRange->sampleCount, colData.size() - colRange->sampleOffset),
+                                colData.data() + colRange->sampleOffset);
                         }
                     }
+                } else {
+                    Warnf("Invalid event type: %s %s", event->name, event->data.type);
+                }
+            } else if (strcmp(event->name, "/gui/imgui_input") == 0) {
+                if (event->data.type == SP_EVENT_DATA_TYPE_BYTES) {
+                    ImGuiInputEvent inputEvent = reinterpret_cast<const ImGuiInputEvent &>(event->data.bytes);
+                    ImGuiContext &imCtx = *ImGui::GetCurrentContext();
+                    inputEvent.EventId = imCtx.InputEventsNextEventId++;
+                    imCtx.InputEventsQueue.push_back(inputEvent);
                 } else {
                     Warnf("Invalid event type: %s %s", event->name, event->data.type);
                 }
@@ -340,35 +406,205 @@ struct GraphDisplayGui {
         }
 
         if (!columnsLoaded) {
-            sp_event_t eventOut = {"/csv/get_metadata", ent, {SP_EVENT_DATA_TYPE_UINT}};
-            eventOut.data.ui = columns.size();
-            sp_event_send_ref(lock, &dataEntityRef, &eventOut);
+            if (!awaitingResponse) {
+                sp_entity_t guiDefinitionEnt = sp_entity_ref_get(&guiDefinitionEntityRef, lock);
+                sp_event_t eventOut = {"/csv/get_metadata", guiDefinitionEnt, {SP_EVENT_DATA_TYPE_UINT}};
+                eventOut.data.ui = columns.size();
+                sp_event_send_ref(lock, &dataEntityRef, &eventOut);
+                awaitingResponse = true;
+            }
 
-            ImGui::TextUnformatted("Loading...");
+            ImGui::Text("Loading... (%d%%)", loadingProgress);
         } else {
-            ImGui::BeginTabBar("graph_tabs");
+            if (ImGui::Button("Reset View") || viewSize == 0) {
+                size_t minTimestamp = ~0llu;
+                size_t maxTimestamp = 0;
+                for (size_t columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
+                    auto &column = columns[columnIndex];
+                    minTimestamp = std::min(minTimestamp, column.firstTimestamp);
+                    maxTimestamp = std::max(maxTimestamp, column.lastTimestamp);
+                }
+                viewStart = minTimestamp;
+                viewSize = maxTimestamp - minTimestamp;
+                reloadingColumn = 0;
+                reloadingColumns = true;
+            }
+            ImVec2 plotOffset = ImGui::GetCursorScreenPos();
+            ImGui::BeginChild("ScrollRegion", ImVec2(-1, -1));
+            viewResolution = 0;
             for (size_t columnIndex = 0; columnIndex < columns.size(); columnIndex++) {
                 auto &column = columns[columnIndex];
-                if (columnIndex == selectedColumn && ImGui::BeginTabItem(column.name.c_str())) {
-                    if (ImGui::IsItemActivated()) selectedColumn = columnIndex;
-                    sp_event_t eventOut = {"/csv/query_range", ent, {SP_EVENT_DATA_TYPE_VEC4}};
-                    eventOut.data.vec4 = {(float)columnIndex, 1.0f, (float)rangeStart, (float)rangeSize};
-                    sp_event_send_ref(lock, &dataEntityRef, &eventOut);
-
+                if (ImGui::CollapsingHeader((column.name + "##graphHeader").c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
                     ImGui::SetNextItemWidth(-1);
-                    auto graphName = "##graph_" + column.name;
-                    ImGui::PlotLines(graphName.c_str(),
-                        column.data.data(),
-                        column.data.size(),
-                        0,
-                        column.name.c_str(),
-                        column.min - 0.1,
-                        column.max + 0.1,
-                        ImVec2(0, -1));
-                    ImGui::EndTabItem();
+                    ImPlot::PushStyleVar(ImPlotStyleVar_PlotBorderSize, 0);
+                    ImPlot::PushStyleVar(ImPlotStyleVar_PlotPadding, ImVec2(0, 0));
+                    ImPlot::PushStyleVar(ImPlotStyleVar_FitPadding, ImVec2(0.0, 0.1));
+                    ImPlot::PushStyleVar(ImPlotStyleVar_LegendPadding, ImVec2(3.0, 0.0));
+                    ImPlot::PushStyleVar(ImPlotStyleVar_LegendInnerPadding, ImVec2(3.0, 0.0));
+                    if (ImPlot::BeginPlot(("##graphPlot_" + column.name).c_str(),
+                            ImVec2(-1, 100),
+                            ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect |
+                                ImPlotFlags_NoFrame)) {
+                        ImPlot::SetupAxes(nullptr,
+                            column.name.c_str(),
+                            ImPlotAxisFlags_NoDecorations,
+                            ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoTickLabels);
+                        ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, rangeResolution, ImPlotCond_Always);
+                        // Disable labels for now
+                        ImPlot::SetupAxisFormat(
+                            ImAxis_X1,
+                            [](double value, char *buff, int size, void *dataPtr) {
+                                GraphDisplayGui &ctx = *(GraphDisplayGui *)dataPtr;
+                                double timestampMs = (double)value * ctx.rangeSize / ctx.rangeResolution +
+                                                     ctx.rangeStart;
+                                return ImPlot::FormatDateTime(
+                                    ImPlotTime((time_t)timestampMs / 1000, glm::fract(timestampMs / 1000) * 1e6),
+                                    buff,
+                                    size,
+                                    ImPlotDateTimeSpec(ImPlotDateFmt_None, ImPlotTimeFmt_HrMinSMs, true));
+                            },
+                            this);
+                        ImPlot::SetupFinish();
+                        if (viewResolution == 0) {
+                            viewResolution = ImPlot::GetPlotSize().x;
+                            plotOffset.x = ImPlot::GetPlotPos().x;
+                        }
+
+                        ImVec4 col = ImPlot::GetColormapColor(0);
+                        ImPlot::PushStyleColor(ImPlotCol_Line, col);
+                        col.w = 0.3;
+                        ImPlot::PushStyleColor(ImPlotCol_Fill, col);
+                        ImPlot::PlotShadedG(("##graphShading_" + column.name).c_str(),
+                            [](int i, void *dataPtr) {
+                                ColumnData &column = *(ColumnData *)dataPtr;
+                                return ImPlotPoint(i, column.data[i].min);
+                            },
+                            &column,
+                            [](int i, void *dataPtr) {
+                                ColumnData &column = *(ColumnData *)dataPtr;
+                                return ImPlotPoint(i, column.data[i].max);
+                            },
+                            &column,
+                            column.data.size());
+                        ImPlot::PopStyleColor();
+                        ImPlot::PlotLineG(("##graphLinesMin_" + column.name).c_str(),
+                            [](int i, void *dataPtr) {
+                                ColumnData &column = *(ColumnData *)dataPtr;
+                                return ImPlotPoint(i, column.data[i].min);
+                            },
+                            &column,
+                            column.data.size());
+                        ImPlot::PlotLineG(("##graphLinesMax_" + column.name).c_str(),
+                            [](int i, void *dataPtr) {
+                                ColumnData &column = *(ColumnData *)dataPtr;
+                                return ImPlotPoint(i, column.data[i].max);
+                            },
+                            &column,
+                            column.data.size());
+                        ImPlot::PopStyleColor();
+                        ImPlot::EndPlot();
+                    }
+                    ImPlot::PopStyleVar(5);
+                    if (ImGui::IsItemHovered() || ImGui::IsItemClicked()) {
+                        selectedColumn = columnIndex;
+                    }
+                    // auto savedCursorPos = ImGui::GetCursorPos();
+                    // ImGui::PlotLines(("##graphMin_" + column.name).c_str(),
+                    //     [](void *dataPtr, int i) {
+                    //         auto &data = *(std::vector<MinMaxSample> *)dataPtr;
+                    //         return data[i].min;
+                    //     },
+                    //     &column.data,
+                    //     column.data.size(),
+                    //     0,
+                    //     column.name.c_str(),
+                    //     column.min - 0.1,
+                    //     column.max + 0.1,
+                    //     ImVec2(-1, 100));
+                    // if (ImGui::IsItemHovered() || ImGui::IsItemClicked()) {
+                    //     selectedColumn = columnIndex;
+                    // }
+                    // ImGui::SetCursorPos(savedCursorPos);
+                    // ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
+                    // ImGui::PlotLines(("##graphMax_" + column.name).c_str(),
+                    //     [](void *dataPtr, int i) {
+                    //         auto &data = *(std::vector<MinMaxSample> *)dataPtr;
+                    //         return data[i].max;
+                    //     },
+                    //     &column.data,
+                    //     column.data.size(),
+                    //     0,
+                    //     column.name.c_str(),
+                    //     column.min - 0.1,
+                    //     column.max + 0.1,
+                    //     ImVec2(-1, 100));
+                    // ImGui::PopStyleColor();
                 }
             }
-            ImGui::EndTabBar();
+            ImGui::EndChild();
+
+            auto &io = ImGui::GetIO();
+            if (io.MouseDown[ImGuiMouseButton_Left]) {
+                if (io.MousePos.y > plotOffset.y) {
+                    size_t prevStart = viewStart;
+                    viewStart -= io.MouseDelta.x / viewResolution * viewSize;
+                    if ((prevStart & (1ull << 63)) != (viewStart & (1ull << 63))) {
+                        // Don't allow wrap-around
+                        viewStart = prevStart;
+                    }
+                    reloadingColumn = selectedColumn;
+                }
+            } else if (io.MouseReleased[ImGuiMouseButton_Left]) {
+                reloadingColumn = 0;
+                reloadingColumns = true;
+            } else if (io.MouseDown[ImGuiMouseButton_Right]) {
+                if (draggingView) {
+                    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1, 1, 1, 0.2));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0);
+                    ImGui::SetCursorScreenPos(ImVec2(std::min(io.MousePos.x, dragStartPos.x), plotOffset.y));
+                    ImGui::BeginChild("dragArea",
+                        ImVec2(std::abs(io.MousePos.x - dragStartPos.x) + 1, -1),
+                        0,
+                        ImGuiWindowFlags_NoInputs);
+                    ImGui::Dummy(ImGui::GetContentRegionAvail());
+                    ImGui::EndChild();
+                    ImGui::PopStyleVar();
+                    ImGui::PopStyleColor();
+                } else if (io.MousePos.y >= plotOffset.y) {
+                    dragStartPos = io.MousePos;
+                    draggingView = true;
+                }
+            } else if (draggingView) {
+                size_t startTimestamp = (dragStartPos.x - plotOffset.x) / viewResolution * viewSize + viewStart;
+                size_t endTimestamp = (io.MousePos.x - plotOffset.x) / viewResolution * viewSize + viewStart;
+                if (endTimestamp < startTimestamp) std::swap(startTimestamp, endTimestamp);
+                viewStart = startTimestamp;
+                viewSize = endTimestamp - startTimestamp;
+                draggingView = false;
+                reloadingColumn = 0;
+                reloadingColumns = true;
+            } else if (io.MousePos.y >= plotOffset.y) {
+                // Draw cursor line
+                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(1, 1, 1, 0.2));
+                ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0);
+                ImGui::SetCursorScreenPos(ImVec2(io.MousePos.x, plotOffset.y));
+                ImGui::BeginChild("cursorLine", ImVec2(1, -1), 0, ImGuiWindowFlags_NoInputs);
+                ImGui::Dummy(ImGui::GetContentRegionAvail());
+                ImGui::EndChild();
+                ImGui::PopStyleVar();
+                ImGui::PopStyleColor();
+            }
+
+            if (!awaitingResponse && reloadingColumn >= 0) {
+                sp_entity_t guiDefinitionEnt = sp_entity_ref_get(&guiDefinitionEntityRef, lock);
+                sp_event_t eventOut2 = {"/csv/query_range", guiDefinitionEnt, {SP_EVENT_DATA_TYPE_VEC4}};
+                eventOut2.data.vec4 = {(float)reloadingColumn,
+                    (float)rangeResolution,
+                    (float)rangeStart,
+                    (float)rangeSize};
+                sp_event_send_ref(lock, &dataEntityRef, &eventOut2);
+                awaitingResponse = true;
+            }
         }
 
         Tecs_lock_release(lock);
@@ -394,8 +630,8 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].default_init_func = &ScriptGuiContext<SignalDisplayGui>::DefaultInit;
         output[0].init_func = &ScriptGuiContext<SignalDisplayGui>::Init;
         output[0].destroy_func = &ScriptGuiContext<SignalDisplayGui>::Destroy;
-        // output[0].before_frame_func = &ScriptGuiContext<SignalDisplayGui>::BeforeFrame;
-        // output[0].render_gui_func = &ScriptGuiContext<SignalDisplayGui>::RenderGui;
+        output[0].before_frame_func = &ScriptGuiContext<SignalDisplayGui>::BeforeFrameStatic;
+        output[0].render_gui_func = &ScriptGuiContext<SignalDisplayGui>::RenderGui;
 
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
         sp_string_set(&fields[0].name, "prefix");
@@ -417,26 +653,27 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[1].default_init_func = &ScriptGuiContext<GraphDisplayGui>::DefaultInit;
         output[1].init_func = &ScriptGuiContext<GraphDisplayGui>::Init;
         output[1].destroy_func = &ScriptGuiContext<GraphDisplayGui>::Destroy;
-        // output[1].before_frame_func = &ScriptGuiContext<GraphDisplayGui>::BeforeFrame;
-        // output[1].render_gui_func = &ScriptGuiContext<GraphDisplayGui>::RenderGui;
+        output[1].before_frame_func = &ScriptGuiContext<GraphDisplayGui>::BeforeFrameStatic;
+        output[1].render_gui_func = &ScriptGuiContext<GraphDisplayGui>::RenderGui;
         output[1].filter_on_event = false;
-        event_name_t *events = sp_event_name_vector_resize(&output[1].events, 2);
+        event_name_t *events = sp_event_name_vector_resize(&output[1].events, 3);
         std::strncpy(events[0], "/csv/column_metadata", sizeof(events[0]) - 1);
         std::strncpy(events[1], "/csv/column_range", sizeof(events[1]) - 1);
+        std::strncpy(events[2], "/csv/loading_progress", sizeof(events[2]) - 1);
 
         fields = sp_struct_field_vector_resize(&output[1].fields, 4);
-        sp_string_set(&fields[0].name, "selected_column");
-        fields[0].type.type_index = SP_TYPE_INDEX_UINT32;
-        fields[0].size = sizeof(ScriptGuiContext<GraphDisplayGui>::selectedColumn);
-        fields[0].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, selectedColumn);
-        sp_string_set(&fields[1].name, "range_start");
+        sp_string_set(&fields[0].name, "range_start");
+        fields[0].type.type_index = SP_TYPE_INDEX_UINT64;
+        fields[0].size = sizeof(ScriptGuiContext<GraphDisplayGui>::viewStart);
+        fields[0].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, viewStart);
+        sp_string_set(&fields[1].name, "range_size");
         fields[1].type.type_index = SP_TYPE_INDEX_UINT64;
-        fields[1].size = sizeof(ScriptGuiContext<GraphDisplayGui>::rangeStart);
-        fields[1].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, rangeStart);
-        sp_string_set(&fields[2].name, "range_size");
-        fields[2].type.type_index = SP_TYPE_INDEX_UINT64;
-        fields[2].size = sizeof(ScriptGuiContext<GraphDisplayGui>::rangeSize);
-        fields[2].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, rangeSize);
+        fields[1].size = sizeof(ScriptGuiContext<GraphDisplayGui>::viewSize);
+        fields[1].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, viewSize);
+        sp_string_set(&fields[2].name, "gui_definition_entity");
+        fields[2].type.type_index = SP_TYPE_INDEX_ENTITY_REF;
+        fields[2].size = sizeof(ScriptGuiContext<GraphDisplayGui>::guiDefinitionEntityRef);
+        fields[2].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, guiDefinitionEntityRef);
         sp_string_set(&fields[3].name, "data_entity");
         fields[3].type.type_index = SP_TYPE_INDEX_ENTITY_REF;
         fields[3].size = sizeof(ScriptGuiContext<GraphDisplayGui>::dataEntityRef);

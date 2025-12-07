@@ -19,7 +19,7 @@
 #include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <sstream>
 
 namespace sp {

@@ -25,7 +25,7 @@
 #include <filesystem>
 #include <fstream>
 #include <glm/glm.hpp>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <robin_hood.h>
 #include <shared_mutex>
 

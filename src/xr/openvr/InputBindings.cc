@@ -21,7 +21,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <openvr.h>
-#include <picojson/picojson.h>
+#include <picojson.h>
 
 namespace sp::xr {
     static CVar<int> CVarForceHandPose("vr.ForceHandePose",

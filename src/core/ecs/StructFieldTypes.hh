@@ -15,7 +15,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
-#include "graphics/GenericCompositor.hh"
+#include "gui/GuiDrawData.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
@@ -163,7 +163,7 @@ namespace ecs {
         void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
         void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
         bool (*)(void *, ScriptState *, Entity), // BeforeFrame
-        sp::GuiDrawData (*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) // RenderGui
+        void (*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &) // RenderGui
         >;
 
     namespace detail {

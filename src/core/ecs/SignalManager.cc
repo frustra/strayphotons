@@ -11,7 +11,7 @@
 #include "ecs/SignalRef.hh"
 
 #include <mutex>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <shared_mutex>
 
 namespace ecs {

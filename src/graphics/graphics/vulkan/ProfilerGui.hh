@@ -11,7 +11,7 @@
 #include "graphics/core/Histogram.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <sstream>
 
 namespace sp::vulkan {

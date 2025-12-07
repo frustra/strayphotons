@@ -22,10 +22,10 @@
 #include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
-#include <imgui/imgui.h>
-#include <imgui/misc/cpp/imgui_stdlib.h>
+#include <imgui.h>
 #include <magic_enum.hpp>
 #include <map>
+#include <misc/cpp/imgui_stdlib.h>
 
 namespace sp {
     using namespace ecs;
@@ -126,11 +126,17 @@ namespace sp {
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, uint32_t &value) {
-        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value, 1.0f, NULL, NULL, "%u");
+        uint32_t min = 0;
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value, 1.0f, &min, NULL, "%u");
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, size_t &value) {
-        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U64, &value, 1.0f, NULL, NULL, "%u");
+    bool EditorContext::AddImGuiElement(const std::string &name, int64_t &value) {
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_S64, &value, 1.0f, NULL, NULL, "%lld");
+    }
+    template<>
+    bool EditorContext::AddImGuiElement(const std::string &name, uint64_t &value) {
+        uint64_t min = 0;
+        return ImGui::DragScalar(name.c_str(), ImGuiDataType_U64, &value, 1.0f, &min, NULL, "%llu");
     }
     template<>
     bool EditorContext::AddImGuiElement(const std::string &name, sp::angle_t &value) {

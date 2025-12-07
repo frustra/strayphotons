@@ -188,7 +188,11 @@ namespace sp::vulkan {
             addTexture(ent.Get<ecs::RenderOutput>(lock).sourceName);
         }
         for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
-            addTexture(ent.Get<ecs::Screen>(lock).textureName);
+            auto &textureName = ent.Get<ecs::Screen>(lock).textureName;
+            if (textureName.empty() && ent.Has<ecs::RenderOutput>(lock)) {
+                addTexture("ent:" + ent.Get<ecs::Name>(lock).String());
+            }
+            addTexture(textureName);
         }
         return complete;
     }
@@ -203,6 +207,9 @@ namespace sp::vulkan {
                         if (id != rg::InvalidResource) {
                             newGraphTextures.emplace_back(tex.first, id);
                         }
+                    }
+                    if (tex.first.length() > 4 && starts_with(tex.first, "ent:")) {
+                        builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
                     }
                 }
                 builder.Write("RenderableEntities", Access::HostWrite);

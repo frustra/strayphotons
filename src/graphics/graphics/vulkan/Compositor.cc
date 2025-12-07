@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,7 +13,6 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/ScriptManager.hh"
-#include "graphics/gui/GuiContext.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -21,19 +20,20 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
+#include "gui/GuiContext.hh"
 
 #include <algorithm>
-#include <imgui/imgui.h>
+#include <imgui.h>
 
 namespace sp::vulkan {
     constexpr ImTextureID FONT_ATLAS_ID = 1ull << (sizeof(TextureIndex) * 8);
 
     Compositor::Compositor(DeviceContext &device, Renderer &renderer)
         : renderer(renderer), scene(renderer.scene), graph(renderer.graph) {
-        vertexLayout = make_unique<VertexLayout>(0, sizeof(ImDrawVert));
-        vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, pos));
-        vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(ImDrawVert, uv));
-        vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ImDrawVert, col));
+        vertexLayout = make_unique<VertexLayout>(0, sizeof(GuiDrawVertex));
+        vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, pos));
+        vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, uv));
+        vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(GuiDrawVertex, col));
 
         fontAtlas = make_shared<ImFontAtlas>();
 
@@ -88,21 +88,16 @@ namespace sp::vulkan {
             glm::to_string(viewport));
         internalDrawGui(drawData,
             vk::Rect2D({viewport.x, viewport.y}, {(uint32_t)viewport.z, (uint32_t)viewport.w}),
-            scale,
-            false);
+            scale);
     }
 
-    void Compositor::internalDrawGui(const GuiDrawData &drawData,
-        vk::Rect2D viewport,
-        glm::vec2 scale,
-        bool allowUserCallback) {
+    void Compositor::internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale) {
         if (drawData.drawCommands.empty()) return;
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this, drawData, viewport, scale, allowUserCallback](rg::Resources &resources,
-                         CommandContext &cmd) {
+            .Execute([this, drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
                 size_t totalVtxSize = CeilToPowerOfTwo(drawData.vertexBuffer.size() * sizeof(GuiDrawVertex));
                 size_t totalIdxSize = CeilToPowerOfTwo(drawData.indexBuffer.size() * sizeof(GuiDrawIndex));
                 if (totalVtxSize == 0 || totalIdxSize == 0) return;
@@ -128,10 +123,8 @@ namespace sp::vulkan {
                 indexBuffer->Unmap();
                 vertexBuffer->Unmap();
 
-                auto flippedViewport = viewport;
-                flippedViewport.offset.y = resources.LastOutput().ImageExtents().height - viewport.extent.height -
-                                           viewport.offset.y;
-                cmd.SetViewport(flippedViewport);
+                cmd.SetYDirection(YDirection::Down);
+                cmd.SetViewport(viewport);
                 cmd.SetVertexLayout(*vertexLayout);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetDepthTest(false, false);
@@ -139,7 +132,9 @@ namespace sp::vulkan {
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
-                glm::mat4 proj = MakeOrthographicProjection(viewport, scale);
+                auto zeroViewport = viewport;
+                zeroViewport.offset = vk::Offset2D();
+                glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, zeroViewport, scale);
                 cmd.PushConstants(proj);
 
                 const vk::IndexType idxType = sizeof(GuiDrawIndex) == 2 ? vk::IndexType::eUint16
@@ -168,15 +163,13 @@ namespace sp::vulkan {
                     } else {
                         cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
                     }
-
                     glm::ivec2 clipOffset(pcmd.clipRect.x, pcmd.clipRect.y);
                     glm::uvec2 clipExtents(pcmd.clipRect.z - pcmd.clipRect.x, pcmd.clipRect.w - pcmd.clipRect.y);
                     glm::uvec2 viewportExtents(viewport.extent.width, viewport.extent.height);
-                    clipOffset = glm::clamp(clipOffset + glm::ivec2(flippedViewport.offset.x, flippedViewport.offset.y),
+                    clipOffset = glm::clamp(clipOffset + glm::ivec2(viewport.offset.x, viewport.offset.y),
                         glm::ivec2(0),
                         glm::ivec2(viewportExtents) - 1);
                     clipExtents = glm::clamp(clipExtents, glm::uvec2(0), viewportExtents - glm::uvec2(clipOffset));
-                    clipOffset.y = resources.LastOutput().ImageExtents().height - clipExtents.y - clipOffset.y;
 
                     cmd.SetScissor(vk::Rect2D{{(int32)clipOffset.x, (int32)clipOffset.y},
                         {(uint32)clipExtents.x, (uint32)clipExtents.y}});
@@ -206,8 +199,7 @@ namespace sp::vulkan {
                 }
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this, drawData, viewport, scale, allowUserCallback](rg::Resources &resources,
-                         CommandContext &cmd) {
+            .Execute([this, drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
                 size_t totalVtxSize = 0, totalIdxSize = 0;
                 for (const auto &cmdList : drawData->CmdLists) {
                     totalVtxSize += cmdList->VtxBuffer.size_in_bytes();
@@ -243,6 +235,7 @@ namespace sp::vulkan {
                 indexBuffer->Unmap();
                 vertexBuffer->Unmap();
 
+                cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);
                 cmd.SetVertexLayout(*vertexLayout);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
@@ -251,7 +244,7 @@ namespace sp::vulkan {
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
-                glm::mat4 proj = MakeOrthographicProjection(viewport, scale);
+                glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, viewport, scale);
                 cmd.PushConstants(proj);
 
                 const vk::IndexType idxType = sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
@@ -289,7 +282,7 @@ namespace sp::vulkan {
                         clipRect.w -= drawData->DisplayPos.y;
                         // TODO: Clamp to viewport
 
-                        cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)(viewport.extent.height - clipRect.w)},
+                        cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)clipRect.y},
                             {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
 
                         cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
@@ -333,44 +326,50 @@ namespace sp::vulkan {
     void Compositor::UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock) {
         renderOutputs.clear();
         auto renderOutputEntities = lock.EntitiesWith<ecs::RenderOutput>();
-        robin_hood::unordered_set<ecs::Entity> existingOutputs;
-        std::vector<RenderOutputInfo> unresolvedDependencies;
+        robin_hood::unordered_map<ecs::Entity, size_t> existingOutputs;
+        std::vector<ecs::Entity> unresolvedDependencies;
         unresolvedDependencies.reserve(renderOutputEntities.size());
         renderOutputs.reserve(renderOutputEntities.size());
         existingOutputs.reserve(renderOutputEntities.size());
 
-        auto dependencyResolved = [&lock, &existingOutputs](const RenderOutputInfo &info) {
-            if (!starts_with(info.sourceName, "ent:")) return true;
-            ecs::EntityRef ref = ecs::Name(info.sourceName.substr(4), ecs::EntityScope());
-            ecs::Entity ent = ref.Get(lock);
-            if (!ent || ent == info.entity) return true;
-            return existingOutputs.count(ent) > 0;
+        auto resolveDependency = [this, &lock, &existingOutputs](const ecs::RenderOutput &output,
+                                     const ecs::Entity &ent) -> int {
+            auto outputSize = output.outputSize;
+            auto windowScale = output.scale;
+            if (starts_with(output.sourceName, "ent:")) {
+                ecs::EntityRef sourceRef = ecs::Name(output.sourceName.substr(4), ecs::EntityScope());
+                ecs::Entity sourceEnt = sourceRef.Get(lock);
+                if (sourceEnt && sourceEnt != ent) {
+                    auto it = existingOutputs.find(sourceEnt);
+                    if (it == existingOutputs.end()) return false;
+
+                    auto &existingInfo = renderOutputs.at(it->second);
+                    if (outputSize.x <= 0.0f || outputSize.y <= 0.0f) outputSize = existingInfo.outputSize;
+                    if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = existingInfo.scale;
+                }
+            }
+            // If outputSize is still -1 here, the compositor will inherit the source texture extents, otherwise (1, 1)
+            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = glm::vec2(1.0f);
+            existingOutputs.emplace(ent, renderOutputs.size());
+            renderOutputs.emplace_back(RenderOutputInfo{ent.Get<ecs::Name>(lock),
+                ent,
+                outputSize,
+                windowScale,
+                output.guiContext,
+                true,
+                output.guiElements,
+                output.sourceName});
+            return true;
         };
 
         for (const ecs::Entity &ent : renderOutputEntities) {
-            ecs::EntityRef ref(ent);
             auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
             if (!renderOutput.guiContext && !renderOutput.guiElements.empty()) {
-                ent.Get<ecs::RenderOutput>(lock).guiContext = std::make_shared<GuiContext>(ref);
+                ent.Get<ecs::RenderOutput>(lock).guiContext = std::make_shared<GuiContext>(ent);
             }
 
-            auto windowScale = renderOutput.scale;
-            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = CVarWindowScale.Get();
-            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-            RenderOutputInfo info = {ref.Name(),
-                ent,
-                renderOutput.outputSize,
-                windowScale,
-                renderOutput.guiContext,
-                true,
-                renderOutput.guiElements,
-                renderOutput.sourceName};
-            if (dependencyResolved(info)) {
-                existingOutputs.emplace(info.entity);
-                renderOutputs.push_back(std::move(info));
-            } else {
-                unresolvedDependencies.push_back(std::move(info));
+            if (!resolveDependency(renderOutput, ent)) {
+                unresolvedDependencies.emplace_back(ent);
             }
         }
         bool makingProgress = true;
@@ -378,10 +377,9 @@ namespace sp::vulkan {
             makingProgress = false;
             auto it = unresolvedDependencies.rbegin();
             while (it != unresolvedDependencies.rend()) {
-                auto &info = *it;
-                if (dependencyResolved(info)) {
-                    existingOutputs.emplace(info.entity);
-                    renderOutputs.push_back(std::move(info));
+                auto &ent = *it;
+                auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
+                if (resolveDependency(renderOutput, ent)) {
                     // reverse_iterator -> iterator -> reverse_iterator
                     it = std::reverse_iterator(unresolvedDependencies.erase(std::next(it).base()));
                     makingProgress = true;
@@ -392,8 +390,9 @@ namespace sp::vulkan {
         }
         if (!unresolvedDependencies.empty()) {
             Errorf("Unable to resolve render output source dependencies:");
-            for (auto &info : unresolvedDependencies) {
-                Errorf("    %s: source %s", info.entityName, info.sourceName);
+            for (auto &ent : unresolvedDependencies) {
+                auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
+                Errorf("    %s: source %s", ecs::ToString(lock, ent), renderOutput.sourceName);
             }
         }
     }
@@ -416,7 +415,7 @@ namespace sp::vulkan {
                 .Build([&](rg::PassBuilder &builder) {
                     bool inheritExtent = true;
                     outputDesc.format = vk::Format::eR8G8B8A8Srgb;
-                    outputDesc.sampler = SamplerType::BilinearClampEdge;
+                    outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
                     viewOutput = builder.GetID(viewName, false);
                     if (viewOutput != rg::InvalidResource) {
@@ -478,7 +477,7 @@ namespace sp::vulkan {
                     auto target = builder.OutputColorAttachment(0, name, outputDesc, {LoadOp::Clear, StoreOp::Store});
                     output.renderGraphID = target.id;
                 })
-                .Execute([this, outputDesc, output, viewOutput](rg::Resources &resources, CommandContext &cmd) {
+                .Execute([this, output, viewOutput](rg::Resources &resources, CommandContext &cmd) {
                     if (viewOutput != rg::InvalidResource) {
                         cmd.DrawScreenCover(resources.GetImageView(viewOutput));
                     }
@@ -501,9 +500,6 @@ namespace sp::vulkan {
                     }
                     if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
                 });
-            if (outputDesc.mipLevels > 1) {
-                renderer::AddMipmap(graph, output.renderGraphID);
-            }
             // TODO: Add effects passes
 
             ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
@@ -522,6 +518,7 @@ namespace sp::vulkan {
                         viewport.extent.height / output.scale.y);
                     io.DisplayFramebufferScale = ImVec2(output.scale.x, output.scale.y);
                     io.DeltaTime = deltaTime;
+                    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
                     auto lastFonts = io.Fonts;
                     io.Fonts = fontAtlas.get();
@@ -540,12 +537,14 @@ namespace sp::vulkan {
                     drawData->ScaleClipRects(io.DisplayFramebufferScale);
                     internalDrawGui(drawData, viewport, output.scale, true);
                 } else {
-                    GuiDrawData drawData = context.GetDrawData(
-                        glm::vec2(viewport.extent.width / output.scale.x, viewport.extent.height / output.scale.y),
-                        output.scale,
-                        deltaTime);
-                    internalDrawGui(drawData, viewport, output.scale, false);
+                    GuiDrawData drawData = {};
+                    context.GetDrawData(drawData);
+                    internalDrawGui(drawData, viewport, output.scale);
                 }
+            }
+
+            if (outputDesc.mipLevels > 1) {
+                renderer::AddMipmap(graph, output.renderGraphID);
             }
         }
     }

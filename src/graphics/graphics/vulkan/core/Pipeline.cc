@@ -10,7 +10,7 @@
 #include "common/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
-#include <SPIRV-Reflect/common/output_stream.h>
+#include <common/output_stream.h>
 
 // void StreamWriteDescriptorBinding(std::ostream &os,
 //     const SpvReflectDescriptorBinding &obj,

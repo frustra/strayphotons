@@ -9,11 +9,13 @@
 
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
-#include "graphics/gui/ImGuiKeyCodes.hh"
+#include "gui/GuiDrawData.hh"
+#include "gui/ImGuiHelpers.hh"
+#include "gui/ImGuiKeyCodes.hh"
 #include "input/BindingNames.hh"
 #include "input/KeyCodes.hh"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 
 namespace sp {
     static std::array fontList = {
@@ -403,8 +405,8 @@ namespace sp {
         ImGui::PopStyleColor(4);
     }
 
-    GuiDrawData GuiContext::GetDrawData(glm::vec2, glm::vec2, float) const {
-        return ImGui::GetDrawData();
+    void GuiContext::GetDrawData(GuiDrawData &output) const {
+        ConvertImDrawData(ImGui::GetDrawData(), &output);
     }
 
     void GuiContext::ClearEntities() {

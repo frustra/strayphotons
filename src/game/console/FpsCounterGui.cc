@@ -10,7 +10,7 @@
 #include "common/RegisteredThread.hh"
 #include "ecs/EcsImpl.hh"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <iomanip>
 #include <sstream>
 

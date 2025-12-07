@@ -11,14 +11,25 @@ target_include_directories(${PROJECT_SCRIPTS_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_SCRIPTS_LIB} PUBLIC
-    ${PROJECT_CORE_LIB}
-    ${PROJECT_GAME_LIB}
-    ${PROJECT_GRAPHICS_CORE_LIB}
+target_link_libraries(${PROJECT_SCRIPTS_LIB}
+    PRIVATE
+        ${PROJECT_CORE_LIB}
+        ${PROJECT_GAME_LIB}
+        ${PROJECT_GRAPHICS_CORE_LIB}
+        ${PROJECT_CODEGEN_LIB}
+        ImGui
 )
 
-target_compile_definitions(${PROJECT_SCRIPTS_LIB} PUBLIC
-    SP_SCRIPTS_SUPPORT
+target_include_directories(${PROJECT_SCRIPTS_LIB} PRIVATE
+    ${PROJECT_ROOT_DIR}/include
+)
+
+target_compile_definitions(${PROJECT_SCRIPTS_LIB}
+    PUBLIC
+        SP_SCRIPTS_SUPPORT
+    PRIVATE
+        SP_SHARED_INTERNAL
+        TECS_SHARED_INTERNAL
 )
 
 # target_precompile_headers(${PROJECT_SCRIPTS_LIB} REUSE_FROM ${PROJECT_CORE_LIB})

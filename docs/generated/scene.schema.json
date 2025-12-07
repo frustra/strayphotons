@@ -908,26 +908,6 @@
 								"minItems": 3,
 								"type": "array"
 							},
-							"resolution": {
-								"default": [1000, 1000],
-								"description": "No description",
-								"items": {
-									"type": "integer"
-								},
-								"maxItems": 2,
-								"minItems": 2,
-								"type": "array"
-							},
-							"scale": {
-								"default": [1, 1],
-								"description": "No description",
-								"items": {
-									"type": "number"
-								},
-								"maxItems": 2,
-								"minItems": 2,
-								"type": "array"
-							},
 							"texture": {
 								"default": "",
 								"description": "No description",

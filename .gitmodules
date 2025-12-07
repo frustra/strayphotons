@@ -73,3 +73,6 @@
 [submodule "ext/dynalo"]
 	path = ext/dynalo
 	url = https://github.com/maddouri/dynalo.git
+[submodule "ext/implot"]
+	path = ext/implot
+	url = https://github.com/epezent/implot.git
