@@ -16,7 +16,7 @@
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
-#include <picojson/picojson.h>
+#include <picojson.h>
 
 namespace ecs {
     const chrono_clock::duration templateCacheTime = std::chrono::seconds(1);

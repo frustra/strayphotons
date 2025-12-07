@@ -24,12 +24,12 @@
 #include "game/SceneManager.hh"
 #include "physx/ForceConstraint.hh"
 
+#include <MurmurHash3.h>
 #include <PxScene.h>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <glm/ext/matrix_relational.hpp>
-#include <murmurhash/MurmurHash3.h>
 
 namespace sp {
     using namespace physx;

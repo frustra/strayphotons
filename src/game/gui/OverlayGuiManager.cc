@@ -14,7 +14,7 @@
 #include "game/SceneManager.hh"
 #include "input/BindingNames.hh"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 
 namespace sp {
     OverlayGuiManager::OverlayGuiManager(const ecs::EntityRef &guiEntity) : GuiContext(guiEntity) {

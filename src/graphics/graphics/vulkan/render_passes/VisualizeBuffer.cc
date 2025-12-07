@@ -27,6 +27,8 @@ namespace sp::vulkan::renderer {
                 auto source = resources.GetImageView(sourceID);
                 if (source->ArrayLayers() > 1 && arrayLayer != ~0u && arrayLayer < source->ArrayLayers()) {
                     source = resources.GetImageLayerView(sourceID, arrayLayer);
+                } else if (source->MipLevels() > 1 && arrayLayer < source->MipLevels()) {
+                    source = resources.GetImageMipView(sourceID, arrayLayer);
                 }
 
                 if (source->ViewType() == vk::ImageViewType::e2DArray) {

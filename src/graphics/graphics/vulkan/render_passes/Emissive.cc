@@ -91,6 +91,11 @@ namespace sp::vulkan::renderer {
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                        } else {
+                            resourceID = builder.ReadPreviousFrame(textureName, Access::FragmentShaderSampleImage);
+                            if (resourceID != InvalidResource) {
+                                screen.texture = resourceID;
+                            }
                         }
                     } else if (auto it = scene.liveTextureCache.find(textureName); it != scene.liveTextureCache.end()) {
                         if (it->first.length() > 6 && starts_with(it->first, "graph:")) {

@@ -73,7 +73,7 @@ namespace sp {
         void Frame() override;
 
         Game &game;
-        ecs::Name flatviewName;
+        ecs::EntityRef flatviewEntity;
 
         chrono_clock::time_point renderStart;
 

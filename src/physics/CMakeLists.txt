@@ -25,6 +25,7 @@ target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_PHYSICS_COOKING_LIB}
         PhysXCharacterKinematic
         PhysXPvdSDK
+        murmurhash
 )
 target_link_libraries(${PROJECT_PHYSICS_COOKING_LIB}
     PRIVATE

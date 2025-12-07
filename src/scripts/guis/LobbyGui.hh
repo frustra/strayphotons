@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "graphics/gui/GuiContext.hh"
+#include "gui/GuiContext.hh"
 
 #include <imgui/imgui.h>
 

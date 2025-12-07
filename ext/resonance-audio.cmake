@@ -32,5 +32,5 @@ endif()
 target_include_directories(
     ResonanceAudioStatic
     INTERFACE
-        ./resonance-audio/resonance_audio/api
+        ./resonance-audio/
 )

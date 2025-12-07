@@ -37,6 +37,7 @@ add_executable(sp-integration-tests tests.cc ${integration_test_sources})
 target_compile_definitions(sp-integration-tests PRIVATE TEST_TYPE=\"integration\")
 target_link_libraries(sp-integration-tests
     ${PROJECT_COMMON_LIB}
+    ${PROJECT_CORE_LIB}
     ${PROJECT_GAME_LIB}
     ${PROJECT_PHYSICS_PHYSX_LIB}
     ${PROJECT_SCRIPTS_LIB}

@@ -227,11 +227,12 @@ namespace ecs {
         return false;
     }
 
-    sp::GuiDrawData DynamicScript::RenderGui(ScriptState &state,
+    void DynamicScript::RenderGui(ScriptState &state,
         Entity ent,
         glm::vec2 displaySize,
         glm::vec2 scale,
-        float deltaTime) {
+        float deltaTime,
+        sp::GuiDrawData &result) {
         ZoneScoped;
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
@@ -239,10 +240,9 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.renderGuiFunc) {
                 auto &renderGui = dynamicScript->dynamicDefinition.renderGuiFunc;
-                return renderGui(ptr.context, &state, ent, displaySize, scale, deltaTime);
+                renderGui(ptr.context, &state, ent, displaySize, scale, deltaTime, result);
             }
         }
-        return {};
     }
 
     DynamicScript::DynamicScript(DynamicLibrary &library, const DynamicScriptDefinition &dynamicDefinition)

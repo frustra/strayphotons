@@ -13,7 +13,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <sstream>
 
 namespace sp {

@@ -13,7 +13,6 @@
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
 
-#include <imgui/imgui.h>
 #include <memory>
 
 namespace dynalo {
@@ -77,7 +76,7 @@ namespace ecs {
         void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
         void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
         bool (*beforeFrameFunc)(void *, ScriptState *, Entity) = nullptr;
-        sp::GuiDrawData (*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float) = nullptr;
+        void (*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &) = nullptr;
     };
 
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
@@ -136,11 +135,12 @@ namespace ecs {
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
         static bool BeforeFrame(ScriptState &state, Entity ent);
-        static sp::GuiDrawData RenderGui(ScriptState &state,
+        static void RenderGui(ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
             glm::vec2 scale,
-            float deltaTime);
+            float deltaTime,
+            sp::GuiDrawData &result);
 
         friend class DynamicScriptContext;
         friend class DynamicLibrary;

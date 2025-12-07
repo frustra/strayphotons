@@ -11,6 +11,7 @@
 #include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
+#include "graphics/vulkan/core/Util.hh"
 
 #include <bit>
 #include <functional>
@@ -53,11 +54,6 @@ namespace sp::vulkan {
         // false skips checking and saving the image layout,
         // caller must set the image's layout before passing the image to other code
         bool trackImageLayout = true;
-    };
-
-    enum class YDirection {
-        Up,
-        Down,
     };
 
     const size_t MAX_VIEWPORTS = 4;

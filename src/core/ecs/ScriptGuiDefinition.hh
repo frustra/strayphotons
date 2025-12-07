@@ -10,20 +10,23 @@
 #include "ecs/Ecs.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/GuiElement.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <memory>
 
 namespace ecs {
     class ScriptGuiDefinition final : public GuiDefinition {
     public:
-        ScriptGuiDefinition(std::shared_ptr<ScriptState> state);
+        ScriptGuiDefinition(std::shared_ptr<ScriptState> state, EntityRef guiDefinitionEntity);
         ~ScriptGuiDefinition();
 
         bool BeforeFrame(Entity ent) override;
         void PreDefine(Entity ent) override;
         void DefineContents(Entity ent) override;
+        void PostDefine(Entity ent) override;
 
         std::weak_ptr<ScriptState> weakState;
+        EntityRef guiDefinitionEntity;
 
         struct CallbackContext {
             sp::GuiDrawData drawData;

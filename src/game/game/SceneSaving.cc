@@ -17,7 +17,7 @@
 #include "game/SceneManager.hh"
 
 #include <fstream>
-#include <picojson/picojson.h>
+#include <picojson.h>
 
 namespace sp {
     using namespace ecs;

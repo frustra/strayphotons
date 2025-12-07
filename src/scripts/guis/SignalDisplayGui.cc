@@ -9,10 +9,11 @@
 #include "assets/AssetManager.hh"
 #include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
-#include "graphics/gui/GuiContext.hh"
+#include "gui/GuiContext.hh"
+#include "gui/ImGuiHelpers.hh"
 
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <iomanip>
 #include <sstream>
 
@@ -117,15 +118,21 @@ namespace sp::scripts {
             return true;
         }
 
-        GuiDrawData RenderGui(ScriptState &state, Entity ent, glm::vec2 displaySize, glm::vec2 scale, float deltaTime) {
+        void RenderGui(ScriptState &state,
+            Entity ent,
+            glm::vec2 displaySize,
+            glm::vec2 scale,
+            float deltaTime,
+            GuiDrawData &result) {
             ZoneScoped;
-            if (!imCtx) return nullptr;
+            if (!imCtx) return;
             ImGui::SetCurrentContext(imCtx);
             ImGuiIO &io = ImGui::GetIO();
             io.IniFilename = nullptr;
             io.DisplaySize = ImVec2(displaySize.x, displaySize.y);
             io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
             io.DeltaTime = deltaTime;
+            io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
             auto lastFonts = io.Fonts;
             io.Fonts = fontAtlas.get();
@@ -137,7 +144,6 @@ namespace sp::scripts {
             ImGui::NewFrame();
 
             // DefineWindows
-            // ecs::GetScriptManager().WithGuiScriptLock([&context] {
             int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
             if (PreDefine(state, ent)) {
@@ -148,13 +154,12 @@ namespace sp::scripts {
                 ImGui::End();
                 PostDefine(state, ent);
             }
-            // });
 
             ImGui::Render();
 
             auto *drawData = ImGui::GetDrawData();
             drawData->ScaleClipRects(io.DisplayFramebufferScale);
-            return drawData;
+            ConvertImDrawData(drawData, &result);
         }
     };
     StructMetadata MetadataSignalDisplay(typeid(SignalDisplayGui),

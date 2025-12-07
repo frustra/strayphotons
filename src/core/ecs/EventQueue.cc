@@ -13,7 +13,7 @@
 #include "ecs/EcsImpl.hh"
 
 #include <optional>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <sstream>
 
 namespace ecs {

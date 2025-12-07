@@ -204,5 +204,10 @@ namespace sp::scene_util {
             auto &scripts = liveId.Get<const Scripts>(live);
             if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
         }
+
+        if (liveId.Has<RenderOutput>(live) && !liveId.Has<EventInput>(live)) {
+            auto &renderOutput = liveId.Get<const RenderOutput>(live);
+            if (!renderOutput.guiElements.empty()) liveId.Set<EventInput>(live);
+        }
     }
 } // namespace sp::scene_util

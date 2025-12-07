@@ -13,5 +13,5 @@ add_library(
 )
 
 target_include_directories(SPIRV-Reflect PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/SPIRV-Reflect
+    ./SPIRV-Reflect
 )

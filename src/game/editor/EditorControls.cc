@@ -13,7 +13,7 @@ namespace sp {
         entityTree.clear();
 
         ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>([this](auto &lock) {
-            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::TransformTree>()) {
                 auto &name = ent.Get<ecs::Name>(lock);
                 auto &tree = ent.Get<ecs::TransformTree>(lock);
                 entityTree[name].hasParent = (bool)tree.parent;
@@ -402,7 +402,7 @@ namespace sp {
                 }
                 return;
             }
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowItemOverlap;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap;
             if (name != "scene_properties") flags |= ImGuiTreeNodeFlags_DefaultOpen;
             if (ImGui::CollapsingHeader(name.c_str(), flags)) {
                 ImGui::SameLine(ImGui::GetColumnWidth() - 8);
