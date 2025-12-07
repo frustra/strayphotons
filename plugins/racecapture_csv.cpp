@@ -57,8 +57,10 @@ struct ColumnData : public ColumnMetadata {
         Assertf(parts.size() == 5, "Invalid column header: %s", std::string(header));
         name = StripQuotes(parts[0]);
         unit = StripQuotes(parts[1]);
-        min = ParseNumber(parts[2]);
-        max = ParseNumber(parts[3]);
+        // min = ParseNumber(parts[2]);
+        // max = ParseNumber(parts[3]);
+        min = std::numeric_limits<double>::max();
+        max = std::numeric_limits<double>::min();
         sampleRate = (size_t)ParseNumber(parts[4]);
         data.reserve(reservedLines);
     }
@@ -74,25 +76,51 @@ struct ColumnData : public ColumnMetadata {
         }
     }
 
-    size_t SampleRange(size_t start, size_t end, float resolution, ColumnRange &output) {
+    uint32_t SampleRange(size_t start, size_t end, size_t sampleOffset, size_t resolution, ColumnRange &output) {
+        auto getSampleStart = [&](size_t i) {
+            return i * (end - start) / resolution + start;
+        };
         output.columnIndex = columnIndex;
-        output.rangeStart = start;
-        output.rangeEnd = std::min(start + output.size(), end);
-        for (size_t i = 0; i < output.rangeEnd - start; i++) {
-            if (i + start >= data.size()) {
-                output[i] = std::nanf("");
-            } else {
-                output[i] = (float)data[i + start].second;
+        output.sampleOffset = sampleOffset;
+        size_t rangeStart = getSampleStart(sampleOffset);
+        size_t rangeEnd = rangeStart;
+        output.sampleCount = 0;
+        auto it = std::lower_bound(data.begin(), data.end(), rangeStart, [](auto &entry, size_t intervalMs) {
+            return entry.first < intervalMs;
+        });
+        while (output.sampleCount < output.size() && rangeEnd < end) {
+            rangeEnd = getSampleStart(sampleOffset + output.sampleCount + 1);
+            if (rangeEnd > end) rangeEnd = end;
+            while ((it == data.end() || it->first >= rangeEnd) && output.sampleCount < output.size()) {
+                // Insert extra values to display previous value
+                if (it != data.begin()) {
+                    output[output.sampleCount] = {(float)(it - 1)->second, (float)(it - 1)->second};
+                } else {
+                    output[output.sampleCount] = {NAN, NAN};
+                }
+                output.sampleCount++;
+                rangeEnd = getSampleStart(sampleOffset + output.sampleCount + 1);
+                if (rangeEnd > end) rangeEnd = end;
             }
+            if (output.sampleCount >= output.size()) break;
+            auto &out = output[output.sampleCount];
+            out.min = NAN;
+            out.max = NAN;
+            while (it != data.end() && it->first < rangeEnd) {
+                float sample = (float)it->second;
+                if (std::isnan(out.min) || sample < out.min) out.min = sample;
+                if (std::isnan(out.max) || sample > out.max) out.max = sample;
+                it++;
+            }
+            output.sampleCount++;
         }
-        return output.rangeEnd;
+        return output.sampleCount;
     }
 };
 
 struct CSVVisualizer {
     std::string filename;
     std::string loaded;
-    std::vector<ColumnData> columns;
     sp_entity_ref_t entityRef = {};
     sp_signal_ref_t loadingRef = {}, accelXRef = {}, accelYRef = {}, accelZRef = {}, xRef = {}, yRef = {}, zRef = {};
     std::vector<sp_signal_ref_t> outputs;
@@ -102,6 +130,8 @@ struct CSVVisualizer {
 
     std::optional<sp::DispatchQueue> workQueue;
     sp::AsyncPtr<std::vector<char>> assetPtr;
+    sp::AsyncPtr<std::vector<ColumnData>> columnsPtr;
+    std::atomic_int32_t loadingProgress = -1;
 
     CSVVisualizer() {}
 
@@ -114,17 +144,24 @@ struct CSVVisualizer {
                     continue;
                 }
                 uint32_t col = event->data.ui;
-                if (col < columns.size()) {
-                    sp_event_t eventOut = {"/csv/column_metadata", ent, {SP_EVENT_DATA_TYPE_BYTES}};
-                    static_assert(sizeof(ColumnMetadata) <= sizeof(event_bytes_t));
-                    std::copy_n((const uint8_t *)(const ColumnMetadata *)&columns[col],
-                        sizeof(ColumnMetadata),
-                        &eventOut.data.bytes[0]);
+                if (!columnsPtr || !columnsPtr->Ready()) {
+                    sp_event_t eventOut = {"/csv/loading_progress", ent, {SP_EVENT_DATA_TYPE_INT}};
+                    eventOut.data.i = loadingProgress.load();
                     sp_event_send(lock, event->source, &eventOut);
                 } else {
-                    sp_event_t eventOut = {"/csv/column_metadata", ent, {SP_EVENT_DATA_TYPE_BOOL}};
-                    eventOut.data.b = false;
-                    sp_event_send(lock, event->source, &eventOut);
+                    auto columns = columnsPtr->Get();
+                    if (col < columns->size()) {
+                        sp_event_t eventOut = {"/csv/column_metadata", ent, {SP_EVENT_DATA_TYPE_BYTES}};
+                        static_assert(sizeof(ColumnMetadata) <= sizeof(event_bytes_t));
+                        std::copy_n((const uint8_t *)(const ColumnMetadata *)&(*columns)[col],
+                            sizeof(ColumnMetadata),
+                            &eventOut.data.bytes[0]);
+                        sp_event_send(lock, event->source, &eventOut);
+                    } else {
+                        sp_event_t eventOut = {"/csv/column_metadata", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                        eventOut.data.b = true;
+                        sp_event_send(lock, event->source, &eventOut);
+                    }
                 }
             } else if (strcmp(event->name, "/csv/query_range") == 0) {
                 if (event->data.type != SP_EVENT_DATA_TYPE_VEC4) {
@@ -132,26 +169,46 @@ struct CSVVisualizer {
                     continue;
                 }
                 uint32_t columnIndex = (uint32_t)event->data.vec4.v[0];
-                if (columnIndex < columns.size()) {
-                    float resolution = event->data.vec4.v[1];
-                    size_t rangeStart = (size_t)event->data.vec4.v[2];
-                    size_t rangeSize = (size_t)event->data.vec4.v[3];
-                    size_t rangeEnd = rangeStart + rangeSize;
+                if (!columnsPtr || !columnsPtr->Ready()) {
+                    sp_event_t eventOut = {"/csv/loading_progress", ent, {SP_EVENT_DATA_TYPE_INT}};
+                    eventOut.data.i = loadingProgress.load();
+                    sp_event_send(lock, event->source, &eventOut);
+                } else {
+                    auto columns = columnsPtr->Get();
+                    if (columnIndex < columns->size()) {
+                        size_t resolution = event->data.vec4.v[1];
+                        size_t rangeStart = event->data.vec4.v[2];
+                        size_t rangeSize = event->data.vec4.v[3];
+                        size_t rangeEnd = rangeStart + rangeSize;
 
-                    size_t offset = rangeStart;
-                    ColumnRange rangeOutput = {};
-                    while (offset < rangeEnd) {
-                        offset = columns[columnIndex].SampleRange(offset, rangeEnd, resolution, rangeOutput);
+                        size_t offset = 9;
+                        ColumnRange rangeOutput = {};
+                        while (offset < resolution) {
+                            uint32_t count = (*columns)[columnIndex].SampleRange(rangeStart,
+                                rangeEnd,
+                                offset,
+                                resolution,
+                                rangeOutput);
+                            offset += count;
 
-                        sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BYTES}};
-                        static_assert(sizeof(ColumnRange) <= sizeof(event_bytes_t));
-                        std::copy_n((const uint8_t *)&rangeOutput, sizeof(ColumnRange), &eventOut.data.bytes[0]);
+                            if (count > 0) {
+                                sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BYTES}};
+                                static_assert(sizeof(ColumnRange) <= sizeof(event_bytes_t));
+                                std::copy_n((const uint8_t *)&rangeOutput,
+                                    sizeof(ColumnRange),
+                                    &eventOut.data.bytes[0]);
+                                sp_event_send(lock, event->source, &eventOut);
+                            }
+                            if (count < rangeOutput.size()) break;
+                        }
+                        sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                        eventOut.data.b = true;
+                        sp_event_send(lock, event->source, &eventOut);
+                    } else {
+                        sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                        eventOut.data.b = false;
                         sp_event_send(lock, event->source, &eventOut);
                     }
-                } else {
-                    sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BOOL}};
-                    eventOut.data.b = false;
-                    sp_event_send(lock, event->source, &eventOut);
                 }
             } else {
                 Logf("Received unknown csv event: %s = %s", event->name, event->data.type);
@@ -159,7 +216,9 @@ struct CSVVisualizer {
         }
     }
 
-    void LoadCSVData(std::string_view dataStr, tecs_lock_t *lock, tecs_entity_t ent) {
+    std::shared_ptr<std::vector<ColumnData>> LoadCSVData(std::string_view dataStr) {
+        loadingProgress = 0;
+        std::vector<ColumnData> columns;
         std::vector<std::string_view> lines;
         SplitStr(dataStr, '\n', lines);
         std::vector<std::string_view> columnNames;
@@ -172,18 +231,45 @@ struct CSVVisualizer {
             outputs.push_back(colRef);
         }
         std::vector<std::string_view> values;
+        size_t firstTimestamp = ~0llu;
+        size_t lastTimestamp = 0;
         for (size_t i = 1; i < lines.size(); i++) {
             SplitStr(lines[i], ',', values);
-            size_t intervalCol = (size_t)ParseNumber(values.front());
+            double number = ParseNumber(values.front());
+            size_t intervalCol = (size_t)number;
+            if (std::isfinite(number) && number >= 0) {
+                firstTimestamp = std::min(firstTimestamp, intervalCol);
+                lastTimestamp = std::max(lastTimestamp, intervalCol);
+            }
             for (size_t c = 0; c < values.size(); c++) {
                 double num = ParseNumber(values[c]);
                 if (!std::isnan(num)) {
+                    if (num < columns[c].min) columns[c].min = num;
+                    if (num > columns[c].max) columns[c].max = num;
                     columns[c].data.emplace_back(intervalCol, num);
                 }
             }
+            loadingProgress = i * 100 / lines.size();
         }
-        sp_signal_ref_clear_value(&loadingRef, lock);
-        currentTimeNs = (size_t)columns.front().data.front().second * 1e6;
+        for (size_t c = 0; c < columns.size(); c++) {
+            columns[c].firstTimestamp = firstTimestamp;
+            columns[c].lastTimestamp = lastTimestamp;
+        }
+        loadingProgress = 100;
+
+        {
+            auto *lock = Tecs_ecs_start_transaction(sp_get_live_ecs(), 1 | SP_ACCESS_SIGNALS, SP_ACCESS_SIGNALS);
+            sp_signal_ref_clear_value(&loadingRef, lock);
+            auto &utcData = columns.at(1).data;
+            for (auto &[sampleTimeMs, value] : utcData) {
+                if (value > 0.0) {
+                    currentTimeNs = sampleTimeMs * 1e6;
+                    break;
+                }
+            }
+            Tecs_lock_release(lock);
+        }
+        return std::make_shared<std::vector<ColumnData>>(std::move(columns));
     }
 
     void OnTick(sp_script_state_t *state, tecs_lock_t *lock, tecs_entity_t ent, uint64_t intervalNs) {
@@ -198,8 +284,7 @@ struct CSVVisualizer {
             sp_signal_ref_new(&entityRef, "z", &zRef);
         }
 
-        if (!assetPtr || filename != loaded) {
-            columns.clear();
+        if (!columnsPtr || filename != loaded) {
             for (auto &ref : outputs) {
                 sp_signal_ref_clear_value(&ref, lock);
             }
@@ -222,22 +307,22 @@ struct CSVVisualizer {
                 }
                 return std::shared_ptr<std::vector<char>>();
             });
+            columnsPtr = workQueue->Dispatch<std::vector<ColumnData>>(assetPtr,
+                [this](std::shared_ptr<std::vector<char>> asset) {
+                    return LoadCSVData(std::string_view(asset->data(), asset->size()));
+                });
             loaded = filename;
         }
         HandleEvents(state, lock, ent);
-        if (!assetPtr->Ready()) return;
-        auto asset = assetPtr->Get();
-        if (!asset) return;
-        if (columns.empty()) {
-            LoadCSVData(std::string_view(asset->data(), asset->size()), lock, ent);
-        } else {
-            for (size_t i = 0; i < columns.size(); i++) {
-                double value = columns[i].SampleTimestamp(currentTimeNs / 1e6);
-                if (std::isnan(value)) {
-                    sp_signal_ref_clear_value(&outputs[i], lock);
-                } else {
-                    sp_signal_ref_set_value(&outputs[i], lock, value);
-                }
+        if (!columnsPtr->Ready()) return;
+        auto columns = columnsPtr->Get();
+        if (!columns) return;
+        for (size_t i = 0; i < columns->size(); i++) {
+            double value = (*columns)[i].SampleTimestamp(currentTimeNs / 1e6);
+            if (std::isnan(value)) {
+                sp_signal_ref_clear_value(&outputs[i], lock);
+            } else {
+                sp_signal_ref_set_value(&outputs[i], lock, value);
             }
         }
         if (Tecs_entity_has_transform_tree(lock, ent)) {

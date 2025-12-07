@@ -9,7 +9,7 @@
 
 #include "input/KeyCodes.hh"
 
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <robin_hood.h>
 
 namespace sp {

@@ -10,7 +10,6 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/components/GuiElement.hh"
-#include "graphics/GenericCompositor.hh"
 
 #include <memory>
 #include <string>
@@ -18,12 +17,9 @@
 
 struct ImGuiContext;
 
-namespace ecs {
-    class ScriptState;
-    class GuiInstance;
-} // namespace ecs
-
 namespace sp {
+    struct GuiDrawData;
+
     enum class GuiFont {
         Primary,
         Accent,
@@ -55,7 +51,7 @@ namespace sp {
         virtual bool SetGuiContext();
         virtual bool BeforeFrame();
         virtual void DefineWindows();
-        virtual GuiDrawData GetDrawData(glm::vec2 resolution, glm::vec2 scale, float deltaTime) const;
+        virtual void GetDrawData(GuiDrawData &output) const;
 
         static void PushFont(GuiFont fontType, float fontSize);
 
@@ -83,9 +79,6 @@ namespace sp {
 
         vector<PointingState> pointingStack;
     };
-
-    // ecs::EntityRef LookupInternalGui(const std::string &windowName);
-    // std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts);
 
     std::span<GuiFontDef> GetGuiFontList();
 } // namespace sp

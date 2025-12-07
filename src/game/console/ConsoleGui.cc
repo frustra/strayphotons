@@ -7,6 +7,8 @@
 
 #include "ConsoleGui.hh"
 
+#include <imgui.h>
+
 namespace sp {
     static ImVec4 LogColours[] = {
         {1.0f, 0.6f, 0.4f, 1.0f},
@@ -121,7 +123,7 @@ namespace sp {
             ImGui::SetNextWindowPos({popupPos.x, popupPos.y - size.y});
             ImGui::SetNextWindowSize(size);
             ImGui::Begin("completion_popup", nullptr, popupFlags);
-            ImGui::PushAllowKeyboardFocus(false);
+            ImGui::PushItemFlag(ImGuiItemFlags_NoTabStop, true);
 
             for (int index = completionEntries.size() - 1; index >= 0; index--) {
                 bool active = completionSelectedIndex == index;
@@ -136,7 +138,7 @@ namespace sp {
                 }
             }
 
-            ImGui::PopAllowKeyboardFocus();
+            ImGui::PopItemFlag();
             ImGui::End();
             windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
         } else {

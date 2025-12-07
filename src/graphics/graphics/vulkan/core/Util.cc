@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -19,20 +19,38 @@ namespace sp::vulkan {
         proj[3][3] = 1.0f;
         return proj;
     }
-    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport, float near, float far) {
-        // Uses OpenGL style, Y up
+
+    glm::mat4 MakeOrthographicProjection(YDirection yDir, const vk::Rect2D &viewport, float near, float far) {
         float left = viewport.offset.x;
         float right = left + viewport.extent.width;
-        float bottom = viewport.offset.y;
-        float top = bottom + viewport.extent.height;
+        float top, bottom;
+        if (yDir == YDirection::Up) {
+            // OpenGL style
+            bottom = viewport.offset.y;
+            top = bottom + viewport.extent.height;
+        } else {
+            top = viewport.offset.y;
+            bottom = top + viewport.extent.height;
+        }
         return MakeOrthographicProjection(left, right, bottom, top, near, far);
     }
-    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport, const glm::vec2 &scale, float near, float far) {
-        // Uses OpenGL style, Y up
+
+    glm::mat4 MakeOrthographicProjection(YDirection yDir,
+        const vk::Rect2D &viewport,
+        const glm::vec2 &scale,
+        float near,
+        float far) {
         float left = viewport.offset.x;
         float right = left + viewport.extent.width;
-        float bottom = viewport.offset.y;
-        float top = bottom + viewport.extent.height;
+        float top, bottom;
+        if (yDir == YDirection::Up) {
+            // OpenGL style
+            bottom = viewport.offset.y;
+            top = bottom + viewport.extent.height;
+        } else {
+            top = viewport.offset.y;
+            bottom = top + viewport.extent.height;
+        }
         return MakeOrthographicProjection(left / scale.x, right / scale.x, bottom / scale.y, top / scale.y, near, far);
     }
 } // namespace sp::vulkan

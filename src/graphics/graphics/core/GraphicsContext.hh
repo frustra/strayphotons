@@ -15,28 +15,11 @@
 #include <string>
 #include <vector>
 
-namespace ecs {
-    struct View;
-}
-
-struct GLFWwindow;
-
-namespace sp::winit {
-    struct WinitContext;
-}
-
-namespace sp::vulkan {
-    class DeviceContext;
-    class PerfTimer;
-} // namespace sp::vulkan
-
 namespace sp {
     class Game;
     class GpuTexture;
     class GuiContext;
     class Image;
-    class MenuGuiManager;
-    class OverlayGuiManager;
 
     extern CVar<float> CVarFieldOfView;
     extern CVar<glm::ivec2> CVarWindowSize;

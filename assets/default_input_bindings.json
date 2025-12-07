@@ -178,6 +178,18 @@
                 "filter": "is_focused(Game) && event",
                 "set_value": "tray"
             },
+            "/keyboard/key/i": [
+                {
+                    "outputs": "console:input/action/run_command",
+                    "filter": "is_focused(Game) && event",
+                    "set_value": "acquirefocus HUD"
+                },
+                {
+                    "outputs": "console:input/action/run_command",
+                    "filter": "is_focused(HUD) && event",
+                    "set_value": "releasefocus HUD"
+                }
+            ],
             "/keyboard/key/f": {
                 "outputs": "player:flashlight/action/flashlight/toggle",
                 "filter": "is_focused(Game) && event"

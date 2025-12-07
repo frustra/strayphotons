@@ -165,8 +165,6 @@ A shadow-casting spot-light with optional color filter / mask texture
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **texture** | string | "" | No description |
-| **resolution** | ivec2 | [1000, 1000] | No description |
-| **scale** | vec2 | [1, 1] | No description |
 | **luminance** | vec3 | [1, 1, 1] | No description |
 
 </div>

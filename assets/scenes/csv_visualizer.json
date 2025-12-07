@@ -2,6 +2,12 @@
 	"libraries": ["imgui_graph", "racecapture_csv"],
 	"entities": [
 		{
+			"name": "player:flatview",
+			"render_output": {
+				"gui_elements": ["graph_display"]
+			}
+		},
+		{
 			"name": "track_root",
 			"transform": {
 				"scale": 0.01
@@ -27,9 +33,9 @@
 				"parent": "track_root"
 			},
 			"signal_bindings": {
-				"x": "(visualizer/Latitude - 47.254946) * 111176",
-				"y": "visualizer/Altitude - 300",
-				"z": "(visualizer/Longitude + 123.191740) * 75693",
+				"x": "(visualizer/Latitude - 47.254946) * 111176 - 46700",
+				"y": "visualizer/Altitude",
+				"z": "(visualizer/Longitude + 123.191740) * 75693 - 82100",
 				"accel_x": "visualizer/AccelX * 0.3",
 				"accel_y": "-visualizer/AccelZ",
 				"accel_z": "visualizer/AccelY * 0.3"
@@ -39,7 +45,7 @@
 				{
 					"name": "csv_visualizer2",
 					"parameters": {
-						"filename": "C:/Users/xthexder/Downloads/July-16/rc_8.log"
+						"filename": "C:/Users/xthexder/Downloads/rc_79_limpmode.log"
 					}
 				}
 			]
@@ -223,8 +229,7 @@
 				"gui_elements": ["gear_display"]
 			},
 			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [120, 50]
+				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
 				"text_color_g": "1",
@@ -254,8 +259,7 @@
 				"gui_elements": ["speed_display"]
 			},
 			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [160, 50]
+				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
 				"text_color_g": "1",
@@ -283,8 +287,7 @@
 				"gui_elements": ["tps_display"]
 			},
 			"screen": {
-				"luminance": [3, 3, 3],
-				"resolution": [220, 50]
+				"luminance": [3, 3, 3]
 			},
 			"signal_bindings": {
 				"text_color_g": "visualizer/TPS / 100",
@@ -310,23 +313,19 @@
 				"translate": [0.0, 0.0, -0.210]
 			},
 			"gui_element": {},
-			"render_output": {
+			"_render_output": {
 				"output_size": [480, 320],
 				"gui_elements": ["graph_display"]
 			},
-			"screen": {
-				"texture": "ent:csv_visualizer:graph_display",
-				"luminance": [3, 3, 3],
-				"resolution": [480, 320]
+			"_screen": {
+				"luminance": [3, 3, 3]
 			},
 			"event_input": {},
 			"script": {
 				"name": "signal_graph",
 				"parameters": {
-					"selected_column": 12,
-					"range_start": 9000,
-					"range_size": 10000,
-					"data_entity": "visualizer"
+					"data_entity": "visualizer",
+					"gui_definition_entity": "graph_display"
 				}
 			}
 		},

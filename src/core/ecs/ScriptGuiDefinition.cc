@@ -5,18 +5,18 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#pragma once
-
 #include "ScriptGuiDefinition.hh"
 
 #include "graphics/GenericCompositor.hh"
 
+#include <imgui_internal.h>
+
 namespace ecs {
-    ScriptGuiDefinition::ScriptGuiDefinition(std::shared_ptr<ScriptState> state)
+    ScriptGuiDefinition::ScriptGuiDefinition(std::shared_ptr<ScriptState> state, EntityRef guiDefinitionEntity)
         : GuiDefinition(state->definition.name,
               ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground),
-          weakState(state) {}
+                  ImGuiWindowFlags_NoBackground),
+          weakState(state), guiDefinitionEntity(guiDefinitionEntity) {}
 
     ScriptGuiDefinition::~ScriptGuiDefinition() {
         context = {};
@@ -38,6 +38,19 @@ namespace ecs {
                 "ScriptGuiDefinition %s has invalid callback type",
                 state.definition.name);
 
+            {
+                auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
+
+                ecs::Entity gui = guiDefinitionEntity.Get(lock);
+                for (ImGuiInputEvent &event : ImGui::GetCurrentContext()->InputEventsQueue) {
+                    ecs::EventBytes data = {};
+                    static_assert(sizeof(ImGuiInputEvent) <= sizeof(data));
+                    std::copy_n(reinterpret_cast<const char *>(&event), sizeof(ImGuiInputEvent), data.begin());
+                    ecs::Event inputEvent("/gui/imgui_input", gui, data);
+                    ecs::EventBindings::SendEvent(lock, guiDefinitionEntity, inputEvent);
+                }
+            }
+
             auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
             if (beforeFrame && renderGui && beforeFrame(state, ent)) {
                 auto &io = ImGui::GetIO();
@@ -46,7 +59,7 @@ namespace ecs {
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
                 glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
                 glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};
-                context.drawData = renderGui(state, ent, displaySize, scale, io.DeltaTime);
+                renderGui(state, ent, displaySize, scale, io.DeltaTime, context.drawData);
                 return !context.drawData.drawCommands.empty();
             }
             return false;
@@ -54,7 +67,10 @@ namespace ecs {
     }
 
     void ScriptGuiDefinition::PreDefine(Entity ent) {
-        // ImGui::SetNextWindowSizeConstraints
+        ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowSize(imguiViewport->WorkSize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     }
 
     void ScriptGuiDefinition::DefineContents(Entity ent) {
@@ -67,6 +83,7 @@ namespace ecs {
             auto minPos = ImGui::GetItemRectMin();
             auto maxPos = ImGui::GetItemRectMax();
             context.viewport = glm::vec4(minPos.x, minPos.y, maxPos.x - minPos.x, maxPos.y - minPos.y);
+
             context.scale = glm::vec2(io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y);
             context.viewport.x *= context.scale.x;
             context.viewport.y *= context.scale.y;
@@ -84,5 +101,9 @@ namespace ecs {
                 },
                 &context);
         }
+    }
+
+    void ScriptGuiDefinition::PostDefine(Entity ent) {
+        ImGui::PopStyleVar(2);
     }
 } // namespace ecs

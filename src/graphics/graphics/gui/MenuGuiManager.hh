@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/EventQueue.hh"
-#include "graphics/gui/GuiContext.hh"
+#include "gui/GuiContext.hh"
 
 namespace sp {
     class GraphicsManager;

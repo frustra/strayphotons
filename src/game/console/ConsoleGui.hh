@@ -10,7 +10,7 @@
 #include "console/Console.hh"
 #include "ecs/components/GuiElement.hh"
 
-#include <imgui/imgui.h>
+struct ImGuiInputTextCallbackData;
 
 namespace sp {
     class ConsoleGui final : public ecs::GuiDefinition {
@@ -37,7 +37,7 @@ namespace sp {
         bool skipEditCheck = false;
         int windowFlags;
 
-        ImVec2 popupPos;
+        glm::vec2 popupPos;
         CompletionMode completionMode = COMPLETION_NONE;
         bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false,
              completionPending = false, requestNewCompletions = false;

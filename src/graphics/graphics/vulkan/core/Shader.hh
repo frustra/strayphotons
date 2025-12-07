@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "SPIRV-Reflect/spirv_reflect.h"
 #include "common/EnumTypes.hh"
 #include "common/Hashing.hh"
 #include "common/InlineVector.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+
+#include <spirv_reflect.h>
 
 namespace sp::vulkan {
     const uint32 MAX_PUSH_CONSTANT_SIZE = 128;

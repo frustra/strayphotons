@@ -679,7 +679,9 @@ namespace sp::vulkan {
             std::array<vk::Rect2D, MAX_VIEWPORTS> scs;
             for (size_t i = 0; i < pipelineInput.state.scissorCount; i++) {
                 scs[i] = scissors[i];
-                scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+                if (viewportYDirection == YDirection::Up) {
+                    scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+                }
             }
             cmd->setScissor(0, pipelineInput.state.scissorCount, scs.data());
         }

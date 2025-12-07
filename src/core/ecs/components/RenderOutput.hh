@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -45,5 +45,7 @@ namespace ecs {
         StructField::New("source", &RenderOutput::sourceName),
         StructField::New("output_size", &RenderOutput::outputSize),
         StructField::New("scale", &RenderOutput::scale),
-        StructField::New("gui_elements", &RenderOutput::guiElements));
+        StructField::New("gui_elements", &RenderOutput::guiElements, ~FieldAction::AutoApply));
+    template<>
+    void EntityComponent<RenderOutput>::Apply(RenderOutput &dst, const RenderOutput &src, bool liveTarget);
 } // namespace ecs

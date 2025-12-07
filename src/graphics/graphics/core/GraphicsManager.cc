@@ -15,7 +15,7 @@
 #include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/OverlayGuiManager.hh"
+#include "gui/OverlayGuiManager.hh"
 
 #include <algorithm>
 #include <cxxopts.hpp>
@@ -99,8 +99,8 @@ namespace sp {
         FrameMarkNamed("Input");
         if (!HasActiveContext()) return false;
 
-        if (!flatviewName || CVarFlatviewEntity.Changed()) {
-            flatviewName = ecs::Name(CVarFlatviewEntity.Get(true), ecs::Name());
+        if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
+            flatviewEntity = ecs::Name(CVarFlatviewEntity.Get(true), ecs::Name());
         }
 
         if (windowHandlers.set_title) {
@@ -120,23 +120,31 @@ namespace sp {
         }
 
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View, ecs::RenderOutput>>();
 
-            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::View>()) {
-                if (!ent.Has<ecs::Name>(lock)) continue;
-                auto &name = ent.Get<ecs::Name>(lock);
-                if (name == flatviewName) {
-                    auto &view = ent.Get<ecs::View>(lock);
-                    if (windowHandlers.update_window_view) {
-                        windowHandlers.update_window_view(this, &view.extents.x, &view.extents.y);
-                    }
-
-                    if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
-                    view.fov = glm::radians(CVarFieldOfView.Get());
-                    view.UpdateProjectionMatrix();
-
-                    context->AttachView(ent);
+            ecs::Entity ent = flatviewEntity.Get(lock);
+            glm::ivec2 outputExtents = CVarWindowSize.Get();
+            if (ent.Has<ecs::RenderOutput>(lock)) {
+                auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
+                if (windowHandlers.update_window_view) {
+                    windowHandlers.update_window_view(this, &renderOutput.outputSize.x, &renderOutput.outputSize.y);
                 }
+
+                if (renderOutput.outputSize.x <= 0.0f || renderOutput.outputSize.y <= 0.0f) {
+                    renderOutput.outputSize = CVarWindowSize.Get();
+                }
+                if (renderOutput.scale.x <= 0.0f || renderOutput.scale.y <= 0.0f) {
+                    renderOutput.scale = CVarWindowScale.Get();
+                }
+                outputExtents = renderOutput.outputSize;
+            }
+            if (ent.Has<ecs::View>(lock)) {
+                auto &view = ent.Get<ecs::View>(lock);
+                view.extents = outputExtents;
+                view.fov = glm::radians(CVarFieldOfView.Get());
+                view.UpdateProjectionMatrix();
+
+                context->AttachView(ent);
             }
         }
         return true;

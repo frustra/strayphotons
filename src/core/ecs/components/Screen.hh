@@ -12,15 +12,11 @@
 namespace ecs {
     struct Screen {
         string textureName;
-        glm::ivec2 resolution = glm::ivec2(1000, 1000); // 1000 pixels per meter world-scale (~25 dpi)
-        glm::vec2 scale = glm::vec2(1.0f);
         glm::vec3 luminanceScale = glm::vec3(1);
     };
 
     static EntityComponent<Screen> ComponentScreen("screen",
         "",
         StructField::New("texture", &Screen::textureName),
-        StructField::New("resolution", &Screen::resolution),
-        StructField::New("scale", &Screen::scale),
         StructField::New("luminance", &Screen::luminanceScale));
 } // namespace ecs

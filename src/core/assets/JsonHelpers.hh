@@ -16,7 +16,7 @@
 #include "ecs/StructMetadata.hh"
 
 #include <glm/glm.hpp>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <robin_hood.h>
 #include <string>
 #include <utility>

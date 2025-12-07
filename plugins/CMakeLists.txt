@@ -46,7 +46,7 @@ endforeach()
 foreach(SCRIPT_NAME ${CPP_SCRIPT_LIST})
     add_library(${SCRIPT_NAME} SHARED ${SCRIPT_NAME}.cpp)
 
-    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm ImGui)
+    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm ImGui ImPlot)
 
     if(WIN32)
         target_compile_definitions(${SCRIPT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)

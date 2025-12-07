@@ -60,8 +60,7 @@ namespace sp {
                 auto &renderOutput = inspector.Set<ecs::RenderOutput>(lock);
                 renderOutput.guiElements.emplace_back(inspector);
                 renderOutput.outputSize = glm::ivec2(800, 1000);
-                auto &screen = inspector.Set<ecs::Screen>(lock);
-                screen.resolution = glm::ivec2(800, 1000);
+                inspector.Set<ecs::Screen>(lock);
                 inspector.Set<ecs::EventInput>(lock);
                 auto &transform = inspector.Set<ecs::TransformTree>(lock);
                 transform.pose.SetScale(glm::vec3(0.8, 1, 1));

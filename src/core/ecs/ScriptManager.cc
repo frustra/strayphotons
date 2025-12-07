@@ -280,8 +280,9 @@ namespace ecs {
             }
             if (state.definition.type == ScriptType::GuiScript && ent.Has<GuiElement>(lock)) {
                 auto &guiElement = ent.Get<GuiElement>(lock);
-                // TODO: Move ScriptGuiDefinition to graphics core module
-                if (!guiElement.definition) guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance);
+                if (!guiElement.definition) {
+                    guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance, ent);
+                }
             }
             entry.first = ent;
         }
