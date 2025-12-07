@@ -66,9 +66,14 @@ void PushFont(sp::GuiFont fontType, float fontSize) {
 }
 
 template<typename GuiDef>
-class ScriptGuiContext : public GuiDef {
-public:
-    ScriptGuiContext() : GuiDef() {}
+struct ScriptGuiContext {
+    GuiDef gui;
+    ImGuiContext *imCtx = nullptr;
+    ImPlotContext *imPlot = nullptr;
+    shared_ptr<ImFontAtlas> fontAtlas;
+    ImFontAtlas *originalAtlas = nullptr;
+
+    ScriptGuiContext() : gui() {}
 
     static void DefaultInit(void *context) {
         ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
@@ -138,7 +143,7 @@ public:
         ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
         if (!ctx->imCtx) return false;
 
-        return ctx->BeforeFrame(state, ent);
+        return ctx->gui.BeforeFrame(state, ent);
     }
 
     static void RenderGui(void *context,
@@ -161,15 +166,15 @@ public:
         // DefineWindows
         int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse;
 
-        ctx->PreDefine(state, ent);
+        ctx->gui.PreDefine(state, ent);
         // static bool open = true;
         // ImPlot::ShowDemoWindow(&open);
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
         ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y));
         ImGui::Begin("signal_display", nullptr, flags);
-        ctx->DefineContents(state, ent);
+        ctx->gui.DefineContents(state, ent);
         ImGui::End();
-        ctx->PostDefine(state, ent);
+        ctx->gui.PostDefine(state, ent);
 
         ImGui::Render();
 
@@ -177,12 +182,6 @@ public:
         drawData->ScaleClipRects(io.DisplayFramebufferScale);
         sp::ConvertImDrawData(drawData, result);
     }
-
-private:
-    ImGuiContext *imCtx = nullptr;
-    ImPlotContext *imPlot = nullptr;
-    shared_ptr<ImFontAtlas> fontAtlas;
-    ImFontAtlas *originalAtlas = nullptr;
 };
 
 struct SignalDisplayGui {
@@ -636,16 +635,16 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
         sp_string_set(&fields[0].name, "prefix");
         fields[0].type.type_index = SP_TYPE_INDEX_STRING;
-        fields[0].size = sizeof(ScriptGuiContext<SignalDisplayGui>::prefix);
-        fields[0].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, prefix);
+        fields[0].size = sizeof(SignalDisplayGui::prefix);
+        fields[0].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, gui.prefix);
         sp_string_set(&fields[1].name, "suffix");
         fields[1].type.type_index = SP_TYPE_INDEX_STRING;
-        fields[1].size = sizeof(ScriptGuiContext<SignalDisplayGui>::suffix);
-        fields[1].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, suffix);
+        fields[1].size = sizeof(SignalDisplayGui::suffix);
+        fields[1].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, gui.suffix);
         sp_string_set(&fields[2].name, "precision");
         fields[2].type.type_index = SP_TYPE_INDEX_UINT64;
-        fields[2].size = sizeof(ScriptGuiContext<SignalDisplayGui>::precision);
-        fields[2].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, precision);
+        fields[2].size = sizeof(SignalDisplayGui::precision);
+        fields[2].offset = offsetof(ScriptGuiContext<SignalDisplayGui>, gui.precision);
 
         std::strncpy(output[1].name, "signal_graph", sizeof(output[1].name) - 1);
         output[1].type = SP_SCRIPT_TYPE_GUI_SCRIPT;
@@ -664,20 +663,20 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         fields = sp_struct_field_vector_resize(&output[1].fields, 4);
         sp_string_set(&fields[0].name, "range_start");
         fields[0].type.type_index = SP_TYPE_INDEX_UINT64;
-        fields[0].size = sizeof(ScriptGuiContext<GraphDisplayGui>::viewStart);
-        fields[0].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, viewStart);
+        fields[0].size = sizeof(GraphDisplayGui::viewStart);
+        fields[0].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, gui.viewStart);
         sp_string_set(&fields[1].name, "range_size");
         fields[1].type.type_index = SP_TYPE_INDEX_UINT64;
-        fields[1].size = sizeof(ScriptGuiContext<GraphDisplayGui>::viewSize);
-        fields[1].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, viewSize);
+        fields[1].size = sizeof(GraphDisplayGui::viewSize);
+        fields[1].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, gui.viewSize);
         sp_string_set(&fields[2].name, "gui_definition_entity");
         fields[2].type.type_index = SP_TYPE_INDEX_ENTITY_REF;
-        fields[2].size = sizeof(ScriptGuiContext<GraphDisplayGui>::guiDefinitionEntityRef);
-        fields[2].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, guiDefinitionEntityRef);
+        fields[2].size = sizeof(GraphDisplayGui::guiDefinitionEntityRef);
+        fields[2].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, gui.guiDefinitionEntityRef);
         sp_string_set(&fields[3].name, "data_entity");
         fields[3].type.type_index = SP_TYPE_INDEX_ENTITY_REF;
-        fields[3].size = sizeof(ScriptGuiContext<GraphDisplayGui>::dataEntityRef);
-        fields[3].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, dataEntityRef);
+        fields[3].size = sizeof(GraphDisplayGui::dataEntityRef);
+        fields[3].offset = offsetof(ScriptGuiContext<GraphDisplayGui>, gui.dataEntityRef);
     }
     return 2;
 }
