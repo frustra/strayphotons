@@ -8,7 +8,10 @@
 #pragma once
 
 #include "common/LockFreeMutex.hh"
+#include "common/Logging.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+
+#include <mutex>
 
 #ifdef SP_DEBUG
     #define HANDLE_POOL_DEBUG_UNFREED_HANDLES

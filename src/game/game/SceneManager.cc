@@ -333,6 +333,9 @@ namespace sp {
                             "Expected to remove %u scenes, got %u",
                             reloadScenes.size(),
                             removedCount);
+
+                        // TODO: Scripts that start transactions in destructor / threads can deadlock when removed from
+                        // the scene
                     }
 
                     for (auto &[path, type] : reloadScenes) {

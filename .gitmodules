@@ -76,3 +76,6 @@
 [submodule "ext/implot"]
 	path = ext/implot
 	url = https://github.com/epezent/implot.git
+[submodule "ext/doomgeneric"]
+	path = ext/doomgeneric
+	url = https://github.com/ozkl/doomgeneric

@@ -75,7 +75,7 @@ namespace sp::vulkan::renderer {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::RenderOutput>(lock)) {
                         ecs::EntityRef ref(ent);
-                        textureName = ResourceName("ent:") + ref.Name().String();
+                        textureName = ResourceName("ent:") + ref.Name().String() + "/RenderOutput";
                     } else {
                         continue;
                     }
@@ -86,7 +86,6 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
                     if (starts_with(textureName, "ent:")) {
-                        // TODO: Combine this with render_output dependency sorting
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
@@ -96,16 +95,6 @@ namespace sp::vulkan::renderer {
                             if (resourceID != InvalidResource) {
                                 screen.texture = resourceID;
                             }
-                        }
-                    } else if (auto it = scene.liveTextureCache.find(textureName); it != scene.liveTextureCache.end()) {
-                        if (it->first.length() > 6 && starts_with(it->first, "graph:")) {
-                            auto resourceID = builder.ReadPreviousFrame(textureName.substr(6),
-                                Access::FragmentShaderSampleImage);
-                            if (resourceID != InvalidResource) {
-                                screen.texture = resourceID;
-                            }
-                        } else if (it->second.Ready()) {
-                            screen.texture = it->second.index;
                         }
                     }
 

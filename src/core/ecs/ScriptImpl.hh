@@ -308,6 +308,7 @@ namespace ecs {
     template<typename T>
     struct script_has_render_gui_func<T,
         std::void_t<decltype(std::declval<T>().RenderGui(std::declval<ScriptState &>(),
+            std::declval<sp::GenericCompositor *>(),
             std::declval<Entity>(),
             std::declval<glm::vec2>(),
             std::declval<glm::vec2>(),
@@ -356,7 +357,8 @@ namespace ecs {
             }
         }
 
-        static void RenderGui([[maybe_unused]] ScriptState &state,
+        static void RenderGui([[maybe_unused]] sp::GenericCompositor *compositor,
+            [[maybe_unused]] ScriptState &state,
             [[maybe_unused]] Entity ent,
             [[maybe_unused]] glm::vec2 displaySize,
             [[maybe_unused]] glm::vec2 scale,
@@ -365,7 +367,7 @@ namespace ecs {
             if constexpr (script_has_render_gui_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
-                ptr->RenderGui(state, ent, displaySize, scale, deltaTime, result);
+                ptr->RenderGui(compositor, state, ent, displaySize, scale, deltaTime, result);
             }
         }
 

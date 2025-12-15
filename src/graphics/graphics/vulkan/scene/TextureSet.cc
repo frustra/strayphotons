@@ -162,7 +162,7 @@ namespace sp::vulkan {
             imageInfo.format = vk::Format::eR8G8B8A8Unorm;
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-            ImageViewCreateInfo viewInfo;
+            ImageViewCreateInfo viewInfo = {};
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             auto pending = Add(imageInfo, viewInfo, {data->data(), data->size(), data});
             textureCache[name] = pending;
@@ -300,7 +300,7 @@ namespace sp::vulkan {
         imageInfo.format = vk::Format::eR8G8B8A8Unorm;
         imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
         auto fut = device.CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
         device.FlushMainQueue();

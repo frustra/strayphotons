@@ -198,7 +198,7 @@ if(SP_BUILD_RUST)
     endif()
 endif()
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sp)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sp-vk)
 
 ################################################
 # Build tests

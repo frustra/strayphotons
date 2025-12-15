@@ -16,7 +16,8 @@
 
 namespace sp {
     class GraphicsManager;
-}
+    class GenericCompositor;
+} // namespace sp
 
 namespace sp::winit {
     struct WinitContext;
@@ -24,12 +25,14 @@ namespace sp::winit {
 
 extern "C" {
 typedef sp::GraphicsManager sp_graphics_ctx_t;
+typedef sp::GenericCompositor sp_compositor_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
 #else
     #include <stddef.h>
     #include <stdint.h>
 
 typedef void sp_graphics_ctx_t;
+typedef void sp_compositor_ctx_t;
 typedef void sp_winit_ctx_t;
 #endif
 
@@ -84,6 +87,21 @@ typedef struct sp_window_handlers_t {
 SP_EXPORT void sp_graphics_set_window_handlers(sp_graphics_ctx_t *graphics, const sp_window_handlers_t *handlers);
 SP_EXPORT bool sp_graphics_handle_input_frame(sp_graphics_ctx_t *graphics);
 SP_EXPORT void sp_graphics_step_thread(sp_graphics_ctx_t *graphics, unsigned int count);
+
+// Create or update an image on the GPU from a CPU buffer so it can be referenced by the render
+// Args:
+//   dst: The destination entity to store the image on
+//   data: A pointer to the raw RGBA 8-bit color image data
+//   dataSize: The size of the image data buffer in bytes
+//   imageWidth: The width of the image in pixels
+//   imageHeight: The height of the image in pixels
+SP_EXPORT void sp_compositor_upload_source_image(sp_compositor_ctx_t *compositor,
+    sp_entity_t dst,
+    const uint8_t *data,
+    uint32_t dataSize,
+    uint32_t imageWidth,
+    uint32_t imageHeight);
+SP_EXPORT void sp_compositor_clear_source_image(sp_compositor_ctx_t *compositor, sp_entity_t dst);
 
 #ifdef __cplusplus
 }

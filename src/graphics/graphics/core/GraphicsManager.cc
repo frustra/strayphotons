@@ -66,7 +66,7 @@ namespace sp {
 
         overlayGui = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
         menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"),
-            *this); // TODO: Copies could use-after-free this
+            *this); // TODO: GuiContext is copied into ECS and might read-after-free
     }
 
     void GraphicsManager::StartThread(bool startPaused) {
@@ -126,6 +126,7 @@ namespace sp {
             glm::ivec2 outputExtents = CVarWindowSize.Get();
             if (ent.Has<ecs::RenderOutput>(lock)) {
                 auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
+                // TODO: Replace with combined window / overlay entity
                 if (windowHandlers.update_window_view) {
                     windowHandlers.update_window_view(this, &renderOutput.outputSize.x, &renderOutput.outputSize.y);
                 }
@@ -148,6 +149,20 @@ namespace sp {
             }
         }
         return true;
+    }
+
+    chrono_clock::duration GraphicsManager::GetRemainingFrameTime() const {
+        auto now = chrono_clock::now();
+        auto frameEnd = targetFrameEnd + interval;
+        return now >= frameEnd ? chrono_clock::duration(0) : (frameEnd - now);
+    }
+
+    chrono_clock::duration GraphicsManager::GetFrameInterval() const {
+        return interval;
+    }
+
+    GenericCompositor *GraphicsManager::GetCompositor() const {
+        return context->GetCompositor();
     }
 
     bool GraphicsManager::PreFrame() {

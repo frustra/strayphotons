@@ -28,11 +28,17 @@ namespace sp::vulkan {
     public:
         Compositor(DeviceContext &device, Renderer &renderer);
 
+        enum class PassOrder : uint8_t {
+            BeforeViews,
+            AfterViews,
+        };
+
         void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) override;
+        void UpdateSourceImage(ecs::Entity dst, std::shared_ptr<sp::Image> src) override;
 
         void BeforeFrame();
-        void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>> lock);
-        void AddOutputPasses();
+        void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name, ecs::RenderOutput>> lock);
+        void AddOutputPasses(PassOrder order);
         void EndFrame();
 
     private:
@@ -53,10 +59,24 @@ namespace sp::vulkan {
             bool enableGui;
             std::vector<ecs::EntityRef> guiElements;
             rg::ResourceName sourceName;
-            std::variant<rg::ResourceID, TextureIndex> sourceTexture = rg::InvalidResource;
-            rg::ResourceID renderGraphID = rg::InvalidResource;
+            rg::ResourceID sourceResourceID = rg::InvalidResource;
+            rg::ResourceID outputResourceID = rg::InvalidResource;
         };
         vector<RenderOutputInfo> renderOutputs;
+        robin_hood::unordered_map<ecs::Entity, size_t> existingOutputs;
+        // 3D views are rendered after this many renderOutputs, allowing later renderOutputs to reference view outputs
+        size_t viewRenderPassOffset = 0;
+
+        PreservingMap<ecs::Entity, GuiContext, 500> ephemeralGuiContexts;
+
+        struct CpuImageSource {
+            std::shared_ptr<sp::Image> cpuImage;
+            bool cpuImageModified = false;
+            std::deque<AsyncPtr<Image>> pendingUploads;
+            ImageViewPtr imageView;
+        };
+        LockFreeMutex uploadMutex;
+        robin_hood::unordered_map<ecs::Entity, CpuImageSource> cpuImageSources;
 
         unique_ptr<VertexLayout> vertexLayout;
 

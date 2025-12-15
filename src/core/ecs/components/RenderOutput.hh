@@ -33,7 +33,7 @@ namespace ecs {
         // - effects? (blur, crosshair, other post-processing)
         // - sprites? (transform tree based positioning)
 
-        std::shared_ptr<sp::GuiContext> guiContext; // TODO: shared_ptr factory or raw pointer manual lifetime?
+        std::weak_ptr<sp::GuiContext> guiContext;
 
         RenderOutput() {}
         RenderOutput(std::string sourceName, std::initializer_list<EntityRef> guiElements = {})

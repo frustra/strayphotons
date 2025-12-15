@@ -59,7 +59,13 @@ namespace ecs {
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
                 glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
                 glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};
-                renderGui(state, ent, displaySize, scale, io.DeltaTime, context.drawData);
+                renderGui((sp::GenericCompositor *)io.UserData,
+                    state,
+                    ent,
+                    displaySize,
+                    scale,
+                    io.DeltaTime,
+                    context.drawData);
                 return !context.drawData.drawCommands.empty();
             }
             return false;
