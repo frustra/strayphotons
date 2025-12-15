@@ -349,13 +349,13 @@ namespace sp::vulkan {
             deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
             deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
             deviceInfo.enabledLayerCount = layers.size();
             deviceInfo.ppEnabledLayerNames = layers.data();
 #ifdef __clang__
-#pragma clang diagnostic pop
+    #pragma clang diagnostic pop
 #endif
 
             device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
