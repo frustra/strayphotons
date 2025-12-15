@@ -88,8 +88,6 @@ namespace sp {
     }
 
     bool OverlayGuiManager::BeforeFrame() {
-        GuiContext::BeforeFrame();
-
         bool focusChanged = false;
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock>>();
@@ -115,6 +113,8 @@ namespace sp {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Overlay);
             }
         }
+
+        GuiContext::BeforeFrame();
         return true;
     }
 } // namespace sp

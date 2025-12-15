@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/FlatSet.hh"
 #include "common/Hashing.hh"
 #include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Access.hh"
@@ -67,6 +68,7 @@ namespace sp::vulkan::render_graph {
 
         ResourceID id = InvalidResource;
         Type type = Type::Undefined;
+        bool externalResource = false;
 
     private:
         union {
@@ -102,6 +104,8 @@ namespace sp::vulkan::render_graph {
         const ResourceName &GetName(ResourceID id) const;
         ResourceID GetID(string_view name, bool assertExists = true, uint32 framesAgo = 0) const;
 
+        ResourceID AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace = false);
+
         ResourceID LastOutputID() const {
             return lastOutputID;
         }
@@ -124,7 +128,7 @@ namespace sp::vulkan::render_graph {
         void AddUsageFromAccess(ResourceID id, Access access);
 
         ResourceID ReserveID(string_view name);
-        void Register(string_view name, Resource &resource);
+        bool Register(string_view name, Resource &resource);
 
         void BeginScope(string_view name);
         void EndScope();
@@ -160,6 +164,7 @@ namespace sp::vulkan::render_graph {
         vector<Resource> resources;
         vector<ResourceName> resourceNames;
         vector<ResourceID> freeIDs;
+        vector<ResourceID> externalIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;

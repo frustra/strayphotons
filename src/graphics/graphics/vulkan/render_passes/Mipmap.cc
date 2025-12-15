@@ -20,7 +20,7 @@ namespace sp::vulkan::renderer {
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
 
-                ImageBarrierInfo transferMips;
+                ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
                 transferMips.baseMipLevel = 1;
                 transferMips.mipLevelCount = image->MipLevels() - 1;

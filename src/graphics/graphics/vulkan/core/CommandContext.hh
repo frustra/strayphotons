@@ -127,6 +127,12 @@ namespace sp::vulkan {
             vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
             const ImageBarrierInfo &options = {});
 
+        void ImageBarrier(const ImagePtr &image,
+            vk::ImageLayout newLayout, // Transition to this layout, ensuring the last image access is complete.
+            vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
+            vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
+            const ImageBarrierInfo &options = {});
+
         // Sets the shaders for arbitrary stages. Any stages not defined in `shaders` will be unset.
         void SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders);
         // Sets the shaders to a standard vertex+fragment pipeline.

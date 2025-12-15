@@ -13,8 +13,8 @@ add_subdirectory(robin-hood-hashing)
 add_subdirectory(physx)
 
 # These projects require more configuration that is encapsulated their own CMake files
-include(cxxopts.cmake)
 include(cglm.cmake)
+include(cxxopts.cmake)
 include(dynalo.cmake)
 include(fpng.cmake)
 include(glfw.cmake)

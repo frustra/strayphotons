@@ -46,6 +46,10 @@ namespace sp::vulkan {
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
+        Compositor &GetCompositor() {
+            return compositor;
+        }
+
     private:
         Game &game;
         DeviceContext &device;

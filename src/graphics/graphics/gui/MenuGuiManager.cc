@@ -168,7 +168,7 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        // if (!logoTex) logoTex = graphics.context->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
+        // if (!logoTex) logoTex = graphics.context->UploadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
         // ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
         ImVec2 logoSize(512, 128);
 

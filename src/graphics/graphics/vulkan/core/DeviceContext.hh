@@ -36,6 +36,7 @@ namespace sp {
     class CFuncCollection;
     class Game;
     class GraphicsManager;
+    class GenericCompositor;
 } // namespace sp
 
 namespace sp::vulkan {
@@ -98,6 +99,8 @@ namespace sp::vulkan {
         std::shared_ptr<Renderer> GetRenderer() const;
         void RenderFrame(chrono_clock::duration elapsedTime) override;
 
+        GenericCompositor *GetCompositor() const override;
+
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
         CommandContextPtr GetFrameCommandContext(render_graph::Resources &resources,
@@ -134,12 +137,12 @@ namespace sp::vulkan {
             return buf;
         }
 
+        AsyncPtr<Buffer> CreateUploadBuffer(const InitialData &data,
+            vk::BufferUsageFlags usage = vk::BufferUsageFlagBits::eTransferSrc);
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data,
             vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo);
-
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-
         BufferPtr GetBuffer(const BufferDesc &desc);
 
         struct BufferTransfer {
@@ -156,7 +159,12 @@ namespace sp::vulkan {
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &initialData = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer);
+        AsyncPtr<Image> UpdateImage(const AsyncPtr<Image> &dstImage,
+            const AsyncPtr<Buffer> &srcData,
+            bool updateMipmap = true);
+        AsyncPtr<Image> UpdateImageMipmap(const AsyncPtr<Image> &image);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         AsyncPtr<ImageView> CreateImageAndView(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
@@ -166,7 +174,7 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
         AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
+        shared_ptr<GpuTexture> UploadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
@@ -185,9 +193,9 @@ namespace sp::vulkan {
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
         SharedHandle<vk::Fence> GetEmptyFence();
-        SharedHandle<vk::Semaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
+        std::shared_ptr<vk::UniqueSemaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
 
-        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
+        using TemporaryObject = std::variant<BufferPtr, ImagePtr, ImageViewPtr, std::shared_ptr<vk::UniqueSemaphore>>;
         void PushInFlightObject(TemporaryObject object, vk::Fence fence);
 
         const vk::PhysicalDeviceLimits &Limits() const {
@@ -212,7 +220,7 @@ namespace sp::vulkan {
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 #endif
 
-        uint32 QueueFamilyIndex(CommandContextType type) {
+        uint32 QueueFamilyIndex(CommandContextType type) const {
             return queueFamilyIndex[QueueType(type)];
         }
 

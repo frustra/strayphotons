@@ -24,9 +24,9 @@ namespace sp::vulkan::renderer {
         graph.AddPass("Transparency")
             .Build([&](PassBuilder &builder) {
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
-                builder.Read("ShadowMap.Linear", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+                builder.Read("ShadowMap/Linear", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/Radiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/Normals", Access::FragmentShaderSampleImage);
 
                 for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
                     builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
@@ -67,9 +67,9 @@ namespace sp::vulkan::renderer {
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
 
-                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
-                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
-                cmd.SetImageView("voxelNormals", "Voxels.Normals");
+                cmd.SetImageView("shadowMap", "ShadowMap/Linear");
+                cmd.SetImageView("voxelRadiance", "Voxels/Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels/Normals");
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                 cmd.SetStorageBuffer("ExposureState", "ExposureState");

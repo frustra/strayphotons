@@ -52,6 +52,7 @@ namespace ecs {
         // Basic types
         bool,
         char,
+        uint8_t,
         uint16_t,
         int32_t,
         uint32_t,
@@ -91,6 +92,7 @@ namespace ecs {
         SignalRef,
         Sound,
         StructField,
+        sp::GenericCompositor,
         sp::GuiDrawData,
         sp::GuiDrawCommand,
         sp::GuiDrawVertex,
@@ -101,6 +103,7 @@ namespace ecs {
         std::vector<std::string>,
         std::vector<SignalExpression>,
         std::vector<EventName>,
+        std::vector<EventString>,
         std::vector<EventDest>,
         std::vector<EventBinding>,
         std::vector<sp::GuiDrawCommand>,
@@ -163,7 +166,14 @@ namespace ecs {
         void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
         void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
         bool (*)(void *, ScriptState *, Entity), // BeforeFrame
-        void (*)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &) // RenderGui
+        void (*)(void *,
+            sp::GenericCompositor *,
+            ScriptState *,
+            Entity,
+            glm::vec2,
+            glm::vec2,
+            float,
+            sp::GuiDrawData &) // RenderGui
         >;
 
     namespace detail {

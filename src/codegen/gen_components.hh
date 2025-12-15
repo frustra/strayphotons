@@ -12,6 +12,7 @@ void GenerateComponentsH(S &out) {
 #include <c_abi/Tecs.h>
 #include <strayphotons/entity.h>
 #include <strayphotons/export.h>
+#include <strayphotons/graphics.h>
 
 #if !defined(__cplusplus) || !defined(SP_SHARED_INTERNAL)
 #ifdef __cplusplus

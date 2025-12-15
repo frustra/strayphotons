@@ -30,8 +30,8 @@ namespace sp::vulkan {
         SetBlending(false);
         SetBlendFunc(vk::BlendFactor::eSrcAlpha,
             vk::BlendFactor::eOneMinusSrcAlpha,
-            vk::BlendFactor::eOne,
-            vk::BlendFactor::eOneMinusSrcAlpha);
+            vk::BlendFactor::eOneMinusDstAlpha,
+            vk::BlendFactor::eOne);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
         SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
@@ -248,6 +248,24 @@ namespace sp::vulkan {
                 "can't track image layout when specifying a subresource range");
             image->SetLayout(oldLayout, newLayout);
         }
+    }
+
+    void CommandContext::ImageBarrier(const ImagePtr &image,
+        vk::ImageLayout newLayout,
+        vk::PipelineStageFlags dstStages,
+        vk::AccessFlags dstAccess,
+        const ImageBarrierInfo &options) {
+        Assertf(options.trackImageLayout, "CommandContext::ImageBarrier requires trackImageLayout or oldLayout");
+        auto last = GetAccessInfo(image->LastAccess());
+        if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
+        ImageBarrier(image,
+            image->LastLayout(),
+            newLayout,
+            last.stageMask,
+            last.accessMask,
+            dstStages,
+            dstAccess,
+            options);
     }
 
     void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders) {

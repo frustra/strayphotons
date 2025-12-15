@@ -9,6 +9,7 @@
 
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/Access.hh"
+#include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
@@ -124,6 +125,24 @@ namespace sp::vulkan {
             return declaredUsage;
         }
 
+        uint32 LastQueueFamily() const {
+            return lastQueueFamilyIndex;
+        }
+
+        const vk::Semaphore &SetPendingCommand(std::shared_ptr<vk::UniqueSemaphore> pendingCmd,
+            uint32 queueFamilyIndex) {
+            static const vk::Semaphore emptySemaphore = {};
+            pendingCommand = pendingCmd;
+            if (queueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) lastQueueFamilyIndex = queueFamilyIndex;
+            return pendingCommand ? pendingCommand->get() : emptySemaphore;
+        }
+
+        const vk::Semaphore &GetWaitSemaphore(uint32 queueFamilyIndex = ~0u) {
+            static const vk::Semaphore emptySemaphore = {};
+            if (lastQueueFamilyIndex == queueFamilyIndex && queueFamilyIndex != ~0u) return emptySemaphore;
+            return pendingCommand ? pendingCommand->get() : emptySemaphore;
+        }
+
         void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
         void SetAccess(Access oldAccess, Access newAccess);
 
@@ -135,6 +154,9 @@ namespace sp::vulkan {
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         Access lastAccess = Access::None;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
+
+        uint32 lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        std::shared_ptr<vk::UniqueSemaphore> pendingCommand;
     };
 
     struct ImageViewCreateInfo {
@@ -224,7 +246,7 @@ namespace sp::vulkan {
         }
 
     private:
-        ImageViewCreateInfo info;
+        ImageViewCreateInfo info = {};
         vk::Extent3D extent;
     };
 

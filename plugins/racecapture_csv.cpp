@@ -119,8 +119,8 @@ struct ColumnData : public ColumnMetadata {
 };
 
 struct CSVVisualizer {
-    std::string filename;
-    std::string loaded;
+    sp::InlineString<255> filename;
+    sp::InlineString<255> loaded;
     sp_entity_ref_t entityRef = {};
     sp_signal_ref_t loadingRef = {}, accelXRef = {}, accelYRef = {}, accelZRef = {}, xRef = {}, yRef = {}, zRef = {};
     std::vector<sp_signal_ref_t> outputs;
@@ -150,7 +150,7 @@ struct CSVVisualizer {
                     sp_event_send(lock, event->source, &eventOut);
                 } else {
                     auto columns = columnsPtr->Get();
-                    if (col < columns->size()) {
+                    if (columns && col < columns->size()) {
                         sp_event_t eventOut = {"/csv/column_metadata", ent, {SP_EVENT_DATA_TYPE_BYTES}};
                         static_assert(sizeof(ColumnMetadata) <= sizeof(event_bytes_t));
                         std::copy_n((const uint8_t *)(const ColumnMetadata *)&(*columns)[col],
@@ -175,7 +175,7 @@ struct CSVVisualizer {
                     sp_event_send(lock, event->source, &eventOut);
                 } else {
                     auto columns = columnsPtr->Get();
-                    if (columnIndex < columns->size()) {
+                    if (columns && columnIndex < columns->size()) {
                         size_t resolution = event->data.vec4.v[1];
                         size_t rangeStart = event->data.vec4.v[2];
                         size_t rangeSize = event->data.vec4.v[3];
@@ -309,6 +309,7 @@ struct CSVVisualizer {
             });
             columnsPtr = workQueue->Dispatch<std::vector<ColumnData>>(assetPtr,
                 [this](std::shared_ptr<std::vector<char>> asset) {
+                    if (!asset) return std::shared_ptr<std::vector<ColumnData>>();
                     return LoadCSVData(std::string_view(asset->data(), asset->size()));
                 });
             loaded = filename;
@@ -407,7 +408,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
 
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 2);
         sp_string_set(&fields[0].name, "filename");
-        fields[0].type.type_index = SP_TYPE_INDEX_STRING;
+        fields[0].type.type_index = SP_TYPE_INDEX_EVENT_STRING;
         fields[0].size = sizeof(CSVVisualizer::filename);
         fields[0].offset = offsetof(CSVVisualizer, filename);
         sp_string_set(&fields[1].name, "current_time_ns");

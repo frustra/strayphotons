@@ -238,7 +238,7 @@ namespace ecs {
             s2 = {s.head, (s.tail + 1) % (uint32_t)events.size()};
             if (s2.tail == s2.head) {
                 EntityRef ref(event.source);
-                Warnf("Event Queue full! Dropping event %s from %s", event.name, ref.Name());
+                Warnf("Event Queue full! Dropping event %s from %s", event.name, ref.Name().String());
                 return false;
             }
         } while (!state.compare_exchange_weak(s, s2, std::memory_order_acquire, std::memory_order_relaxed));

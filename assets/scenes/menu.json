@@ -1,5 +1,5 @@
 {
-	"libraries": ["hello_cpp", "imgui_graph"],
+	"libraries": ["hello_cpp", "imgui_graph", "doomgeneric"],
 	"entities": [
 		{
 			"scene_connection": {
@@ -68,6 +68,17 @@
 			}
 		},
 		{
+			"name": "doom_display",
+			"gui_element": {},
+			"event_input": {},
+			"script": {
+				"name": "doomgeneric",
+				"parameters": {
+					"cli_args": []
+				}
+			}
+		},
+		{
 			"name": "lobby_gui",
 			"transform": {
 				"rotate": [62.7994, -0.678598, -0.678598, -0.281085],
@@ -77,8 +88,19 @@
 			"gui": {
 				"window_name": "lobby"
 			},
+			"render_output": {
+				"gui_elements": ["doom_display"]
+			},
+			"event_bindings": {
+				"/interact/press": {
+					"outputs": "console:input/action/run_command",
+					"filter": "event",
+					"set_value": "acquirefocus HUD"
+				}
+			},
 			"screen": {
-				"luminance": [3, 1, 3]
+				"_texture": "ent:player:flatview/RenderOutput",
+				"luminance": [2, 1.6, 1]
 			},
 			"script": {
 				"parameters": {

@@ -171,9 +171,8 @@ namespace sp::vulkan {
                     auto &handle = it->second;
                     if (!handle.Ready()) complete = false;
                 }
-            } else {
-                // "graph:" and "ent:" prefix
-                // TODO: Fix render_outputs are referenced by graph:ent:
+            } else if (str.length() > 4 && starts_with(str, "ent:")) {
+                // Populated in AddGraphTextures()
                 textureCache[str] = {};
             }
         };
@@ -184,16 +183,17 @@ namespace sp::vulkan {
         for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Light>()) {
             addTexture(ent.Get<ecs::Light>(lock).filterName);
         }
-        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
-            addTexture(ent.Get<ecs::RenderOutput>(lock).sourceName);
-        }
-        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
-            auto &textureName = ent.Get<ecs::Screen>(lock).textureName;
-            if (textureName.empty() && ent.Has<ecs::RenderOutput>(lock)) {
-                addTexture("ent:" + ent.Get<ecs::Name>(lock).String());
-            }
-            addTexture(textureName);
-        }
+        // TODO: Don't use up texture indexes for render output sources
+        // for (const ecs::Entity &ent : lock.EntitiesWith<ecs::RenderOutput>()) {
+        //     addTexture(ent.Get<ecs::RenderOutput>(lock).sourceName);
+        // }
+        // for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
+        //     auto &textureName = ent.Get<ecs::Screen>(lock).textureName;
+        //     if (textureName.empty() && ent.Has<ecs::RenderOutput>(lock)) {
+        //         addTexture("ent:" + ent.Get<ecs::Name>(lock).String());
+        //     }
+        //     addTexture(textureName);
+        // }
         return complete;
     }
 
@@ -202,14 +202,16 @@ namespace sp::vulkan {
         graph.AddPass("AddGraphTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &tex : liveTextureCache) {
-                    if (tex.first.length() > 6 && starts_with(tex.first, "graph:")) {
-                        auto id = builder.ReadPreviousFrame(tex.first.substr(6), Access::FragmentShaderSampleImage);
+                    if (tex.first.length() > 4 && starts_with(tex.first, "ent:")) {
+                        rg::ResourceID id = builder.GetID(tex.first, false);
+                        if (id == rg::InvalidResource) {
+                            id = builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
+                        } else {
+                            builder.Read(id, Access::FragmentShaderSampleImage);
+                        }
                         if (id != rg::InvalidResource) {
                             newGraphTextures.emplace_back(tex.first, id);
                         }
-                    }
-                    if (tex.first.length() > 4 && starts_with(tex.first, "ent:")) {
-                        builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
                     }
                 }
                 builder.Write("RenderableEntities", Access::HostWrite);
@@ -223,9 +225,13 @@ namespace sp::vulkan {
                 }
                 textures.Flush();
                 for (auto &overridePair : renderableTextureOverrides) {
+                    auto &renderable = renderables[overridePair.second];
+                    renderable.baseColorOverrideID = 0;
                     auto cacheEntry = liveTextureCache.find(overridePair.first);
                     if (cacheEntry != liveTextureCache.end()) {
-                        renderables[overridePair.second].baseColorOverrideID = cacheEntry->second.index;
+                        if (cacheEntry->second.Ready()) {
+                            renderable.baseColorOverrideID = cacheEntry->second.index;
+                        }
                     }
                 }
                 resources.GetBuffer("RenderableEntities")->CopyFrom(renderables.data(), renderables.size());

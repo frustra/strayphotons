@@ -25,6 +25,11 @@ namespace sp::vulkan::render_graph {
             scope.frames[frameIndex].resourceNames.clear();
         }
 
+        sp::erase_if(externalIDs, [&](auto &id) {
+            if (refCounts[id] == 1) DecrementRef(id);
+            return refCounts[id] <= 0;
+        });
+
         for (ResourceID id = 0; id < resources.size(); id++) {
             if (resources[id].type != Resource::Type::Undefined && refCounts[id] == 0) {
                 Assert(!images[id], "dangling render target");
@@ -168,11 +173,11 @@ namespace sp::vulkan::render_graph {
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
-        if (/* name.find(':') == string_view::npos && */ name.find('.') != string_view::npos) {
-            // Any resource name with a dot is assumed to be fully qualified.
-            auto lastDot = name.rfind('.');
-            auto scopeName = name.substr(0, lastDot);
-            auto resourceName = name.substr(lastDot + 1);
+        auto lastSep = name.rfind('/');
+        if (starts_with(name, "/")) {
+            // The resource name is fully qualified, look it up directly.
+            auto scopeName = name.substr(0, lastSep);
+            auto resourceName = name.substr(lastSep + 1);
 
             for (auto &scope : nameScopes) {
                 if (scope.name == scopeName) {
@@ -180,16 +185,58 @@ namespace sp::vulkan::render_graph {
                     break;
                 }
             }
-            Assertf(!assertExists || result != InvalidResource, "resource does not exist: %s", name);
-            return result;
+        } else {
+            // The resource name is relative to the current or one of the parent scopes.
+            string_view relativeScope;
+            if (lastSep != name.npos) {
+                relativeScope = name.substr(0, lastSep);
+                name = name.substr(lastSep + 1);
+            }
+
+            for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
+                if (!relativeScope.empty()) {
+                    auto fullScopeName = nameScopes[*scopeIt].name + "/" + relativeScope;
+                    for (auto &scope : nameScopes) {
+                        if (scope.name == fullScopeName) {
+                            result = scope.GetID(name, getFrameIndex);
+                            break;
+                        }
+                    }
+                    if (result != InvalidResource) return result;
+                } else {
+                    auto id = nameScopes[*scopeIt].GetID(name, getFrameIndex);
+                    if (id != InvalidResource) return id;
+                }
+            }
+        }
+        Assertf(!assertExists || result != InvalidResource, "resource does not exist: %s", name);
+        return result;
+    }
+
+    ResourceID Resources::AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace) {
+        Assertf(view, "Resources::AddExternalImageView called with null view");
+        Assert(view->BaseArrayLayer() == 0, "RenderGraph::AddImageView can't target a specific layer");
+
+        ImageDesc desc = {};
+        desc.extent = view->Extent();
+        desc.format = view->Format();
+        desc.arrayLayers = view->ArrayLayers();
+
+        if (!name.empty() && !allowReplace) {
+            auto existingID = GetID(name, false);
+            Assertf(existingID == InvalidResource,
+                "Resources::AddExternalImageView called with existing name: %s",
+                name);
         }
 
-        for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
-            auto id = nameScopes[*scopeIt].GetID(name, getFrameIndex);
-            if (id != InvalidResource) return id;
+        Resource resource(desc);
+        resource.externalResource = true;
+        if (Register(name, resource)) {
+            externalIDs.emplace_back(resource.id);
+            IncrementRef(resource.id);
+            images[resource.id] = make_shared<PooledImage>(device, desc, view);
         }
-        Assertf(!assertExists, "resource does not exist: %s", name);
-        return InvalidResource;
+        return resource.id;
     }
 
     uint32 Resources::RefCount(ResourceID id) {
@@ -248,7 +295,7 @@ namespace sp::vulkan::render_graph {
         return futureResource.id;
     }
 
-    void Resources::Register(string_view name, Resource &resource) {
+    bool Resources::Register(string_view name, Resource &resource) {
         DebugZoneScoped;
         if (!name.empty()) {
             auto existingID = GetID(name, false);
@@ -259,26 +306,48 @@ namespace sp::vulkan::render_graph {
                     "resource defined twice");
                 resource.id = existingID;
                 resources[existingID] = resource;
-                return;
+                return true;
             }
         }
 
+        ResourceName scopeName;
         Scope *nameScope = nullptr;
-        if (name.find(':') == string_view::npos && name.find('.') != string_view::npos) {
+        auto lastSep = name.rfind('/');
+        if (starts_with(name, "/")) {
+            // The resource name is fully qualified, look it up directly.
+            scopeName = name.substr(0, lastSep);
+            name = name.substr(lastSep + 1);
+
             for (auto &scope : nameScopes) {
-                if (scope.name.empty()) continue;
-                auto sep = scope.name + ".";
-                auto scopeSep = name.find(sep);
-                if (scopeSep != string_view::npos && (scopeSep == 0 || name[scopeSep - 1] == '.')) {
+                if (scope.name == scopeName) {
                     nameScope = &scope;
-                    name = name.substr(scopeSep + sep.length());
                     break;
                 }
             }
-            if (!nameScope) return;
         } else {
-            nameScope = &nameScopes[scopeStack.back()];
+            // The resource name is relative to the current or one of the parent scopes.
+            string_view relativeScope;
+            if (lastSep != name.npos) {
+                relativeScope = name.substr(0, lastSep);
+                name = name.substr(lastSep + 1);
+            }
+
+            if (!relativeScope.empty()) {
+                for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
+                    scopeName = nameScopes[*scopeIt].name + "/" + relativeScope;
+                    for (auto &scope : nameScopes) {
+                        if (scope.name == scopeName) {
+                            nameScope = &scope;
+                            break;
+                        }
+                    }
+                    if (nameScope) break;
+                }
+            } else {
+                nameScope = &nameScopes[scopeStack.back()];
+            }
         }
+        if (!nameScope) return false;
 
         if (freeIDs.empty()) {
             resource.id = (ResourceID)resources.size();
@@ -291,9 +360,10 @@ namespace sp::vulkan::render_graph {
             resourceNames[resource.id] = name;
         }
 
-        if (name.empty()) return;
+        if (name.empty()) return false;
 
         nameScope->SetID(name, resource.id, frameIndex);
+        return true;
     }
 
     void Resources::BeginScope(string_view name) {
@@ -301,13 +371,7 @@ namespace sp::vulkan::render_graph {
         Assert(!name.empty(), "scopes must have a name");
 
         const auto &topScope = nameScopes[scopeStack.back()];
-        ResourceName fullName;
-
-        if (topScope.name.empty()) {
-            fullName = name;
-        } else {
-            fullName = topScope.name + "." + name;
-        }
+        ResourceName fullName = topScope.name + "/" + name;
 
         size_t scopeIndex = 0;
         for (size_t i = 0; i < nameScopes.size(); i++) {
@@ -391,7 +455,7 @@ namespace sp::vulkan::render_graph {
         imageInfo.format = createDesc.format;
         imageInfo.usage = createDesc.usage;
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         viewInfo.viewType = createDesc.primaryViewType;
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
