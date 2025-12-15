@@ -71,7 +71,7 @@
 			"name": "doom_display",
 			"gui_element": {},
 			"event_input": {},
-			"script": {
+			"_script": {
 				"name": "doomgeneric",
 				"parameters": {
 					"cli_args": []
@@ -99,7 +99,7 @@
 				}
 			},
 			"screen": {
-				"_texture": "ent:player:flatview/RenderOutput",
+				"texture": "ent:player:flatview/RenderOutput",
 				"luminance": [2, 1.6, 1]
 			},
 			"script": {
