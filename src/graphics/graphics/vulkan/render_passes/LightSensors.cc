@@ -61,7 +61,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("LightSensors")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("ShadowMap.Linear", Access::ComputeShaderSampleImage);
+                builder.Read("ShadowMap/Linear", Access::ComputeShaderSampleImage);
                 builder.Read("LightState", Access::ComputeShaderReadUniform);
                 builder.CreateBuffer("LightSensorValues",
                     {sizeof(glm::vec4), MAX_LIGHT_SENSORS},
@@ -71,7 +71,7 @@ namespace sp::vulkan::renderer {
             .Execute([data, textureSet = &scene.textures](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("light_sensor.comp");
 
-                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetImageView("shadowMap", "ShadowMap/Linear");
                 cmd.SetStorageBuffer("LightSensorResults", "LightSensorValues");
                 cmd.SetUniformBuffer("LightData", "LightState");
                 cmd.UploadUniformData("LightSensorData", &data->gpu);

@@ -17,6 +17,10 @@
 #include <map>
 #include <variant>
 
+namespace sp {
+    class GenericCompositor;
+}
+
 namespace ecs {
     class ScriptState;
     struct GuiElement;
@@ -51,7 +55,8 @@ namespace ecs {
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
     using BeforeFrameFunc = std::function<bool(ScriptState &, Entity)>;
-    using RenderGuiFunc = std::function<void(ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
+    using RenderGuiFunc = std::function<
+        void(sp::GenericCompositor *, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
     using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
 
     using ScriptCallback = std::

@@ -317,7 +317,7 @@ namespace sp::vulkan::renderer {
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
-                builder.Read("ShadowMap.Linear", Access::FragmentShaderSampleImage);
+                builder.Read("ShadowMap/Linear", Access::FragmentShaderSampleImage);
 
                 builder.Write("FragmentListMetadata", Access::FragmentShaderWrite);
                 builder.Write("FragmentLists", Access::FragmentShaderWrite);
@@ -365,7 +365,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer("VoxelStateUniform", resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer("LightData", "LightState");
-                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetImageView("shadowMap", "ShadowMap/Linear");
                 cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
                 cmd.SetImageView("radianceOut", resources.GetImageMipView("Radiance", 0));
                 cmd.SetImageView("normalsOut", resources.GetImageMipView("Normals", 0));
@@ -630,9 +630,9 @@ namespace sp::vulkan::renderer {
 
                 builder.ReadUniform("VoxelState");
 
-                builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
-                builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
-                builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                builder.Read("Voxels/FragmentListMetadata", Access::IndirectBuffer);
+                builder.Read("Voxels/FragmentListMetadata", Access::ComputeShaderReadStorage);
+                builder.Read("Voxels/FragmentLists", Access::ComputeShaderReadStorage);
             })
 
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
@@ -640,11 +640,11 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
-                auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                auto metadata = resources.GetBuffer("Voxels/FragmentListMetadata");
                 cmd.SetStorageBuffer("VoxelFragmentListMetadata", metadata, 0, sizeof(GPUVoxelFragmentList));
 
                 cmd.SetStorageBuffer("VoxelFragmentList",
-                    "Voxels.FragmentLists",
+                    "Voxels/FragmentLists",
                     fragmentListSizes[0].offset * sizeof(GPUVoxelFragment),
                     fragmentListSizes[0].capacity * sizeof(GPUVoxelFragment));
 
@@ -665,9 +665,9 @@ namespace sp::vulkan::renderer {
 
                     builder.ReadUniform("VoxelState");
 
-                    builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
-                    builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
-                    builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                    builder.Read("Voxels/FragmentListMetadata", Access::IndirectBuffer);
+                    builder.Read("Voxels/FragmentListMetadata", Access::ComputeShaderReadStorage);
+                    builder.Read("Voxels/FragmentLists", Access::ComputeShaderReadStorage);
                 })
                 .Execute([this, i](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetComputeShader("voxel_merge_layer.comp");
@@ -675,14 +675,14 @@ namespace sp::vulkan::renderer {
 
                     cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
-                    auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                    auto metadata = resources.GetBuffer("Voxels/FragmentListMetadata");
                     cmd.SetStorageBuffer("VoxelFragmentListMetadata",
                         metadata,
                         i * sizeof(GPUVoxelFragmentList),
                         sizeof(GPUVoxelFragmentList));
 
                     cmd.SetStorageBuffer("VoxelFragmentList",
-                        "Voxels.FragmentLists",
+                        "Voxels/FragmentLists",
                         fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -703,9 +703,9 @@ namespace sp::vulkan::renderer {
 
                 builder.ReadUniform("VoxelState");
 
-                builder.Read("Voxels.FragmentListMetadata", Access::IndirectBuffer);
-                builder.Read("Voxels.FragmentListMetadata", Access::ComputeShaderReadStorage);
-                builder.Read("Voxels.FragmentLists", Access::ComputeShaderReadStorage);
+                builder.Read("Voxels/FragmentListMetadata", Access::IndirectBuffer);
+                builder.Read("Voxels/FragmentListMetadata", Access::ComputeShaderReadStorage);
+                builder.Read("Voxels/FragmentLists", Access::ComputeShaderReadStorage);
             })
             .Execute([this, i = fragmentListCount - 1](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("voxel_merge_layer_serial.comp");
@@ -713,14 +713,14 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
-                auto metadata = resources.GetBuffer("Voxels.FragmentListMetadata");
+                auto metadata = resources.GetBuffer("Voxels/FragmentListMetadata");
                 cmd.SetStorageBuffer("VoxelFragmentListMetadata",
                     metadata,
                     i * sizeof(GPUVoxelFragmentList),
                     sizeof(GPUVoxelFragmentList));
 
                 cmd.SetStorageBuffer("VoxelFragmentList",
-                    "Voxels.FragmentLists",
+                    "Voxels/FragmentLists",
                     fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                     fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
@@ -825,9 +825,9 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("VoxelDebug")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("Voxels.FillCounters", Access::FragmentShaderReadStorage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/FillCounters", Access::FragmentShaderReadStorage);
+                builder.Read("Voxels/Radiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/Normals", Access::FragmentShaderSampleImage);
                 builder.ReadUniform("ViewState");
                 builder.ReadUniform("VoxelState");
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
@@ -854,9 +854,9 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                 cmd.SetStorageBuffer("ExposureState", "ExposureState");
                 cmd.SetImageView("overlayTex", resources.LastOutputID());
-                cmd.SetImageView("fillCounters", "Voxels.FillCounters");
-                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
-                cmd.SetImageView("voxelNormals", "Voxels.Normals");
+                cmd.SetImageView("fillCounters", "Voxels/FillCounters");
+                cmd.SetImageView("voxelRadiance", "Voxels/Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels/Normals");
 
                 for (auto &voxelLayer : VoxelLayers[debugMipLayer]) {
                     auto layerView = resources.GetImageView(voxelLayer.fullName);

@@ -6,6 +6,7 @@
  */
 
 #include "game/CGameContext.hh"
+#include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsManager.hh"
 
 #include <strayphotons.h>
@@ -107,4 +108,23 @@ SP_EXPORT bool sp_graphics_handle_input_frame(sp_graphics_ctx_t *graphics) {
 SP_EXPORT void sp_graphics_step_thread(sp_graphics_ctx_t *graphics, unsigned int count) {
     Assertf(graphics != nullptr, "sp_graphics_step_thread called with null graphics");
     graphics->Step(count);
+}
+
+SP_EXPORT void sp_compositor_upload_source_image(sp_compositor_ctx_t *compositor,
+    sp_entity_t dst,
+    const uint8_t *data,
+    uint32_t dataSize,
+    uint32_t imageWidth,
+    uint32_t imageHeight) {
+    Assertf(compositor != nullptr, "sp_graphics_upload_source_image called with null compositor");
+    Assertf(imageWidth > 0 && imageHeight > 0,
+        "sp_compositor_upload_source_image called with zero size image: %ux%u",
+        imageWidth,
+        imageHeight);
+    compositor->UpdateSourceImage(dst, data, dataSize, imageWidth, imageHeight, 4);
+}
+
+SP_EXPORT void sp_compositor_clear_source_image(sp_compositor_ctx_t *compositor, sp_entity_t dst) {
+    Assertf(compositor != nullptr, "sp_graphics_upload_source_image called with null compositor");
+    compositor->UpdateSourceImage(dst, nullptr);
 }

@@ -15,9 +15,18 @@
 #include <vector>
 
 namespace sp {
+    class Image;
+
     class GenericCompositor : public NonCopyable {
     public:
         virtual void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) = 0;
+        virtual void UpdateSourceImage(ecs::Entity dst, std::shared_ptr<sp::Image> src) = 0;
+        void UpdateSourceImage(ecs::Entity dst,
+            const uint8_t *data,
+            size_t dataSize,
+            uint32_t imageWidth,
+            uint32_t imageHeight,
+            uint32_t components);
     };
 
     static ecs::StructMetadata MetadataGuiDrawVertex(typeid(GuiDrawVertex),

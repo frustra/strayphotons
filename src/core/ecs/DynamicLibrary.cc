@@ -7,6 +7,8 @@
 
 #include "DynamicLibrary.hh"
 
+#include "graphics/GenericCompositor.hh"
+
 #include <dynalo/dynalo.hpp>
 
 namespace ecs {
@@ -227,7 +229,8 @@ namespace ecs {
         return false;
     }
 
-    void DynamicScript::RenderGui(ScriptState &state,
+    void DynamicScript::RenderGui(sp::GenericCompositor *compositor,
+        ScriptState &state,
         Entity ent,
         glm::vec2 displaySize,
         glm::vec2 scale,
@@ -240,7 +243,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.renderGuiFunc) {
                 auto &renderGui = dynamicScript->dynamicDefinition.renderGuiFunc;
-                renderGui(ptr.context, &state, ent, displaySize, scale, deltaTime, result);
+                renderGui(ptr.context, compositor, &state, ent, displaySize, scale, deltaTime, result);
             }
         }
     }

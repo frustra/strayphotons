@@ -17,6 +17,7 @@
 
 namespace sp {
     class Game;
+    class GenericCompositor;
     class GpuTexture;
     class GuiContext;
     class Image;
@@ -57,7 +58,10 @@ namespace sp {
             return monitorModes;
         }
 
-        virtual std::shared_ptr<GpuTexture> LoadTexture(std::shared_ptr<const Image> image, bool genMipmap = true) = 0;
+        virtual GenericCompositor *GetCompositor() const = 0;
+
+        virtual std::shared_ptr<GpuTexture> UploadTexture(std::shared_ptr<const Image> image,
+            bool genMipmap = true) = 0;
 
         // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
         virtual void *Win32WindowHandle() {

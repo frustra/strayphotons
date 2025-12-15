@@ -348,8 +348,15 @@ namespace sp::vulkan {
             deviceInfo.pNext = &enabledDeviceFeatures2;
             deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
             deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
             deviceInfo.enabledLayerCount = layers.size();
             deviceInfo.ppEnabledLayerNames = layers.data();
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
             device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
             VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
@@ -390,8 +397,8 @@ namespace sp::vulkan {
 #endif
             }
 
-            vk::SemaphoreCreateInfo semaphoreInfo;
-            vk::FenceCreateInfo fenceInfo;
+            vk::SemaphoreCreateInfo semaphoreInfo = {};
+            vk::FenceCreateInfo fenceInfo = {};
             fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
             for (auto &frame : frameContexts) {
@@ -622,7 +629,7 @@ namespace sp::vulkan {
         swapchainImageContexts.resize(swapchainImages.size());
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
-            ImageViewCreateInfo imageViewInfo;
+            ImageViewCreateInfo imageViewInfo = {};
             imageViewInfo.image = make_shared<Image>(swapchainImages[i],
                 swapchainInfo.imageFormat,
                 swapchainInfo.imageExtent);
@@ -644,6 +651,11 @@ namespace sp::vulkan {
 
     std::shared_ptr<Renderer> DeviceContext::GetRenderer() const {
         return vkRenderer;
+    }
+
+    GenericCompositor *DeviceContext::GetCompositor() const {
+        if (!vkRenderer) return nullptr;
+        return &vkRenderer->GetCompositor();
     }
 
     void DeviceContext::RenderFrame(chrono_clock::duration elapsedTime) {
@@ -926,7 +938,7 @@ namespace sp::vulkan {
             cmdBufs.push_back(cmd->Raw());
         }
 
-        vk::SubmitInfo submitInfo;
+        vk::SubmitInfo submitInfo = {};
         submitInfo.waitSemaphoreCount = waitSemArray.size();
         submitInfo.pWaitSemaphores = waitSemArray.data();
         submitInfo.pWaitDstStageMask = waitStageArray.data();
@@ -965,6 +977,24 @@ namespace sp::vulkan {
 
     BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {
         return Thread().bufferPool->Get(desc);
+    }
+
+    AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const AsyncPtr<InitialData> &asyncData,
+        vk::BufferUsageFlags usage) {
+        if (!asyncData) return nullptr;
+        return allocatorQueue.Dispatch<Buffer>(asyncData, [=, this](std::shared_ptr<InitialData> data) {
+            vk::BufferCreateInfo bufferInfo = {};
+            bufferInfo.size = data->dataSize;
+            bufferInfo.usage = usage;
+            VmaAllocationCreateInfo allocInfo = {};
+            allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+
+            Assertf(data, "DeviceContext::CreateBuffer null initial buffer data");
+            auto buf = AllocateBuffer(bufferInfo, allocInfo);
+            buf->CopyFrom(data->data, data->dataSize);
+            return buf;
+        });
     }
 
     AsyncPtr<Buffer> DeviceContext::CreateBuffer(const AsyncPtr<InitialData> &asyncData,
@@ -1039,6 +1069,7 @@ namespace sp::vulkan {
             //     (delayFrames * graphics.interval).count() / 1000000);
             std::this_thread::sleep_for(delayFrames * graphics.interval);
         }
+        transferCmd->End();
 
         return frameEndQueue.Dispatch<void>([this, transferCmd]() {
             auto cmd = transferCmd;
@@ -1056,7 +1087,44 @@ namespace sp::vulkan {
         return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<InitialData> &data) {
+    void transferImageQueueType(DeviceContext &device,
+        const std::shared_ptr<Image> &image,
+        CommandContextType type = CommandContextType::General,
+        Access access = Access::FragmentShaderSampleImage) {
+        ImageBarrierInfo transferToQueue = {};
+        transferToQueue.srcQueueFamilyIndex = image->LastQueueFamily();
+        transferToQueue.dstQueueFamilyIndex = device.QueueFamilyIndex(type);
+        auto waitSemaphore = image->GetWaitSemaphore(transferToQueue.dstQueueFamilyIndex);
+        if (transferToQueue.srcQueueFamilyIndex == transferToQueue.dstQueueFamilyIndex ||
+            transferToQueue.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
+            transferToQueue.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            transferToQueue.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        }
+
+        auto cmd = device.GetFencedCommandContext(type);
+        auto info = GetAccessInfo(access);
+        cmd->ImageBarrier(image, info.imageLayout, info.stageMask, info.accessMask, transferToQueue);
+        device.PushInFlightObject(image, cmd->Fence());
+        auto transferComplete = image->SetPendingCommand(device.GetEmptySemaphore(cmd->Fence()),
+            transferToQueue.dstQueueFamilyIndex);
+        if (waitSemaphore) {
+            device.Submit(cmd, {transferComplete}, {waitSemaphore}, {info.stageMask});
+        } else {
+            device.Submit(cmd, {transferComplete}, {}, {});
+        }
+        image->SetLayout(vk::ImageLayout::eUndefined, info.imageLayout);
+    }
+
+    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<InitialData> &initialData) {
+        if (!initialData) {
+            Assert(!createInfo.genMipmap, "DeviceContext::CreateImage must pass initial data to generate a mipmap");
+            return CreateImage(createInfo, AsyncPtr<Buffer>());
+        } else {
+            return CreateImage(createInfo, CreateUploadBuffer(initialData));
+        }
+    }
+
+    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer) {
         ZoneScoped;
 
         bool genMipmap = createInfo.genMipmap;
@@ -1067,8 +1135,8 @@ namespace sp::vulkan {
         if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
-        if (!data) {
-            Assert(!genMipmap, "must pass initial data to generate a mipmap");
+        if (!uploadBuffer) {
+            Assert(!genMipmap, "DeviceContext::CreateImage must pass upload buffer to generate a mipmap");
         } else {
             Assert(createInfo.arrayLayers == 1, "can't load initial data into an image array");
             Assert(!genMipmap || createInfo.mipLevels > 1, "can't generate mipmap for a single level image");
@@ -1094,200 +1162,180 @@ namespace sp::vulkan {
 
             return AllocateImage(actualCreateInfo, VMA_MEMORY_USAGE_GPU_ONLY, declaredUsage);
         });
-        if (!data) return futImage;
 
-        auto futStagingBuf = allocatorQueue.Dispatch<Buffer>(data, [=, this](std::shared_ptr<InitialData> data) {
-            Assertf(data, "DeviceContext::CreateImage null initial buffer data");
-            vk::BufferCreateInfo bufferInfo;
-            bufferInfo.size = data->dataSize;
-            bufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
-            VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
-            allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-            auto buf = AllocateBuffer(bufferInfo, allocInfo);
-            buf->CopyFrom(data->data, data->dataSize);
-            return buf;
-        });
-
-        return frameEndQueue.Dispatch<Image>(futImage, futStagingBuf, [=, this](ImagePtr image, BufferPtr stagingBuf) {
-            ZoneScopedN("PrepareImage");
-            auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
-
-            transferCmd->ImageBarrier(image,
-                vk::ImageLayout::eUndefined,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::PipelineStageFlagBits::eTopOfPipe,
-                {},
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite);
-
-            vk::BufferImageCopy region;
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = FormatToAspectFlags(createInfo.format);
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-            region.imageOffset = vk::Offset3D{0, 0, 0};
-            region.imageExtent = createInfo.extent;
-
-            PushInFlightObject(stagingBuf, transferCmd->Fence());
-            transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
-
-            ImageBarrierInfo transferToGeneral;
-            transferToGeneral.trackImageLayout = false;
-            transferToGeneral.srcQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-            transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-
-            ImageBarrierInfo transferToCompute = transferToGeneral;
-            transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
-
-            SharedHandle<vk::Semaphore> transferComplete;
-            if (genMipmap || genFactor ||
-                transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                transferComplete = GetEmptySemaphore(transferCmd->Fence());
-            }
-
-            // The amount of state tracking in this function is somewhat objectionable.
-            // Should we have an automatic image access tracking mechanism to avoid it?
-            vk::ImageLayout lastLayout = vk::ImageLayout::eTransferDstOptimal;
-            vk::ImageLayout nextLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-            if (genFactor) {
-                nextLayout = vk::ImageLayout::eGeneral;
-            } else if (genMipmap) {
-                nextLayout = vk::ImageLayout::eTransferSrcOptimal;
-            }
-            vk::PipelineStageFlags lastStage = vk::PipelineStageFlagBits::eTransfer;
-            vk::AccessFlags lastAccess = vk::AccessFlagBits::eTransferWrite;
-
-            transferCmd->ImageBarrier(image,
-                lastLayout,
-                nextLayout,
-                lastStage,
-                lastAccess,
-                vk::PipelineStageFlagBits::eBottomOfPipe,
-                {},
-                genFactor ? transferToCompute : transferToGeneral);
-
-            {
-                ZoneScopedN("CopyBufferToImage");
-                if (transferComplete)
-                    Submit(transferCmd, {transferComplete}, {}, {});
-                else
-                    Submit(transferCmd, {}, {}, {});
-            }
+        if (uploadBuffer) {
+            futImage = UpdateImage(futImage, uploadBuffer, genMipmap && !genFactor);
 
             if (genFactor) {
-                ZoneScopedN("ApplyFactor");
-                auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
-                {
-                    GPUZone(this, factorCmd, "ApplyFactor");
-                    factorCmd->ImageBarrier(image,
-                        lastLayout,
-                        vk::ImageLayout::eGeneral,
-                        lastStage,
-                        lastAccess,
-                        vk::PipelineStageFlagBits::eComputeShader,
-                        vk::AccessFlagBits::eShaderRead,
-                        transferToCompute);
+                futImage = frameEndQueue.Dispatch<Image>(futImage, [=, this](ImagePtr image) {
+                    if (!image) return std::shared_ptr<Image>();
 
-                    ImageViewCreateInfo factorViewInfo;
-                    factorViewInfo.image = image;
-                    factorViewInfo.format = factorFormat;
-                    factorViewInfo.mipLevelCount = 1;
-                    factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-                    auto factorView = CreateImageView(factorViewInfo);
+                    ZoneScopedN("ApplyFactor");
+                    auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
 
-                    image->SetLayout(lastLayout, vk::ImageLayout::eGeneral);
-                    factorCmd->SetComputeShader("texture_factor.comp");
-                    factorCmd->SetImageView("texture", factorView);
-
-                    struct {
-                        glm::vec4 factor;
-                        int components;
-                        bool srgb;
-                    } factorPushConstants;
-
-                    for (size_t i = 0; i < createInfo.factor.size(); i++) {
-                        factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                    ImageBarrierInfo transferToCompute = {};
+                    transferToCompute.srcQueueFamilyIndex = image->LastQueueFamily();
+                    transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
+                    auto waitSemaphore = image->GetWaitSemaphore(transferToCompute.dstQueueFamilyIndex);
+                    if (transferToCompute.srcQueueFamilyIndex == transferToCompute.dstQueueFamilyIndex ||
+                        transferToCompute.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
+                        transferToCompute.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        transferToCompute.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     }
-                    factorPushConstants.components = createInfo.factor.size();
-                    factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
-                    factorCmd->PushConstants(factorPushConstants);
 
-                    factorCmd->Dispatch((createInfo.extent.width + 15) / 16, (createInfo.extent.height + 15) / 16, 1);
+                    {
+                        GPUZone(this, factorCmd, "ApplyFactor");
 
-                    nextLayout = genMipmap ? vk::ImageLayout::eTransferSrcOptimal
-                                           : vk::ImageLayout::eShaderReadOnlyOptimal;
-                    auto nextStage = genMipmap ? vk::PipelineStageFlagBits::eTransfer
-                                               : vk::PipelineStageFlagBits::eFragmentShader;
-                    auto nextAccess = genMipmap ? vk::AccessFlagBits::eTransferRead : vk::AccessFlagBits::eShaderRead;
+                        factorCmd->ImageBarrier(image,
+                            vk::ImageLayout::eGeneral,
+                            vk::PipelineStageFlagBits::eComputeShader,
+                            vk::AccessFlagBits::eShaderRead,
+                            transferToCompute);
+                        image->SetAccess(Access::None, Access::ComputeShaderReadStorage);
 
-                    transferToGeneral.srcQueueFamilyIndex = transferToCompute.dstQueueFamilyIndex;
-                    factorCmd->ImageBarrier(image,
-                        vk::ImageLayout::eGeneral,
-                        nextLayout,
-                        vk::PipelineStageFlagBits::eComputeShader,
-                        vk::AccessFlagBits::eShaderWrite,
-                        nextStage,
-                        nextAccess,
-                        transferToGeneral);
-                    lastLayout = vk::ImageLayout::eGeneral;
-                    lastStage = vk::PipelineStageFlagBits::eComputeShader;
-                    lastAccess = vk::AccessFlagBits::eShaderWrite;
-                    PushInFlightObject(factorView, factorCmd->Fence());
-                }
-                SharedHandle<vk::Semaphore> factorComplete;
-                if (genMipmap || transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                    factorComplete = GetEmptySemaphore(factorCmd->Fence());
-                    Submit(factorCmd,
-                        {factorComplete},
-                        {transferComplete},
-                        {vk::PipelineStageFlagBits::eComputeShader});
-                } else {
-                    Submit(factorCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eComputeShader});
-                }
-                transferComplete = factorComplete;
+                        ImageViewCreateInfo factorViewInfo = {};
+                        factorViewInfo.image = image;
+                        factorViewInfo.format = factorFormat;
+                        factorViewInfo.mipLevelCount = 1;
+                        factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+                        auto factorView = CreateImageView(factorViewInfo);
+
+                        factorCmd->SetComputeShader("texture_factor.comp");
+                        factorCmd->SetImageView("texture", factorView);
+
+                        struct {
+                            glm::vec4 factor;
+                            int components;
+                            bool srgb;
+                        } factorPushConstants;
+
+                        for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                            factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                        }
+                        factorPushConstants.components = createInfo.factor.size();
+                        factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+                        factorCmd->PushConstants(factorPushConstants);
+
+                        factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
+                            (createInfo.extent.height + 15) / 16,
+                            1);
+                        PushInFlightObject(factorView, factorCmd->Fence());
+                    }
+                    auto factorComplete = image->SetPendingCommand(GetEmptySemaphore(factorCmd->Fence()),
+                        transferToCompute.dstQueueFamilyIndex);
+                    if (waitSemaphore) {
+                        Submit(factorCmd,
+                            {factorComplete},
+                            {waitSemaphore},
+                            {vk::PipelineStageFlagBits::eComputeShader});
+                    } else {
+                        Submit(factorCmd, {factorComplete}, {}, {});
+                    }
+                    if (!genMipmap) {
+                        transferImageQueueType(*this, image);
+                    }
+                    return image;
+                });
             }
+            if (genMipmap) futImage = UpdateImageMipmap(futImage);
+        }
+        return futImage;
+    }
 
-            if (!genMipmap) {
-                if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                    auto graphicsCmd = GetFencedCommandContext();
-                    graphicsCmd->ImageBarrier(image,
-                        lastLayout,
-                        vk::ImageLayout::eShaderReadOnlyOptimal,
-                        lastStage,
-                        lastAccess,
-                        vk::PipelineStageFlagBits::eFragmentShader,
-                        vk::AccessFlagBits::eShaderRead,
-                        transferToGeneral);
-                    Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eFragmentShader});
+    AsyncPtr<Image> DeviceContext::UpdateImage(const AsyncPtr<Image> &dstImage,
+        const AsyncPtr<Buffer> &srcBuffer,
+        bool updateMipmap) {
+        auto futImage = frameEndQueue.Dispatch<Image>(dstImage,
+            srcBuffer,
+            [updateMipmap, this](ImagePtr image, BufferPtr stagingBuf) {
+                if (!image) return std::shared_ptr<Image>();
+
+                ZoneScopedN("PrepareImage");
+                auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+
+                ImageBarrierInfo transferToTransferAsync = {};
+                transferToTransferAsync.srcQueueFamilyIndex = image->LastQueueFamily();
+                transferToTransferAsync.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
+                auto waitSemaphore = image->GetWaitSemaphore(transferToTransferAsync.dstQueueFamilyIndex);
+                if (transferToTransferAsync.srcQueueFamilyIndex == transferToTransferAsync.dstQueueFamilyIndex ||
+                    transferToTransferAsync.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
+                    transferToTransferAsync.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    transferToTransferAsync.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 }
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+                transferCmd->ImageBarrier(image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferWrite,
+                    transferToTransferAsync);
+
+                vk::BufferImageCopy region;
+                region.bufferOffset = 0;
+                region.bufferRowLength = 0;
+                region.bufferImageHeight = 0;
+                region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
+                region.imageSubresource.mipLevel = 0;
+                region.imageSubresource.baseArrayLayer = 0;
+                region.imageSubresource.layerCount = 1;
+                region.imageOffset = vk::Offset3D{0, 0, 0};
+                region.imageExtent = image->Extent();
+
+                transferCmd->Raw().copyBufferToImage(*stagingBuf,
+                    *image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    {region});
+
+                PushInFlightObject(stagingBuf, transferCmd->Fence());
+                auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(transferCmd->Fence()),
+                    transferToTransferAsync.dstQueueFamilyIndex);
+                {
+                    ZoneScopedN("CopyBufferToImage");
+                    if (waitSemaphore) {
+                        Submit(transferCmd,
+                            {transferComplete},
+                            {waitSemaphore},
+                            {vk::PipelineStageFlagBits::eTransfer});
+                    } else {
+                        Submit(transferCmd, {transferComplete}, {}, {});
+                    }
+                }
+
+                if (!updateMipmap) transferImageQueueType(*this, image);
                 return image;
+            });
+        if (updateMipmap) futImage = UpdateImageMipmap(futImage);
+        return futImage;
+    }
+
+    AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const AsyncPtr<Image> &image) {
+        ZoneScoped;
+        return frameEndQueue.Dispatch<Image>(image, [this](ImagePtr image) {
+            if (!image) return std::shared_ptr<Image>();
+            auto graphicsCmd = GetFencedCommandContext(CommandContextType::General); // TODO: Add GraphicsAsync
+
+            ImageBarrierInfo transferToGeneral = {};
+            transferToGeneral.srcQueueFamilyIndex = image->LastQueueFamily();
+            transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
+            auto waitSemaphore = image->GetWaitSemaphore(transferToGeneral.dstQueueFamilyIndex);
+            if (transferToGeneral.srcQueueFamilyIndex == transferToGeneral.dstQueueFamilyIndex ||
+                transferToGeneral.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
+                transferToGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                transferToGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             }
 
-            ZoneNamedN(mipmapZone, "Mipmap", true);
-            auto graphicsCmd = GetFencedCommandContext();
             {
                 GPUZone(this, graphicsCmd, "Mipmap");
 
-                if (transferToGeneral.srcQueueFamilyIndex != transferToGeneral.dstQueueFamilyIndex) {
-                    graphicsCmd->ImageBarrier(image,
-                        lastLayout,
-                        vk::ImageLayout::eTransferSrcOptimal,
-                        lastStage,
-                        lastAccess,
-                        vk::PipelineStageFlagBits::eTransfer,
-                        vk::AccessFlagBits::eTransferRead,
-                        transferToGeneral);
-                }
+                graphicsCmd->ImageBarrier(image,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    transferToGeneral);
 
-                ImageBarrierInfo transferMips;
+                ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
                 transferMips.baseMipLevel = 1;
-                transferMips.mipLevelCount = createInfo.mipLevels - 1;
+                transferMips.mipLevelCount = image->MipLevels() - 1;
 
                 graphicsCmd->ImageBarrier(image,
                     vk::ImageLayout::eUndefined,
@@ -1298,13 +1346,13 @@ namespace sp::vulkan {
                     vk::AccessFlagBits::eTransferWrite,
                     transferMips);
 
-                vk::Offset3D currentExtent = {(int32)createInfo.extent.width,
-                    (int32)createInfo.extent.height,
-                    (int32)createInfo.extent.depth};
+                vk::Offset3D currentExtent = {(int32)image->Extent().width,
+                    (int32)image->Extent().height,
+                    (int32)image->Extent().depth};
 
                 transferMips.mipLevelCount = 1;
 
-                for (uint32 i = 1; i < createInfo.mipLevels; i++) {
+                for (uint32 i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
                     currentExtent.x = std::max(currentExtent.x >> 1, 1);
                     currentExtent.y = std::max(currentExtent.y >> 1, 1);
@@ -1340,14 +1388,18 @@ namespace sp::vulkan {
                 image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
 
                 graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eTransferSrcOptimal,
                     vk::ImageLayout::eShaderReadOnlyOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite,
                     vk::PipelineStageFlagBits::eFragmentShader,
                     vk::AccessFlagBits::eShaderRead);
             }
-            Submit(graphicsCmd, {}, {transferComplete}, {vk::PipelineStageFlagBits::eTransfer});
+            PushInFlightObject(image, graphicsCmd->Fence());
+            auto mipmapComplete = image->SetPendingCommand(GetEmptySemaphore(graphicsCmd->Fence()),
+                transferToGeneral.dstQueueFamilyIndex);
+            if (waitSemaphore) {
+                Submit(graphicsCmd, {mipmapComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
+            } else {
+                Submit(graphicsCmd, {mipmapComplete}, {}, {});
+            }
             return image;
         });
     }
@@ -1355,13 +1407,15 @@ namespace sp::vulkan {
     ImageViewPtr DeviceContext::CreateImageView(ImageViewCreateInfo info) {
         if (info.format == vk::Format::eUndefined) info.format = info.image->Format();
 
-        if (info.arrayLayerCount == VK_REMAINING_ARRAY_LAYERS)
+        if (info.arrayLayerCount == VK_REMAINING_ARRAY_LAYERS) {
             info.arrayLayerCount = info.image->ArrayLayers() - info.baseArrayLayer;
+        }
 
-        if (info.mipLevelCount == VK_REMAINING_MIP_LEVELS)
+        if (info.mipLevelCount == VK_REMAINING_MIP_LEVELS) {
             info.mipLevelCount = info.image->MipLevels() - info.baseMipLevel;
+        }
 
-        vk::ImageViewCreateInfo createInfo;
+        vk::ImageViewCreateInfo createInfo = {};
         createInfo.image = *info.image;
         createInfo.format = info.format;
         createInfo.viewType = info.viewType;
@@ -1415,7 +1469,7 @@ namespace sp::vulkan {
         const uint8_t *data = image->GetImage().get();
         Assert(data, "missing image data");
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         if (genMipmap) {
             viewInfo.defaultSampler = GetSampler(SamplerType::TrilinearTiled);
         } else {
@@ -1424,7 +1478,7 @@ namespace sp::vulkan {
         return CreateImageAndView(createInfo, viewInfo, make_async<InitialData>(data, image->ByteSize(), image));
     }
 
-    shared_ptr<GpuTexture> DeviceContext::LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
+    shared_ptr<GpuTexture> DeviceContext::UploadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
         auto view = LoadAssetImage(image, genMipmap, true);
         FlushMainQueue();
         return view->Get();
@@ -1578,13 +1632,16 @@ namespace sp::vulkan {
         return fencePool->Get();
     }
 
-    SharedHandle<vk::Semaphore> DeviceContext::GetEmptySemaphore(vk::Fence inUseUntilFence) {
-        auto sem = semaphorePool->Get();
+    std::shared_ptr<vk::UniqueSemaphore> DeviceContext::GetEmptySemaphore(vk::Fence inUseUntilFence) {
+        // auto sem = semaphorePool->Get();
+        vk::SemaphoreCreateInfo semaphoreInfo = {};
+        auto sem = std::make_shared<vk::UniqueSemaphore>(device->createSemaphoreUnique(semaphoreInfo));
         PushInFlightObject(sem, inUseUntilFence);
         return sem;
     }
 
     void DeviceContext::PushInFlightObject(TemporaryObject object, vk::Fence fence) {
+        if (!fence) fence = *Frame().inFlightFence;
         Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
     }
 

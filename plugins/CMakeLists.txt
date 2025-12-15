@@ -57,3 +57,5 @@ foreach(SCRIPT_NAME ${CPP_SCRIPT_LIST})
         )
     endif()
 endforeach()
+
+add_subdirectory(doomgeneric)

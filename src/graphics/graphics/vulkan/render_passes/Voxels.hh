@@ -76,7 +76,7 @@ namespace sp::vulkan::renderer {
                     std::string name = "VoxelLayer" + std::to_string(i) + "_" + std::to_string(dir);
                     layers[i][dir] = VoxelLayerInfo{
                         name,
-                        "Voxels2." + name,
+                        "Voxels2/" + name,
                         name + "_PreBlur",
                         i,
                         dir,

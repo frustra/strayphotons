@@ -59,4 +59,19 @@ namespace sp {
             stbi_image_free((void *)ptr);
         });
     }
+
+    Image::Image(const uint8_t *data, size_t dataSize, uint32_t width, uint32_t height, uint32_t components)
+        : width(width), height(height), components(components) {
+        Assertf(dataSize >= width * height * components,
+            "Image buffer size %llu is too small to fit image %ux%u (%u components)",
+            dataSize,
+            width,
+            height,
+            components);
+        uint8_t *dataCopy = new uint8_t[dataSize];
+        std::copy_n(data, dataSize, dataCopy);
+        this->image = std::shared_ptr<uint8_t>(dataCopy, [](uint8_t *ptr) {
+            delete[] ptr;
+        });
+    }
 } // namespace sp

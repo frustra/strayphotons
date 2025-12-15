@@ -181,7 +181,7 @@ namespace sp::vulkan {
             imageInfo.format = vk::Format::eR8G8B8A8Unorm;
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-            ImageViewCreateInfo viewInfo;
+            ImageViewCreateInfo viewInfo = {};
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             *newHandle = Add(imageInfo, viewInfo, make_async<InitialData>(data->data(), data->size(), data));
             return *newHandle;
@@ -322,7 +322,7 @@ namespace sp::vulkan {
         imageInfo.format = vk::Format::eR8G8B8A8Unorm;
         imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
         auto fut = device.CreateImageAndView(imageInfo, viewInfo, make_async<InitialData>(&value[0], sizeof(value)));
         device.FlushMainQueue();

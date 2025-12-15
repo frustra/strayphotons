@@ -12,6 +12,7 @@
 #include "ecs/ScriptImpl.hh"
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <memory>
 
@@ -76,7 +77,14 @@ namespace ecs {
         void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
         void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
         bool (*beforeFrameFunc)(void *, ScriptState *, Entity) = nullptr;
-        void (*renderGuiFunc)(void *, ScriptState *, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &) = nullptr;
+        void (*renderGuiFunc)(void *,
+            sp::GenericCompositor *,
+            ScriptState *,
+            Entity,
+            glm::vec2,
+            glm::vec2,
+            float,
+            sp::GuiDrawData &) = nullptr;
     };
 
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
@@ -135,7 +143,8 @@ namespace ecs {
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
         static bool BeforeFrame(ScriptState &state, Entity ent);
-        static void RenderGui(ScriptState &state,
+        static void RenderGui(sp::GenericCompositor *compositor,
+            ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
             glm::vec2 scale,

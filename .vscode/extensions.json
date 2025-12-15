@@ -5,10 +5,8 @@
 	"recommendations": [
 		"ms-vscode.cpptools",
 		"ms-vscode.cmake-tools",
-		"twxs.cmake",
 		"slevesque.shader",
-		"cesium.gltf-vscode",
-		"rust-lang.rust-analyzer",
+		"cesium.gltf-vscode"
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": []

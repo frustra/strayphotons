@@ -9,6 +9,7 @@
 #include "assets/AssetManager.hh"
 #include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/GenericCompositor.hh"
 #include "gui/GuiContext.hh"
 #include "gui/ImGuiHelpers.hh"
 
@@ -118,7 +119,8 @@ namespace sp::scripts {
             return true;
         }
 
-        void RenderGui(ScriptState &state,
+        void RenderGui(sp::GenericCompositor *,
+            ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
             glm::vec2 scale,

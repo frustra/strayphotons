@@ -32,6 +32,7 @@ namespace sp::winit {
 namespace sp {
     class Game;
     class GraphicsContext;
+    class GenericCompositor;
     class GuiContext;
     class ProfilerGui;
 
@@ -55,6 +56,8 @@ namespace sp {
         chrono_clock::duration GetRemainingFrameTime() const;
         chrono_clock::duration GetFrameInterval() const;
 
+        GenericCompositor *GetCompositor() const;
+
         sp_window_handlers_t windowHandlers = {0};
 
         // Note: deconstruction order for the below fields is important.
@@ -73,7 +76,7 @@ namespace sp {
         void Frame() override;
 
         Game &game;
-        ecs::EntityRef flatviewEntity;
+        ecs::EntityRef flatviewEntity; // TODO: Replace with combined window / overlay entity
 
         chrono_clock::time_point renderStart;
 

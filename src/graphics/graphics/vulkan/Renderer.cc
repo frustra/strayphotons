@@ -33,8 +33,8 @@
 #include <assets/AssetManager.hh>
 
 namespace sp::vulkan {
-    static const std::string defaultWindowViewTarget = "ent:gui:overlay";
-    static const std::string defaultXrViewTarget = "XrView.LastOutput";
+    static const std::string defaultWindowViewTarget = "/ent:gui:overlay/LastOutput";
+    static const std::string defaultXrViewTarget = "/XrView/LastOutput";
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
@@ -124,6 +124,10 @@ namespace sp::vulkan {
 
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
+
+        graph.AddImageView("ErrorColor", scene.textures.GetSinglePixel(ERROR_COLOR));
+
+        compositor.AddOutputPasses(Compositor::PassOrder::BeforeViews);
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name,
                 ecs::FocusLock,
@@ -157,29 +161,9 @@ namespace sp::vulkan {
 
             AddViewOutputs(lock, elapsedTime);
 
-            if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
-            graph.AddPass("LogoOverlay")
-                .Build([](rg::PassBuilder &builder) {
-                    rg::ImageDesc desc;
-                    auto windowSize = CVarWindowSize.Get();
-                    auto windowScale = CVarWindowScale.Get();
-                    if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-                    if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-                    desc.extent = vk::Extent3D(windowSize.x / windowScale.x, windowSize.y / windowScale.y, 1);
-                    desc.format = vk::Format::eR8G8B8A8Srgb;
-                    builder.OutputColorAttachment(0, "LogoView", desc, {LoadOp::DontCare, StoreOp::Store});
-                })
-                .Execute([&](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.DrawScreenCover(scene.textures.GetSinglePixel(glm::vec4(0, 0, 0, 1)));
-                    if (logoTex->Ready()) {
-                        cmd.SetBlending(true);
-                        cmd.DrawScreenCover(logoTex->Get());
-                    }
-                });
-
             Assert(lock.UseCount() == 1, "something held onto the renderer lock");
         }
-        compositor.AddOutputPasses();
+        compositor.AddOutputPasses(Compositor::PassOrder::AfterViews);
         screenshots.AddPass(graph);
         AddWindowOutput();
     }
@@ -187,6 +171,10 @@ namespace sp::vulkan {
     void Renderer::AddWindowOutput() {
         auto swapchainImage = device.SwapchainImageView();
         if (!swapchainImage) return;
+
+        if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
+
+        graph.AddImageView("WindowFinalOutput", swapchainImage);
 
         rg::ResourceID sourceID = rg::InvalidResource;
         graph.AddPass("WindowFinalOutput")
@@ -215,15 +203,15 @@ namespace sp::vulkan {
                     loadOp = LoadOp::Clear;
                 }
 
-                rg::ImageDesc desc;
-                desc.extent = swapchainImage->Extent();
-                desc.format = swapchainImage->Format();
-                builder.OutputColorAttachment(0, "WindowFinalOutput", desc, {loadOp, StoreOp::Store});
+                builder.SetColorAttachment(0, "WindowFinalOutput", {loadOp, StoreOp::Store});
             })
-            .Execute([sourceID](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
                 if (sourceID != rg::InvalidResource) {
                     auto source = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(source);
+                } else if (logoTex->Ready()) {
+                    cmd.SetBlending(true);
+                    cmd.DrawScreenCover(logoTex->Get());
                 }
 
                 // TODO: use overlay/window render output source instead of r.WindowView cvar so console stays on top
@@ -236,8 +224,6 @@ namespace sp::vulkan {
                 //     windowScale);
                 // }
             });
-
-        graph.SetTargetImageView("WindowFinalOutput", swapchainImage);
     }
 
     void Renderer::AddViewOutputs(ecs::Lock<ecs::Read<ecs::Name,
@@ -287,7 +273,7 @@ namespace sp::vulkan {
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
-                rg::ImageDesc desc;
+                rg::ImageDesc desc = {};
                 desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
 
@@ -394,7 +380,7 @@ namespace sp::vulkan {
 
         graph.AddPass("HiddenAreaStencil0")
             .Build([&](rg::PassBuilder &builder) {
-                rg::ImageDesc desc;
+                rg::ImageDesc desc = {};
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
@@ -418,7 +404,7 @@ namespace sp::vulkan {
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
-                rg::ImageDesc desc;
+                rg::ImageDesc desc = {};
                 desc.extent = vk::Extent3D(viewExtents.x, viewExtents.y, 1);
                 desc.arrayLayers = xrViews.size();
                 desc.primaryViewType = vk::ImageViewType::e2DArray;
@@ -637,8 +623,8 @@ namespace sp::vulkan {
             return complete;
         });
 
-        bool renderOutputsChanged = false;
         {
+            bool renderOutputsChanged = false;
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::RenderOutput>>();
             ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
             while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
@@ -649,10 +635,7 @@ namespace sp::vulkan {
                 // Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
                 renderOutputsChanged = true;
             }
-        }
-        if (renderOutputsChanged) {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::RenderOutput>>();
-            compositor.UpdateRenderOutputs(lock);
+            if (renderOutputsChanged) compositor.UpdateRenderOutputs(lock);
         }
 
         scene.Flush();
