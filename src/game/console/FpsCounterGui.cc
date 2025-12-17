@@ -27,7 +27,7 @@ namespace sp {
                   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoTitleBar |
                   ImGuiWindowFlags_NoBringToFrontOnFocus) {}
 
-    bool FpsCounterGui::BeforeFrame(ecs::Entity ent) {
+    bool FpsCounterGui::BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) {
         return CVarShowFPS.Get();
     }
 

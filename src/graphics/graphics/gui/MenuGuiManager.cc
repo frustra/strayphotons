@@ -13,6 +13,7 @@
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
+#include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
@@ -79,8 +80,8 @@ namespace sp {
         return guiContext;
     }
 
-    bool MenuGuiManager::BeforeFrame() {
-        GuiContext::BeforeFrame();
+    bool MenuGuiManager::BeforeFrame(GenericCompositor &compositor) {
+        GuiContext::BeforeFrame(compositor);
 
         ImGuiIO &io = ImGui::GetIO();
 
@@ -117,7 +118,14 @@ namespace sp {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
             }
         }
-        return MenuOpen();
+        if (!logoTex) {
+            logoTex = graphics.GetCompositor().UploadStaticImage(Assets().LoadImage("logos/sp-menu.png")->Get());
+        }
+        if (MenuOpen()) {
+            if (logoTex) logoResourceID = compositor.AddStaticImage("logos_sp-menu.png", logoTex);
+            return true;
+        }
+        return false;
     }
 
     static const char *StringVectorGetter(void *data, int idx) {
@@ -168,9 +176,7 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        // if (!logoTex) logoTex = graphics.context->UploadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
-        // ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
-        ImVec2 logoSize(512, 128);
+        ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, -1.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y));
         if (selectedScreen == MenuScreen::Main) {
@@ -179,10 +185,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
-            static int textureIndex = 0;
-            ImGui::SliderInt("Texture Index", &textureIndex, -1, 4096);
-            ImGui::Image((ImTextureID)(int64_t)textureIndex, logoSize);
-            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);
@@ -220,8 +223,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
-            ImGui::Image((ImTextureID)0, logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -253,8 +255,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSaveSelect", nullptr, flags);
 
-            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
-            ImGui::Image((ImTextureID)0, logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -286,8 +287,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
-            // ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
-            ImGui::Image((ImTextureID)0, logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 

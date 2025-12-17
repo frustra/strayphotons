@@ -161,14 +161,14 @@ namespace ecs {
         // Function pointers
         void *(*)(const void *),
         void (*)(void *),
-        void (*)(void *, ScriptState *),
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t), // OnTick
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *), // OnEvent
-        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *), // RunPrefab
-        bool (*)(void *, ScriptState *, Entity), // BeforeFrame
+        void (*)(void *, ScriptState &),
+        void (*)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t), // OnTick
+        void (*)(void *, ScriptState &, DynamicLock<> &, Entity, Event &), // OnEvent
+        void (*)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &), // RunPrefab
+        bool (*)(void *, sp::GenericCompositor &, ScriptState &, Entity), // BeforeFrame
         void (*)(void *,
-            sp::GenericCompositor *,
-            ScriptState *,
+            sp::GenericCompositor &,
+            ScriptState &,
             Entity,
             glm::vec2,
             glm::vec2,

@@ -12,6 +12,10 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+namespace sp {
+    class GenericCompositor;
+}
+
 namespace ecs {
     enum class GuiLayoutAnchor {
         Fullscreen,
@@ -27,7 +31,7 @@ namespace ecs {
         GuiDefinition(std::string_view name, int windowFlags = 0) : name(name), windowFlags(windowFlags) {}
         virtual ~GuiDefinition() {}
 
-        virtual bool BeforeFrame(Entity ent) {
+        virtual bool BeforeFrame(sp::GenericCompositor &compositor, Entity ent) {
             return true;
         }
 

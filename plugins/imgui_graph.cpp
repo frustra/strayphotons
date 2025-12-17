@@ -10,8 +10,8 @@
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
-#include <common/Logging.hh>
 #include <common/InlineString.hh>
+#include <common/Logging.hh>
 #include <fstream>
 #include <glm/glm.hpp>
 #include <gui/ImGuiHelpers.hh>
@@ -19,6 +19,7 @@
 #include <imgui_internal.h>
 #include <implot.h>
 #include <implot_internal.h>
+#include <limits>
 #include <strayphotons/components.h>
 #include <vector>
 
@@ -127,7 +128,7 @@ struct ScriptGuiContext {
         ImGuiIO &io = ImGui::GetIO(ctx->imCtx);
         ctx->originalAtlas = io.Fonts;
         io.Fonts = ctx->fontAtlas.get();
-        io.Fonts->TexID = 1ull << 16; // FONT_ATLAS_ID
+        io.Fonts->TexID = (uint64_t)std::numeric_limits<uint32_t>::max() + 1; // FontAtlasID
         io.IniFilename = nullptr;
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     }
@@ -140,7 +141,10 @@ struct ScriptGuiContext {
         ctx->imCtx = nullptr;
     }
 
-    static bool BeforeFrameStatic(void *context, sp_script_state_t *state, tecs_entity_t ent) {
+    static bool BeforeFrameStatic(void *context,
+        sp_compositor_ctx_t *compositor,
+        sp_script_state_t *state,
+        tecs_entity_t ent) {
         ScriptGuiContext<GuiDef> *ctx = static_cast<ScriptGuiContext<GuiDef> *>(context);
         if (!ctx->imCtx) return false;
 

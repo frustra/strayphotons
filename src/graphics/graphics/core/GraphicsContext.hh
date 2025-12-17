@@ -52,16 +52,14 @@ namespace sp {
         }
 
         virtual void InitRenderer(Game &game) = 0;
+
+        virtual GenericCompositor &GetCompositor() = 0;
+
         virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
 
         virtual const std::vector<glm::ivec2> &MonitorModes() {
             return monitorModes;
         }
-
-        virtual GenericCompositor *GetCompositor() const = 0;
-
-        virtual std::shared_ptr<GpuTexture> UploadTexture(std::shared_ptr<const Image> image,
-            bool genMipmap = true) = 0;
 
         // Returns the window HWND, if it exists. On non-Windows platforms this returns nullptr.
         virtual void *Win32WindowHandle() {

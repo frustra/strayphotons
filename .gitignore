@@ -1,6 +1,7 @@
 /build
 /bin
 /.vscode
+/.cache
 /assets/audio
 /assets/models/**/*.glb
 /assets/models/**/*.gltf

@@ -21,7 +21,7 @@ namespace sp {
         : ecs::GuiDefinition("console",
               ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar) {}
 
-    bool ConsoleGui::BeforeFrame(ecs::Entity ent) {
+    bool ConsoleGui::BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) {
         return consoleOpen;
     }
 

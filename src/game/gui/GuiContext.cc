@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
+#include "graphics/GenericCompositor.hh"
 #include "gui/GuiDrawData.hh"
 #include "gui/ImGuiHelpers.hh"
 #include "gui/ImGuiKeyCodes.hh"
@@ -86,7 +87,7 @@ namespace sp {
         return true;
     }
 
-    bool GuiContext::BeforeFrame() {
+    bool GuiContext::BeforeFrame(GenericCompositor &compositor) {
         ZoneScoped;
         SetGuiContext();
 
@@ -291,7 +292,7 @@ namespace sp {
             if (!element.definition) continue;
             ecs::Entity ent = guiEntity.GetLive();
             if (!ent) continue;
-            element.enabled = element.definition->BeforeFrame(ent);
+            element.enabled = element.definition->BeforeFrame(compositor, ent);
             anyEnabled |= element.enabled;
         }
         return anyEnabled;

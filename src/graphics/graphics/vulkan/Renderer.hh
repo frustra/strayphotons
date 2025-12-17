@@ -40,20 +40,17 @@ namespace sp::vulkan {
 
     class Renderer {
     public:
-        Renderer(Game &game, DeviceContext &context);
+        Renderer(Game &game, DeviceContext &context, rg::RenderGraph &graph, Compositor &compositor);
         ~Renderer();
 
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        Compositor &GetCompositor() {
-            return compositor;
-        }
-
     private:
         Game &game;
         DeviceContext &device;
-        rg::RenderGraph graph;
+        rg::RenderGraph &graph;
+        Compositor &compositor;
 
         void BuildFrameGraph(chrono_clock::duration elapsedTime);
         void AddViewOutputs(ecs::Lock<ecs::Read<ecs::Name,
@@ -86,7 +83,6 @@ namespace sp::vulkan {
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
 
-        Compositor compositor;
         AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;
@@ -98,7 +94,5 @@ namespace sp::vulkan {
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
         std::array<uint32, 2> hiddenAreaTriangleCount;
-
-        friend class Compositor;
     };
 } // namespace sp::vulkan

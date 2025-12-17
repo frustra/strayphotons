@@ -43,7 +43,7 @@ namespace sp {
             });
     }
 
-    bool InspectorGui::BeforeFrame(ecs::Entity ent) {
+    bool InspectorGui::BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) {
         if (!context) return false;
         ZoneScoped;
         {
