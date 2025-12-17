@@ -11,6 +11,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
+#include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -49,9 +50,9 @@ namespace sp::vulkan {
     static CVar<bool> CVarSortedDraw("r.SortedDraw", true, "Draw geometry in sorted depth-order");
     static CVar<bool> CVarDrawReverseOrder("r.DrawReverseOrder", false, "Flip the order for geometry depth sorting");
 
-    Renderer::Renderer(Game &game, DeviceContext &device)
-        : game(game), device(device), graph(device), scene(device), voxels(scene), lighting(scene, voxels),
-          transparency(scene, voxels), emissive(scene), compositor(device, *this) {
+    Renderer::Renderer(Game &game, DeviceContext &device, rg::RenderGraph &graph, Compositor &compositor)
+        : game(game), device(device), graph(graph), compositor(compositor), scene(device), voxels(scene),
+          lighting(scene, voxels), transparency(scene, voxels), emissive(scene) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -86,7 +87,9 @@ namespace sp::vulkan {
 
         if (game.xr) game.xr->WaitFrame();
 
-        compositor.BeforeFrame();
+        graph.AddImageView("ErrorColor", scene.textures.GetSinglePixel(ERROR_COLOR));
+
+        compositor.BeforeFrame(graph);
 
         BuildFrameGraph(elapsedTime);
 
@@ -124,8 +127,6 @@ namespace sp::vulkan {
 
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
-
-        graph.AddImageView("ErrorColor", scene.textures.GetSinglePixel(ERROR_COLOR));
 
         compositor.AddOutputPasses(Compositor::PassOrder::BeforeViews);
         {

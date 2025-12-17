@@ -10,13 +10,14 @@
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
+#include <common/InlineString.hh>
 #include <common/Logging.hh>
 #include <fstream>
 #include <input/BindingNames.hh>
 #include <input/KeyCodes.hh>
 #include <strayphotons/components.h>
-#include <common/InlineString.hh>
 #include <vector>
+
 
 extern "C" {
 #include <doomgeneric/doomgeneric.h>
@@ -76,7 +77,10 @@ struct ScriptContext {
         *ctx = {};
     }
 
-    static bool BeforeFrameStatic(void *, sp_script_state_t *state, tecs_entity_t ent) {
+    static bool BeforeFrameStatic(void *,
+        sp_compositor_ctx_t *compositor,
+        sp_script_state_t *state,
+        tecs_entity_t ent) {
         return true;
     }
 

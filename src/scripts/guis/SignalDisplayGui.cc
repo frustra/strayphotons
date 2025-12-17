@@ -119,7 +119,7 @@ namespace sp::scripts {
             return true;
         }
 
-        void RenderGui(sp::GenericCompositor *,
+        void RenderGui(GenericCompositor &,
             ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,
@@ -138,7 +138,7 @@ namespace sp::scripts {
 
             auto lastFonts = io.Fonts;
             io.Fonts = fontAtlas.get();
-            io.Fonts->TexID = 1ull << 16; // FONT_ATLAS_ID
+            io.Fonts->TexID = GenericCompositor::FontAtlasID;
             Defer defer([&] {
                 io.Fonts = lastFonts;
             });

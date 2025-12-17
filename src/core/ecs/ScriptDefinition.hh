@@ -54,9 +54,9 @@ namespace ecs {
         void(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration)>;
     using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
     using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using BeforeFrameFunc = std::function<bool(ScriptState &, Entity)>;
+    using BeforeFrameFunc = std::function<bool(sp::GenericCompositor &, ScriptState &, Entity)>;
     using RenderGuiFunc = std::function<
-        void(sp::GenericCompositor *, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
+        void(sp::GenericCompositor &, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
     using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
 
     using ScriptCallback = std::

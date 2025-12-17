@@ -10,15 +10,16 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/components/GuiElement.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <memory>
-#include <string>
 #include <vector>
 
 struct ImGuiContext;
 
 namespace sp {
     struct GuiDrawData;
+    class GenericCompositor;
 
     enum class GuiFont {
         Primary,
@@ -49,7 +50,7 @@ namespace sp {
         void Detach(std::shared_ptr<ecs::GuiDefinition> definition);
 
         virtual bool SetGuiContext();
-        virtual bool BeforeFrame();
+        virtual bool BeforeFrame(GenericCompositor &compositor);
         virtual void DefineWindows();
         virtual void GetDrawData(GuiDrawData &output) const;
 

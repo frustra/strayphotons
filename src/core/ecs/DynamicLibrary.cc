@@ -154,7 +154,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
                 Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ScriptState));
-                dynamicScript->dynamicDefinition.initFunc(ptr.context, &state);
+                dynamicScript->dynamicDefinition.initFunc(ptr.context, state);
             }
         }
     }
@@ -166,7 +166,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
             if (ptr && dynamicScript->dynamicDefinition.destroyFunc) {
-                dynamicScript->dynamicDefinition.destroyFunc(ptr->context, &state);
+                dynamicScript->dynamicDefinition.destroyFunc(ptr->context, state);
             }
         }
     }
@@ -183,8 +183,8 @@ namespace ecs {
             if (dynamicScript->dynamicDefinition.onTickFunc) {
                 DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
-                    &state,
-                    &dynLock,
+                    state,
+                    dynLock,
                     ent,
                     std::chrono::nanoseconds(interval).count());
             }
@@ -199,7 +199,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onEventFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, ent, &event);
+                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, state, dynLock, ent, event);
             }
         }
     }
@@ -211,25 +211,25 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             if (dynamicScript->dynamicDefinition.prefabFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, ent, &scene);
+                dynamicScript->dynamicDefinition.prefabFunc(state, dynLock, ent, scene);
             }
         }
     }
 
-    bool DynamicScript::BeforeFrame(ScriptState &state, Entity ent) {
+    bool DynamicScript::BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent) {
         ZoneScoped;
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.beforeFrameFunc) {
-                return dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, &state, ent);
+                return dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, compositor, state, ent);
             }
         }
         return false;
     }
 
-    void DynamicScript::RenderGui(sp::GenericCompositor *compositor,
+    void DynamicScript::RenderGui(sp::GenericCompositor &compositor,
         ScriptState &state,
         Entity ent,
         glm::vec2 displaySize,
@@ -243,7 +243,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.renderGuiFunc) {
                 auto &renderGui = dynamicScript->dynamicDefinition.renderGuiFunc;
-                renderGui(ptr.context, compositor, &state, ent, displaySize, scale, deltaTime, result);
+                renderGui(ptr.context, compositor, state, ent, displaySize, scale, deltaTime, result);
             }
         }
     }

@@ -8,8 +8,14 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/ScriptManager.hh"
 #include "ecs/components/RenderOutput.hh"
-#include "ecs/components/Scripts.hh"
+
+#include <utility>
+
+namespace sp {
+    class GenericCompositor;
+}
 
 namespace ecs {
     template<typename LockType>
@@ -299,16 +305,17 @@ namespace ecs {
     struct script_has_before_frame_func : std::false_type {};
     template<typename T>
     struct script_has_before_frame_func<T,
-        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
+        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<sp::GenericCompositor &>(),
+            std::declval<ScriptState &>(),
+            std::declval<Entity>()))>> : std::true_type {};
 
     // Checks if the script has a RenderGui() function
     template<typename T, typename = void>
     struct script_has_render_gui_func : std::false_type {};
     template<typename T>
     struct script_has_render_gui_func<T,
-        std::void_t<decltype(std::declval<T>().RenderGui(std::declval<ScriptState &>(),
-            std::declval<sp::GenericCompositor *>(),
+        std::void_t<decltype(std::declval<T>().RenderGui(std::declval<sp::GenericCompositor &>(),
+            std::declval<ScriptState &>(),
             std::declval<Entity>(),
             std::declval<glm::vec2>(),
             std::declval<glm::vec2>(),
@@ -347,17 +354,19 @@ namespace ecs {
             }
         }
 
-        static bool BeforeFrame([[maybe_unused]] ScriptState &state, [[maybe_unused]] Entity ent) {
+        static bool BeforeFrame([[maybe_unused]] sp::GenericCompositor &compositor,
+            [[maybe_unused]] ScriptState &state,
+            [[maybe_unused]] Entity ent) {
             if constexpr (script_has_before_frame_func<T>()) {
                 auto *ptr = std::any_cast<T>(&state.scriptData);
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
-                return ptr->BeforeFrame(state, ent);
+                return ptr->BeforeFrame(compositor, state, ent);
             } else {
                 return false;
             }
         }
 
-        static void RenderGui([[maybe_unused]] sp::GenericCompositor *compositor,
+        static void RenderGui([[maybe_unused]] sp::GenericCompositor &compositor,
             [[maybe_unused]] ScriptState &state,
             [[maybe_unused]] Entity ent,
             [[maybe_unused]] glm::vec2 displaySize,

@@ -8,18 +8,34 @@
 #pragma once
 
 #include "common/Common.hh"
+#include "common/InlineString.hh"
 #include "ecs/StructMetadata.hh"
 #include "gui/GuiDrawData.hh"
 
+#include <cstdint>
 #include <glm/glm.hpp>
-#include <vector>
 
 namespace sp {
     class Image;
+    class GpuTexture;
 
     class GenericCompositor : public NonCopyable {
     public:
+        virtual ~GenericCompositor() = default;
+
+        typedef uint32 ResourceID;
+        typedef InlineString<127> ResourceName;
+
+        static constexpr uint64_t FontAtlasID = (uint64_t)std::numeric_limits<ResourceID>::max() + 1;
+        static constexpr ResourceID InvalidResource = ~0u;
+
         virtual void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) = 0;
+
+        virtual std::shared_ptr<GpuTexture> UploadStaticImage(std::shared_ptr<const Image> image,
+            bool genMipmap = true,
+            bool srgb = true) = 0;
+        virtual ResourceID AddStaticImage(const ResourceName &name, std::shared_ptr<GpuTexture> image) = 0;
+
         virtual void UpdateSourceImage(ecs::Entity dst, std::shared_ptr<sp::Image> src) = 0;
         void UpdateSourceImage(ecs::Entity dst,
             const uint8_t *data,

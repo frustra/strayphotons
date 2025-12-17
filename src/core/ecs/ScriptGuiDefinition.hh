@@ -20,7 +20,7 @@ namespace ecs {
         ScriptGuiDefinition(std::shared_ptr<ScriptState> state, EntityRef guiDefinitionEntity);
         ~ScriptGuiDefinition();
 
-        bool BeforeFrame(Entity ent) override;
+        bool BeforeFrame(sp::GenericCompositor &compositor, Entity ent) override;
         void PreDefine(Entity ent) override;
         void DefineContents(Entity ent) override;
         void PostDefine(Entity ent) override;

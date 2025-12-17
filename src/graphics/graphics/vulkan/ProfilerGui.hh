@@ -31,7 +31,7 @@ namespace sp::vulkan {
             return (float)self->drawHistogram.buckets[index];
         }
 
-        bool BeforeFrame(ecs::Entity ent) override {
+        bool BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) override {
             if (timer.lastCompleteFrame.empty()) return false;
             if (!CVarProfileRender.Get()) {
                 // Auto-resize on first frame shown

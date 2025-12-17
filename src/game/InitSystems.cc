@@ -52,13 +52,12 @@ namespace sp {
     void StartGraphicsThread(Game &game, bool scriptMode) {
 #ifdef SP_GRAPHICS_SUPPORT
         if (game.graphics) {
-            game.graphics->Init();
-
     #ifdef SP_GRAPHICS_SUPPORT_VK
             bool withValidationLayers = game.options.count("with-validation-layers");
             game.graphics->context = std::make_shared<vulkan::DeviceContext>(*game.graphics, withValidationLayers);
     #endif
 
+            game.graphics->Init();
             game.graphics->StartThread(scriptMode);
         }
 #endif

@@ -17,13 +17,9 @@
 #include "graphics/gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
 
-#include <algorithm>
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
-#include <optional>
-#include <system_error>
-#include <thread>
 
 namespace sp {
     static CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
@@ -61,12 +57,13 @@ namespace sp {
 
     void GraphicsManager::Init() {
         ZoneScoped;
+        Assert(context, "GraphicsManager::Init Invalid vulkan context");
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
 
         overlayGui = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
-        menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"),
-            *this); // TODO: GuiContext is copied into ECS and might read-after-free
+        // TODO: GuiContext is copied into ECS and might read-after-free
+        menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"), *this);
     }
 
     void GraphicsManager::StartThread(bool startPaused) {
@@ -86,7 +83,7 @@ namespace sp {
         ZoneScoped;
         renderStart = chrono_clock::now();
 
-        Assert(context, "Invalid vulkan context on init");
+        Assert(context, "GraphicsManager::ThreadInit Invalid vulkan context");
 
         context->InitRenderer(game);
         if (overlayGui) context->AttachOverlay(*overlayGui);
@@ -161,7 +158,7 @@ namespace sp {
         return interval;
     }
 
-    GenericCompositor *GraphicsManager::GetCompositor() const {
+    GenericCompositor &GraphicsManager::GetCompositor() {
         return context->GetCompositor();
     }
 

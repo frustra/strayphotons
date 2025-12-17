@@ -23,7 +23,7 @@ namespace sp {
 
         static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName);
 
-        bool BeforeFrame() override;
+        bool BeforeFrame(GenericCompositor &compositor) override;
         void DefineWindows() override;
 
     private:
