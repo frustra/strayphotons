@@ -293,8 +293,8 @@ namespace sp::vulkan::render_graph {
             for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];
                 if (res.type == Resource::Type::Image) {
-                    ResourceName resourceName = starts_with(scope, "/") ? scope.substr(1) : scope.substr(0);
-                    resourceName += "/" + name;
+                    ResourceName resourceName = scope + "/" + name;
+                    resourceName = starts_with(resourceName, "/") ? resourceName.substr(1) : resourceName.substr(0);
                     output.emplace_back(PooledImageInfo{resourceName, res.imageDesc});
                 }
             }

@@ -17,7 +17,7 @@ namespace sp {
     public:
         ConsoleGui();
 
-        bool BeforeFrame(ecs::Entity ent) override;
+        bool BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) override;
         void DefineContents(ecs::Entity ent) override;
         void PostDefine(ecs::Entity ent) override;
 

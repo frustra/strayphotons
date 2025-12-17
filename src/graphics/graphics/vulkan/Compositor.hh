@@ -8,10 +8,12 @@
 #pragma once
 
 #include "common/Async.hh"
+#include "common/PreservingMap.hh"
 #include "graphics/GenericCompositor.hh"
-#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "graphics/vulkan/scene/GPUScene.hh"
+#include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 
 struct ImFontAtlas;
 struct ImDrawData;
@@ -21,12 +23,11 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    class Renderer;
     struct VertexLayout;
 
-    class Compositor : public GenericCompositor {
+    class Compositor final : public GenericCompositor {
     public:
-        Compositor(DeviceContext &device, Renderer &renderer);
+        Compositor(DeviceContext &device, render_graph::RenderGraph &graph);
 
         enum class PassOrder : uint8_t {
             BeforeViews,
@@ -34,9 +35,14 @@ namespace sp::vulkan {
         };
 
         void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) override;
+
+        std::shared_ptr<GpuTexture> UploadStaticImage(std::shared_ptr<const sp::Image> image,
+            bool genMipmap = true,
+            bool srgb = true) override;
+        rg::ResourceID AddStaticImage(const rg::ResourceName &name, std::shared_ptr<GpuTexture> image) override;
         void UpdateSourceImage(ecs::Entity dst, std::shared_ptr<sp::Image> src) override;
 
-        void BeforeFrame();
+        void BeforeFrame(rg::RenderGraph &graph);
         void UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name, ecs::RenderOutput>> lock);
         void AddOutputPasses(PassOrder order);
         void EndFrame();
@@ -45,8 +51,7 @@ namespace sp::vulkan {
         void internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale);
         void internalDrawGui(ImDrawData *drawData, vk::Rect2D viewport, glm::vec2 scale, bool allowUserCallback);
 
-        Renderer &renderer;
-        GPUScene &scene;
+        DeviceContext &device;
         rg::RenderGraph &graph;
         double lastTime = 0.0, deltaTime;
 
@@ -69,14 +74,18 @@ namespace sp::vulkan {
 
         PreservingMap<ecs::Entity, GuiContext, 500> ephemeralGuiContexts;
 
-        struct CpuImageSource {
+        struct DynamicImageSource {
             std::shared_ptr<sp::Image> cpuImage;
             bool cpuImageModified = false;
             std::deque<AsyncPtr<Image>> pendingUploads;
             ImageViewPtr imageView;
         };
-        LockFreeMutex uploadMutex;
-        robin_hood::unordered_map<ecs::Entity, CpuImageSource> cpuImageSources;
+        struct StaticImageSource {
+            std::shared_ptr<sp::Image> cpuImage;
+            AsyncPtr<ImageView> gpuImage;
+        };
+        LockFreeMutex dynamicSourceMutex;
+        robin_hood::unordered_map<ecs::Entity, DynamicImageSource> dynamicImageSources;
 
         unique_ptr<VertexLayout> vertexLayout;
 

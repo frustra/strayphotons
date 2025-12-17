@@ -25,7 +25,6 @@
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
-#include "gui/OverlayGuiManager.hh"
 
 #include <algorithm>
 #include <iostream>
@@ -113,8 +112,8 @@ namespace sp::vulkan {
 
     DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
         : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
-          frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
-          allocatorQueue("GPUAllocator", 1, {}) {
+          frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}), allocatorQueue("GPUAllocator", 1, {}),
+          graph(*this) {
         ZoneScoped;
 
         try {
@@ -539,6 +538,8 @@ namespace sp::vulkan {
             }
 
             if (enableSwapchain) CreateSwapchain();
+
+            compositor = std::make_unique<Compositor>(*this, graph);
         } catch (const vk::InitializationFailedError &err) {
             Errorf("Device initialization failed! %s", err.what());
             deviceResetRequired = true;
@@ -635,16 +636,15 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::InitRenderer(Game &game) {
-        vkRenderer = make_shared<vulkan::Renderer>(game, *this);
+        vkRenderer = make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
     }
 
     std::shared_ptr<Renderer> DeviceContext::GetRenderer() const {
         return vkRenderer;
     }
 
-    GenericCompositor *DeviceContext::GetCompositor() const {
-        if (!vkRenderer) return nullptr;
-        return &vkRenderer->GetCompositor();
+    GenericCompositor &DeviceContext::GetCompositor() {
+        return *compositor;
     }
 
     void DeviceContext::RenderFrame(chrono_clock::duration elapsedTime) {
@@ -1441,12 +1441,6 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
         return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
-    }
-
-    shared_ptr<GpuTexture> DeviceContext::UploadTexture(shared_ptr<const sp::Image> image, bool genMipmap) {
-        auto view = LoadAssetImage(image, genMipmap, true);
-        FlushMainQueue();
-        return view->Get();
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {

@@ -28,7 +28,7 @@ namespace ecs {
     struct RenderOutput {
         sp::InlineString<127> sourceName;
         glm::ivec2 outputSize = {-1, -1}; // -1 == inherit
-        glm::vec2 scale = {-1, -1}; // -1 == use window ui scale
+        glm::vec2 scale = {-1, -1}; // -1 == inherit
         std::vector<EntityRef> guiElements;
         // - effects? (blur, crosshair, other post-processing)
         // - sprites? (transform tree based positioning)

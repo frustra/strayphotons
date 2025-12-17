@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/EventQueue.hh"
+#include "graphics/GenericCompositor.hh"
 #include "gui/GuiContext.hh"
 
 namespace sp {
@@ -23,7 +24,7 @@ namespace sp {
 
         static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName, GraphicsManager &graphics);
 
-        bool BeforeFrame() override;
+        bool BeforeFrame(GenericCompositor &compositor) override;
         void DefineWindows() override;
 
         bool MenuOpen() const;
@@ -42,6 +43,7 @@ namespace sp {
         std::vector<std::pair<std::string, std::string>> saveList;
 
         shared_ptr<GpuTexture> logoTex;
+        GenericCompositor::ResourceID logoResourceID = GenericCompositor::InvalidResource;
     };
 
     inline bool IsAspect(glm::ivec2 size, int w, int h) {

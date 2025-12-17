@@ -12,11 +12,14 @@
 #include "common/DispatchQueue.hh"
 #include "common/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <atomic>
 #include <future>
@@ -97,9 +100,10 @@ namespace sp::vulkan {
 
         void InitRenderer(Game &game) override;
         std::shared_ptr<Renderer> GetRenderer() const;
-        void RenderFrame(chrono_clock::duration elapsedTime) override;
 
-        GenericCompositor *GetCompositor() const override;
+        GenericCompositor &GetCompositor() override;
+
+        void RenderFrame(chrono_clock::duration elapsedTime) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
@@ -174,7 +178,6 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
         AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
-        shared_ptr<GpuTexture> UploadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
 
         ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
@@ -397,6 +400,10 @@ namespace sp::vulkan {
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
+
+        rg::RenderGraph graph;
+        GPUScene scene;
+        std::unique_ptr<vulkan::Compositor> compositor;
         std::shared_ptr<vulkan::Renderer> vkRenderer;
     };
 } // namespace sp::vulkan

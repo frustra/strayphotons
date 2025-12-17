@@ -22,9 +22,11 @@ namespace ecs {
         context = {};
     }
 
-    bool ScriptGuiDefinition::BeforeFrame(Entity ent) {
+    bool ScriptGuiDefinition::BeforeFrame(sp::GenericCompositor &compositor, Entity ent) {
         ZoneScoped;
-        context = {};
+        context = {
+            .compositor = &compositor,
+        };
         return ecs::GetScriptManager().WithGuiScriptLock([&] {
             auto activeState = weakState.lock();
             if (!activeState) return false;
@@ -52,20 +54,14 @@ namespace ecs {
             }
 
             auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
-            if (beforeFrame && renderGui && beforeFrame(state, ent)) {
+            if (beforeFrame && renderGui && beforeFrame(compositor, state, ent)) {
                 auto &io = ImGui::GetIO();
                 ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
                 // TODO: Viewport is one frame behind here, and undefined on first frame.
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
                 glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
                 glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};
-                renderGui((sp::GenericCompositor *)io.UserData,
-                    state,
-                    ent,
-                    displaySize,
-                    scale,
-                    io.DeltaTime,
-                    context.drawData);
+                renderGui(compositor, state, ent, displaySize, scale, io.DeltaTime, context.drawData);
                 return !context.drawData.drawCommands.empty();
             }
             return false;
@@ -83,9 +79,7 @@ namespace ecs {
         ImGui::Dummy(ImGui::GetContentRegionAvail());
 
         auto &io = ImGui::GetIO();
-        sp::GenericCompositor *compositor = (sp::GenericCompositor *)io.UserData;
-        if (!context.drawData.drawCommands.empty() && compositor) {
-            context.compositor = compositor;
+        if (!context.drawData.drawCommands.empty()) {
             auto minPos = ImGui::GetItemRectMin();
             auto maxPos = ImGui::GetItemRectMax();
             context.viewport = glm::vec4(minPos.x, minPos.y, maxPos.x - minPos.x, maxPos.y - minPos.y);

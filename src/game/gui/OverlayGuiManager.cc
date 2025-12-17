@@ -87,7 +87,7 @@ namespace sp {
         ImGui::PopStyleColor(4);
     }
 
-    bool OverlayGuiManager::BeforeFrame() {
+    bool OverlayGuiManager::BeforeFrame(GenericCompositor &compositor) {
         bool focusChanged = false;
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock>>();
@@ -114,7 +114,7 @@ namespace sp {
             }
         }
 
-        GuiContext::BeforeFrame();
+        GuiContext::BeforeFrame(compositor);
         return true;
     }
 } // namespace sp

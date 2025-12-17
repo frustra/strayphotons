@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/InlineString.hh"
 #include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/components/GuiElement.hh"
@@ -71,15 +70,15 @@ namespace ecs {
         size_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;
         void (*defaultFreeFunc)(void *) = nullptr;
-        void (*initFunc)(void *, ScriptState *) = nullptr;
-        void (*destroyFunc)(void *, ScriptState *) = nullptr;
-        void (*onTickFunc)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t) = nullptr;
-        void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
-        void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
-        bool (*beforeFrameFunc)(void *, ScriptState *, Entity) = nullptr;
+        void (*initFunc)(void *, ScriptState &) = nullptr;
+        void (*destroyFunc)(void *, ScriptState &) = nullptr;
+        void (*onTickFunc)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t) = nullptr;
+        void (*onEventFunc)(void *, ScriptState &, DynamicLock<> &, Entity, Event &) = nullptr;
+        void (*prefabFunc)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &) = nullptr;
+        bool (*beforeFrameFunc)(void *, sp::GenericCompositor &, ScriptState &, Entity) = nullptr;
         void (*renderGuiFunc)(void *,
-            sp::GenericCompositor *,
-            ScriptState *,
+            sp::GenericCompositor &,
+            ScriptState &,
             Entity,
             glm::vec2,
             glm::vec2,
@@ -142,8 +141,8 @@ namespace ecs {
             chrono_clock::duration interval);
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
-        static bool BeforeFrame(ScriptState &state, Entity ent);
-        static void RenderGui(sp::GenericCompositor *compositor,
+        static bool BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent);
+        static void RenderGui(sp::GenericCompositor &compositor,
             ScriptState &state,
             Entity ent,
             glm::vec2 displaySize,

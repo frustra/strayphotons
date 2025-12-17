@@ -23,7 +23,7 @@ namespace sp {
         InspectorGui(const std::string &name);
         virtual ~InspectorGui();
 
-        bool BeforeFrame(ecs::Entity ent) override;
+        bool BeforeFrame(GenericCompositor &compositor, ecs::Entity ent) override;
         void PreDefine(ecs::Entity ent) override;
         void DefineContents(ecs::Entity ent) override;
         void PostDefine(ecs::Entity ent) override;
