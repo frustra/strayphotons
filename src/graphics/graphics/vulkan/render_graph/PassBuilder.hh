@@ -60,6 +60,10 @@ namespace sp::vulkan::render_graph {
             return CreateBuffer(name, size, Residency::CPU_TO_GPU, Access::HostWrite);
         }
 
+        const ResourceName &GetName(ResourceID id) const {
+            return resources.GetName(id);
+        }
+
         ResourceID LastOutputID() const {
             return resources.lastOutputID;
         }

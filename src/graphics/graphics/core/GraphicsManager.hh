@@ -80,7 +80,7 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        std::shared_ptr<GuiContext> overlayGui, menuGui;
+        std::shared_ptr<GuiContext> windowGuiContext, menuGui;
         shared_ptr<ProfilerGui> profilerGui;
 
         bool initialized = false;

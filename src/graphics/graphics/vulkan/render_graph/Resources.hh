@@ -16,6 +16,7 @@
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 
 #include <robin_hood.h>
+#include <thread>
 
 namespace sp::vulkan::render_graph {
     typedef uint32 ResourceID;
@@ -143,15 +144,16 @@ namespace sp::vulkan::render_graph {
 
         DeviceContext &device;
         uint32 frameIndex = 0;
+        mutable std::thread::id renderThread;
 
         struct Scope {
             ResourceName name;
 
             struct PerFrame {
-                robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
-                // std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                // robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
             };
-            std::array<PerFrame, RESOURCE_FRAME_COUNT> frames;
+            std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
             ResourceID GetID(string_view name, uint32 frameIndex) const;
             void SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace = false);

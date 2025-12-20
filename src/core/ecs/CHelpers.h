@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
         #include <ecs/Components.hh>
@@ -19,9 +16,14 @@
     #endif
 
 extern "C" {
-#else
-typedef uint8_t bool;
 #endif
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+static_assert(sizeof(bool) == 1, "Unexpected bool size");
 
 #if defined(__cplusplus) && !defined(SP_WASM_BUILD)
 typedef glm::vec3 GlmVec3;

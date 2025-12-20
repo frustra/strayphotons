@@ -25,6 +25,8 @@
 
 namespace ecs {
     class SignalManager {
+        sp::LogOnExit logOnExit = "SignalManager shut down  ==============================================";
+
     public:
         SignalManager();
 

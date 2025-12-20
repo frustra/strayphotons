@@ -18,6 +18,7 @@
 namespace sp {
     class Image;
     class GpuTexture;
+    class GuiContext;
 
     class GenericCompositor : public NonCopyable {
     public:
@@ -29,7 +30,8 @@ namespace sp {
         static constexpr uint64_t FontAtlasID = (uint64_t)std::numeric_limits<ResourceID>::max() + 1;
         static constexpr ResourceID InvalidResource = ~0u;
 
-        virtual void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) = 0;
+        virtual void DrawGuiContext(GuiContext &context, glm::ivec4 viewport, glm::vec2 scale) = 0;
+        virtual void DrawGuiData(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) = 0;
 
         virtual std::shared_ptr<GpuTexture> UploadStaticImage(std::shared_ptr<const Image> image,
             bool genMipmap = true,

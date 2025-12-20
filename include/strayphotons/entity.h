@@ -9,11 +9,11 @@
 
 #include "export.h"
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h>
 
 typedef uint64_t sp_entity_t;
 

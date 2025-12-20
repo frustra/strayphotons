@@ -68,6 +68,16 @@
 			}
 		},
 		{
+			"name": "input:keyboard",
+			"event_bindings": {
+				"/keyboard/key/escape": {
+					"outputs": "console:input/action/run_command",
+					"filter": "is_primary_focus(HUD) && event",
+					"set_value": "releasefocus HUD"
+				}
+			}
+		},
+		{
 			"name": "doom_display",
 			"gui_element": {},
 			"event_input": {},
@@ -99,7 +109,7 @@
 				}
 			},
 			"screen": {
-				"texture": "ent:player:flatview/RenderOutput",
+				"texture": "/ent:player:flatview/RenderOutput",
 				"luminance": [2, 1.6, 1]
 			},
 			"script": {

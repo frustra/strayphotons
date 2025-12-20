@@ -8,7 +8,9 @@
 #pragma once
 
 #include "common/Async.hh"
+#include "common/InlineString.hh"
 #include "common/PreservingMap.hh"
+#include "ecs/SignalExpression.hh"
 #include "graphics/GenericCompositor.hh"
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
@@ -34,7 +36,8 @@ namespace sp::vulkan {
             AfterViews,
         };
 
-        void DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) override;
+        void DrawGuiContext(GuiContext &context, glm::ivec4 viewport, glm::vec2 scale) override;
+        void DrawGuiData(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) override;
 
         std::shared_ptr<GpuTexture> UploadStaticImage(std::shared_ptr<const sp::Image> image,
             bool genMipmap = true,
@@ -60,8 +63,10 @@ namespace sp::vulkan {
             ecs::Entity entity;
             glm::ivec2 outputSize;
             glm::vec2 scale;
+            sp::InlineString<127> effectName;
+            ecs::SignalExpression effectCondition;
             std::shared_ptr<GuiContext> guiContext;
-            bool enableGui;
+            bool enableGui, enableEffect;
             std::vector<ecs::EntityRef> guiElements;
             rg::ResourceName sourceName;
             rg::ResourceID sourceResourceID = rg::InvalidResource;

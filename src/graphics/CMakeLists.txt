@@ -40,6 +40,7 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
+        ${PROJECT_CODEGEN_LIB}
         SPIRV-Reflect
         fpng
         ImGui
@@ -56,6 +57,8 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     PRIVATE
         VULKAN_HPP_STORAGE_SHARED_EXPORT
+        SP_SHARED_INTERNAL
+        TECS_SHARED_INTERNAL
 )
 
 # target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})

@@ -459,8 +459,7 @@ namespace sp::vulkan {
                     blendState.dstColorBlendFactor = state.dstBlendFactor;
                     blendState.dstAlphaBlendFactor = state.dstAlphaBlendFactor;
                 }
-                blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+                blendState.colorWriteMask = vk::ColorComponentFlags(state.colorWriteMask);
             }
 
             multisampling.sampleShadingEnable = false;

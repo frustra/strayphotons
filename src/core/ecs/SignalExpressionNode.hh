@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/Hashing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
@@ -73,11 +74,14 @@ namespace ecs {
         };
         struct FocusCondition {
             FocusLayer ifFocused;
+            bool checkPrimaryFocus;
 
             CompiledFunc Compile() const;
             bool operator==(const FocusCondition &) const = default;
             size_t Hash() const {
-                return robin_hood::hash<std::string>()(std::string(magic_enum::enum_name(ifFocused)));
+                size_t hash = robin_hood::hash<FocusLayer>()(ifFocused);
+                sp::hash_combine(hash, robin_hood::hash<bool>()(checkPrimaryFocus));
+                return hash;
             }
         };
         struct OneInputOperation {

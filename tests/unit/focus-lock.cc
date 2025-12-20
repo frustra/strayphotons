@@ -38,12 +38,13 @@ namespace FocusLockTests {
             player.Set<ecs::Name>(lock, "player", "player");
             auto &eventInput = player.Set<ecs::EventInput>(lock);
             eventInput.Register(lock, playerQueue, TEST_EVENT_ACTION);
-            ecs::SignalRef(player, TEST_SIGNAL_ACTION).SetBinding(lock, "if_focused(Game, input:mouse/device1_button)");
+            ecs::SignalRef(player, TEST_SIGNAL_ACTION)
+                .SetBinding(lock, "if_primary_focus(Game, input:mouse/device1_button)");
 
             keyboard.Set<ecs::Name>(lock, "input", "keyboard");
             auto &eventBindings = keyboard.Set<ecs::EventBindings>(lock);
             auto &binding = eventBindings.Bind(TEST_EVENT_KEY, player, TEST_EVENT_ACTION);
-            binding.actions.filterExpr = ecs::SignalExpression("is_focused(Game)");
+            binding.actions.filterExpr = ecs::SignalExpression("is_primary_focus(Game)");
 
             mouse.Set<ecs::Name>(lock, "input", "mouse");
             ecs::SignalRef(mouse, TEST_SIGNAL_BUTTON).SetValue(lock, 42.0);
