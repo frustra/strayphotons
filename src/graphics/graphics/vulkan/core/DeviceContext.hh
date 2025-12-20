@@ -19,7 +19,6 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
-#include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <atomic>
 #include <future>
@@ -98,7 +97,7 @@ namespace sp::vulkan {
             return deviceResetRequired;
         }
 
-        void AttachOverlay(GuiContext &overlayContext) override;
+        void AttachWindow(const std::shared_ptr<GuiContext> &context) override;
 
         void InitRenderer(Game &game) override;
         std::shared_ptr<Renderer> GetRenderer() const;
@@ -410,7 +409,6 @@ namespace sp::vulkan {
         std::unique_ptr<CFuncCollection> funcs;
 
         rg::RenderGraph graph;
-        GPUScene scene;
         std::unique_ptr<vulkan::Compositor> compositor;
         std::shared_ptr<vulkan::Renderer> vkRenderer;
     };

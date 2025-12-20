@@ -372,7 +372,7 @@ struct GraphDisplayGui {
                 if (event->data.type == SP_EVENT_DATA_TYPE_BOOL) {
                     awaitingResponse = false;
                     if (reloadingColumns) {
-                        if (reloadingColumn >= columns.size()) {
+                        if (reloadingColumn >= (int32_t)columns.size()) {
                             reloadingColumn = -1;
                             reloadingColumns = false;
                         } else {

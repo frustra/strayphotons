@@ -8,6 +8,7 @@
 #include "ScriptGuiDefinition.hh"
 
 #include "graphics/GenericCompositor.hh"
+#include "imgui.h"
 
 #include <imgui_internal.h>
 
@@ -96,7 +97,9 @@ namespace ecs {
                     if (cmd && cmd->UserCallbackData) {
                         CallbackContext *context = static_cast<CallbackContext *>(cmd->UserCallbackData);
                         if (!context->compositor) return;
-                        context->compositor->DrawGui(context->drawData, (glm::ivec4)context->viewport, context->scale);
+                        context->compositor->DrawGuiData(context->drawData,
+                            (glm::ivec4)context->viewport,
+                            context->scale);
                     }
                 },
                 &context);

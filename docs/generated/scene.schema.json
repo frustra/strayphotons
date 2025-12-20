@@ -748,6 +748,17 @@
 					"physics_query": {},
 					"render_output": {
 						"properties": {
+							"effect": {
+								"default": "",
+								"description": "No description",
+								"maxLength": 127,
+								"type": "string"
+							},
+							"effect_if": {
+								"$ref": "#/definitions/SignalExpression",
+								"default": "",
+								"description": "No description"
+							},
 							"gui_elements": {
 								"anyOf": [
 									{

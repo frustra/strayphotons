@@ -52,7 +52,7 @@ namespace sp {
         virtual bool SetGuiContext();
         virtual bool BeforeFrame(GenericCompositor &compositor);
         virtual void DefineWindows();
-        virtual void GetDrawData(GuiDrawData &output) const;
+        virtual void GetDrawData(GuiDrawData &output);
 
         static void PushFont(GuiFont fontType, float fontSize);
 

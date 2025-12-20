@@ -10,7 +10,6 @@
 #include "ecs/Components.hh"
 #include "ecs/components/Renderable.hh"
 
-#include <bitset>
 #include <glm/glm.hpp>
 
 namespace ecs {

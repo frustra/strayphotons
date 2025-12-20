@@ -9,9 +9,9 @@
 
 #include "ecs/components/XrView.hh"
 
+#include <cstdint>
 #include <glm/glm.hpp>
-#include <memory>
-#include <stdint.h>
+
 
 namespace sp {
     class RenderTarget;

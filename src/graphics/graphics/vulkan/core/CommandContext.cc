@@ -26,12 +26,14 @@ namespace sp::vulkan {
     void CommandContext::SetDefaultOpaqueState() {
         SetDepthTest(true, true);
         SetDepthRange(0.0f, 1.0f);
+        SetColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
         SetStencilTest(false);
         SetBlending(false);
         SetBlendFunc(vk::BlendFactor::eSrcAlpha,
             vk::BlendFactor::eOneMinusSrcAlpha,
-            vk::BlendFactor::eOneMinusDstAlpha,
-            vk::BlendFactor::eOne);
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eOneMinusSrcAlpha);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
         SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
@@ -182,6 +184,12 @@ namespace sp::vulkan {
             }
             SetImageView("tex", view);
         }
+        Draw(3); // vertices are defined as constants in the vertex shader
+    }
+
+    void CommandContext::DrawScreenCover(const color_alpha_t &color) {
+        SetShaders("screen_cover.vert", "solid_color.frag");
+        PushConstants((glm::vec4)color);
         Draw(3); // vertices are defined as constants in the vertex shader
     }
 

@@ -321,7 +321,7 @@ namespace sp::vulkan::renderer {
             .Execute([this](Resources &resources, DeviceContext &device) {
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].filterTexture.has_value()) {
-                        if (starts_with(lights[i].filterName, "ent:")) {
+                        if (starts_with(lights[i].filterName, "/ent:")) {
                             gpuData.lights[i].filterId = scene.liveTextureCache[lights[i].filterName].index;
                         } else {
                             gpuData.lights[i].filterId = lights[i].filterTexture.value();

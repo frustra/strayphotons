@@ -10,20 +10,20 @@
 #include "export.h"
 
 #ifdef __cplusplus
-    #include <cstdint>
-
 namespace sp {
     class CVarBase;
-} // namespace sp
-
+}
 extern "C" {
 typedef sp::CVarBase sp_cvar_t;
 #else
-    #include <stdint.h>
-
 typedef void sp_cvar_t;
-typedef uint8_t bool;
 #endif
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+static_assert(sizeof(bool) == 1, "Unexpected bool size");
 
 // The following functions are declared in src/exports/Console.cc
 

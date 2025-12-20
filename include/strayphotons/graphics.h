@@ -11,9 +11,6 @@
 #include "game.h"
 
 #ifdef __cplusplus
-    #include <cstddef>
-    #include <cstdint>
-
 namespace sp {
     class GraphicsManager;
     class GenericCompositor;
@@ -28,13 +25,17 @@ typedef sp::GraphicsManager sp_graphics_ctx_t;
 typedef sp::GenericCompositor sp_compositor_ctx_t;
 typedef sp::winit::WinitContext sp_winit_ctx_t;
 #else
-    #include <stddef.h>
-    #include <stdint.h>
-
 typedef void sp_graphics_ctx_t;
 typedef void sp_compositor_ctx_t;
 typedef void sp_winit_ctx_t;
 #endif
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+static_assert(sizeof(bool) == 1, "Unexpected bool size");
 
 typedef struct VkInstance_T *VkInstance;
 typedef struct VkSurfaceKHR_T *VkSurfaceKHR;

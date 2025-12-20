@@ -87,7 +87,7 @@ namespace sp::vulkan::renderer {
             std::copy_n(illuminanceValues, data->gpu.sensorCount, sensorValues.data());
             std::copy_n(data->entities, data->gpu.sensorCount, sensorEntities.data());
             ecs::QueueTransaction<ecs::Write<ecs::LightSensor>>([sensorValues, sensorEntities](auto &lock) {
-                for (int i = 0; i < sensorValues.size(); i++) {
+                for (size_t i = 0; i < sensorValues.size(); i++) {
                     if (sensorEntities[i].Has<ecs::LightSensor>(lock)) {
                         auto &sensor = sensorEntities[i].Get<ecs::LightSensor>(lock);
                         sensor.illuminance = sensorValues[i];

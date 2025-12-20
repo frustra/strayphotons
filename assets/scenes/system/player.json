@@ -3,15 +3,11 @@
 	"libraries": ["camera_view", "game_scripts"],
 	"entities": [
 		{
-			"name": "gui:overlay",
-			"render_output": {
-				"source": "ent:gui:menu"
-			}
-		},
-		{
 			"name": "gui:menu",
 			"render_output": {
-				"source": "ent:player:flatview"
+				"source": "/ent:player:flatview",
+				"effect": "background_blur",
+				"effect_if": "is_focused(Menu)"
 			}
 		},
 		{

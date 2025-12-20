@@ -406,7 +406,7 @@ namespace sp {
         ImGui::PopStyleColor(4);
     }
 
-    void GuiContext::GetDrawData(GuiDrawData &output) const {
+    void GuiContext::GetDrawData(GuiDrawData &output) {
         ConvertImDrawData(ImGui::GetDrawData(), &output);
     }
 

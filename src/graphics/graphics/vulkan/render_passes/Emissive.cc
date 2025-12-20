@@ -75,7 +75,7 @@ namespace sp::vulkan::renderer {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::RenderOutput>(lock)) {
                         ecs::EntityRef ref(ent);
-                        textureName = ResourceName("ent:") + ref.Name().String() + "/RenderOutput";
+                        textureName = ResourceName("/ent:") + ref.Name().String() + "/RenderOutput";
                     } else {
                         continue;
                     }
@@ -85,7 +85,7 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
-                    if (starts_with(textureName, "ent:")) {
+                    if (starts_with(textureName, "/ent:")) {
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
