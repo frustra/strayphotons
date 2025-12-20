@@ -14,15 +14,21 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/ScriptManager.hh"
+#include "ecs/SignalRef.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
+#include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "gui/GuiContext.hh"
+#include "gui/ImGuiHelpers.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -86,13 +92,48 @@ namespace sp::vulkan {
         EndFrame();
     }
 
-    void Compositor::DrawGui(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) {
+    void Compositor::DrawGuiContext(GuiContext &context, glm::ivec4 viewport, glm::vec2 scale) {
+        vk::Rect2D viewportRect({viewport.x, viewport.y}, {(uint32_t)viewport.z, (uint32_t)viewport.w});
+        ImGui::SetCurrentContext(nullptr); // Don't leak contexts between instances
+        if (context.SetGuiContext()) {
+            ImGui::GetMainViewport()->PlatformHandleRaw = device.Win32WindowHandle();
+
+            ImGuiIO &io = ImGui::GetIO();
+            io.IniFilename = nullptr;
+            io.DisplaySize = ImVec2(viewport.z / scale.x, viewport.w / scale.y);
+            io.DisplayFramebufferScale = ImVec2(scale.x, scale.y);
+            io.DeltaTime = deltaTime;
+            io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+
+            auto lastFonts = io.Fonts;
+            io.Fonts = fontAtlas.get();
+            io.Fonts->TexID = FontAtlasID;
+            Defer defer([&] {
+                io.Fonts = lastFonts;
+            });
+
+            ImGui::NewFrame();
+            context.DefineWindows();
+            ImGui::Render();
+
+            ImDrawData *drawData = ImGui::GetDrawData();
+            drawData->ScaleClipRects(io.DisplayFramebufferScale);
+            internalDrawGui(drawData, viewportRect, scale, true);
+        } else {
+            GuiDrawData drawData = {};
+            context.GetDrawData(drawData);
+            internalDrawGui(drawData, viewportRect, scale);
+        }
+    }
+
+    void Compositor::DrawGuiData(const GuiDrawData &drawData, glm::ivec4 viewport, glm::vec2 scale) {
+        if (drawData.drawCommands.empty()) return;
+
         Assertf(viewport.z > 0 && viewport.w > 0,
-            "Compositor::DrawGui called with invalid viewport: %s",
+            "Compositor::DrawGuiData called with invalid viewport: %s",
             glm::to_string(viewport));
-        internalDrawGui(drawData,
-            vk::Rect2D({viewport.x, viewport.y}, {(uint32_t)viewport.z, (uint32_t)viewport.w}),
-            scale);
+        vk::Rect2D viewportRect({viewport.x, viewport.y}, {(uint32_t)viewport.z, (uint32_t)viewport.w});
+        internalDrawGui(drawData, viewportRect, scale);
     }
 
     std::shared_ptr<GpuTexture> Compositor::UploadStaticImage(std::shared_ptr<const sp::Image> image,
@@ -137,6 +178,389 @@ namespace sp::vulkan {
         auto &source = it->second;
         source.cpuImage = src;
         source.cpuImageModified = true;
+    }
+
+    void Compositor::BeforeFrame(rg::RenderGraph &graph) {
+        for (auto &output : renderOutputs) {
+            if (!output.effectName.empty()) {
+                if (!output.effectCondition) {
+                    output.enableEffect = true;
+                } else {
+                    auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
+                    output.enableEffect = output.effectCondition.Evaluate(lock) >= 0.5;
+                }
+            } else {
+                output.enableEffect = false;
+            }
+            if (output.guiContext) {
+                output.guiContext->ClearEntities();
+                if (!output.guiElements.empty()) {
+                    auto lock = ecs::StartTransaction<ecs::Read<ecs::GuiElement>>();
+                    for (auto &elementRef : output.guiElements) {
+                        ecs::Entity ent = elementRef.Get(lock);
+                        if (ent && ent.Has<ecs::GuiElement>(lock)) {
+                            auto &guiElement = ent.Get<ecs::GuiElement>(lock);
+                            if (guiElement.enabled && guiElement.definition) {
+                                output.guiContext->AddEntity(ent,
+                                    guiElement.definition,
+                                    guiElement.anchor, // TODO: Move archor and preferred size to render output listing
+                                    guiElement.preferredSize);
+                            }
+                        }
+                    }
+                }
+
+                ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
+                output.guiContext->SetGuiContext();
+                output.enableGui = output.guiContext->BeforeFrame(*this);
+            } else {
+                output.enableGui = false;
+            }
+        }
+
+        {
+            std::lock_guard l(dynamicSourceMutex);
+            for (auto &[ent, source] : dynamicImageSources) {
+                if (!source.cpuImage) continue;
+
+                AsyncPtr<Image> latestReadyImage = nullptr;
+                auto it = source.pendingUploads.begin();
+                for (; it != source.pendingUploads.end(); it++) {
+                    AsyncPtr<Image> &pendingImage = *it;
+                    if (pendingImage && pendingImage->Ready()) {
+                        latestReadyImage = *it;
+                    } else {
+                        break;
+                    }
+                }
+                if (it != source.pendingUploads.begin()) {
+                    source.pendingUploads.erase(source.pendingUploads.begin(), it);
+                }
+
+                if (latestReadyImage) {
+                    ImageViewCreateInfo createInfo = {};
+                    createInfo.image = latestReadyImage->Get();
+                    createInfo.defaultSampler = createInfo.image->MipLevels() > 1
+                                                    ? device.GetSampler(SamplerType::TrilinearClampEdge)
+                                                    : device.GetSampler(SamplerType::BilinearClampEdge);
+                    source.imageView = device.CreateImageView(createInfo);
+                }
+                if (source.imageView) {
+                    ecs::EntityRef ref(ent);
+                    graph.AddImageView(rg::ResourceName("image:") + ref.Name().String(), source.imageView);
+                }
+            }
+        }
+    }
+
+    void Compositor::UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name, ecs::RenderOutput>> lock) {
+        renderOutputs.clear();
+        existingOutputs.clear();
+        viewRenderPassOffset = ~0llu;
+        auto renderOutputEntities = lock.EntitiesWith<ecs::RenderOutput>();
+        std::vector<ecs::Entity> unresolvedDependencies;
+        unresolvedDependencies.reserve(renderOutputEntities.size());
+        renderOutputs.reserve(renderOutputEntities.size());
+        existingOutputs.reserve(renderOutputEntities.size());
+
+        auto resolveDependency = [this, &lock](const ecs::Entity &ent, bool force = false) -> int {
+            if (viewRenderPassOffset > renderOutputs.size() && ent.Has<ecs::View>(lock) && !force) {
+                // View passes go as late as possible in the ordering, skip for now.
+                return false;
+            }
+
+            auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
+            auto outputSize = renderOutput.outputSize;
+            auto windowScale = renderOutput.scale;
+            if (starts_with(renderOutput.sourceName, "/ent:")) {
+                ecs::EntityRef sourceRef = ecs::Name(renderOutput.sourceName.substr(5), ecs::EntityScope());
+                ecs::Entity sourceEnt = sourceRef.Get(lock);
+                if (sourceEnt && sourceEnt != ent) {
+                    auto it = existingOutputs.find(sourceEnt);
+                    if (it != existingOutputs.end()) {
+                        auto &existingInfo = renderOutputs.at(it->second);
+                        if (outputSize.x <= 0.0f || outputSize.y <= 0.0f) outputSize = existingInfo.outputSize;
+                        if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = existingInfo.scale;
+                    } else if (!force) {
+                        return false;
+                    }
+                }
+            }
+
+            auto guiContext = renderOutput.guiContext.lock();
+            if (!guiContext && !renderOutput.guiElements.empty()) {
+                guiContext = ephemeralGuiContexts.Load(ent);
+                if (!guiContext) {
+                    guiContext = std::make_shared<GuiContext>(ent);
+                    ephemeralGuiContexts.Register(ent, guiContext, true);
+                }
+            }
+
+            // If outputSize is still -1 here, the compositor will inherit the source texture extents, otherwise (1, 1)
+            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = glm::vec2(1.0f);
+            existingOutputs.emplace(ent, renderOutputs.size());
+            renderOutputs.emplace_back(RenderOutputInfo{ent.Get<ecs::Name>(lock),
+                ent,
+                outputSize,
+                windowScale,
+                renderOutput.effectName,
+                renderOutput.effectCondition,
+                guiContext,
+                true,
+                true,
+                renderOutput.guiElements,
+                renderOutput.sourceName});
+            return true;
+        };
+
+        for (const ecs::Entity &ent : renderOutputEntities) {
+            if (!resolveDependency(ent)) {
+                unresolvedDependencies.emplace_back(ent);
+            }
+        }
+        bool makingProgress = true;
+        while (!unresolvedDependencies.empty() && makingProgress) {
+            makingProgress = false;
+            auto it = unresolvedDependencies.rbegin();
+            while (it != unresolvedDependencies.rend()) {
+                if (resolveDependency(*it)) {
+                    // reverse_iterator -> iterator -> reverse_iterator
+                    it = std::reverse_iterator(unresolvedDependencies.erase(std::next(it).base()));
+                    makingProgress = true;
+                } else {
+                    it++;
+                }
+            }
+            if (!makingProgress && viewRenderPassOffset > renderOutputs.size()) {
+                viewRenderPassOffset = renderOutputs.size();
+                makingProgress = true;
+            } else if (!makingProgress) {
+                // Force-solve dependency loops
+                resolveDependency(unresolvedDependencies.back(), true);
+                unresolvedDependencies.pop_back();
+                makingProgress = true;
+            }
+        }
+        if (!unresolvedDependencies.empty()) {
+            Errorf("Unable to resolve render output source dependencies:");
+            for (auto &ent : unresolvedDependencies) {
+                auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
+                Errorf("    %s: source %s", ecs::ToString(lock, ent), renderOutput.sourceName);
+            }
+        }
+    }
+
+    void Compositor::AddOutputPasses(PassOrder order) {
+        ZoneScoped;
+        auto offset = std::min(viewRenderPassOffset, renderOutputs.size());
+        std::span<RenderOutputInfo> outputSpan;
+        switch (order) {
+        case PassOrder::BeforeViews:
+            outputSpan = {renderOutputs.begin(), renderOutputs.begin() + offset};
+            break;
+        case PassOrder::AfterViews:
+            outputSpan = {renderOutputs.begin() + offset, renderOutputs.end()};
+            break;
+        default:
+            Abortf("Compositor::AddOutputPasses called with invalid order: %s", order);
+        }
+        for (auto &output : outputSpan) {
+            auto scope = graph.Scope("ent:" + output.entityName.String());
+            // TODO:
+            // - Implement asset: source inputs
+            // - Add effect shader options (menu blur)
+            // - Implement reverse inheritance for menu and view to inherit from overlay/window
+            // - Add crop / zoom / offset options
+            // - Integrate with TransformSnapshot somehow to make sprite engine
+            // - Remove extents from View and use RenderOutput instead
+            // - Remove "cached" matrices from View and keep them in Renderer
+
+            /**
+            "render_output": {
+                "output_size": [1280, 720],
+                "background": [
+                    {"view": "player:flatview"},
+                    {
+                        "effect": "background_blur",
+                        "enable_if": "is_focused(Menu)"
+                    }
+                ]
+            },
+            "render_element": {
+                {"gui": "menu:signal_display"},
+                {
+                    "gui": "menu:signal_display",
+                    "offset": [10, 30],
+                    "size": [100, 50]
+                },
+                {
+                    "asset": "logos/sp_menu.png",
+                    "offset": [10, 30],
+                    "size": [100, 50]
+                }
+            }
+             */
+
+            rg::ResourceID viewOutput = rg::InvalidResource;
+            rg::ResourceID sourceImageOutput = rg::InvalidResource;
+
+            rg::ImageDesc outputDesc = {};
+
+            graph.AddPass("RenderOutput")
+                .Build([&](rg::PassBuilder &builder) {
+                    bool inheritExtent = true;
+                    outputDesc.format = vk::Format::eR8G8B8A8Srgb;
+                    outputDesc.sampler = SamplerType::TrilinearClampEdge;
+
+                    auto viewName = rg::ResourceName("view:") + output.entityName.String() + "/LastOutput";
+                    viewOutput = builder.GetID(viewName, false);
+                    if (viewOutput != rg::InvalidResource) {
+                        builder.Read(viewOutput, Access::FragmentShaderSampleImage);
+                        outputDesc = builder.DeriveImage(viewOutput);
+                        inheritExtent = false;
+                    }
+
+                    if (output.outputSize.x > 0 && output.outputSize.y > 0) {
+                        outputDesc.extent = vk::Extent3D(output.outputSize.x, output.outputSize.y, 1);
+                        inheritExtent = false;
+                    }
+
+                    output.sourceResourceID = rg::InvalidResource;
+
+                    if (starts_with(output.sourceName, "/ent:")) {
+                        auto resourceID = builder.GetID(output.sourceName + "/LastOutput", false);
+                        if (resourceID != rg::InvalidResource) {
+                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                            output.sourceResourceID = resourceID;
+                            auto derivedDesc = builder.DeriveImage(resourceID);
+                            if (inheritExtent) {
+                                outputDesc.extent = derivedDesc.extent;
+                                inheritExtent = false;
+                            }
+                            outputDesc.sampler = derivedDesc.sampler;
+                        } else {
+                            resourceID = builder.ReadPreviousFrame(output.sourceName + "/LastOutput",
+                                Access::FragmentShaderSampleImage);
+                            if (resourceID != rg::InvalidResource) {
+                                output.sourceResourceID = resourceID;
+                                auto res = builder.GetResource(resourceID);
+                                if (res.type == rg::Resource::Type::Image) {
+                                    auto derivedDesc = builder.DeriveImage(resourceID);
+                                    if (inheritExtent) {
+                                        outputDesc.extent = derivedDesc.extent;
+                                        inheritExtent = false;
+                                    }
+                                    outputDesc.sampler = derivedDesc.sampler;
+                                }
+                            } else {
+                                output.sourceResourceID = builder.GetID("ErrorColor");
+                            }
+                        }
+                    }
+
+                    auto sourceImageName = rg::ResourceName("image:") + output.entityName.String();
+                    sourceImageOutput = builder.GetID(sourceImageName, false);
+                    if (sourceImageOutput != rg::InvalidResource) {
+                        builder.Read(sourceImageOutput, Access::FragmentShaderSampleImage);
+                        if (inheritExtent) outputDesc = builder.DeriveImage(sourceImageOutput);
+                        inheritExtent = false;
+                    }
+
+                    outputDesc.extent = vk::Extent3D(std::max(1u, outputDesc.extent.width),
+                        std::max(1u, outputDesc.extent.height),
+                        1);
+                    outputDesc.mipLevels = CalculateMipmapLevels(outputDesc.extent);
+
+                    builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
+                    builder.OutputColorAttachment(0, "RenderOutput", outputDesc, {LoadOp::Clear, StoreOp::Store});
+                })
+                .Execute([output, viewOutput, sourceImageOutput](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetDepthTest(false, false);
+                    if (viewOutput != rg::InvalidResource) {
+                        cmd.DrawScreenCover(resources.GetImageView(viewOutput));
+                    }
+                    cmd.SetBlending(true);
+
+                    if (output.sourceResourceID != rg::InvalidResource) {
+                        ImageViewPtr sourceImgView = resources.GetImageView(output.sourceResourceID);
+                        if (sourceImgView) {
+                            cmd.DrawScreenCover(sourceImgView);
+                        } else {
+                            cmd.DrawScreenCover(resources.GetImageView("ErrorColor"));
+                        }
+                    }
+
+                    if (sourceImageOutput != rg::InvalidResource) {
+                        ImageViewPtr sourceImgView = resources.GetImageView(sourceImageOutput);
+                        if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
+                    }
+                });
+
+            if (!output.effectName.empty() && output.enableEffect) {
+                if (output.effectName == "background_blur") {
+                    renderer::AddBackgroundBlur(graph);
+                }
+            }
+
+            ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
+            if (output.guiContext && output.enableGui && fontView->Ready()) {
+                GuiContext &context = *output.guiContext;
+
+                glm::ivec4 viewport(0, 0, outputDesc.extent.width, outputDesc.extent.height);
+                DrawGuiContext(context, viewport, output.scale);
+            }
+
+            if (outputDesc.mipLevels > 1) renderer::AddMipmap(graph);
+        }
+    }
+
+    void Compositor::EndFrame() {
+        double currTime = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
+        deltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
+        lastTime = currTime;
+
+        ephemeralGuiContexts.Tick(std::chrono::milliseconds(33));
+
+        bool sourcesModified = false;
+        {
+            std::lock_guard l(dynamicSourceMutex);
+            auto it = dynamicImageSources.begin();
+            while (it != dynamicImageSources.end()) {
+                auto &[ent, source] = *it;
+                if (!source.cpuImage) {
+                    it = dynamicImageSources.erase(it);
+                    continue;
+                }
+
+                if (source.cpuImageModified) {
+                    if (source.cpuImage) {
+                        auto &cpuImage = *source.cpuImage;
+                        Assertf(cpuImage.GetWidth() > 0 && cpuImage.GetHeight() > 0,
+                            "Compositor uploading zero size image: %dx%d",
+                            cpuImage.GetWidth(),
+                            cpuImage.GetHeight());
+                        Assertf(cpuImage.GetComponents() == 4,
+                            "Unsupported number of source image components: %d",
+                            cpuImage.GetComponents());
+                        ImageCreateInfo createInfo = {};
+                        createInfo.imageType = vk::ImageType::e2D;
+                        createInfo.extent = vk::Extent3D(cpuImage.GetWidth(), cpuImage.GetHeight(), 1);
+                        createInfo.mipLevels = CalculateMipmapLevels(createInfo.extent);
+                        createInfo.format = vk::Format::eR8G8B8A8Unorm;
+                        createInfo.usage = vk::ImageUsageFlagBits::eSampled;
+                        createInfo.genMipmap = createInfo.mipLevels > 1;
+                        auto initialData = make_async<InitialData>(cpuImage.GetImage().get(),
+                            cpuImage.ByteSize(),
+                            cpuImage.GetImage());
+                        source.pendingUploads.emplace_back(device.CreateImage(createInfo, initialData));
+                        sourcesModified = true;
+                    }
+                    source.cpuImageModified = false;
+                }
+                it++;
+            }
+        }
+        if (sourcesModified) device.FlushMainQueue();
     }
 
     void Compositor::internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale) {
@@ -240,7 +664,6 @@ namespace sp::vulkan {
         if (!drawData) return;
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
                 for (const auto &cmdList : drawData->CmdLists) {
                     for (const auto &cmd : cmdList->CmdBuffer) {
                         if (cmd.UserCallback) {
@@ -347,382 +770,4 @@ namespace sp::vulkan {
                 cmd.ClearScissor();
             });
     }
-
-    void Compositor::BeforeFrame(rg::RenderGraph &graph) {
-        for (auto &output : renderOutputs) {
-            if (output.guiContext) {
-                output.guiContext->ClearEntities();
-                if (!output.guiElements.empty()) {
-                    auto lock = ecs::StartTransaction<ecs::Read<ecs::GuiElement>>();
-                    for (auto &elementRef : output.guiElements) {
-                        ecs::Entity ent = elementRef.Get(lock);
-                        if (ent && ent.Has<ecs::GuiElement>(lock)) {
-                            auto &guiElement = ent.Get<ecs::GuiElement>(lock);
-                            if (guiElement.enabled && guiElement.definition) {
-                                output.guiContext->AddEntity(ent,
-                                    guiElement.definition,
-                                    guiElement.anchor, // TODO: Move archor and preferred size to render output listing
-                                    guiElement.preferredSize);
-                            }
-                        }
-                    }
-                }
-
-                ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
-                output.guiContext->SetGuiContext();
-                output.enableGui = output.guiContext->BeforeFrame(*this);
-            } else {
-                output.enableGui = false;
-            }
-        }
-
-        {
-            std::lock_guard l(dynamicSourceMutex);
-            for (auto &[ent, source] : dynamicImageSources) {
-                if (!source.cpuImage) continue;
-
-                AsyncPtr<Image> latestReadyImage = nullptr;
-                auto it = source.pendingUploads.begin();
-                for (; it != source.pendingUploads.end(); it++) {
-                    AsyncPtr<Image> &pendingImage = *it;
-                    if (pendingImage && pendingImage->Ready()) {
-                        latestReadyImage = *it;
-                    } else {
-                        break;
-                    }
-                }
-                if (it != source.pendingUploads.begin()) {
-                    // TODO: This ends up being 2 fairly often at large image sizes
-                    // Fix by moving mipmap step to GraphicsAsync queue
-                    // Logf("Consuming %d source images", it - source.pendingUploads.begin());
-                    source.pendingUploads.erase(source.pendingUploads.begin(), it);
-                }
-
-                if (latestReadyImage) {
-                    ImageViewCreateInfo createInfo = {};
-                    createInfo.image = latestReadyImage->Get();
-                    createInfo.defaultSampler = createInfo.image->MipLevels() > 1
-                                                    ? device.GetSampler(SamplerType::TrilinearClampEdge)
-                                                    : device.GetSampler(SamplerType::BilinearClampEdge);
-                    source.imageView = device.CreateImageView(createInfo);
-                }
-                if (source.imageView) {
-                    ecs::EntityRef ref(ent);
-                    graph.AddImageView(rg::ResourceName("image:") + ref.Name().String(), source.imageView);
-                }
-            }
-        }
-    }
-
-    void Compositor::UpdateRenderOutputs(ecs::Lock<ecs::Read<ecs::Name, ecs::RenderOutput>> lock) {
-        renderOutputs.clear();
-        existingOutputs.clear();
-        viewRenderPassOffset = ~0llu;
-        auto renderOutputEntities = lock.EntitiesWith<ecs::RenderOutput>();
-        std::vector<ecs::Entity> unresolvedDependencies;
-        unresolvedDependencies.reserve(renderOutputEntities.size());
-        renderOutputs.reserve(renderOutputEntities.size());
-        existingOutputs.reserve(renderOutputEntities.size());
-
-        auto resolveDependency = [this, &lock](const ecs::Entity &ent, bool force = false) -> int {
-            if (viewRenderPassOffset > renderOutputs.size() && ent.Has<ecs::View>(lock) && !force) {
-                // View passes go as late as possible in the ordering, skip for now.
-                return false;
-            }
-
-            auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
-            auto outputSize = renderOutput.outputSize;
-            auto windowScale = renderOutput.scale;
-            if (starts_with(renderOutput.sourceName, "ent:")) {
-                ecs::EntityRef sourceRef = ecs::Name(renderOutput.sourceName.substr(4), ecs::EntityScope());
-                ecs::Entity sourceEnt = sourceRef.Get(lock);
-                if (sourceEnt && sourceEnt != ent) {
-                    auto it = existingOutputs.find(sourceEnt);
-                    if (it != existingOutputs.end()) {
-                        auto &existingInfo = renderOutputs.at(it->second);
-                        if (outputSize.x <= 0.0f || outputSize.y <= 0.0f) outputSize = existingInfo.outputSize;
-                        if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = existingInfo.scale;
-                    } else if (!force) {
-                        return false;
-                    }
-                }
-            }
-
-            auto guiContext = renderOutput.guiContext.lock();
-            if (!guiContext && !renderOutput.guiElements.empty()) {
-                guiContext = ephemeralGuiContexts.Load(ent);
-                if (!guiContext) {
-                    guiContext = std::make_shared<GuiContext>(ent);
-                    ephemeralGuiContexts.Register(ent, guiContext, true);
-                }
-                // ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
-            }
-
-            // If outputSize is still -1 here, the compositor will inherit the source texture extents, otherwise (1, 1)
-            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = glm::vec2(1.0f);
-            existingOutputs.emplace(ent, renderOutputs.size());
-            renderOutputs.emplace_back(RenderOutputInfo{ent.Get<ecs::Name>(lock),
-                ent,
-                outputSize,
-                windowScale,
-                guiContext,
-                true,
-                renderOutput.guiElements,
-                renderOutput.sourceName});
-            return true;
-        };
-
-        for (const ecs::Entity &ent : renderOutputEntities) {
-            if (!resolveDependency(ent)) {
-                unresolvedDependencies.emplace_back(ent);
-            }
-        }
-        bool makingProgress = true;
-        while (!unresolvedDependencies.empty() && makingProgress) {
-            makingProgress = false;
-            auto it = unresolvedDependencies.rbegin();
-            while (it != unresolvedDependencies.rend()) {
-                if (resolveDependency(*it)) {
-                    // reverse_iterator -> iterator -> reverse_iterator
-                    it = std::reverse_iterator(unresolvedDependencies.erase(std::next(it).base()));
-                    makingProgress = true;
-                } else {
-                    it++;
-                }
-            }
-            if (!makingProgress && viewRenderPassOffset > renderOutputs.size()) {
-                viewRenderPassOffset = renderOutputs.size();
-                makingProgress = true;
-            } else if (!makingProgress) {
-                // Force-solve dependency loops
-                resolveDependency(unresolvedDependencies.back(), true);
-                unresolvedDependencies.pop_back();
-                makingProgress = true;
-            }
-        }
-        if (!unresolvedDependencies.empty()) {
-            Errorf("Unable to resolve render output source dependencies:");
-            for (auto &ent : unresolvedDependencies) {
-                auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
-                Errorf("    %s: source %s", ecs::ToString(lock, ent), renderOutput.sourceName);
-            }
-        }
-    }
-
-    void Compositor::AddOutputPasses(PassOrder order) {
-        ZoneScoped;
-        auto offset = std::min(viewRenderPassOffset, renderOutputs.size());
-        std::span<RenderOutputInfo> outputSpan;
-        switch (order) {
-        case PassOrder::BeforeViews:
-            outputSpan = {renderOutputs.begin(), renderOutputs.begin() + offset};
-            break;
-        case PassOrder::AfterViews:
-            outputSpan = {renderOutputs.begin() + offset, renderOutputs.end()};
-            break;
-        default:
-            Abortf("Compositor::AddOutputPasses called with invalid order: %s", order);
-        }
-        for (auto &output : outputSpan) {
-            auto scope = graph.Scope("ent:" + output.entityName.String());
-            // TODO:
-            // - Implement asset: source inputs
-            // - Implement script-sourced texture inputs
-            // - Add effect shader options (menu blur)
-            // - Implement reverse inheritance for menu and view to inherit from overlay/window
-            // - Rethink gui:overlay / WindowOutput and fallback scenarios
-            // - Add crop / zoom / offset options
-            // - Integrate with TransformSnapshot somehow to make sprite engine
-            // - Remove extents from View and use RenderOutput instead
-            // - Remove "cached" matrices from View and keep them in Renderer
-
-            rg::ResourceID viewOutput = rg::InvalidResource;
-            rg::ResourceID sourceImageOutput = rg::InvalidResource;
-
-            rg::ImageDesc outputDesc = {};
-            rg::ResourceID outputResourceID = rg::InvalidResource;
-            graph.AddPass("RenderOutput")
-                .Build([&](rg::PassBuilder &builder) {
-                    bool inheritExtent = true;
-                    outputDesc.format = vk::Format::eR8G8B8A8Srgb;
-                    outputDesc.sampler = SamplerType::TrilinearClampEdge;
-
-                    auto viewName = rg::ResourceName("view:") + output.entityName.String() + "/LastOutput";
-                    viewOutput = builder.GetID(viewName, false);
-                    if (viewOutput != rg::InvalidResource) {
-                        builder.Read(viewOutput, Access::FragmentShaderSampleImage);
-                        outputDesc = builder.DeriveImage(viewOutput);
-                        inheritExtent = false;
-                    }
-
-                    if (output.outputSize.x > 0 && output.outputSize.y > 0) {
-                        outputDesc.extent = vk::Extent3D(output.outputSize.x, output.outputSize.y, 1);
-                        inheritExtent = false;
-                    }
-
-                    output.sourceResourceID = rg::InvalidResource;
-
-                    if (starts_with(output.sourceName, "ent:")) {
-                        auto resourceID = builder.GetID(output.sourceName + "/LastOutput", false);
-                        if (resourceID != rg::InvalidResource) {
-                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
-                            output.sourceResourceID = resourceID;
-                            auto derivedDesc = builder.DeriveImage(resourceID);
-                            if (inheritExtent) {
-                                outputDesc.extent = derivedDesc.extent;
-                                inheritExtent = false;
-                            }
-                            outputDesc.sampler = derivedDesc.sampler;
-                        } else {
-                            resourceID = builder.ReadPreviousFrame(output.sourceName + "/LastOutput",
-                                Access::FragmentShaderSampleImage);
-                            if (resourceID != rg::InvalidResource) {
-                                output.sourceResourceID = resourceID;
-                                auto res = builder.GetResource(resourceID);
-                                if (res.type == rg::Resource::Type::Image) {
-                                    auto derivedDesc = builder.DeriveImage(resourceID);
-                                    if (inheritExtent) {
-                                        outputDesc.extent = derivedDesc.extent;
-                                        inheritExtent = false;
-                                    }
-                                    outputDesc.sampler = derivedDesc.sampler;
-                                }
-                            } else {
-                                output.sourceResourceID = builder.GetID("ErrorColor");
-                            }
-                        }
-                    }
-
-                    auto sourceImageName = rg::ResourceName("image:") + output.entityName.String();
-                    sourceImageOutput = builder.GetID(sourceImageName, false);
-                    if (sourceImageOutput != rg::InvalidResource) {
-                        builder.Read(sourceImageOutput, Access::FragmentShaderSampleImage);
-                        if (inheritExtent) outputDesc = builder.DeriveImage(sourceImageOutput);
-                        inheritExtent = false;
-                    }
-
-                    outputDesc.extent = vk::Extent3D(std::max(1u, outputDesc.extent.width),
-                        std::max(1u, outputDesc.extent.height),
-                        1);
-                    outputDesc.mipLevels = CalculateMipmapLevels(outputDesc.extent);
-
-                    builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
-                    auto target = builder.OutputColorAttachment(0,
-                        "RenderOutput",
-                        outputDesc,
-                        {LoadOp::Clear, StoreOp::Store});
-                    outputResourceID = target.id;
-                })
-                .Execute([output, viewOutput, sourceImageOutput](rg::Resources &resources, CommandContext &cmd) {
-                    if (viewOutput != rg::InvalidResource) {
-                        cmd.DrawScreenCover(resources.GetImageView(viewOutput));
-                    }
-                    cmd.SetBlending(true);
-
-                    if (output.sourceResourceID != rg::InvalidResource) {
-                        ImageViewPtr sourceImgView = resources.GetImageView(output.sourceResourceID);
-                        if (sourceImgView) {
-                            cmd.DrawScreenCover(sourceImgView);
-                        } else {
-                            cmd.DrawScreenCover(resources.GetImageView("ErrorColor"));
-                        }
-                    }
-
-                    if (sourceImageOutput != rg::InvalidResource) {
-                        ImageViewPtr sourceImgView = resources.GetImageView(sourceImageOutput);
-                        if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
-                    }
-                });
-            // TODO: Add effects passes here
-
-            ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
-            if (output.guiContext && output.enableGui && fontView->Ready()) {
-                GuiContext &context = *output.guiContext;
-
-                vk::Rect2D viewport = {{}, {outputDesc.extent.width, outputDesc.extent.height}};
-                if (context.SetGuiContext()) {
-                    ImGui::GetMainViewport()->PlatformHandleRaw = device.Win32WindowHandle();
-
-                    ImGuiIO &io = ImGui::GetIO();
-                    io.IniFilename = nullptr;
-                    io.DisplaySize = ImVec2(viewport.extent.width / output.scale.x,
-                        viewport.extent.height / output.scale.y);
-                    io.DisplayFramebufferScale = ImVec2(output.scale.x, output.scale.y);
-                    io.DeltaTime = deltaTime;
-                    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
-
-                    auto lastFonts = io.Fonts;
-                    io.Fonts = fontAtlas.get();
-                    io.Fonts->TexID = FontAtlasID;
-                    Defer defer([&] {
-                        io.Fonts = lastFonts;
-                    });
-
-                    ImGui::NewFrame();
-                    context.DefineWindows();
-                    ImGui::Render();
-
-                    ImDrawData *drawData = ImGui::GetDrawData();
-                    drawData->ScaleClipRects(io.DisplayFramebufferScale);
-                    internalDrawGui(drawData, viewport, output.scale, true);
-                } else {
-                    GuiDrawData drawData = {};
-                    context.GetDrawData(drawData);
-                    internalDrawGui(drawData, viewport, output.scale);
-                }
-            }
-
-            if (outputDesc.mipLevels > 1) renderer::AddMipmap(graph, outputResourceID);
-        }
-    }
-
-    void Compositor::EndFrame() {
-        double currTime = (double)chrono_clock::now().time_since_epoch().count() / 1e9;
-        deltaTime = lastTime > 0.0 ? (float)(currTime - lastTime) : 1.0f / 60.0f;
-        lastTime = currTime;
-
-        ephemeralGuiContexts.Tick(std::chrono::milliseconds(33));
-
-        bool sourcesModified = false;
-        {
-            std::lock_guard l(dynamicSourceMutex);
-            auto it = dynamicImageSources.begin();
-            while (it != dynamicImageSources.end()) {
-                auto &[ent, source] = *it;
-                if (!source.cpuImage) {
-                    it = dynamicImageSources.erase(it);
-                    continue;
-                }
-
-                if (source.cpuImageModified) {
-                    if (source.cpuImage) {
-                        auto &cpuImage = *source.cpuImage;
-                        Assertf(cpuImage.GetWidth() > 0 && cpuImage.GetHeight() > 0,
-                            "Compositor uploading zero size image: %dx%d",
-                            cpuImage.GetWidth(),
-                            cpuImage.GetHeight());
-                        Assertf(cpuImage.GetComponents() == 4,
-                            "Unsupported number of source image components: %d",
-                            cpuImage.GetComponents());
-                        ImageCreateInfo createInfo = {};
-                        createInfo.imageType = vk::ImageType::e2D;
-                        createInfo.extent = vk::Extent3D(cpuImage.GetWidth(), cpuImage.GetHeight(), 1);
-                        createInfo.mipLevels = CalculateMipmapLevels(createInfo.extent);
-                        createInfo.format = vk::Format::eR8G8B8A8Unorm;
-                        createInfo.usage = vk::ImageUsageFlagBits::eSampled;
-                        createInfo.genMipmap = createInfo.mipLevels > 1;
-                        auto initialData = make_async<InitialData>(cpuImage.GetImage().get(),
-                            cpuImage.ByteSize(),
-                            cpuImage.GetImage());
-                        source.pendingUploads.emplace_back(device.CreateImage(createInfo, initialData));
-                        sourcesModified = true;
-                    }
-                    source.cpuImageModified = false;
-                }
-                it++;
-            }
-        }
-        if (sourcesModified) device.FlushMainQueue();
-    }
-
 } // namespace sp::vulkan

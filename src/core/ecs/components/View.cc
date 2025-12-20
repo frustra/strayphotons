@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,7 +7,6 @@
 
 #include "View.hh"
 
-#include "assets/JsonHelpers.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 
@@ -27,11 +26,19 @@ namespace ecs {
     }
 
     void View::UpdateProjectionMatrix() {
-        if (this->fov > 0 && (this->extents.x != 0 || this->extents.y != 0)) {
-            auto aspect = this->extents.x / (float)this->extents.y;
+        if (fov > 0 && (extents.x != 0 || extents.y != 0)) {
+            auto aspect = extents.x / (float)extents.y;
 
-            this->projMat = glm::perspective(this->fov.radians(), aspect, this->clip[0], this->clip[1]);
-            this->invProjMat = glm::inverse(this->projMat);
+            this->projMat = glm::perspective(fov.radians(), aspect, clip[0], clip[1]);
+            this->invProjMat = glm::inverse(projMat);
+        } else if (this->extents.x != 0 || this->extents.y != 0) {
+            this->projMat = glm::ortho(-extents.x / 2.0f,
+                extents.x / 2.0f,
+                -extents.y / 2.0f,
+                extents.y / 2.0f,
+                clip[0],
+                clip[1]);
+            this->invProjMat = glm::inverse(projMat);
         }
     }
 

@@ -9,19 +9,20 @@
 
 #include "export.h"
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 namespace sp {
     struct CGameContext;
-} // namespace sp
-
+}
 extern "C" {
 typedef sp::CGameContext sp_game_t;
 #else
 typedef void sp_game_t;
-typedef uint8_t bool;
 #endif
+
+#include <assert.h>
+#include <stdbool.h>
+
+static_assert(sizeof(bool) == 1, "Unexpected bool size");
 
 struct GLFWwindow;
 

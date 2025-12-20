@@ -12,12 +12,10 @@
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
 #include <common/InlineString.hh>
 #include <common/Logging.hh>
-#include <fstream>
 #include <input/BindingNames.hh>
 #include <input/KeyCodes.hh>
 #include <strayphotons/components.h>
 #include <vector>
-
 
 extern "C" {
 #include <doomgeneric/doomgeneric.h>
@@ -65,7 +63,7 @@ struct ScriptContext {
         ctx->executableName = "doomgeneric";
         ctx->argv.resize(ctx->args.size() + 1);
         ctx->argv[0] = ctx->executableName.data();
-        for (int i = 1; i < ctx->argv.size(); i++) {
+        for (size_t i = 1; i < ctx->argv.size(); i++) {
             ctx->argv[i] = ctx->args[i - 1].data();
         }
         s_StartTime = chrono_clock::now();

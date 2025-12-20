@@ -56,20 +56,11 @@ namespace sp {
             [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, name);
                 ent.Set<ecs::EventInput>(lock);
-                ent.Set<ecs::RenderOutput>(lock);
+                // ent.Set<ecs::RenderOutput>(lock);
             });
 
         ecs::EntityRef ref(guiName);
-        auto guiContext = std::shared_ptr<OverlayGuiManager>(new OverlayGuiManager(ref));
-        {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
-
-            ecs::Entity ent = ref.Get(lock);
-            Assert(ent.Has<ecs::RenderOutput>(lock), "Expected overlay gui to start with a RenderOutput");
-
-            ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
-        }
-        return guiContext;
+        return std::shared_ptr<OverlayGuiManager>(new OverlayGuiManager(ref));
     }
 
     void OverlayGuiManager::DefineWindows() {

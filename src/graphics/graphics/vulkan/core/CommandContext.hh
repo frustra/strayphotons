@@ -117,6 +117,7 @@ namespace sp::vulkan {
             uint32 stride = sizeof(VkDrawIndexedIndirectCommand));
 
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
+        void DrawScreenCover(const color_alpha_t &color);
 
         void ImageBarrier(const ImagePtr &image,
             vk::ImageLayout oldLayout, // Transition the image from oldLayout
@@ -341,6 +342,13 @@ namespace sp::vulkan {
         void SetFrontFaceWinding(vk::FrontFace winding) {
             if (winding != pipelineInput.state.frontFaceWinding) {
                 pipelineInput.state.frontFaceWinding = winding;
+                SetDirty(DirtyFlags::Pipeline);
+            }
+        }
+
+        void SetColorWriteMask(vk::ColorComponentFlags mask) {
+            if ((vk::ColorComponentFlags::MaskType)mask != pipelineInput.state.colorWriteMask) {
+                pipelineInput.state.colorWriteMask = (vk::ColorComponentFlags::MaskType)mask;
                 SetDirty(DirtyFlags::Pipeline);
             }
         }

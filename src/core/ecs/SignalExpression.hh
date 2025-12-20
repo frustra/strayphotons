@@ -59,8 +59,10 @@ Signal expressions support the following operations and functions:
   - `floor(x)`, `ceil(x)`, `abs(x)`
   - `min(a, b)`, `max(a, b)`
 - **Focus functions**: (Possible focus layers: `Game`, `HUD`, `Menu`, `Overlay`)
-  - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active, else `0.0`.
-  - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active, else `0.0`.
+  - `is_primary_focus(FocusLayer)`: Returns `1.0` if the layer is the primary active layer, else `0.0`.
+  - `if_primary_focus(FocusLayer, x)`: Returns `x` if the layer is the primary active layer, else `0.0`.
+  - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active (may be background foucused), else `0.0`.
+  - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active (may be background foucused), else `0.0`.
 - **Entity signal access**:
   - `<entity_name>/<signal_name>`: Read a signal on a specific entity. If the signal or entity is missing, returns `0.0`.
 - **Component field access**:  

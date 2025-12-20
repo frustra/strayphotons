@@ -92,6 +92,7 @@ add_library(doomgeneric SHARED
 target_include_directories(doomgeneric PUBLIC
     ${PROJECT_ROOT_DIR}/ext/doomgeneric
 )
+set_target_properties(doomgeneric PROPERTIES C_STANDARD 17)
 
 target_link_libraries(doomgeneric PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB})
 

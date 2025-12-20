@@ -350,8 +350,15 @@ namespace sp::vulkan {
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
             deviceInfo.enabledLayerCount = layers.size();
             deviceInfo.ppEnabledLayerNames = layers.data();
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
 #ifdef __clang__
     #pragma clang diagnostic pop
 #endif
@@ -651,12 +658,14 @@ namespace sp::vulkan {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
 
-    void DeviceContext::AttachOverlay(GuiContext &overlayContext) {
+    void DeviceContext::AttachWindow(const std::shared_ptr<GuiContext> &context) {
+        if (!context) return;
         auto *perfTimer = GetPerfTimer();
         if (perfTimer) {
             if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
-            overlayContext.Attach(std::static_pointer_cast<ecs::GuiDefinition>(profilerGui));
+            context->Attach(std::static_pointer_cast<ecs::GuiDefinition>(profilerGui));
         }
+        if (vkRenderer) vkRenderer->AttachWindow(context);
     }
 
     bool DeviceContext::BeginFrame() {

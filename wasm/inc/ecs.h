@@ -7,6 +7,14 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 typedef uint64_t Entity;
+
+#ifdef __cplusplus
+}
+#endif

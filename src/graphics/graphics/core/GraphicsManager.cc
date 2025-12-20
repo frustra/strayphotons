@@ -61,8 +61,8 @@ namespace sp {
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
 
-        overlayGui = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
-        // TODO: GuiContext is copied into ECS and might read-after-free
+        windowGuiContext = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
+        // TODO: GuiContext is copied into ECS and might read-after-free on shutdown
         menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"), *this);
     }
 
@@ -86,7 +86,7 @@ namespace sp {
         Assert(context, "GraphicsManager::ThreadInit Invalid vulkan context");
 
         context->InitRenderer(game);
-        if (overlayGui) context->AttachOverlay(*overlayGui);
+        context->AttachWindow(windowGuiContext);
 
         return true;
     }
@@ -141,8 +141,6 @@ namespace sp {
                 view.extents = outputExtents;
                 view.fov = glm::radians(CVarFieldOfView.Get());
                 view.UpdateProjectionMatrix();
-
-                context->AttachView(ent);
             }
         }
         return true;

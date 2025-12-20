@@ -9,7 +9,6 @@
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
 #include <cglm/cglm.h>
-#include <stdbool.h>
 #include <strayphotons/components.h>
 #include <strayphotons/logging.h>
 #include <string.h>

@@ -171,7 +171,7 @@ namespace sp::vulkan {
                     auto &handle = it->second;
                     if (!handle.Ready()) complete = false;
                 }
-            } else if (str.length() > 4 && starts_with(str, "ent:")) {
+            } else if (str.length() > 5 && starts_with(str, "/ent:")) {
                 // Populated in AddGraphTextures()
                 textureCache[str] = {};
             }
@@ -190,7 +190,7 @@ namespace sp::vulkan {
         // for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Screen>()) {
         //     auto &textureName = ent.Get<ecs::Screen>(lock).textureName;
         //     if (textureName.empty() && ent.Has<ecs::RenderOutput>(lock)) {
-        //         addTexture("ent:" + ent.Get<ecs::Name>(lock).String());
+        //         addTexture("/ent:" + ent.Get<ecs::Name>(lock).String());
         //     }
         //     addTexture(textureName);
         // }
@@ -202,7 +202,7 @@ namespace sp::vulkan {
         graph.AddPass("AddGraphTextures")
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &tex : liveTextureCache) {
-                    if (tex.first.length() > 4 && starts_with(tex.first, "ent:")) {
+                    if (tex.first.length() > 5 && starts_with(tex.first, "/ent:")) {
                         rg::ResourceID id = builder.GetID(tex.first, false);
                         if (id == rg::InvalidResource) {
                             id = builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);

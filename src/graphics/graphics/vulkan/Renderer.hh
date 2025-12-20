@@ -24,6 +24,7 @@
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <robin_hood.h>
 
 namespace sp {
@@ -42,6 +43,8 @@ namespace sp::vulkan {
     public:
         Renderer(Game &game, DeviceContext &context, rg::RenderGraph &graph, Compositor &compositor);
         ~Renderer();
+
+        void AttachWindow(const std::shared_ptr<GuiContext> &context);
 
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
@@ -83,6 +86,8 @@ namespace sp::vulkan {
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
 
+        std::weak_ptr<GuiContext> windowGuiContext;
+        std::shared_ptr<GuiContext> activeGuiContext;
         AsyncPtr<ImageView> logoTex;
 
         ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;

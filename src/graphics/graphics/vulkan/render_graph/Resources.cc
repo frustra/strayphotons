@@ -12,7 +12,7 @@
 namespace sp::vulkan::render_graph {
     Resources::Resources(DeviceContext &device) : device(device) {
         Reset();
-        nameScopes.emplace_back();
+        nameScopes.emplace_back(Scope{});
     }
 
     void Resources::Reset() {
@@ -116,6 +116,12 @@ namespace sp::vulkan::render_graph {
     }
 
     PooledImagePtr Resources::GetPooledImage(ResourceID id) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
+
         if (id >= resources.size()) return nullptr;
         auto &res = resources[id];
         if (res.type == Resource::Type::Future) return nullptr;
@@ -170,6 +176,12 @@ namespace sp::vulkan::render_graph {
     }
 
     ResourceID Resources::GetID(string_view name, bool assertExists, uint32 framesAgo) const {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
+
         ResourceID result = InvalidResource;
         uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
@@ -214,6 +226,12 @@ namespace sp::vulkan::render_graph {
     }
 
     ResourceID Resources::AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
+
         Assertf(view, "Resources::AddExternalImageView called with null view");
         Assert(view->BaseArrayLayer() == 0, "RenderGraph::AddImageView can't target a specific layer");
 
@@ -245,12 +263,22 @@ namespace sp::vulkan::render_graph {
     }
 
     void Resources::IncrementRef(ResourceID id) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
         Assert(id < resources.size(), "id out of range");
         ResizeIfNeeded();
         ++refCounts[id];
     }
 
     void Resources::DecrementRef(ResourceID id) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
         Assert(id < resources.size(), "id out of range");
         if (--refCounts[id] > 0) return;
 
@@ -296,14 +324,44 @@ namespace sp::vulkan::render_graph {
     }
 
     bool Resources::Register(string_view name, Resource &resource) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
+
         DebugZoneScoped;
         if (!name.empty()) {
-            auto existingID = GetID(name, false);
+            ResourceID existingID = InvalidResource;
+
+            auto lastSep = name.rfind('/');
+            if (starts_with(name, "/")) {
+                // The resource name is fully qualified, look it up directly.
+                auto scopeName = name.substr(0, lastSep);
+                auto resourceName = name.substr(lastSep + 1);
+
+                for (auto &scope : nameScopes) {
+                    if (scope.name == scopeName) {
+                        existingID = scope.GetID(resourceName, frameIndex);
+                        break;
+                    }
+                }
+            } else {
+                Assertf(lastSep == name.npos, "Resources::Register can't register name with relative scope: %s", name);
+
+                // The resource name is relative to the current scope.
+                existingID = nameScopes[scopeStack.back()].GetID(name, frameIndex);
+            }
+
             if (existingID != InvalidResource) {
-                Assert(resourceNames[existingID] == name, "resource defined with a different name");
-                Assert(resources[existingID].type == Resource::Type::Undefined ||
-                           resources[existingID].type == Resource::Type::Future,
-                    "resource defined twice");
+                Assertf(resourceNames[existingID] == name,
+                    "Resource::Register %s resource already exists as %s",
+                    name,
+                    resourceNames[existingID]);
+                Assertf(resources[existingID].type == Resource::Type::Undefined ||
+                            resources[existingID].type == Resource::Type::Future,
+                    "Resource::Register %s resource defined twice",
+                    name);
                 resource.id = existingID;
                 resources[existingID] = resource;
                 return true;
@@ -314,7 +372,7 @@ namespace sp::vulkan::render_graph {
         Scope *nameScope = nullptr;
         auto lastSep = name.rfind('/');
         if (starts_with(name, "/")) {
-            // The resource name is fully qualified, look it up directly.
+            // The resource name is fully qualified, look up the scope directly.
             scopeName = name.substr(0, lastSep);
             name = name.substr(lastSep + 1);
 
@@ -325,27 +383,8 @@ namespace sp::vulkan::render_graph {
                 }
             }
         } else {
-            // The resource name is relative to the current or one of the parent scopes.
-            string_view relativeScope;
-            if (lastSep != name.npos) {
-                relativeScope = name.substr(0, lastSep);
-                name = name.substr(lastSep + 1);
-            }
-
-            if (!relativeScope.empty()) {
-                for (auto scopeIt = scopeStack.rbegin(); scopeIt != scopeStack.rend(); scopeIt++) {
-                    scopeName = nameScopes[*scopeIt].name + "/" + relativeScope;
-                    for (auto &scope : nameScopes) {
-                        if (scope.name == scopeName) {
-                            nameScope = &scope;
-                            break;
-                        }
-                    }
-                    if (nameScope) break;
-                }
-            } else {
-                nameScope = &nameScopes[scopeStack.back()];
-            }
+            // The resource name is relative to the current scope.
+            nameScope = &nameScopes[scopeStack.back()];
         }
         if (!nameScope) return false;
 

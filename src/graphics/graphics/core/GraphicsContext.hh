@@ -41,15 +41,7 @@ namespace sp {
             return false;
         }
 
-        void AttachView(ecs::Entity e) {
-            activeView = e;
-        }
-
-        virtual void AttachOverlay(GuiContext &overlayContext) = 0;
-
-        const ecs::Entity &GetActiveView() const {
-            return activeView;
-        }
+        virtual void AttachWindow(const std::shared_ptr<GuiContext> &context) = 0;
 
         virtual void InitRenderer(Game &game) = 0;
 
@@ -71,7 +63,6 @@ namespace sp {
         }
 
     protected:
-        ecs::Entity activeView;
         std::vector<glm::ivec2> monitorModes;
     };
 } // namespace sp

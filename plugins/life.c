@@ -8,11 +8,7 @@
 #include <c_abi/Tecs.h>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
-// #include <cglm/cglm.h>
-// #include <math.h>
-#include <stdbool.h>
 #include <strayphotons/components.h>
-// #include <strayphotons/logging.h>
 #include <string.h>
 
 typedef struct script_life_cell_t {

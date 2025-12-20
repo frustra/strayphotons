@@ -12,11 +12,15 @@
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/vulkan/Compositor.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Util.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "graphics/vulkan/render_graph/PassBuilder.hh"
+#include "graphics/vulkan/render_graph/PooledImage.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Crosshair.hh"
@@ -29,12 +33,13 @@
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
+#include "vulkan/vulkan.hpp"
 #include "xr/XrSystem.hh"
 
 #include <assets/AssetManager.hh>
 
 namespace sp::vulkan {
-    static const std::string defaultWindowViewTarget = "/ent:gui:overlay/LastOutput";
+    static const std::string defaultWindowViewTarget = "/ent:gui:menu/LastOutput";
     static const std::string defaultXrViewTarget = "/XrView/LastOutput";
 
     CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
@@ -79,6 +84,10 @@ namespace sp::vulkan {
         }
     }
 
+    void Renderer::AttachWindow(const std::shared_ptr<GuiContext> &context) {
+        windowGuiContext = context;
+    }
+
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
         if (CVarMirrorXR.Changed()) {
             bool mirrorXR = CVarMirrorXR.Get(true);
@@ -90,6 +99,8 @@ namespace sp::vulkan {
         graph.AddImageView("ErrorColor", scene.textures.GetSinglePixel(ERROR_COLOR));
 
         compositor.BeforeFrame(graph);
+        activeGuiContext = windowGuiContext.lock();
+        if (activeGuiContext) activeGuiContext->BeforeFrame(compositor);
 
         BuildFrameGraph(elapsedTime);
 
@@ -177,8 +188,30 @@ namespace sp::vulkan {
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
 
+        rg::ResourceID guiResourceID = rg::InvalidResource;
+        if (activeGuiContext) {
+            auto windowScale = CVarWindowScale.Get();
+            if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
+            if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
+
+            guiResourceID = graph.AddPass("WindowOverlay")
+                                .Build([&](rg::PassBuilder &builder) {
+                                    rg::ImageDesc overlayDesc = {};
+                                    overlayDesc.extent = swapchainImage->Extent();
+                                    overlayDesc.format = swapchainImage->Format();
+                                    builder.OutputColorAttachment(0,
+                                        "WindowOverlay",
+                                        overlayDesc,
+                                        {LoadOp::Clear, StoreOp::Store});
+                                })
+                                .Execute([](rg::Resources &resources, CommandContext &cmd) {});
+
+            auto extent = swapchainImage->Extent();
+            compositor.DrawGuiContext(*activeGuiContext, glm::ivec4{0, 0, extent.width, extent.height}, windowScale);
+        }
+
         rg::ResourceID sourceID = rg::InvalidResource;
-        graph.AddPass("WindowFinalOutput")
+        graph.AddPass("WindowOutput")
             .Build([&](rg::PassBuilder &builder) {
                 builder.RequirePass();
 
@@ -203,27 +236,28 @@ namespace sp::vulkan {
                 } else {
                     loadOp = LoadOp::Clear;
                 }
-
+                if (guiResourceID != rg::InvalidResource) {
+                    builder.Read(guiResourceID, Access::FragmentShaderSampleImage);
+                }
                 builder.SetColorAttachment(0, "WindowFinalOutput", {loadOp, StoreOp::Store});
             })
-            .Execute([this, sourceID](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, sourceID, guiResourceID](rg::Resources &resources, CommandContext &cmd) {
                 if (sourceID != rg::InvalidResource) {
-                    auto source = resources.GetImageView(sourceID);
-                    cmd.DrawScreenCover(source);
+                    auto view = resources.GetImageView(sourceID);
+                    cmd.DrawScreenCover(view);
                 } else if (logoTex->Ready()) {
-                    cmd.SetBlending(true);
                     cmd.DrawScreenCover(logoTex->Get());
                 }
-
-                // TODO: use overlay/window render output source instead of r.WindowView cvar so console stays on top
-                // if (overlayGui) {
-                //     auto windowScale = CVarWindowScale.Get();
-                //     if (windowScale.x <= 0.0f) windowScale.x = 1.0f;
-                //     if (windowScale.y <= 0.0f) windowScale.y = windowScale.x;
-
-                //     guiRenderer->Render(*overlayGui, cmd, vk::Rect2D{{0, 0}, cmd.GetFramebufferExtent()},
-                //     windowScale);
-                // }
+                if (guiResourceID != rg::InvalidResource) {
+                    cmd.SetBlending(true);
+                    // GUI outputs premultiplied alpha
+                    cmd.SetBlendFunc(vk::BlendFactor::eOne,
+                        vk::BlendFactor::eOneMinusSrcAlpha,
+                        vk::BlendFactor::eOne,
+                        vk::BlendFactor::eOneMinusSrcAlpha);
+                    auto view = resources.GetImageView(guiResourceID);
+                    if (view) cmd.DrawScreenCover(view);
+                }
             });
     }
 
@@ -515,37 +549,6 @@ namespace sp::vulkan {
 
         if (CVarSMAA.Get()) smaa.AddPass(graph);
     }
-
-    // TODO: Covert to blur effect for render_output
-    // void Renderer::AddMenuOverlay() {
-    //     MenuGuiManager *menuManager = dynamic_cast<MenuGuiManager *>(menuGui);
-    //     if (!menuManager || !menuManager->MenuOpen()) return;
-
-    //     auto inputID = graph.LastOutputID();
-    //     {
-    //         auto scope = graph.Scope("MenuOverlayBlur");
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 2);
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 2);
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 1);
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 2);
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(0, 1), 1);
-    //         renderer::AddGaussianBlur1D(graph, graph.LastOutputID(), glm::ivec2(1, 0), 1, 0.2f);
-    //     }
-
-    //     graph.AddPass("MenuOverlay")
-    //         .Build([&](rg::PassBuilder &builder) {
-    //             builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
-    //             builder.Read("menu_gui", Access::FragmentShaderSampleImage);
-
-    //             auto desc = builder.GetResource(inputID).DeriveImage();
-    //             builder.OutputColorAttachment(0, "Menu", desc, {LoadOp::DontCare, StoreOp::Store});
-    //         })
-    //         .Execute([](rg::Resources &resources, CommandContext &cmd) {
-    //             cmd.DrawScreenCover(resources.GetImageView(resources.LastOutputID()));
-    //             cmd.SetBlending(true);
-    //             cmd.DrawScreenCover(resources.GetImageView("menu_gui"));
-    //         });
-    // }
 
     void Renderer::EndFrame() {
         ZoneScoped;

@@ -186,7 +186,7 @@ For example, the following binding is evaluated for each `/keyboard/key/v` input
 "event_bindings": {
     "/keyboard/key/v": {
         "outputs": "console:input/action/run_command",
-        "filter": "is_focused(Game) && event",
+        "filter": "is_primary_focus(Game) && event",
         "set_value": "togglesignal player:player/move_noclip"
     }
 }

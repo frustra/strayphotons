@@ -376,7 +376,7 @@ namespace sp {
                 auto &lightingModeCVar = GetConsoleManager().GetCVar<int>("r.lightingmode");
                 int voxelLighting = lightingModeCVar.Get();
                 int voxelLightingIndex = 0;
-                for (int i = 0; i < voxelLightingModes.size(); i++) {
+                for (size_t i = 0; i < voxelLightingModes.size(); i++) {
                     if (voxelLightingModes[i].second == voxelLighting) {
                         voxelLightingIndex = i;
                         break;
@@ -422,18 +422,18 @@ namespace sp {
                 int shadowMapSizeOffset = shadowMapSizeOffsetCVar.Get();
                 int shadowMapSampleCount = shadowMapSampleCountCVar.Get();
                 float shadowMapSampleWidth = shadowMapSampleWidthCVar.Get();
-                int shadowResolutionModeIndex = shadowResolutions.size();
-                for (int i = 0; i < shadowResolutions.size(); i++) {
+                int shadowResolutionModeIndex = (int)shadowResolutions.size();
+                for (int i = 0; i < (int)shadowResolutions.size(); i++) {
                     if (shadowResolutions[i].sizeOffset == shadowMapSizeOffset) {
                         shadowResolutionModeIndex = i;
                         break;
                     }
                 }
-                if (shadowResolutionModeIndex < shadowResolutions.size()) {
+                if (shadowResolutionModeIndex < (int)shadowResolutions.size()) {
                     auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
                     if (shadowSetting.sampleCount != shadowMapSampleCount ||
                         shadowSetting.sampleWidth != shadowMapSampleWidth) {
-                        shadowResolutionModeIndex = shadowResolutions.size();
+                        shadowResolutionModeIndex = (int)shadowResolutions.size();
                     }
                 }
                 int itemCount = std::max((int)shadowResolutions.size(), shadowResolutionModeIndex + 1);
@@ -442,12 +442,12 @@ namespace sp {
                         "##shadowqualitypicker",
                         &shadowResolutionModeIndex,
                         [](void *, int i) {
-                            if (i < 0 || i >= shadowResolutions.size()) return "Custom";
+                            if (i < 0 || i >= (int)shadowResolutions.size()) return "Custom";
                             return shadowResolutions[i].name;
                         },
                         nullptr,
                         itemCount)) {
-                    if (shadowResolutionModeIndex >= 0 && shadowResolutionModeIndex < shadowResolutions.size()) {
+                    if (shadowResolutionModeIndex >= 0 && shadowResolutionModeIndex < (int)shadowResolutions.size()) {
                         auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
                         shadowMapSizeOffsetCVar.Set(shadowSetting.sizeOffset);
                         shadowMapSampleCountCVar.Set(shadowSetting.sampleCount);

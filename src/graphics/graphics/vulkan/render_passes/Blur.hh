@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -16,4 +16,6 @@ namespace sp::vulkan::renderer {
         uint32 downsample = 1,
         float scale = 1.0f,
         float clip = FLT_MAX);
+
+    void AddBackgroundBlur(RenderGraph &graph);
 } // namespace sp::vulkan::renderer

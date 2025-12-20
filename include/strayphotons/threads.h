@@ -10,11 +10,9 @@
 #include "export.h"
 
 #ifdef __cplusplus
-
 namespace sp {
     class RegisteredThread;
-} // namespace sp
-
+}
 extern "C" {
 typedef sp::RegisteredThread sp_thread_t;
 #else
