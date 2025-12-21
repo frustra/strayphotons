@@ -146,16 +146,6 @@ namespace sp {
         return true;
     }
 
-    chrono_clock::duration GraphicsManager::GetRemainingFrameTime() const {
-        auto now = chrono_clock::now();
-        auto frameEnd = targetFrameEnd + interval;
-        return now >= frameEnd ? chrono_clock::duration(0) : (frameEnd - now);
-    }
-
-    chrono_clock::duration GraphicsManager::GetFrameInterval() const {
-        return interval;
-    }
-
     GenericCompositor &GraphicsManager::GetCompositor() {
         return context->GetCompositor();
     }

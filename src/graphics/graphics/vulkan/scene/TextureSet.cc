@@ -70,7 +70,7 @@ namespace sp::vulkan {
     }
 
     TextureHandle TextureSet::LoadAssetImage(std::string_view name, bool genMipmap, bool srgb) {
-        string key = "asset:" + name;
+        std::string key = "asset:" + std::string(name);
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;
 

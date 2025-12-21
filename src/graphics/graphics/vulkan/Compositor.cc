@@ -87,7 +87,7 @@ namespace sp::vulkan {
 
         fontView = device.CreateImageAndView(fontImageInfo,
             fontViewInfo,
-            make_async<InitialData>(fontData, size_t(fontWidth * fontHeight * 4)));
+            InitialData(fontData, size_t(fontWidth * fontHeight * 4)));
 
         EndFrame();
     }
@@ -549,10 +549,8 @@ namespace sp::vulkan {
                         createInfo.format = vk::Format::eR8G8B8A8Unorm;
                         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
                         createInfo.genMipmap = createInfo.mipLevels > 1;
-                        auto initialData = make_async<InitialData>(cpuImage.GetImage().get(),
-                            cpuImage.ByteSize(),
-                            cpuImage.GetImage());
-                        source.pendingUploads.emplace_back(device.CreateImage(createInfo, initialData));
+                        source.pendingUploads.emplace_back(device.CreateImage(createInfo,
+                            InitialData(cpuImage.GetImage().get(), cpuImage.ByteSize(), cpuImage.GetImage())));
                         sourcesModified = true;
                     }
                     source.cpuImageModified = false;
