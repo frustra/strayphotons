@@ -9,6 +9,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "common/Async.hh"
 #include "common/Common.hh"
 #include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
@@ -148,7 +149,7 @@ namespace sp::vulkan {
         Assertf(image->GetComponents() == 4,
             "Compositor::UploadStaticImage called with unsupported component count: %d",
             image->GetComponents());
-        auto view = device.LoadAssetImage(image, genMipmap, srgb);
+        auto view = device.LoadImage(image, genMipmap, srgb);
         device.FlushMainQueue();
         return view->Get();
     }
@@ -269,6 +270,7 @@ namespace sp::vulkan {
                 return false;
             }
 
+            AsyncPtr<ImageView> assetImage;
             auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
             auto outputSize = renderOutput.outputSize;
             auto windowScale = renderOutput.scale;
@@ -283,6 +285,15 @@ namespace sp::vulkan {
                         if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = existingInfo.scale;
                     } else if (!force) {
                         return false;
+                    }
+                }
+            } else if (starts_with(renderOutput.sourceName, "asset:")) {
+                auto assetName = std::string(renderOutput.sourceName.substr(6));
+                if (!assetName.empty()) {
+                    assetImage = staticAssetImages.Load(assetName);
+                    if (!assetImage) {
+                        assetImage = device.LoadAssetImage(assetName, true);
+                        staticAssetImages.Register(assetName, assetImage, true);
                     }
                 }
             }
@@ -309,7 +320,8 @@ namespace sp::vulkan {
                 true,
                 true,
                 renderOutput.guiElements,
-                renderOutput.sourceName});
+                renderOutput.sourceName,
+                assetImage});
             return true;
         };
 
@@ -368,7 +380,6 @@ namespace sp::vulkan {
             auto scope = graph.Scope("ent:" + output.entityName.String());
             // TODO:
             // - Implement asset: source inputs
-            // - Add effect shader options (menu blur)
             // - Implement reverse inheritance for menu and view to inherit from overlay/window
             // - Add crop / zoom / offset options
             // - Integrate with TransformSnapshot somehow to make sprite engine
@@ -456,6 +467,30 @@ namespace sp::vulkan {
                                 output.sourceResourceID = builder.GetID("ErrorColor");
                             }
                         }
+                    } else if (starts_with(output.sourceName, "asset:") && output.assetImage) {
+                        if (output.assetImage->Ready()) {
+                            auto assetView = output.assetImage->Get();
+                            if (assetView) {
+                                if (inheritExtent) {
+                                    outputDesc.extent = assetView->Extent();
+                                    inheritExtent = false;
+                                }
+                                rg::ResourceName resourceName = "/" + output.sourceName;
+                                std::transform(resourceName.begin() + 1,
+                                    resourceName.end(),
+                                    resourceName.begin() + 1,
+                                    [](auto &ch) {
+                                        if (ch == '/') return '_';
+                                        return ch;
+                                    });
+                                output.sourceResourceID = graph.AddImageView(resourceName, assetView);
+                                Assertf(output.sourceResourceID != rg::InvalidResource,
+                                    "Failed to add asset image view to graph: %s",
+                                    resourceName);
+                            } else {
+                                output.sourceResourceID = builder.GetID("ErrorColor");
+                            }
+                        }
                     }
 
                     auto sourceImageName = rg::ResourceName("image:") + output.entityName.String();
@@ -520,6 +555,7 @@ namespace sp::vulkan {
         lastTime = currTime;
 
         ephemeralGuiContexts.Tick(std::chrono::milliseconds(33));
+        staticAssetImages.Tick(std::chrono::milliseconds(33));
 
         bool sourcesModified = false;
         {
