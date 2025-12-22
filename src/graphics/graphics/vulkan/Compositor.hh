@@ -69,6 +69,7 @@ namespace sp::vulkan {
             bool enableGui, enableEffect;
             std::vector<ecs::EntityRef> guiElements;
             rg::ResourceName sourceName;
+            AsyncPtr<ImageView> assetImage;
             rg::ResourceID sourceResourceID = rg::InvalidResource;
             rg::ResourceID outputResourceID = rg::InvalidResource;
         };
@@ -78,6 +79,7 @@ namespace sp::vulkan {
         size_t viewRenderPassOffset = 0;
 
         PreservingMap<ecs::Entity, GuiContext, 500> ephemeralGuiContexts;
+        PreservingMap<std::string, Async<ImageView>, 500> staticAssetImages;
 
         struct DynamicImageSource {
             std::shared_ptr<sp::Image> cpuImage;

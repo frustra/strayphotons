@@ -44,6 +44,7 @@ namespace ecs {
     };
 
     struct GuiElement {
+        // TODO: Move anchor / preferred size to GuiContext::Attach
         GuiLayoutAnchor anchor = GuiLayoutAnchor::Fullscreen;
         glm::ivec2 preferredSize = {-100, -100};
         bool enabled = true;

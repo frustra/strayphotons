@@ -365,7 +365,8 @@
 			"gui_element": {},
 			"render_output": {
 				"gui_elements": ["airlock_in_signal_display"],
-				"output_size": [120, 50]
+				"output_size": [230, 100],
+				"scale": [2, 2]
 			},
 			"screen": {
 				"luminance": [3, 3, 3]
@@ -376,12 +377,6 @@
 				"value": "airlock_in_button_sensor.Icosphere/light_value_r"
 			},
 			"script": [
-				{
-					"parameters": {
-						"source": "world_gui"
-					},
-					"name": "prefab_template"
-				},
 				{
 					"name": "signal_display",
 					"parameters": {
