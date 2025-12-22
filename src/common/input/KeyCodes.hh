@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint> // robin_hood.h uses uint32_t without including it
 #include <robin_hood.h>
 #include <string>
 

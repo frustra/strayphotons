@@ -18,12 +18,14 @@
 extern "C" {
 #endif
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#ifndef SP_WASM_BUILD
+    #include <assert.h>
 static_assert(sizeof(bool) == 1, "Unexpected bool size");
+#endif
 
 #if defined(__cplusplus) && !defined(SP_WASM_BUILD)
 typedef glm::vec3 GlmVec3;
