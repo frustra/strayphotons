@@ -57,7 +57,7 @@ impl From<usize> for Game {
 impl Game {
     pub unsafe fn get_cli_flag(&mut self, arg_name: &str) -> bool {
         let c_str = CString::new(arg_name).unwrap();
-        sp_game_get_cli_flag(self.0, c_str.as_ptr()) != 0
+        sp_game_get_cli_flag(self.0, c_str.as_ptr())
     }
 
     pub unsafe fn start(&mut self) -> i32 {
@@ -69,7 +69,7 @@ impl Game {
     }
 
     pub unsafe fn is_exit_triggered(&mut self) -> bool {
-        sp_game_is_exit_triggered(self.0) != 0
+        sp_game_is_exit_triggered(self.0)
     }
 
     pub unsafe fn wait_for_exit_trigger(&mut self) -> i32 {
@@ -137,10 +137,10 @@ impl Game {
 
 impl CVar {
     pub unsafe fn get_bool(&mut self) -> bool {
-        sp_cvar_get_bool(self.0) != 0
+        sp_cvar_get_bool(self.0)
     }
     pub unsafe fn set_bool(&mut self, value: bool) {
-        sp_cvar_set_bool(self.0, if value { 1 } else { 0 })
+        sp_cvar_set_bool(self.0, value)
     }
 
     pub unsafe fn get_f32(&mut self) -> f32 {
@@ -214,7 +214,7 @@ impl GraphicsContext {
     }
 
     pub unsafe fn handle_input_frame(&mut self) -> bool {
-        sp_graphics_handle_input_frame(self.0) != 0
+        sp_graphics_handle_input_frame(self.0)
     }
 
     pub unsafe fn step_thread(&mut self, count: u32) {
