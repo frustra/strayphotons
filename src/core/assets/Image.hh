@@ -9,8 +9,8 @@
 
 #include "common/Common.hh"
 
-#include <functional>
 #include <memory>
+#include <span>
 
 namespace sp {
     class Asset;
