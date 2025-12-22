@@ -184,7 +184,7 @@ namespace sp::vulkan {
         auto swapchainImage = device.SwapchainImageView();
         if (!swapchainImage) return;
 
-        if (!logoTex) logoTex = device.LoadAssetImage(sp::Assets().LoadImage("logos/splash.png")->Get(), true);
+        if (!logoTex) logoTex = device.LoadAssetImage("logos/splash.png", true);
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
 
@@ -621,7 +621,7 @@ namespace sp::vulkan {
                 if (!loadModel(lock, ent)) complete = false;
             }
             if (!this->scene.PreloadTextures(lock)) complete = false;
-            if (!smaa.PreloadTextures()) complete = false;
+            if (!smaa.PreloadTextures(device)) complete = false;
             return complete;
         });
 

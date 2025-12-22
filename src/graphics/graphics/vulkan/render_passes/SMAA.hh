@@ -15,10 +15,9 @@ namespace sp::vulkan::renderer {
     public:
         void AddPass(RenderGraph &graph);
 
-        bool PreloadTextures();
+        bool PreloadTextures(DeviceContext &device);
 
     private:
         AsyncPtr<ImageView> areaTex, searchTex;
-        AsyncPtr<sp::Image> areaTexAsset, searchTexAsset;
     };
 } // namespace sp::vulkan::renderer

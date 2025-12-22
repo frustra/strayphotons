@@ -24,6 +24,7 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 
 #include <algorithm>
@@ -1429,7 +1430,21 @@ namespace sp::vulkan {
         });
     }
 
-    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
+    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(string_view assetName, bool genMipmap, bool srgb) {
+        auto futImage = Assets().LoadImage(assetName);
+        return allocatorQueue.Dispatch<ImageView>(futImage,
+            [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
+                if (!image) {
+                    Warnf("Missing asset image: %s", name);
+                    return std::make_shared<Async<ImageView>>();
+                }
+                return LoadImage(image, genMipmap, srgb);
+            });
+    }
+
+    AsyncPtr<ImageView> DeviceContext::LoadImage(shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
+        ZoneScoped;
+        Assertf(image, "DeviceContext::LoadImage called with null image");
         ImageCreateInfo createInfo;
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");

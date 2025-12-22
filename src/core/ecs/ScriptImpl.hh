@@ -362,6 +362,7 @@ namespace ecs {
                 if (!ptr) ptr = &state.scriptData.emplace<T>();
                 return ptr->BeforeFrame(compositor, state, ent);
             } else {
+                Warnf("GuiScript %s has no BeforeFrame function", state.definition.name);
                 return false;
             }
         }

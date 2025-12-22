@@ -115,7 +115,7 @@ namespace sp::scripts {
             ImGui::PopStyleColor();
         }
 
-        bool BeforeFrame(ScriptState &state, Entity ent) {
+        bool BeforeFrame(GenericCompositor &, ScriptState &state, Entity ent) {
             return true;
         }
 

@@ -174,8 +174,11 @@
 				"scale": [0.13, 0.05, 1],
 				"translate": [0, 0.08, 0]
 			},
-			"gui": {
-				"window_name": "signal_display"
+			"gui_element": {},
+			"render_output": {
+				"gui_elements": ["charge_display"],
+				"output_size": [260, 100],
+				"scale": [2, 2]
 			},
 			"screen": {
 				"luminance": [3, 3, 3]
@@ -187,6 +190,12 @@
 				"value": "scoperoot/charge_level"
 			},
 			"script": [
+				{
+					"name": "signal_display",
+					"parameters": {
+						"suffix": "mW"
+					}
+				},
 				{
 					"name": "rotate_to_entity",
 					"parameters": {

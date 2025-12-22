@@ -176,7 +176,8 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
-        AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> LoadAssetImage(string_view assetName, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> LoadImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
 
         ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;

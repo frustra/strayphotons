@@ -456,42 +456,6 @@ namespace sp {
         Abortf("missing font type %d with size %f", (int)fontType, fontSize);
     }
 
-    // ecs::EntityRef LookupInternalGui(const std::string &windowName) {
-    //     if (windowName == "lobby") {
-    //         static const auto lobby = make_shared<LobbyGui>(windowName);
-    //         return lobby;
-    //     } else if (windowName == "entity_picker") {
-    //         static const auto entityPicker = make_shared<EntityPickerGui>(windowName);
-    //         return entityPicker;
-    //     } else if (windowName == "inspector") {
-    //         static const auto inspector = make_shared<InspectorGui>(windowName);
-    //         return inspector;
-    //         // } else if (windowName == "signal_display") {
-    //         //     static const auto signalDisplay = make_shared<SignalDisplayGui>(windowName);
-    //         //     return signalDisplay;
-    //     }
-    //     return std::weak_ptr<ecs::GuiElement>();
-    // }
-
-    // std::shared_ptr<ecs::ScriptState> LookupScriptGui(const std::string &windowName, const ecs::Scripts *scripts) {
-    //     if (windowName.empty() && scripts) {
-    //         for (auto &script : scripts->scripts) {
-    //             if (!script.state) continue;
-    //             ecs::ScriptState &state = *script.state;
-    //             if (state.definition.type == ecs::ScriptType::GuiScript) {
-    //                 if (std::holds_alternative<ecs::GuiRenderFuncs>(state.definition.callback)) {
-    //                     return script.state;
-    //                 } else {
-    //                     Errorf("Gui script %s has invalid callback type: GuiScript != GuiRender",
-    //                         state.definition.name);
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     if (!windowName.empty()) Errorf("unknown gui window: %s", windowName);
-    //     return nullptr;
-    // }
-
     std::span<GuiFontDef> GetGuiFontList() {
         return fontList;
     }
