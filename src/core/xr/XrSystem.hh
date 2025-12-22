@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 
-
 namespace sp {
     class RenderTarget;
     class GpuTexture;
