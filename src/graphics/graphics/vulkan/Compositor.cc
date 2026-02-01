@@ -16,6 +16,7 @@
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalRef.hh"
+#include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
@@ -248,7 +249,7 @@ namespace sp::vulkan {
                 }
                 if (source.imageView) {
                     ecs::EntityRef ref(ent);
-                    graph.AddImageView(rg::ResourceName("image:") + ref.Name().String(), source.imageView);
+                    if (ref) graph.AddImageView(rg::ResourceName("image:") + ref.Name().String(), source.imageView);
                 }
             }
         }
@@ -308,7 +309,7 @@ namespace sp::vulkan {
             }
 
             // If outputSize is still -1 here, the compositor will inherit the source texture extents, otherwise (1, 1)
-            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = glm::vec2(1.0f);
+            if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = CVarWindowScale.Get();
             existingOutputs.emplace(ent, renderOutputs.size());
             renderOutputs.emplace_back(RenderOutputInfo{ent.Get<ecs::Name>(lock),
                 ent,
@@ -442,30 +443,25 @@ namespace sp::vulkan {
                         auto resourceID = builder.GetID(output.sourceName + "/LastOutput", false);
                         if (resourceID != rg::InvalidResource) {
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
-                            output.sourceResourceID = resourceID;
-                            auto derivedDesc = builder.DeriveImage(resourceID);
-                            if (inheritExtent) {
-                                outputDesc.extent = derivedDesc.extent;
-                                inheritExtent = false;
-                            }
-                            outputDesc.sampler = derivedDesc.sampler;
                         } else {
                             resourceID = builder.ReadPreviousFrame(output.sourceName + "/LastOutput",
                                 Access::FragmentShaderSampleImage);
-                            if (resourceID != rg::InvalidResource) {
-                                output.sourceResourceID = resourceID;
-                                auto res = builder.GetResource(resourceID);
-                                if (res.type == rg::Resource::Type::Image) {
-                                    auto derivedDesc = builder.DeriveImage(resourceID);
-                                    if (inheritExtent) {
-                                        outputDesc.extent = derivedDesc.extent;
-                                        inheritExtent = false;
-                                    }
-                                    outputDesc.sampler = derivedDesc.sampler;
+                        }
+                        if (resourceID != rg::InvalidResource) {
+                            auto res = builder.GetResource(resourceID);
+                            if (res.type == rg::Resource::Type::Image) {
+                                auto derivedDesc = builder.DeriveImage(resourceID);
+                                if (inheritExtent) {
+                                    outputDesc.extent = derivedDesc.extent;
+                                    inheritExtent = false;
                                 }
+                                outputDesc.sampler = derivedDesc.sampler;
+                                output.sourceResourceID = resourceID;
                             } else {
                                 output.sourceResourceID = builder.GetID("ErrorColor");
                             }
+                        } else {
+                            output.sourceResourceID = builder.GetID("ErrorColor");
                         }
                     } else if (starts_with(output.sourceName, "asset:") && output.assetImage) {
                         if (output.assetImage->Ready()) {

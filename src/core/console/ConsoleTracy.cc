@@ -25,5 +25,13 @@ void sp::ConsoleManager::RegisterTracyCommands() {
         if (pi.hProcess) CloseHandle(pi.hProcess);
         if (pi.hThread) CloseHandle(pi.hThread);
     });
+#else
+    funcs.Register("tracy", "Open tracing window", []() {
+        if (fork() == 0) { // 0 for new process, -1 error, otherwise pid
+            int result = execl("../extra/tracy-profiler", "tracy-profiler", "-a", "127.0.0.1", NULL);
+            // execl only returns on error
+            exit(result);
+        }
+    });
 #endif
 } // namespace sp

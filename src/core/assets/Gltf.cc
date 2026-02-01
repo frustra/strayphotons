@@ -148,7 +148,17 @@ namespace sp {
                     stream.read(reinterpret_cast<char *>(out->data()), fileSize);
                     return true;
                 },
-            .WriteWholeFile = nullptr,
+            .WriteWholeFile =
+                [](std::string *, const std::string &, const std::vector<unsigned char> &, void *) {
+                    Errorf("Tried to write gltf file");
+                    return false;
+                },
+            .GetFileSizeInBytes =
+                [](size_t *out, std::string *err, const std::string &absFilename, void *) {
+                    ZoneScopedN("GltfGetFileSizeInBytes");
+                    std::ifstream stream;
+                    return Assets().InputStream(absFilename, AssetType::Bundled, stream, out);
+                },
             .user_data = this,
         };
         gltfLoader.SetFsCallbacks(fsCallbacks);

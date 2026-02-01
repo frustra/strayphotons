@@ -7,6 +7,7 @@
 
 #include "ScriptManager.hh"
 
+#include "common/Common.hh"
 #include "common/Defer.hh"
 #include "console/CVar.hh"
 #include "ecs/DynamicLibrary.hh"
@@ -133,6 +134,7 @@ namespace ecs {
                 scriptSet.freeScriptList.pop();
                 scriptSet.scripts[newIndex] = {Entity(), state};
             }
+            scriptSet.activeScriptList.emplace_back(newIndex);
             auto &newState = scriptSet.scripts[newIndex].second;
             newState.index = newIndex;
             if (runInit) {
@@ -149,6 +151,7 @@ namespace ecs {
             if (state->index < scriptSet.scripts.size()) {
                 // TODO: unregister event queue if applicable
                 if (state->initialized && state->definition.destroyFunc) (*state->definition.destroyFunc)(*state);
+                sp::erase(scriptSet.activeScriptList, state->index);
                 scriptSet.freeScriptList.push(state->index);
                 scriptSet.scripts[state->index] = {};
             }
@@ -187,7 +190,8 @@ namespace ecs {
             std::vector<ScriptDefinition> previousList;
             // Destroy existing script contexts before reloading
             for (auto &scriptSet : scripts) {
-                for (auto &script : scriptSet.scripts) {
+                for (size_t i : scriptSet.activeScriptList) {
+                    auto &script = scriptSet.scripts[i];
                     auto &scriptCtx = script.second.definition.context;
                     if (scriptCtx.expired()) continue;
                     for (auto &dynamicScript : dynamicLibrary->scripts) {
@@ -227,7 +231,8 @@ namespace ecs {
                 if (oldDefinition) {
                     // Replace instance definitions and reinit
                     for (auto &scriptSet : scripts) {
-                        for (auto &script : scriptSet.scripts) {
+                        for (size_t i : scriptSet.activeScriptList) {
+                            auto &script = scriptSet.scripts[i];
                             auto &scriptCtx = script.second.definition.context;
                             if (!oldDefinition->context.owner_before(scriptCtx) &&
                                 !scriptCtx.owner_before(oldDefinition->context)) {
@@ -322,7 +327,8 @@ namespace ecs {
         auto &scriptSet = scripts[ScriptType::LogicScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
-        for (auto &[ent, state] : scriptSet.scripts) {
+        for (size_t i : scriptSet.activeScriptList) {
+            auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
             auto *callback = std::get_if<LogicTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;
@@ -339,7 +345,8 @@ namespace ecs {
         auto &scriptSet = scripts[ScriptType::PhysicsScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
-        for (auto &[ent, state] : scriptSet.scripts) {
+        for (size_t i : scriptSet.activeScriptList) {
+            auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
             auto *callback = std::get_if<PhysicsTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;

@@ -70,36 +70,35 @@
 		{
 			"name": "input:keyboard",
 			"event_bindings": {
-				"/keyboard/key/escape": {
-					"outputs": "console:input/action/run_command",
-					"filter": "is_primary_focus(HUD) && event",
-					"set_value": "releasefocus HUD"
-				}
+				"/keyboard/key/escape": [
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && is_primary_focus(HUD) && menu:doom_display/menu_open",
+						"set_value": "releasefocus HUD"
+					},
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && is_primary_focus(HUD)",
+						"set_value": "togglesignal menu:doom_display/menu_open"
+					}
+				]
 			}
 		},
 		{
 			"name": "doom_display",
-			"gui_element": {},
-			"event_input": {},
-			"_script": {
-				"name": "doomgeneric",
-				"parameters": {
-					"cli_args": []
-				}
-			}
-		},
-		{
-			"name": "lobby_gui",
 			"transform": {
 				"rotate": [62.7994, -0.678598, -0.678598, -0.281085],
 				"scale": [0.8, 0.5, 1],
 				"translate": [3.8, 1.1, -2.8]
 			},
-			"gui": {
-				"window_name": "lobby"
-			},
+			"gui_element": {},
 			"render_output": {
+				"source": "/ent:player:flatview",
+				"source_if": "",
 				"gui_elements": ["doom_display"]
+			},
+			"signal_output": {
+				"menu_open": 0
 			},
 			"event_bindings": {
 				"/interact/press": {
@@ -109,15 +108,23 @@
 				}
 			},
 			"screen": {
-				"texture": "/ent:player:flatview/RenderOutput",
 				"luminance": [2, 1.6, 1]
 			},
-			"script": {
-				"parameters": {
-					"source": "world_gui"
+			"event_input": {},
+			"script": [
+				{
+					"parameters": {
+						"source": "world_gui"
+					},
+					"name": "prefab_template"
 				},
-				"name": "prefab_template"
-			}
+				{
+					"_name": "doomgeneric",
+					"parameters": {
+						"cli_args": []
+					}
+				}
+			]
 		},
 		{
 			"name": "cabi:ABI_TEST",

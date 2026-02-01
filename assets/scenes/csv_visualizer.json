@@ -226,6 +226,7 @@
 			"gui_element": {},
 			"render_output": {
 				"output_size": [120, 50],
+				"scale": [1, 1],
 				"gui_elements": ["gear_display"]
 			},
 			"screen": {
@@ -256,6 +257,7 @@
 			"gui_element": {},
 			"render_output": {
 				"output_size": [160, 50],
+				"scale": [1, 1],
 				"gui_elements": ["speed_display"]
 			},
 			"screen": {
@@ -284,6 +286,7 @@
 			"gui_element": {},
 			"render_output": {
 				"output_size": [220, 50],
+				"scale": [1, 1],
 				"gui_elements": ["tps_display"]
 			},
 			"screen": {

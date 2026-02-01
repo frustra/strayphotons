@@ -33,6 +33,28 @@ namespace ecs {
                     Abortf("Assertion failed (%s): %f != true", expr.expr, result);
                 }
             });
+        funcs.Register("debug_signals", "Prints debug information about the signal manager", [this] {
+            auto lock = StartTransaction<Read<Signals>>();
+            auto &signals = lock.Get<Signals>();
+            Logf("Signal debug info:");
+            Logf("  Storage capacity: %llu", signals.signals.capacity());
+            Logf("  Allocated signals: %llu/%llu",
+                signals.signals.size() - signals.freeIndexes.size(),
+                signals.signals.size());
+            Logf("  Free signals: %llu", signals.freeIndexes.size());
+            Logf("  Dirty signals: %llu", signals.dirtyIndices.size());
+            size_t minIndex = ~0llu;
+            size_t maxIndex = 0;
+            for (size_t i = 0; i < signals.signals.size(); i++) {
+                auto &signal = signals.signals[i];
+                if (signal.ref) {
+                    minIndex = std::min(minIndex, i);
+                    maxIndex = std::max(maxIndex, i);
+                }
+            }
+            Logf("  First/Last used index: %llu/%llu", minIndex, maxIndex);
+            Logf("  Signal References: %llu", signalRefs.Size());
+        });
     }
 
     SignalRef SignalManager::GetRef(const SignalKey &signal) {

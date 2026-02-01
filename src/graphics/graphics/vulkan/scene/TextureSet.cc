@@ -198,7 +198,11 @@ namespace sp::vulkan {
             int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
             int magFilter = sampler.magFilter > 0 ? sampler.magFilter : TINYGLTF_TEXTURE_FILTER_LINEAR;
 
-            auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT, sampler.wrapR);
+            auto samplerInfo = GLSamplerToVKSampler(minFilter,
+                magFilter,
+                sampler.wrapS,
+                sampler.wrapT,
+                TINYGLTF_TEXTURE_WRAP_REPEAT);
             if (samplerInfo.mipmapMode == vk::SamplerMipmapMode::eLinear) {
                 samplerInfo.anisotropyEnable = true;
                 samplerInfo.maxAnisotropy = 8.0f;
