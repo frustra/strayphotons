@@ -131,9 +131,6 @@ namespace sp {
                 if (renderOutput.outputSize.x <= 0.0f || renderOutput.outputSize.y <= 0.0f) {
                     renderOutput.outputSize = CVarWindowSize.Get();
                 }
-                if (renderOutput.scale.x <= 0.0f || renderOutput.scale.y <= 0.0f) {
-                    renderOutput.scale = CVarWindowScale.Get();
-                }
                 outputExtents = renderOutput.outputSize;
             }
             if (ent.Has<ecs::View>(lock)) {

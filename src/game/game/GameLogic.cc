@@ -49,6 +49,7 @@ namespace sp {
 
     void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
         LockFreeEventQueue<ecs::Event> &inputQueue) {
+        ZoneScoped;
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         static const ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
 
@@ -122,6 +123,7 @@ namespace sp {
             ecs::GetScriptManager().RunLogicUpdate(lock, interval);
         }
         {
+            ZoneScopedN("UpdateSignals");
             auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();
             auto &signals = lock.Get<const ecs::Signals>().signals;
             for (size_t index = 0; index < signals.size(); index++) {

@@ -15,6 +15,7 @@
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
+#include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/Compositor.hh"
@@ -28,10 +29,11 @@
 #include "graphics/vulkan/core/VkTracing.hh"
 
 #include <algorithm>
+#include <glm/glm.hpp>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <new>
-#include <optional>
 #include <string>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -574,6 +576,12 @@ namespace sp::vulkan {
 
         if (surfaceCapabilities.currentExtent.width == 0 || surfaceCapabilities.currentExtent.height == 0) {
             return;
+        }
+        if (surfaceCapabilities.currentExtent.width == std::numeric_limits<uint32_t>::max() ||
+            surfaceCapabilities.currentExtent.height == std::numeric_limits<uint32_t>::max()) {
+            auto windowSize = CVarWindowSize.Get();
+            surfaceCapabilities.currentExtent.width = windowSize.x;
+            surfaceCapabilities.currentExtent.height = windowSize.y;
         }
 
         auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);

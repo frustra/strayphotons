@@ -117,15 +117,15 @@ struct ScriptContext {
 
         if (compositor) {
             auto frameBuffer = s_DoomImageBuffer;
-            if (frameBuffer && frameBuffer->width > 0 && frameBuffer->height > 0) {
+            if (frameBuffer && frameBuffer->width > 0 && frameBuffer->height > 0 && ctx->hasFocus) {
                 sp_compositor_upload_source_image(compositor,
                     ent,
                     frameBuffer->data.data(),
                     frameBuffer->data.size(),
                     frameBuffer->width,
                     frameBuffer->height);
-                // } else {
-                //     sp_compositor_clear_source_image(compositor, ent);
+            } else {
+                sp_compositor_clear_source_image(compositor, ent);
             }
         }
     }
