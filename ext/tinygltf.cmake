@@ -12,5 +12,3 @@ set(TINYGLTF_INSTALL_VENDOR OFF CACHE BOOL "Don't install since we use add_subdi
 add_subdirectory(tinygltf)
 
 target_compile_definitions(tinygltf INTERFACE TINYGLTF_NO_FS=1)
-
-# target_include_directories(tinygltf SYSTEM INTERFACE ./tinygltf)
