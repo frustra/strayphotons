@@ -211,7 +211,14 @@ int main(int argc, char **argv) {
         glm::ivec2 initialSize = glm::ivec2(0);
         sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
-        GLFWwindow *window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+
+        glm::vec2 monitorScale;
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+        GLFWwindow *window = glfwCreateWindow(initialSize.x / monitorScale.x,
+            initialSize.y / monitorScale.y,
+            "STRAY PHOTONS",
+            nullptr,
+            nullptr);
         Assert(window, "glfw window creation failed");
         sp_graphics_set_glfw_window(GameGraphics, window, [](GLFWwindow *window) {
             if (window) glfwDestroyWindow(window);
@@ -349,7 +356,9 @@ int main(int argc, char **argv) {
                 if (sp_cvar_get_bool(cvarWindowFullscreen)) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
-                    glfwSetWindowSize(window, windowSize.x, windowSize.y);
+                    glm::vec2 monitorScale;
+                    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+                    glfwSetWindowSize(window, windowSize.x / monitorScale.x, windowSize.y / monitorScale.y);
                 }
 
                 systemWindowSize = windowSize;
