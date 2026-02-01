@@ -128,6 +128,7 @@ namespace ecs {
     struct ScriptSet {
         std::deque<std::pair<Entity, ScriptState>> scripts;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
+        std::vector<size_t> activeScriptList;
         mutable sp::LockFreeMutex mutex;
     };
 

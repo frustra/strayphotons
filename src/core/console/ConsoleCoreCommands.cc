@@ -168,7 +168,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Write<ecs::Signals>>();
             auto &entityRef = signal.GetEntity();
             ecs::Entity entity = entityRef.Get(lock);
-            if (!entity) {
+            if (!entity.Exists(lock)) {
                 Logf("Signal entity %s not found", entityRef.Name().String());
                 return;
             }

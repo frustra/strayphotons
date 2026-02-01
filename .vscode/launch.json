@@ -32,8 +32,8 @@
             }
         },
         {
-            "name": "StrayPhotons GLFW (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons GLFW (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
             "args": ["--with-validation-layers", "--assets", "../assets/"],
@@ -66,7 +66,7 @@
             }
         },
         {
-            "name": "StrayPhotons GLFW No VR (gdb)",
+            "name": "StrayPhotons GLFW No VR (lldb)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
@@ -115,8 +115,8 @@
             }
         },
         {
-            "name": "StrayPhotons Winit No VR (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Winit No VR (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-winit",
             "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr"],
@@ -149,8 +149,8 @@
             }
         },
         {
-            "name": "StrayPhotons Hull Compiler (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Hull Compiler (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/hull_compiler",
             "args": ["--assets", "../assets/", "box"],
@@ -180,8 +180,8 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Docs Generator (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Docs Generator (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/docs_generator",
             "args": ["."],
@@ -223,8 +223,8 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Components Codegen (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Components Codegen (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator",
             "args": ["include/strayphotons/components.h", "components_gen.cc"],
@@ -267,11 +267,11 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Test (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Test (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test",
-            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/scene-overrides.txt"],
+            "args": ["-v", "--assets", "../assets/", "--run", "tests/editor.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -298,8 +298,8 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "Unit Tests (gdb)",
-            "type": "cppdbg",
+            "name": "Unit Tests (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-unit-tests",
             "args": [],
@@ -329,8 +329,8 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "Integration Tests (gdb)",
-            "type": "cppdbg",
+            "name": "Integration Tests (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-integration-tests",
             "args": [],
