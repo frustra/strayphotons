@@ -95,7 +95,7 @@ namespace ecs {
         std::shared_ptr<Ref> ptr;
 
         friend class SignalManager;
-        friend class Signals;
+        friend struct Signals;
         friend struct expression::Node;
         friend struct std::hash<SignalRef>;
         friend bool operator==(const std::shared_ptr<Ref> &, const WeakRef &);
