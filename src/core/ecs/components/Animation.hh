@@ -118,7 +118,7 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
 
         CurrNextState GetCurrNextState(double currentState, double targetState) const;
         static void UpdateTransform(
-            Lock<ReadSignalsLock, Read<Animation, ecs::LightSensor, ecs::LaserSensor>, Write<TransformTree>> lock,
+            Lock<ReadSignalsLock, Read<Animation, LightSensor, LaserSensor>, Write<TransformTree>> lock,
             Entity ent);
     };
 

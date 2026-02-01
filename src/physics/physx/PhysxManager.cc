@@ -85,7 +85,7 @@ namespace sp {
         GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
             "physx",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                auto ent = scene->NewSystemEntity(lock, scene, debugLineEntity.Name());
+                ecs::Entity ent = scene->NewSystemEntity(lock, scene, debugLineEntity.Name());
                 auto &laser = ent.Set<ecs::LaserLine>(lock);
                 laser.intensity = 0.5f;
                 laser.mediaDensityFactor = 0;
@@ -160,11 +160,11 @@ namespace sp {
         GetSceneManager().PreloadScenePhysics([this](auto lock, auto scene) {
             ZoneScopedN("PreloadScenePhysics");
             bool complete = true;
-            for (auto ent : lock.template EntitiesWith<ecs::Physics>()) {
-                if (!ent.template Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
-                if (ent.template Get<ecs::SceneInfo>(lock).scene != scene) continue;
+            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Physics>()) {
+                if (!ent.Has<ecs::SceneInfo, ecs::Physics>(lock)) continue;
+                if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
 
-                auto &ph = ent.template Get<ecs::Physics>(lock);
+                auto &ph = ent.Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (!mesh || !mesh->model || !mesh->hullSettings) continue;
@@ -229,7 +229,7 @@ namespace sp {
 
             {
                 ZoneScopedN("UpdateSnapshots(Dynamic)");
-                for (auto ent : lock.EntitiesWith<ecs::Physics>()) {
+                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
                     auto &ph = ent.Get<ecs::Physics>(lock);
@@ -255,7 +255,7 @@ namespace sp {
 
             {
                 ZoneScopedN("UpdateSnapshots(NonDynamic)");
-                for (auto &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
                     if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
 
                     // Only recalculate the transform snapshot for entities that moved.
@@ -335,7 +335,7 @@ namespace sp {
             {
                 ZoneScopedN("UpdateActors");
                 // Update actors with latest entity data
-                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
                     auto &ph = ent.Get<ecs::Physics>(lock);
                     if (ph.type == ecs::PhysicsActorType::SubActor) continue;
@@ -346,7 +346,7 @@ namespace sp {
             {
                 ZoneScopedN("UpdateSubActors");
                 // Update sub actors once all parent actors are complete
-                for (auto &ent : lock.EntitiesWith<ecs::Physics>()) {
+                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
                     auto &ph = ent.Get<ecs::Physics>(lock);
                     if (ph.type != ecs::PhysicsActorType::SubActor) continue;

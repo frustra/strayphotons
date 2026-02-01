@@ -44,7 +44,7 @@ namespace SceneManagerTests {
         auto &liveSceneInfo = liveEnt.Get<ecs::SceneInfo>(liveLock);
         AssertEqual(liveSceneInfo.liveId, liveEnt, "Staging SceneInfo.liveId does not match");
 
-        auto ent = liveSceneInfo.rootStagingId;
+        ecs::Entity ent = liveSceneInfo.rootStagingId;
         Assertf(!!ent, "Expected entity to exist: %s", std::to_string(ent));
         Assertf(ent.Has<ecs::SceneInfo>(stagingLock), "Expected %s to have SceneInfo", std::to_string(ent));
         auto &rootSceneInfo = ent.Get<ecs::SceneInfo>(stagingLock);
@@ -70,7 +70,7 @@ namespace SceneManagerTests {
     }
 
     void systemSceneCallback(ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<sp::Scene> scene) {
-        auto ent = lock.NewEntity();
+        ecs::Entity ent = lock.NewEntity();
         ent.Set<ecs::Name>(lock, "player", "player");
         ent.Set<ecs::SceneInfo>(lock, ent, scene, ecs::EntityScope("player", ""));
         ent.Set<ecs::TransformSnapshot>(lock, ecs::Transform(glm::vec3(1, 2, 3)));

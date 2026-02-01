@@ -64,7 +64,7 @@ namespace sp {
             return ecs::Entity();
         }
 
-        auto entity = stagingLock.NewEntity();
+        ecs::Entity entity = stagingLock.NewEntity();
         entity.Set<ecs::SceneInfo>(stagingLock, entity, scene, ecs::EntityScope(scene->data->name, ""));
         entity.Set<ecs::Name>(stagingLock, entityName);
         namedEntities.emplace(entityName, entity);
@@ -101,7 +101,7 @@ namespace sp {
             return ecs::Entity();
         }
 
-        auto entity = lock.NewEntity();
+        ecs::Entity entity = lock.NewEntity();
         entity.Set<ecs::SceneInfo>(lock, entity, scene, scope);
         entity.Set<ecs::Name>(lock, entityName);
         if (ecs::IsLive(lock)) entity.Set<ecs::SceneProperties>(lock, scene->data->GetProperties(lock));
@@ -147,7 +147,7 @@ namespace sp {
             return ecs::Entity();
         }
 
-        auto entity = stagingLock.NewEntity();
+        ecs::Entity entity = stagingLock.NewEntity();
         auto &rootSceneInfo = prefabRoot.Get<const ecs::SceneInfo>(stagingLock);
         entity.Set<ecs::Name>(stagingLock, entityName);
         auto &newSceneInfo = entity.Set<ecs::SceneInfo>(stagingLock,
@@ -256,7 +256,7 @@ namespace sp {
             if (!sceneInfo.rootStagingId.Has<ecs::SceneInfo>(staging)) e.Destroy(live);
         }
         for (size_t i = 0; i < entities.size(); i++) {
-            auto &e = entities[i];
+            const ecs::Entity &e = entities[i];
             auto &flatEntity = components[i];
             auto &sceneInfo = e.Get<ecs::SceneInfo>(staging);
 

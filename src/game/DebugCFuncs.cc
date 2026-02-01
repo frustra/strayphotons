@@ -184,7 +184,7 @@ namespace sp {
         funcs.Register("printevents", "Print out the current state of event queues", []() {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::EventInput>>();
 
-            for (auto &ent : lock.EntitiesWith<ecs::EventInput>()) {
+            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::EventInput>()) {
                 auto &input = ent.Get<ecs::EventInput>(lock);
                 if (input.events.empty()) continue;
                 Logf("Event input %s:", ecs::ToString(lock, ent));
@@ -207,7 +207,7 @@ namespace sp {
         funcs.Register("printbindings", "Print out the event binding state", []() {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::EventBindings>>();
 
-            for (auto &ent : lock.EntitiesWith<ecs::EventBindings>()) {
+            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::EventBindings>()) {
                 auto &bindings = ent.Get<ecs::EventBindings>(lock);
                 if (bindings.sourceToDest.empty()) continue;
                 Logf("Event binding %s:", ecs::ToString(lock, ent));

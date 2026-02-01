@@ -23,7 +23,7 @@ namespace sp {
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
 
-        auto gui = guiEntity.Get(lock);
+        ecs::Entity gui = guiEntity.Get(lock);
         Assert(gui.Has<ecs::EventInput>(lock), "Expected overlay gui to start with an EventInput");
 
         auto &eventInput = gui.Get<ecs::EventInput>(lock);

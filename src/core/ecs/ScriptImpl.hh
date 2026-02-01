@@ -15,9 +15,9 @@ namespace ecs {
     template<typename LockType>
     static inline ScriptDefinition CreateLogicScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
-        auto wrapperFn = [callback = std::move(callback)](ecs::ScriptState &state,
-                             ecs::DynamicLock<ecs::ReadSignalsLock> lock,
-                             ecs::Entity ent,
+        auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
+                             DynamicLock<ReadSignalsLock> lock,
+                             Entity ent,
                              chrono_clock::duration interval) {
             auto tryLock = lock.TryLock<LockType>();
             Assertf(tryLock, "LogicScript invoked without lock permissions: %s", typeid(LockType).name());
@@ -28,9 +28,9 @@ namespace ecs {
     template<typename LockType>
     static inline ScriptDefinition CreatePhysicsScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
-        auto wrapperFn = [callback = std::move(callback)](ecs::ScriptState &state,
-                             ecs::DynamicLock<ecs::ReadSignalsLock> lock,
-                             ecs::Entity ent,
+        auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
+                             DynamicLock<ReadSignalsLock> lock,
+                             Entity ent,
                              chrono_clock::duration interval) {
             auto tryLock = lock.TryLock<LockType>();
             Assertf(tryLock, "PhysicsScript invoked without lock permissions: %s", typeid(LockType).name());

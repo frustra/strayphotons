@@ -51,7 +51,7 @@ namespace sp::vulkan {
             cfg.SizePixels = def.size;
             cfg.GlyphRanges = &glyphRanges[0];
             auto filename = asset->path.filename().string();
-            memcpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name), filename.length()));
+            strncpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name) - 1, filename.length()));
             fontAtlas->AddFont(&cfg);
         }
 

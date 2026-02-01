@@ -121,7 +121,7 @@ namespace sp::xr {
                                 return (c == ':' || c == '/') ? '_' : tolower(c);
                             });
                             action.poseEntity = ecs::Name("input", inputName);
-                            auto ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
+                            ecs::Entity ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
                         } else if (action.type == Action::DataType::Haptic) {
                             if (!action.eventQueue) action.eventQueue = ecs::EventQueue::New();
@@ -480,7 +480,7 @@ namespace sp::xr {
                             if (action.type == Action::DataType::Skeleton) {
                                 for (auto &boneEnt : action.boneEntities) {
                                     if (scene->GetStagingEntity(boneEnt.Name())) continue;
-                                    auto ent = scene->NewSystemEntity(lock, scene, boneEnt.Name());
+                                    ecs::Entity ent = scene->NewSystemEntity(lock, scene, boneEnt.Name());
                                     ent.Set<ecs::TransformTree>(lock);
                                 }
                             }

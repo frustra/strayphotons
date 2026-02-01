@@ -34,7 +34,7 @@ namespace sp {
         ecs::ComponentAddRemoveEvent<ecs::TriggerGroup> triggerEvent;
         while (triggerGroupObserver.Poll(lock, triggerEvent)) {
             if (triggerEvent.type == Tecs::EventType::REMOVED) {
-                for (auto &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
+                for (const ecs::Entity &entity : lock.EntitiesWith<ecs::TriggerArea>()) {
                     auto &containedEntities = entity.Get<ecs::TriggerArea>(lock).containedEntities;
                     containedEntities[triggerEvent.component].erase(triggerEvent.entity);
                 }

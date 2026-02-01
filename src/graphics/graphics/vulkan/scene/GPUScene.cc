@@ -59,7 +59,7 @@ namespace sp::vulkan {
         primitiveCount = 0;
         vertexCount = 0;
 
-        for (auto &ent : lock.EntitiesWith<ecs::Renderable>()) {
+        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &renderable = ent.Get<ecs::Renderable>(lock);

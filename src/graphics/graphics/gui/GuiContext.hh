@@ -42,10 +42,6 @@ namespace sp {
         virtual void BeforeFrame();
         virtual void DefineWindows() = 0;
 
-        const std::string &Name() const {
-            return name;
-        }
-
         static void PushFont(GuiFont fontType, float fontSize);
 
     protected:

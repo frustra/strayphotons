@@ -49,7 +49,7 @@ namespace ecs {
 
     void SignalRef::SetScope(const EntityScope &scope) {
         if (!ptr) return;
-        ecs::EntityRef newRef = ptr->signal.entity;
+        EntityRef newRef = ptr->signal.entity;
         newRef.SetScope(scope);
         if (!newRef) {
             ptr = nullptr;

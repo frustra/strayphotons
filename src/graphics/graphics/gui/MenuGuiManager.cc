@@ -29,7 +29,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
 
-            auto gui = guiEntity.Get(lock);
+            ecs::Entity gui = guiEntity.Get(lock);
             Assertf(gui.Has<ecs::EventInput>(lock),
                 "Expected menu gui to start with an EventInput: %s",
                 guiEntity.Name().String());

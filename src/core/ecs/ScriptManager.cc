@@ -63,7 +63,7 @@ namespace ecs {
         // Remove any ScriptStates and EventQueues that are still in use
         {
             auto lock = StartStagingTransaction<Write<Scripts>>();
-            for (auto &ent : lock.EntitiesWith<Scripts>()) {
+            for (const Entity &ent : lock.EntitiesWith<Scripts>()) {
                 auto &scripts = ent.Get<Scripts>(lock).scripts;
                 for (auto &script : scripts) {
                     script.state.reset();
@@ -72,13 +72,13 @@ namespace ecs {
         }
         {
             auto lock = StartTransaction<Write<Scripts, EventInput>>();
-            for (auto &ent : lock.EntitiesWith<Scripts>()) {
+            for (const Entity &ent : lock.EntitiesWith<Scripts>()) {
                 auto &scripts = ent.Get<Scripts>(lock).scripts;
                 for (auto &script : scripts) {
                     script.state.reset();
                 }
             }
-            for (auto &ent : lock.EntitiesWith<EventInput>()) {
+            for (const Entity &ent : lock.EntitiesWith<EventInput>()) {
                 auto &eventInput = ent.Get<EventInput>(lock);
                 eventInput.events.clear();
             }
@@ -265,7 +265,7 @@ namespace ecs {
             if (ent.Has<EventInput>(lock)) {
                 auto &eventInput = ent.Get<EventInput>(lock);
                 for (auto &event : state.definition.events) {
-                    if (!state.eventQueue) state.eventQueue = ecs::EventQueue::New();
+                    if (!state.eventQueue) state.eventQueue = EventQueue::New();
                     eventInput.Register(lock, state.eventQueue, event);
                 }
                 entry.first = ent;
@@ -284,7 +284,7 @@ namespace ecs {
         for (size_t i = 0; i < scripts.size(); i++) {
             scripts.at(i).mutex.lock_shared();
         }
-        for (auto &ent : lock.EntitiesWith<ecs::Scripts>()) {
+        for (const Entity &ent : lock.EntitiesWith<Scripts>()) {
             if (!ent.Has<Scripts>(lock)) continue;
             for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
                 if (!instance) continue;

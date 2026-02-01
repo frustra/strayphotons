@@ -21,7 +21,7 @@ namespace ecs {
             Entity prefabStagingId,
             size_t prefabScriptId,
             const SceneInfo &rootSceneInfo,
-            const ecs::EntityScope &scope)
+            const EntityScope &scope)
             : rootStagingId(rootStagingId), prefabStagingId(prefabStagingId), prefabScriptId(prefabScriptId),
               priority(rootSceneInfo.priority), scene(rootSceneInfo.scene), scope(scope) {
             Assertf(IsStaging(rootStagingId), "Invalid rootStagingId in SceneInfo: %s", std::to_string(rootStagingId));

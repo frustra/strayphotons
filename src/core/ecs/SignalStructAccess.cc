@@ -18,7 +18,7 @@ namespace ecs {
     std::optional<StructField> GetStructField(std::type_index baseType,
         std::string_view fieldName,
         size_t fieldNameOffset) {
-        return ecs::GetFieldType(baseType, [&](auto *typePtr) -> std::optional<StructField> {
+        return GetFieldType(baseType, [&](auto *typePtr) -> std::optional<StructField> {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
             auto delimiter = fieldName.find('.', fieldNameOffset);
