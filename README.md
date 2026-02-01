@@ -58,7 +58,7 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 
 ## License
 
-> Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+> Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
 > 
 > Stray Photons is licensed under the terms of the [Mozilla Public License Version 2.0](https://mozilla.org/MPL/2.0/).  
 > Dependencies are licensed under individual MPL2.0-compatible licenses.  

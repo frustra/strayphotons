@@ -49,7 +49,11 @@ namespace sp {
                 ZoneValue(flushCount);
                 if (FlushInternal(lock, flushCount, false) == 0) {
                     lock.unlock();
-                    std::this_thread::sleep_for(flushSleepInterval);
+                    if (flushSleepInterval.count() > 0) {
+                        std::this_thread::sleep_for(flushSleepInterval);
+                    } else {
+                        std::this_thread::yield();
+                    }
                     lock.lock();
                 }
             }
@@ -65,6 +69,7 @@ namespace sp {
             lock.unlock();
             bool ready = blockUntilReady || item->Ready();
             if (ready) {
+                ZoneScopedN("DispatchQueue::Process");
                 item->Process();
                 std::this_thread::yield();
                 flushCount++;

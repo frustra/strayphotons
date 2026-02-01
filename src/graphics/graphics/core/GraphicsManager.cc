@@ -12,6 +12,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
+#include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/gui/OverlayGuiManager.hh"
@@ -144,6 +145,7 @@ namespace sp {
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;
+        if (context->RequiresReset()) return false;
         if (overlayGui) overlayGui->BeforeFrame();
         if (menuGui) menuGui->BeforeFrame();
 

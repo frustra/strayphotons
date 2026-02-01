@@ -14,7 +14,7 @@
 #define HIGH_DETAIL_LIGHT 1
 #define CUBE_MAP_LIGHT 2
 
-vec3 HDRTonemap(vec3 x) {
+vec3 HableSDRTonemap(vec3 x) {
     // Based on the Uncharted 2 implementation of a filmic tone map by Kodak [Hable 2010]
 
     const float A = 0.15;
