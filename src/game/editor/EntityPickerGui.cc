@@ -46,7 +46,10 @@ namespace sp {
         if (!context) return false;
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock>>();
+
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            if (!focusLock.HasFocus(ecs::FocusLayer::HUD) && pickerEntity != ent) return false;
 
             ecs::Event event;
             while (ecs::EventInput::Poll(lock, events, event)) {

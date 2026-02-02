@@ -11,3 +11,5 @@ stepphysics 100
 stepgraphics 100
 screenshot delayed.png
 stepgraphics
+screenshot delayed2.png
+stepgraphics
