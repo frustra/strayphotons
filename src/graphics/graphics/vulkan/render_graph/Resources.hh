@@ -150,8 +150,8 @@ namespace sp::vulkan::render_graph {
             ResourceName name;
 
             struct PerFrame {
-                // robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
-                std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                // std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
             };
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
