@@ -1,6 +1,8 @@
 screenshot empty-state.png
 stepgraphics
 editinworld player:flathead
+# Hackily change the inspector size to fill the screenshot
+setcomponent editor:inspector#gui_element.preferred_size.x -100
 screenshot editor1.png /ent:editor:inspector/LastOutput
 stepgraphics
 # Click on "Entity View" tab and move mouse away

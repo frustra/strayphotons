@@ -8,11 +8,17 @@
 #include "common/Logging.hh"
 #include "common/RegisteredThread.hh"
 #include "console/Console.hh"
+#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalExpression.hh"
+#include "ecs/SignalStructAccess.hh"
+#include "ecs/components/Name.hh"
 
 #include <fstream>
 #include <shared_mutex>
 #include <sstream>
+#include <string_view>
 
 template<typename Callback>
 void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
@@ -254,6 +260,63 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             } else {
                 Logf("Sent %u events to %s%s", sent, entityName.String(), eventName);
             }
+        });
+
+    funcs.Register<string, string>("setcomponent",
+        "Set a data field on component (setcomponent <entity>#<component>.<field> <value>)",
+        [](string componentStr, string exprStr) {
+            ecs::SignalExpression expr(exprStr);
+            if (!expr) {
+                Errorf("Invalid value expression: %s", exprStr);
+                return;
+            }
+
+            size_t delimiter = componentStr.find_first_of("#");
+            if (delimiter >= componentStr.length()) {
+                Errorf("Invalid entity component name, missing '#': %s", componentStr);
+                return;
+            }
+            ecs::Name entityName = ecs::Name(componentStr.substr(0, delimiter), ecs::EntityScope());
+            auto fieldPath = componentStr.substr(delimiter + 1);
+
+            delimiter = fieldPath.find('.');
+            if (delimiter == std::string::npos) {
+                Errorf("Invalid component path, missing '.': %s", fieldPath);
+                return;
+            }
+            auto componentName = fieldPath.substr(0, delimiter);
+
+            auto comp = ecs::LookupComponent(componentName);
+            if (!comp) {
+                Errorf("Invalid component name: %s", componentName);
+                return;
+            }
+
+            auto lock = ecs::QueueTransaction<ecs::WriteAll>([=](auto lock) {
+                ecs::EntityRef ref(entityName);
+                ecs::Entity ent = ref.Get(lock);
+                if (!comp->HasComponent(lock, ent)) {
+                    Warnf("Entity does not have component: %s", componentName);
+                    return;
+                }
+
+                auto field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                if (!field) {
+                    Errorf("Invalid component path, missing field: %s", fieldPath);
+                    return;
+                }
+
+                auto signalValue = expr.Evaluate(lock);
+
+                void *compPtr = comp->AccessMut(lock, ent);
+                if (!compPtr) {
+                    Errorf("Error, %s access returned null data: %s", componentName, ecs::ToString(lock, ent));
+                    return;
+                }
+                ecs::WriteStructField(compPtr, *field, [&signalValue](double &value) {
+                    value = signalValue;
+                });
+            });
         });
 
     funcs.Register<size_t>("tracetecs", "Save an ECS performance trace (tracetecs <time_ms>)", [](size_t timeMs) {

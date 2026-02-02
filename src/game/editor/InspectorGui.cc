@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "ecs/components/Focus.hh"
 #include "editor/EditorControls.hh"
 #include "editor/EditorSystem.hh"
 #include "game/SceneManager.hh"
@@ -46,7 +47,10 @@ namespace sp {
         if (!context) return false;
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::ActiveScene>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock, ecs::ActiveScene>>();
+
+            auto &focusLock = lock.Get<ecs::FocusLock>();
+            if (!focusLock.HasFocus(ecs::FocusLayer::HUD) && inspectorEntity != ent) return false;
 
             if (lock.Has<ecs::ActiveScene>()) {
                 auto &active = lock.Get<ecs::ActiveScene>();
