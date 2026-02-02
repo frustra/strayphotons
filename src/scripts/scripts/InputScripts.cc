@@ -172,8 +172,4 @@ namespace sp::scripts {
     };
     StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
     LogicScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
-    // PhysicsScript<CameraView> physicsCameraView("physics_camera_view",
-    //     MetadataCameraView,
-    //     true,
-    //     "/script/camera_rotate");
 } // namespace sp::scripts
