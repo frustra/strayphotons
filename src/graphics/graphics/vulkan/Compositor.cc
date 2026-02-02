@@ -538,7 +538,9 @@ namespace sp::vulkan {
                 GuiContext &context = *output.guiContext;
 
                 glm::ivec4 viewport(0, 0, outputDesc.extent.width, outputDesc.extent.height);
-                DrawGuiContext(context, viewport, output.scale);
+                glm::vec2 scale = output.scale;
+                if (scale.x <= 0.0f || scale.y <= 0.0f) scale = glm::vec2(1.0f);
+                DrawGuiContext(context, viewport, scale);
             }
 
             if (outputDesc.mipLevels > 1) renderer::AddMipmap(graph);
