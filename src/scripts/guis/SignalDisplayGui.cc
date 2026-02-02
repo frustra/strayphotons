@@ -27,7 +27,7 @@ namespace sp::scripts {
         shared_ptr<ImFontAtlas> fontAtlas;
 
         void Init(ScriptState &state) {
-            Logf("Created signal display: %llu", state.GetInstanceId());
+            Debugf("Created signal display: %llu", state.GetInstanceId());
 
             imCtx = ImGui::CreateContext();
             fontAtlas = make_shared<ImFontAtlas>();
@@ -62,7 +62,7 @@ namespace sp::scripts {
         }
 
         void Destroy(ScriptState &state) {
-            Logf("Destroying signal display: %llu", state.GetInstanceId());
+            Debugf("Destroying signal display: %llu", state.GetInstanceId());
             ImGui::DestroyContext(imCtx);
             imCtx = nullptr;
         }

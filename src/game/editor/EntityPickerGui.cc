@@ -15,7 +15,6 @@
 #include "input/BindingNames.hh"
 
 #include <imgui.h>
-// #include <misc/cpp/imgui_stdlib.h>
 
 namespace sp {
     EntityPickerGui::EntityPickerGui(const string &name)
