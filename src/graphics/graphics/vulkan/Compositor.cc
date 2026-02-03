@@ -91,7 +91,20 @@ namespace sp::vulkan {
             fontViewInfo,
             InitialData(fontData, size_t(fontWidth * fontHeight * 4)));
 
+        {
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
+            renderOutputObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::RenderOutput>>();
+            UpdateRenderOutputs(lock);
+        }
+
         EndFrame();
+    }
+
+    Compositor::~Compositor() {
+        {
+            auto lock = ecs::StartTransaction<ecs::AddRemove>();
+            renderOutputObserver.Stop(lock);
+        }
     }
 
     void Compositor::DrawGuiContext(GuiContext &context, glm::ivec4 viewport, glm::vec2 scale) {
@@ -183,6 +196,20 @@ namespace sp::vulkan {
     }
 
     void Compositor::BeforeFrame(rg::RenderGraph &graph) {
+        {
+            bool renderOutputsChanged = false;
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::RenderOutput>>();
+            ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
+            while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
+                // std::string sourceName = "";
+                // if (renderOutputEvent.Has<ecs::RenderOutput>(lock)) {
+                //     sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
+                // }
+                // Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
+                renderOutputsChanged = true;
+            }
+            if (renderOutputsChanged) UpdateRenderOutputs(lock);
+        }
         for (auto &output : renderOutputs) {
             if (!output.effectName.empty()) {
                 if (!output.effectCondition) {

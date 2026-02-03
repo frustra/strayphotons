@@ -30,6 +30,7 @@ namespace sp::vulkan {
     class Compositor final : public GenericCompositor {
     public:
         Compositor(DeviceContext &device, render_graph::RenderGraph &graph);
+        ~Compositor();
 
         enum class PassOrder : uint8_t {
             BeforeViews,
@@ -77,6 +78,7 @@ namespace sp::vulkan {
         robin_hood::unordered_map<ecs::Entity, size_t> existingOutputs;
         // 3D views are rendered after this many renderOutputs, allowing later renderOutputs to reference view outputs
         size_t viewRenderPassOffset = 0;
+        ecs::ComponentModifiedObserver<ecs::RenderOutput> renderOutputObserver;
 
         PreservingMap<ecs::Entity, GuiContext, 500> ephemeralGuiContexts;
         PreservingMap<std::string, Async<ImageView>, 500> staticAssetImages;
