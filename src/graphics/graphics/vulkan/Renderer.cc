@@ -63,11 +63,8 @@ namespace sp::vulkan {
         });
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        renderOutputObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::RenderOutput>>();
         renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
         lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
-
-        compositor.UpdateRenderOutputs(lock);
 
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
             {vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16UnormS8Uint});
@@ -78,7 +75,6 @@ namespace sp::vulkan {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            renderOutputObserver.Stop(lock);
             renderableObserver.Stop(lock);
             lightObserver.Stop(lock);
         }
@@ -624,21 +620,6 @@ namespace sp::vulkan {
             if (!smaa.PreloadTextures(device)) complete = false;
             return complete;
         });
-
-        {
-            bool renderOutputsChanged = false;
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::RenderOutput>>();
-            ecs::ComponentModifiedEvent<ecs::RenderOutput> renderOutputEvent;
-            while (renderOutputObserver.Poll(lock, renderOutputEvent)) {
-                // std::string sourceName = "";
-                // if (renderOutputEvent.Has<ecs::RenderOutput>(lock)) {
-                //     sourceName = renderOutputEvent.Get<ecs::RenderOutput>(lock).sourceName;
-                // }
-                // Logf("Render output entity changed: %s %s", ecs::ToString(lock, renderOutputEvent), sourceName);
-                renderOutputsChanged = true;
-            }
-            if (renderOutputsChanged) compositor.UpdateRenderOutputs(lock);
-        }
 
         scene.Flush();
     }
