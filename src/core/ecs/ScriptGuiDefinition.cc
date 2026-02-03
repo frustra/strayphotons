@@ -58,7 +58,6 @@ namespace ecs {
             if (beforeFrame && renderGui && beforeFrame(compositor, state, ent)) {
                 auto &io = ImGui::GetIO();
                 ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
-                // TODO: Viewport is one frame behind here, and undefined on first frame.
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");
                 glm::vec2 displaySize = {imguiViewport->WorkSize.x, imguiViewport->WorkSize.y};
                 glm::vec2 scale = {io.DisplayFramebufferScale.x, io.DisplayFramebufferScale.y};

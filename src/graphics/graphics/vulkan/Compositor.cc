@@ -214,6 +214,12 @@ namespace sp::vulkan {
 
                 ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
                 output.guiContext->SetGuiContext();
+                ImGuiIO &io = ImGui::GetIO();
+                io.DisplaySize = ImVec2(output.outputSize.x / output.scale.x, output.outputSize.y / output.scale.y);
+                io.DisplayFramebufferScale = ImVec2(output.scale.x, output.scale.y);
+                ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
+                imguiViewport->Pos = imguiViewport->WorkPos = ImVec2(0, 0);
+                imguiViewport->Size = imguiViewport->WorkSize = io.DisplaySize;
                 output.enableGui = output.guiContext->BeforeFrame(*this);
             } else {
                 output.enableGui = false;
