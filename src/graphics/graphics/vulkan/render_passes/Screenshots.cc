@@ -73,11 +73,11 @@ namespace sp::vulkan::renderer {
                 return;
             }
         }
-        auto fullPath = std::filesystem::weakly_canonical(base / path);
-        Logf("Saving screenshot to: %s", fullPath.string());
-
         auto extent = view->Extent();
         extent.depth = 1;
+
+        auto fullPath = std::filesystem::weakly_canonical(base / path);
+        Logf("Saving %ux%u screenshot to: %s", extent.width, extent.height, fullPath.string());
 
         vk::ImageCreateInfo outputDesc;
         outputDesc.imageType = vk::ImageType::e2D;
