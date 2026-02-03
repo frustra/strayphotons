@@ -39,10 +39,13 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Read<TransformSnapshot>, Write<PhysicsJoints>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<PhysicsJoints, TransformSnapshot>(lock)) return;
             auto &joints = ent.Get<PhysicsJoints>(lock);
-            auto &plugTransform = ent.Get<const TransformSnapshot>(lock).globalPose;
+            auto &plugTransform = ent.Get<TransformSnapshot>(lock).globalPose;
 
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -67,7 +70,7 @@ namespace sp::scripts {
                                 for (const ecs::Entity &entity : socketEntities) {
                                     if (!entity.Has<TransformSnapshot>(lock)) continue;
 
-                                    auto &socketTransform = entity.Get<const TransformSnapshot>(lock).globalPose;
+                                    auto &socketTransform = entity.Get<TransformSnapshot>(lock).globalPose;
                                     float distance = glm::length(
                                         socketTransform.GetPosition() - plugTransform.GetPosition());
                                     if (!nearestSocket.Has<TransformSnapshot>(lock) || distance < nearestDist) {
@@ -76,7 +79,7 @@ namespace sp::scripts {
                                     }
                                 }
                                 if (nearestSocket.Has<TransformSnapshot>(lock)) {
-                                    auto &socketTransform = nearestSocket.Get<const TransformSnapshot>(lock).globalPose;
+                                    auto &socketTransform = nearestSocket.Get<TransformSnapshot>(lock).globalPose;
 
                                     float snapAngle = SignalRef(nearestSocket, "snap_angle").GetSignal(lock);
 
@@ -128,7 +131,7 @@ namespace sp::scripts {
     struct MagneticSocket {
         robin_hood::unordered_flat_set<Entity> disabledEntities;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, Lock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
             if (!ent.Has<TriggerArea>(lock)) return;
 
             EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope);

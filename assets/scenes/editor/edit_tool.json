@@ -6,13 +6,13 @@
                 "/mouse/left_click": [
                     {
                         "outputs": "edit_tool:edit_tool/interact/press",
-                        "filter": "is_focused(Game)"
+                        "filter": "is_primary_focus(Game)"
                     }
                 ],
                 "/mouse/scroll": [
                     {
                         "outputs": "edit_tool:edit_tool/signal/add/edit_mode",
-                        "filter": "is_focused(Game)",
+                        "filter": "is_primary_focus(Game)",
                         "set_value": 0,
                         "modify": "event.y >= 0 ? 1 : -1"
                     }

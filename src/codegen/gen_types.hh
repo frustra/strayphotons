@@ -77,6 +77,10 @@ std::string LookupCTypeName(std::type_index type) {
             return "bool"s;
         } else if constexpr (std::is_same<T, char>()) {
             return "char"s;
+        } else if constexpr (std::is_same<T, uint8_t>()) {
+            return "uint8_t"s;
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            return "uint16_t"s;
         } else if constexpr (std::is_same<T, int32_t>()) {
             return "int32_t"s;
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -93,6 +97,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "event_name_t"s;
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             return "event_string_t"s;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            return "event_bytes_t"s;
         } else if constexpr (sp::is_inline_string<T>()) {
             return "string_" + std::to_string(T::max_size()) + "_t";
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -156,6 +162,8 @@ std::string LookupCTypeName(std::type_index type) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
             return "sp_" + subtype + "_map_t";
+        } else if constexpr (std::is_same<T, sp::GenericCompositor>()) {
+            return "sp_compositor_ctx_t"s;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
             if (ecs::LookupComponent(type)) {
@@ -568,6 +576,10 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, uint8_t>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -586,6 +598,8 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_angle_t { float radians; } sp_angle_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
             out << "typedef char " << LookupCTypeName(typeid(T)) << "[" << (T::max_size() + 1) << "];" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            out << "typedef uint8_t " << LookupCTypeName(typeid(T)) << "[" << std::tuple_size<T>() << "];" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
             out << "typedef struct string_t { const uint8_t _unknown[" << sizeof(T) << "]; } string_t;" << std::endl;
             out << "SP_EXPORT void sp_string_set(string_t *str, const char *new_str);" << std::endl;
@@ -679,6 +693,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_" << subtype << "_map_t {" << std::endl;
             out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_map_t;" << std::endl;
+        } else if constexpr (std::is_same<T, sp::GenericCompositor>()) {
+            // Defined in "strayphotons/graphics.h"
+            // out << "typedef void sp_compositor_ctx_t;" << std::endl;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
             if (const ecs::ComponentBase *comp = ecs::LookupComponent(type); comp) {
@@ -789,6 +806,10 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, char>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, uint8_t>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, uint16_t>()) {
+            // Built-in
         } else if constexpr (std::is_same<T, int32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint32_t>()) {
@@ -809,6 +830,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "typedef ecs::EventName event_name_t;" << std::endl;
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             out << "typedef ecs::EventString event_string_t;" << std::endl;
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            out << "typedef ecs::EventBytes event_bytes_t;" << std::endl;
         } else if constexpr (sp::is_inline_string<T>()) {
             out << "typedef sp::InlineString<" << T::max_size() << "> string_" << T::max_size() << "_t;" << std::endl;
         } else if constexpr (std::is_same<T, std::string>()) {
@@ -903,6 +926,9 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
                                      TypeToString<typename T::mapped_type>();
             out << "typedef robin_hood::unordered_node_map<" << subCppType << "> sp_" << subCType << "_map_t;"
                 << std::endl;
+        } else if constexpr (std::is_same<T, sp::GenericCompositor>()) {
+            // Defined in "strayphotons/graphics.h"
+            // out << "typedef sp::GenericCompositor sp_compositor_ctx_t;" << std::endl;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
             if (const ecs::ComponentBase *comp = ecs::LookupComponent(type); comp) {

@@ -32,8 +32,9 @@ namespace sp::winit {
 namespace sp {
     class Game;
     class GraphicsContext;
-    class OverlayGuiManager;
-    class MenuGuiManager;
+    class GenericCompositor;
+    class GuiContext;
+    class ProfilerGui;
 
     class GraphicsManager : public RegisteredThread {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
@@ -51,6 +52,8 @@ namespace sp {
         void StopThread();
         bool HasActiveContext();
         bool InputFrame();
+
+        GenericCompositor &GetCompositor();
 
         sp_window_handlers_t windowHandlers = {0};
 
@@ -70,12 +73,12 @@ namespace sp {
         void Frame() override;
 
         Game &game;
-        ecs::Name flatviewName;
+        ecs::EntityRef flatviewEntity; // TODO: Replace with combined window / overlay entity
 
         chrono_clock::time_point renderStart;
 
-        std::shared_ptr<OverlayGuiManager> overlayGui;
-        std::shared_ptr<MenuGuiManager> menuGui;
+        std::shared_ptr<GuiContext> windowGuiContext, menuGui;
+        shared_ptr<ProfilerGui> profilerGui;
 
         bool initialized = false;
     };

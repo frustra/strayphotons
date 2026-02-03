@@ -22,7 +22,7 @@
 #include "ecs/components/CharacterController.hh"
 #include "ecs/components/Events.hh"
 #include "ecs/components/Focus.hh"
-#include "ecs/components/Gui.hh"
+#include "ecs/components/GuiElement.hh"
 #include "ecs/components/LaserEmitter.hh"
 #include "ecs/components/LaserLine.hh"
 #include "ecs/components/LaserSensor.hh"
@@ -33,6 +33,7 @@
 #include "ecs/components/Physics.hh"
 #include "ecs/components/PhysicsJoints.hh"
 #include "ecs/components/PhysicsQuery.hh"
+#include "ecs/components/RenderOutput.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/SceneConnection.hh"
 #include "ecs/components/SceneInfo.hh"
@@ -62,7 +63,7 @@ namespace ecs {
         ECS staging;
         ECS live;
         EntityReferenceManager refManager;
-        sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue");
+        sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue", 2, std::chrono::milliseconds(1));
     };
 
     // Define these special components here to solve circular includes

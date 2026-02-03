@@ -1,5 +1,5 @@
 #
-# Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+# Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,8 +13,8 @@ add_subdirectory(robin-hood-hashing)
 add_subdirectory(physx)
 
 # These projects require more configuration that is encapsulated their own CMake files
-include(cxxopts.cmake)
 include(cglm.cmake)
+include(cxxopts.cmake)
 include(dynalo.cmake)
 include(fpng.cmake)
 include(glfw.cmake)

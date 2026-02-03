@@ -56,10 +56,7 @@ namespace sp::vulkan::renderer {
 
                     cmd.SetShaderConstant(ShaderStage::Vertex, "DRAW_DEPTH", 1.0f);
 
-                    if (!first) {
-                        cmd.SetBlending(true, vk::BlendOp::eMax);
-                        cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
-                    }
+                    if (!first) cmd.SetBlending(true, vk::BlendOp::eMax);
 
                     cmd.SetDepthTest(true, false);
                     cmd.SetDepthCompareOp(vk::CompareOp::eEqual);

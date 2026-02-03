@@ -14,7 +14,7 @@
             "cwd": "${workspaceFolder}/bin/",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis"
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis"
         },
         {
             "name": "StrayPhotons GLFW (vsdbg)",
@@ -26,14 +26,14 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
         },
         {
-            "name": "StrayPhotons GLFW (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons GLFW (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
             "args": ["--with-validation-layers", "--assets", "../assets/"],
@@ -60,17 +60,17 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
         },
         {
-            "name": "StrayPhotons GLFW No VR (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons GLFW No VR (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
-            "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr"],
+            "args": ["--assets", "../assets/", "--no-vr"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -94,7 +94,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
@@ -109,14 +109,14 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
         },
         {
-            "name": "StrayPhotons Winit No VR (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Winit No VR (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-winit",
             "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr"],
@@ -143,14 +143,14 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
             "sourceFileMap": {
                 "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
             }
         },
         {
-            "name": "StrayPhotons Hull Compiler (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Hull Compiler (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/hull_compiler",
             "args": ["--assets", "../assets/", "box"],
@@ -177,11 +177,11 @@
             "cwd": "${workspaceFolder}/docs/generated/",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Docs Generator (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Docs Generator (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/docs_generator",
             "args": ["."],
@@ -208,7 +208,7 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
             "name": "StrayPhotons Components Codegen (vsdbg)",
@@ -220,11 +220,11 @@
             "cwd": "${workspaceFolder}/build/src/codegen",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Components Codegen (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Components Codegen (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/src/codegen/strayphotons-codegen-generator",
             "args": ["include/strayphotons/components.h", "components_gen.cc"],
@@ -252,26 +252,26 @@
             "cwd": "${workspaceFolder}/build/src/codegen",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
             "name": "StrayPhotons Test (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test.exe",
-            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/scene-overrides.txt"],
+            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/blackhole2.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Test (gdb)",
-            "type": "cppdbg",
+            "name": "StrayPhotons Test (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test",
-            "args": ["--with-validation-layers", "-v", "--assets", "../assets/", "--run", "tests/scene-overrides.txt"],
+            "args": ["-v", "--assets", "../assets/", "--run", "tests/editor.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -295,11 +295,11 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "Unit Tests (gdb)",
-            "type": "cppdbg",
+            "name": "Unit Tests (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-unit-tests",
             "args": [],
@@ -326,11 +326,11 @@
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
             "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/robin_hood.natvis",
+            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "Integration Tests (gdb)",
-            "type": "cppdbg",
+            "name": "Integration Tests (lldb)",
+            "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-integration-tests",
             "args": [],

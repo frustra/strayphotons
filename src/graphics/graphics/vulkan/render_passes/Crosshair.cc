@@ -54,7 +54,7 @@ namespace sp::vulkan::renderer {
                 glm::vec2 dotSize = glm::min(spread * 0.4f, windowScale * 2.0f);
 
                 cmd.PushConstants(glm::vec4(1, 1, 0.95, 0.3));
-                cmd.SetBlendFuncSeparate(vk::BlendFactor::eSrcAlpha,
+                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha,
                     vk::BlendFactor::eOne,
                     vk::BlendFactor::eZero,
                     vk::BlendFactor::eOne);
@@ -62,10 +62,6 @@ namespace sp::vulkan::renderer {
                 drawDots(cmd, center, spread, dotSize);
 
                 cmd.PushConstants(glm::vec4(0.6, 0.6, 0.5, 1));
-                cmd.SetBlendFuncSeparate(vk::BlendFactor::eSrcAlpha,
-                    vk::BlendFactor::eZero,
-                    vk::BlendFactor::eZero,
-                    vk::BlendFactor::eOne);
                 cmd.SetBlending(true, vk::BlendOp::eMin);
                 drawDots(cmd, center, spread, dotSize);
             });

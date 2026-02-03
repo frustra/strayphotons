@@ -95,9 +95,11 @@ namespace ecs {
         std::shared_ptr<Ref> ptr;
 
         friend class SignalManager;
+        friend struct Signals;
         friend struct expression::Node;
         friend struct std::hash<SignalRef>;
         friend bool operator==(const std::shared_ptr<Ref> &, const WeakRef &);
+        friend bool operator!=(const std::shared_ptr<Ref> &, const WeakRef &);
 #ifdef TEST_FRIENDS_signal_caching
         TEST_FRIENDS_signal_caching
 #endif
@@ -106,8 +108,20 @@ namespace ecs {
     using WeakSignalRef = SignalRef::WeakRef;
 
     // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const WeakSignalRef &a, const WeakSignalRef &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
+
     inline bool operator==(const std::shared_ptr<SignalRef::Ref> &a, const WeakSignalRef &b) {
         return !a.owner_before(b) && !b.owner_before(a);
+    }
+
+    inline bool operator!=(const WeakSignalRef &a, const WeakSignalRef &b) {
+        return a.owner_before(b) || b.owner_before(a);
+    }
+
+    inline bool operator!=(const std::shared_ptr<SignalRef::Ref> &a, const WeakSignalRef &b) {
+        return a.owner_before(b) || b.owner_before(a);
     }
 } // namespace ecs
 

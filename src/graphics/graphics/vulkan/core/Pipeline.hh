@@ -12,9 +12,9 @@
 #include "graphics/vulkan/core/VertexLayout.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
-#include <SPIRV-Reflect/spirv_reflect.h>
 #include <bitset>
 #include <robin_hood.h>
+#include <spirv_reflect.h>
 
 namespace sp::vulkan {
     class Model;
@@ -36,6 +36,7 @@ namespace sp::vulkan {
         vk::BlendOp blendOp;
         vk::BlendFactor srcBlendFactor, srcAlphaBlendFactor;
         vk::BlendFactor dstBlendFactor, dstAlphaBlendFactor;
+        vk::ColorComponentFlags::MaskType colorWriteMask : 4;
         unsigned depthWrite : 1;
         unsigned depthTest : 1;
         unsigned blendEnable : 1;

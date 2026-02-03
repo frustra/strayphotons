@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "ecs/StructMetadata.hh"
 
 #include <bitset>
 
@@ -15,6 +16,7 @@ namespace ecs {
     enum class FocusLayer {
         Never = 0,
         Game,
+        HUD,
         Menu,
         Overlay,
         Always,
@@ -39,7 +41,13 @@ namespace ecs {
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);
 
-    static GlobalComponent<FocusLock> ComponentFocusLock("focus_lock", "");
+    static GlobalComponent<FocusLock> ComponentFocusLock("focus_lock",
+        "",
+        StructFunction::New("AcquireFocus", "", &FocusLock::AcquireFocus, ArgDesc("layer", "")),
+        StructFunction::New("ReleaseFocus", "", &FocusLock::ReleaseFocus, ArgDesc("layer", "")),
+        StructFunction::New("HasPrimaryFocus", "", &FocusLock::HasPrimaryFocus, ArgDesc("layer", "")),
+        StructFunction::New("HasFocus", "", &FocusLock::HasFocus, ArgDesc("layer", "")),
+        StructFunction::New("PrimaryFocus", "", &FocusLock::PrimaryFocus));
 } // namespace ecs
 
 TECS_GLOBAL_COMPONENT(ecs::FocusLock);

@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "common/InlineString.hh"
 #include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
+#include "graphics/GenericCompositor.hh"
 
 #include <memory>
 
@@ -69,11 +70,20 @@ namespace ecs {
         size_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;
         void (*defaultFreeFunc)(void *) = nullptr;
-        void (*initFunc)(void *, ScriptState *) = nullptr;
-        void (*destroyFunc)(void *, ScriptState *) = nullptr;
-        void (*onTickFunc)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t) = nullptr;
-        void (*onEventFunc)(void *, ScriptState *, DynamicLock<> *, Entity, Event *) = nullptr;
-        void (*prefabFunc)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *) = nullptr;
+        void (*initFunc)(void *, ScriptState &) = nullptr;
+        void (*destroyFunc)(void *, ScriptState &) = nullptr;
+        void (*onTickFunc)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t) = nullptr;
+        void (*onEventFunc)(void *, ScriptState &, DynamicLock<> &, Entity, Event &) = nullptr;
+        void (*prefabFunc)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &) = nullptr;
+        bool (*beforeFrameFunc)(void *, sp::GenericCompositor &, ScriptState &, Entity) = nullptr;
+        void (*renderGuiFunc)(void *,
+            sp::GenericCompositor &,
+            ScriptState &,
+            Entity,
+            glm::vec2,
+            glm::vec2,
+            float,
+            sp::GuiDrawData &) = nullptr;
     };
 
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
@@ -97,7 +107,9 @@ namespace ecs {
         StructField::New("destroy_func", &DynamicScriptDefinition::destroyFunc),
         StructField::New("on_tick_func", &DynamicScriptDefinition::onTickFunc),
         StructField::New("on_event_func", &DynamicScriptDefinition::onEventFunc),
-        StructField::New("prefab_func", &DynamicScriptDefinition::prefabFunc));
+        StructField::New("prefab_func", &DynamicScriptDefinition::prefabFunc),
+        StructField::New("before_frame_func", &DynamicScriptDefinition::beforeFrameFunc),
+        StructField::New("render_gui_func", &DynamicScriptDefinition::renderGuiFunc));
 
     class DynamicScript final : public ScriptDefinitionBase, sp::NonMoveable {
     public:
@@ -129,6 +141,14 @@ namespace ecs {
             chrono_clock::duration interval);
         static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
+        static bool BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent);
+        static void RenderGui(sp::GenericCompositor &compositor,
+            ScriptState &state,
+            Entity ent,
+            glm::vec2 displaySize,
+            glm::vec2 scale,
+            float deltaTime,
+            sp::GuiDrawData &result);
 
         friend class DynamicScriptContext;
         friend class DynamicLibrary;

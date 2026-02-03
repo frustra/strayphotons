@@ -70,7 +70,7 @@ namespace sp::vulkan::renderer {
             auto &light = entity.Get<ecs::Light>(lock);
             auto &filterName = light.filterName;
 
-            if (!filterName.empty() && scene.textureCache.find(filterName) == scene.textureCache.end()) {
+            if (!filterName.empty() && scene.liveTextureCache.find(filterName) == scene.liveTextureCache.end()) {
                 // cull lights that don't have their filter texture loaded yet
                 continue;
             }
@@ -116,7 +116,7 @@ namespace sp::vulkan::renderer {
                     glm::vec2(1, 0),
                 };
                 vLight.filterName = filterName;
-                vLight.filterTexture = scene.textureCache[filterName].index;
+                vLight.filterTexture = scene.liveTextureCache[filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -239,7 +239,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 vLight.filterName = light.filterName;
-                vLight.filterTexture = scene.textureCache[light.filterName].index;
+                vLight.filterTexture = scene.liveTextureCache[light.filterName].index;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -321,8 +321,8 @@ namespace sp::vulkan::renderer {
             .Execute([this](Resources &resources, DeviceContext &device) {
                 for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
                     if (lights[i].filterTexture.has_value()) {
-                        if (starts_with(lights[i].filterName, "graph:")) {
-                            gpuData.lights[i].filterId = scene.textureCache[lights[i].filterName].index;
+                        if (starts_with(lights[i].filterName, "/ent:")) {
+                            gpuData.lights[i].filterId = scene.liveTextureCache[lights[i].filterName].index;
                         } else {
                             gpuData.lights[i].filterId = lights[i].filterTexture.value();
                         }
@@ -375,7 +375,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
-                auto lastFrameID = resources.GetID("ShadowMap.Linear", false, 1);
+                auto lastFrameID = resources.GetID("ShadowMap/Linear", false, 1);
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
@@ -552,7 +552,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur.LastOutput" : "ShadowMap.Linear";
+        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur/LastOutput" : "ShadowMap/Linear";
         uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Lighting")
@@ -561,8 +561,8 @@ namespace sp::vulkan::renderer {
                 builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
                 builder.Read("GBuffer2", Access::FragmentShaderSampleImage);
                 builder.Read(shadowDepth, Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Radiance", Access::FragmentShaderSampleImage);
-                builder.Read("Voxels.Normals", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/Radiance", Access::FragmentShaderSampleImage);
+                builder.Read("Voxels/Normals", Access::FragmentShaderSampleImage);
 
                 for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
                     builder.Read(voxelLayer.fullName, Access::FragmentShaderSampleImage);
@@ -608,8 +608,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView("gBuffer2", "GBuffer2");
                 cmd.SetImageView("gBufferDepth", resources.GetImageDepthView("GBufferDepthStencil"));
                 cmd.SetImageView("shadowMap", shadowDepth);
-                cmd.SetImageView("voxelRadiance", "Voxels.Radiance");
-                cmd.SetImageView("voxelNormals", "Voxels.Normals");
+                cmd.SetImageView("voxelRadiance", "Voxels/Radiance");
+                cmd.SetImageView("voxelNormals", "Voxels/Normals");
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                 cmd.SetStorageBuffer("ExposureState", "ExposureState");

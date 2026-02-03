@@ -9,8 +9,8 @@
 
 #include "common/Common.hh"
 
-#include <functional>
 #include <memory>
+#include <span>
 
 namespace sp {
     class Asset;
@@ -21,6 +21,8 @@ namespace sp {
     class Image : public NonCopyable {
     public:
         Image(std::shared_ptr<const Asset> asset);
+        Image(std::span<const unsigned char> bufferView);
+        Image(const uint8_t *data, size_t dataSize, uint32_t width, uint32_t height, uint32_t components);
 
         int GetWidth() const {
             return width;

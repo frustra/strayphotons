@@ -27,6 +27,7 @@ target_link_libraries(${PROJECT_CORE_LIB}
     PRIVATE
         microtar
         murmurhash
+        ImGui
 )
 
 if(WIN32)
@@ -58,3 +59,4 @@ add_subdirectory(assets)
 add_subdirectory(console)
 add_subdirectory(ecs)
 add_subdirectory(game)
+add_subdirectory(graphics)

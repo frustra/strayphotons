@@ -8,11 +8,7 @@
 #include <c_abi/Tecs.h>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
-// #include <cglm/cglm.h>
-// #include <math.h>
-#include <stdbool.h>
 #include <strayphotons/components.h>
-// #include <strayphotons/logging.h>
 #include <string.h>
 
 typedef struct script_life_cell_t {
@@ -59,7 +55,7 @@ void life_cell_on_tick(void *context,
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         strncpy(output[0].name, "life_cell", sizeof(output[0].name) - 1);
-        output[1].desc = "An event handling script to notify neighboring cells when state changes";
+        output[0].desc = "An event handling script to notify neighboring cells when state changes";
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);

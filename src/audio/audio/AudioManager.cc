@@ -13,8 +13,8 @@
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 
-#include <resonance-audio/resonance_audio/base/constants_and_types.h>
-#include <resonance_audio_api.h>
+#include <resonance_audio/api/resonance_audio_api.h>
+#include <resonance_audio/base/constants_and_types.h>
 #include <soundio/soundio.h>
 
 namespace sp {

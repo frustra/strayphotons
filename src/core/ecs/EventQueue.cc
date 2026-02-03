@@ -13,7 +13,7 @@
 #include "ecs/EcsImpl.hh"
 
 #include <optional>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <sstream>
 
 namespace ecs {
@@ -86,6 +86,12 @@ namespace ecs {
     const EventData &EventData::operator=(EventString newString) {
         type = EventDataType::String;
         str = newString;
+        return *this;
+    }
+
+    const EventData &EventData::operator=(EventBytes newBytes) {
+        type = EventDataType::Bytes;
+        bytes = newBytes;
         return *this;
     }
 
@@ -231,7 +237,8 @@ namespace ecs {
             s = state.load();
             s2 = {s.head, (s.tail + 1) % (uint32_t)events.size()};
             if (s2.tail == s2.head) {
-                Warnf("Event Queue full! Dropping event %s from %s", event.name, std::to_string(event.source));
+                EntityRef ref(event.source);
+                Warnf("Event Queue full! Dropping event %s from %s", event.name, ref.Name().String());
                 return false;
             }
         } while (!state.compare_exchange_weak(s, s2, std::memory_order_acquire, std::memory_order_relaxed));

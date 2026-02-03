@@ -22,7 +22,10 @@ namespace sp::scripts {
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Read<TransformTree>, Write<Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             glm::vec3 movementInput = glm::vec3(0);
             movementInput.x -= SignalRef(ent, "move_left").GetSignal(lock);
             movementInput.x += SignalRef(ent, "move_right").GetSignal(lock);
@@ -38,14 +41,14 @@ namespace sp::scripts {
             glm::quat orientation = glm::identity<glm::quat>();
             auto reference = referenceEntity.Get(lock);
             if (reference.Has<TransformTree>(lock)) {
-                orientation = reference.Get<const TransformTree>(lock).GetGlobalRotation(lock);
+                orientation = reference.Get<TransformTree>(lock).GetGlobalRotation(lock);
             }
 
             glm::vec3 output = glm::vec3(0);
 
             auto target = targetEntity.Get(lock);
             if (target.Has<TransformTree>(lock)) {
-                auto relativeRotation = target.Get<const TransformTree>(lock).GetGlobalRotation(lock);
+                auto relativeRotation = target.Get<TransformTree>(lock).GetGlobalRotation(lock);
                 relativeRotation = glm::inverse(orientation) * relativeRotation;
                 auto flatMovement = glm::vec3(movementInput.x, 0, movementInput.z);
                 output = relativeRotation * flatMovement;
@@ -78,7 +81,10 @@ namespace sp::scripts {
         EntityRef targetEntity;
         bool enableSmoothRotation = false;
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Write<TransformTree>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformTree>(lock)) return;
 
             auto target = targetEntity.Get(lock);
@@ -166,8 +172,4 @@ namespace sp::scripts {
     };
     StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
     LogicScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
-    PhysicsScript<CameraView> physicsCameraView("physics_camera_view",
-        MetadataCameraView,
-        true,
-        "/script/camera_rotate");
 } // namespace sp::scripts

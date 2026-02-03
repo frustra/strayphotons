@@ -12,11 +12,13 @@
 #include "common/DispatchQueue.hh"
 #include "common/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
+#include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
 #include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/RenderGraph.hh"
 
 #include <atomic>
 #include <future>
@@ -36,6 +38,7 @@ namespace sp {
     class CFuncCollection;
     class Game;
     class GraphicsManager;
+    class GenericCompositor;
 } // namespace sp
 
 namespace sp::vulkan {
@@ -92,11 +95,14 @@ namespace sp::vulkan {
             return deviceResetRequired;
         }
 
-        void InitRenderer(Game &game) override;
-        void RenderFrame(chrono_clock::duration elapsedTime) override;
+        void AttachWindow(const std::shared_ptr<GuiContext> &context) override;
 
-        void SetOverlayGui(OverlayGuiManager *overlayGui) override;
-        void SetMenuGui(MenuGuiManager *menuGui) override;
+        void InitRenderer(Game &game) override;
+        std::shared_ptr<Renderer> GetRenderer() const;
+
+        GenericCompositor &GetCompositor() override;
+
+        void RenderFrame(chrono_clock::duration elapsedTime) override;
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
@@ -134,12 +140,12 @@ namespace sp::vulkan {
             return buf;
         }
 
+        AsyncPtr<Buffer> CreateUploadBuffer(const InitialData &data,
+            vk::BufferUsageFlags usage = vk::BufferUsageFlagBits::eTransferSrc);
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data,
             vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo);
-
         AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
-
         BufferPtr GetBuffer(const BufferDesc &desc);
 
         struct BufferTransfer {
@@ -156,7 +162,12 @@ namespace sp::vulkan {
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &data = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &initialData = {});
+        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer);
+        AsyncPtr<Image> UpdateImage(const AsyncPtr<Image> &dstImage,
+            const AsyncPtr<Buffer> &srcData,
+            bool updateMipmap = true);
+        AsyncPtr<Image> UpdateImageMipmap(const AsyncPtr<Image> &image);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         AsyncPtr<ImageView> CreateImageAndView(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
@@ -165,8 +176,8 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
-        AsyncPtr<ImageView> LoadAssetImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
-        shared_ptr<GpuTexture> LoadTexture(shared_ptr<const sp::Image> image, bool genMipmap = true) override;
+        AsyncPtr<ImageView> LoadAssetImage(string_view assetName, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> LoadImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
 
         ShaderHandle LoadShader(string_view name);
         shared_ptr<Shader> GetShader(ShaderHandle handle) const;
@@ -185,9 +196,9 @@ namespace sp::vulkan {
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
         SharedHandle<vk::Fence> GetEmptyFence();
-        SharedHandle<vk::Semaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
+        std::shared_ptr<vk::UniqueSemaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
 
-        using TemporaryObject = std::variant<BufferPtr, ImageViewPtr, SharedHandle<vk::Semaphore>>;
+        using TemporaryObject = std::variant<BufferPtr, ImagePtr, ImageViewPtr, std::shared_ptr<vk::UniqueSemaphore>>;
         void PushInFlightObject(TemporaryObject object, vk::Fence fence);
 
         const vk::PhysicalDeviceLimits &Limits() const {
@@ -212,7 +223,7 @@ namespace sp::vulkan {
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 #endif
 
-        uint32 QueueFamilyIndex(CommandContextType type) {
+        uint32 QueueFamilyIndex(CommandContextType type) const {
             return queueFamilyIndex[QueueType(type)];
         }
 
@@ -389,6 +400,9 @@ namespace sp::vulkan {
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
+
+        rg::RenderGraph graph;
+        std::unique_ptr<vulkan::Compositor> compositor;
         std::shared_ptr<vulkan::Renderer> vkRenderer;
     };
 } // namespace sp::vulkan

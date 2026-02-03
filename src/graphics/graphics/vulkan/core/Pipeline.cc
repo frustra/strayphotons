@@ -10,7 +10,7 @@
 #include "common/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
-#include <SPIRV-Reflect/common/output_stream.h>
+#include <common/output_stream.h>
 
 // void StreamWriteDescriptorBinding(std::ostream &os,
 //     const SpvReflectDescriptorBinding &obj,
@@ -459,8 +459,7 @@ namespace sp::vulkan {
                     blendState.dstColorBlendFactor = state.dstBlendFactor;
                     blendState.dstAlphaBlendFactor = state.dstAlphaBlendFactor;
                 }
-                blendState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+                blendState.colorWriteMask = vk::ColorComponentFlags(state.colorWriteMask);
             }
 
             multisampling.sampleShadingEnable = false;

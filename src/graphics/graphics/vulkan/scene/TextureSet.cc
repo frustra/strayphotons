@@ -12,6 +12,8 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <string>
+
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device)
         : device(device), workQueue("TextureSet", 0, std::chrono::milliseconds(1)) {
@@ -67,19 +69,12 @@ namespace sp::vulkan {
         texturesToFlush.push_back(i);
     }
 
-    TextureHandle TextureSet::LoadAssetImage(const string &name, bool genMipmap, bool srgb) {
-        string key = "asset:" + name;
+    TextureHandle TextureSet::LoadAssetImage(std::string_view name, bool genMipmap, bool srgb) {
+        std::string key = "asset:" + std::string(name);
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;
 
-        auto imageFut = Assets().LoadImage(name);
-        auto imageView = workQueue.Dispatch<ImageView>(imageFut, [=, this](shared_ptr<sp::Image> image) {
-            if (!image) {
-                Warnf("Missing asset image: %s", name);
-                return make_shared<Async<ImageView>>(GetSinglePixel(ERROR_COLOR));
-            }
-            return device.LoadAssetImage(image, genMipmap, srgb);
-        });
+        auto imageView = device.LoadAssetImage(name, genMipmap, srgb);
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;
@@ -159,7 +154,7 @@ namespace sp::vulkan {
             imageInfo.format = vk::Format::eR8G8B8A8Unorm;
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-            ImageViewCreateInfo viewInfo;
+            ImageViewCreateInfo viewInfo = {};
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
             auto pending = Add(imageInfo, viewInfo, {data->data(), data->size(), data});
             textureCache[name] = pending;
@@ -203,7 +198,11 @@ namespace sp::vulkan {
             int minFilter = sampler.minFilter > 0 ? sampler.minFilter : TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
             int magFilter = sampler.magFilter > 0 ? sampler.magFilter : TINYGLTF_TEXTURE_FILTER_LINEAR;
 
-            auto samplerInfo = GLSamplerToVKSampler(minFilter, magFilter, sampler.wrapS, sampler.wrapT, sampler.wrapR);
+            auto samplerInfo = GLSamplerToVKSampler(minFilter,
+                magFilter,
+                sampler.wrapS,
+                sampler.wrapT,
+                TINYGLTF_TEXTURE_WRAP_REPEAT);
             if (samplerInfo.mipmapMode == vk::SamplerMipmapMode::eLinear) {
                 samplerInfo.anisotropyEnable = true;
                 samplerInfo.maxAnisotropy = 8.0f;
@@ -297,7 +296,7 @@ namespace sp::vulkan {
         imageInfo.format = vk::Format::eR8G8B8A8Unorm;
         imageInfo.extent = vk::Extent3D(1, 1, 1);
 
-        ImageViewCreateInfo viewInfo;
+        ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
         auto fut = device.CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
         device.FlushMainQueue();

@@ -132,8 +132,8 @@ namespace sp::vulkan::render_graph {
                     if (passScope != 255) {
                         string_view name = resources.nameScopes[passScope].name;
                         if (!name.empty()) {
-                            auto dot = name.find(".");
-                            if (dot != name.npos) name = name.substr(dot + 1);
+                            auto sep = name.rfind("/");
+                            if (sep != name.npos) name = name.substr(sep + 1);
                         }
                         phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
                         if (timer) phaseScopes.top().StartTimer(*timer);
@@ -188,7 +188,18 @@ namespace sp::vulkan::render_graph {
                 Abortf("invalid render graph pass: %s", pass.name);
             }
 
-            if (cmd) pendingCmds.push_back(std::move(cmd));
+            if (cmd) {
+                // Preserve external image view resources until the frame is complete
+                for (auto &access : pass.accesses) {
+                    auto &res = resources.resources[access.id];
+                    if (res.type == Resource::Type::Image && res.externalResource) {
+                        auto view = resources.GetImageView(access.id);
+                        if (!view || view->IsSwapchain()) continue;
+                        device.PushInFlightObject(view, cmd->Fence());
+                    }
+                }
+                pendingCmds.push_back(std::move(cmd));
+            }
             cmd.reset();
 
             for (auto &access : pass.accesses) {
@@ -272,20 +283,8 @@ namespace sp::vulkan::render_graph {
         resources.EndScope();
     }
 
-    void RenderGraph::SetTargetImageView(string_view name, ImageViewPtr view) {
-        auto &res = resources.GetResource(name);
-        Assert(res.imageDesc.extent == view->Extent(), "image extent mismatch");
-
-        auto resFormat = res.imageDesc.format;
-        auto viewFormat = view->Format();
-        Assert(FormatComponentCount(resFormat) == FormatComponentCount(viewFormat), "image component count mismatch");
-        Assert(FormatByteSize(resFormat) == FormatByteSize(viewFormat), "image component size mismatch");
-
-        Assert(view->BaseArrayLayer() == 0, "view can't target a specific layer");
-        Assert(res.imageDesc.arrayLayers == view->ArrayLayers(), "image array mismatch");
-
-        resources.ResizeIfNeeded();
-        resources.images[res.id] = make_shared<PooledImage>(device, res.imageDesc, view);
+    ResourceID RenderGraph::AddImageView(string_view name, ImageViewPtr view) {
+        return resources.AddExternalImageView(name, view);
     }
 
     vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {
@@ -294,8 +293,9 @@ namespace sp::vulkan::render_graph {
             for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];
                 if (res.type == Resource::Type::Image) {
-                    output.emplace_back(
-                        PooledImageInfo{ResourceName{scope.empty() ? name : scope + "." + name}, res.imageDesc});
+                    ResourceName resourceName = scope + "/" + name;
+                    resourceName = starts_with(resourceName, "/") ? resourceName.substr(1) : resourceName.substr(0);
+                    output.emplace_back(PooledImageInfo{resourceName, res.imageDesc});
                 }
             }
         }

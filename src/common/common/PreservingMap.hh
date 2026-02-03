@@ -59,7 +59,8 @@ namespace sp {
             auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
             last_tick = now;
 
-            InlineVector<K, 100> cleanupList;
+            // 64KiB of stack space or 100 items per tick, whichever is higher
+            InlineVector<K, std::max<size_t>(100, 65536 / sizeof(K))> cleanupList;
             {
                 std::shared_lock lock(mutex);
                 for (auto &[key, timed] : storage) {

@@ -128,6 +128,7 @@ namespace ecs {
     struct ScriptSet {
         std::deque<std::pair<Entity, ScriptState>> scripts;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
+        std::vector<size_t> activeScriptList;
         mutable sp::LockFreeMutex mutex;
     };
 
@@ -147,27 +148,27 @@ namespace ecs {
         void ReloadDynamicLibraries();
         std::vector<std::string> GetDynamicLibraries() const;
 
-        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock);
-        void RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent);
-        void RunOnTick(const Lock<WriteAll> &Lock, const chrono_clock::duration &interval);
-        void RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
+        void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock);
+        void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock, const Entity &ent);
+        void RunLogicUpdate(const LogicUpdateLock &Lock, const chrono_clock::duration &interval);
+        void RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
 
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
 
         template<typename Fn>
-        void WithGuiScriptLock(Fn &&callback) {
+        auto WithGuiScriptLock(Fn &&callback) {
             ZoneScoped;
             auto &scriptSet = scripts[ScriptType::GuiScript];
             std::shared_lock l1(dynamicLibraryMutex);
             std::shared_lock l2(scriptSet.mutex);
-            callback();
+            return callback();
         }
 
     private:
-        void internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
+        void internalRegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock,
             const Entity &ent,
-            ScriptState &state);
+            std::shared_ptr<ScriptState> instance);
 
         sp::CFuncCollection funcs;
         sp::EnumArray<ScriptSet, ScriptType> scripts = {};

@@ -7,6 +7,8 @@
 
 #include "DynamicLibrary.hh"
 
+#include "graphics/GenericCompositor.hh"
+
 #include <dynalo/dynalo.hpp>
 
 namespace ecs {
@@ -152,7 +154,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
                 Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ScriptState));
-                dynamicScript->dynamicDefinition.initFunc(ptr.context, &state);
+                dynamicScript->dynamicDefinition.initFunc(ptr.context, state);
             }
         }
     }
@@ -164,7 +166,7 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
             if (ptr && dynamicScript->dynamicDefinition.destroyFunc) {
-                dynamicScript->dynamicDefinition.destroyFunc(ptr->context, &state);
+                dynamicScript->dynamicDefinition.destroyFunc(ptr->context, state);
             }
         }
     }
@@ -181,9 +183,9 @@ namespace ecs {
             if (dynamicScript->dynamicDefinition.onTickFunc) {
                 DynamicLock<> dynLock = lock;
                 dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
-                    &state,
-                    &dynLock,
-                    (uint64_t)ent,
+                    state,
+                    dynLock,
+                    ent,
                     std::chrono::nanoseconds(interval).count());
             }
         }
@@ -197,7 +199,7 @@ namespace ecs {
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.onEventFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, &state, &dynLock, ent, &event);
+                dynamicScript->dynamicDefinition.onEventFunc(ptr.context, state, dynLock, ent, event);
             }
         }
     }
@@ -209,7 +211,39 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             if (dynamicScript->dynamicDefinition.prefabFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.prefabFunc(&state, &dynLock, ent, &scene);
+                dynamicScript->dynamicDefinition.prefabFunc(state, dynLock, ent, scene);
+            }
+        }
+    }
+
+    bool DynamicScript::BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent) {
+        ZoneScoped;
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
+            ZoneStr(dynamicScript->definition.name);
+            auto &ptr = dynamicScript->MaybeAllocContext(state);
+            if (dynamicScript->dynamicDefinition.beforeFrameFunc) {
+                return dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, compositor, state, ent);
+            }
+        }
+        return false;
+    }
+
+    void DynamicScript::RenderGui(sp::GenericCompositor &compositor,
+        ScriptState &state,
+        Entity ent,
+        glm::vec2 displaySize,
+        glm::vec2 scale,
+        float deltaTime,
+        sp::GuiDrawData &result) {
+        ZoneScoped;
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
+            ZoneStr(dynamicScript->definition.name);
+            auto &ptr = dynamicScript->MaybeAllocContext(state);
+            if (dynamicScript->dynamicDefinition.renderGuiFunc) {
+                auto &renderGui = dynamicScript->dynamicDefinition.renderGuiFunc;
+                renderGui(ptr.context, compositor, state, ent, displaySize, scale, deltaTime, result);
             }
         }
     }
@@ -227,10 +261,14 @@ namespace ecs {
         metadata.fields = dynamicDefinition.fields;
         switch (definition.type) {
         case ScriptType::LogicScript:
+            definition.initFunc = ScriptInitFunc(&Init);
+            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
+            definition.callback = LogicTickFunc(&OnTick);
+            break;
         case ScriptType::PhysicsScript:
             definition.initFunc = ScriptInitFunc(&Init);
             definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = OnTickFunc(&OnTick);
+            definition.callback = PhysicsTickFunc(&OnTick);
             break;
         case ScriptType::EventScript:
             definition.initFunc = ScriptInitFunc(&Init);
@@ -239,6 +277,11 @@ namespace ecs {
             break;
         case ScriptType::PrefabScript:
             definition.callback = PrefabFunc(&Prefab);
+            break;
+        case ScriptType::GuiScript:
+            definition.initFunc = ScriptInitFunc(&Init);
+            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
+            definition.callback = GuiRenderFuncs(&BeforeFrame, &RenderGui);
             break;
         default:
             Abortf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);
@@ -280,6 +323,15 @@ namespace ecs {
                 Warnf("%s(%s) PrefabScript defines unsupported sp_script_init()", library.name, definition.name);
             if (definition.destroyFunc)
                 Warnf("%s(%s) PrefabScript defines unsupported sp_script_destroy()", library.name, definition.name);
+            break;
+        case ScriptType::GuiScript:
+            if (!definition.renderGuiFunc) {
+                Errorf("Failed to load %s(%s), %s is missing sp_script_render_gui()",
+                    library.name,
+                    definition.name,
+                    definition.type);
+                return nullptr;
+            }
             break;
         default:
             Errorf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);

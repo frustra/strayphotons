@@ -9,9 +9,11 @@
 
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 
 namespace sp::vulkan::renderer {
     void AddMipmap(RenderGraph &graph, ResourceID id) {
+        if (id == InvalidResource) id = graph.LastOutputID();
         graph.AddPass("Mipmap")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Write(id, Access::TransferWrite);
@@ -20,8 +22,20 @@ namespace sp::vulkan::renderer {
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
 
-                ImageBarrierInfo transferMips;
+                ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
+                transferMips.baseMipLevel = 0;
+                transferMips.mipLevelCount = 1;
+
+                cmd.ImageBarrier(image,
+                    vk::ImageLayout::eUndefined,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::PipelineStageFlagBits::eTopOfPipe,
+                    {},
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    transferMips);
+
                 transferMips.baseMipLevel = 1;
                 transferMips.mipLevelCount = image->MipLevels() - 1;
 

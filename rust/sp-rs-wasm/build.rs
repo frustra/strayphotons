@@ -10,15 +10,10 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut bridges = vec![];
-    #[cfg(feature = "api")]
-    bridges.push("src/api.rs");
     #[cfg(feature = "wasm")]
     bridges.push("src/wasm.rs");
 
     let mut build = cxx_build::bridges(bridges); // returns a cc::Build
-
-    #[cfg(feature = "api")]
-    build.file("src/api.cc");
 
     build.cpp(true)
         .flag_if_supported("/std:c++20")
@@ -44,9 +39,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:warning=Building in directory: {}", build_dir);
 
     // Add source files here and in CMakeLists.txt
-    println!("cargo:rerun-if-changed=src/api.cc");
-    println!("cargo:rerun-if-changed=include/api.hh");
-    println!("cargo:rerun-if-changed=src/api.rs");
     println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/wasm.rs");
     Ok(())

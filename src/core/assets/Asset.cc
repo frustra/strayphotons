@@ -9,7 +9,7 @@
 
 #include "common/Logging.hh"
 
-#include <murmurhash/MurmurHash3.h>
+#include <MurmurHash3.h>
 
 namespace sp {
     Hash128 Asset::Hash() const {

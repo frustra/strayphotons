@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
     #ifndef SP_WASM_BUILD
         #include <ecs/Components.hh>
@@ -19,8 +16,15 @@
     #endif
 
 extern "C" {
-#else
-typedef uint8_t bool;
+#endif
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#ifndef SP_WASM_BUILD
+    #include <assert.h>
+static_assert(sizeof(bool) == 1, "Unexpected bool size");
 #endif
 
 #if defined(__cplusplus) && !defined(SP_WASM_BUILD)

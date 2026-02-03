@@ -136,6 +136,7 @@ namespace sp {
                 },
             .ReadWholeFile =
                 [](std::vector<unsigned char> *out, std::string *err, const std::string &filepath, void *gltfPtr) {
+                    ZoneScopedN("GltfReadWholeFile");
                     Gltf &gltf = *static_cast<Gltf *>(gltfPtr);
                     std::ifstream stream;
                     size_t fileSize = 0;
@@ -147,12 +148,23 @@ namespace sp {
                     stream.read(reinterpret_cast<char *>(out->data()), fileSize);
                     return true;
                 },
-            .WriteWholeFile = nullptr,
+            .WriteWholeFile =
+                [](std::string *, const std::string &, const std::vector<unsigned char> &, void *) {
+                    Errorf("Tried to write gltf file");
+                    return false;
+                },
+            .GetFileSizeInBytes =
+                [](size_t *out, std::string *err, const std::string &absFilename, void *) {
+                    ZoneScopedN("GltfGetFileSizeInBytes");
+                    std::ifstream stream;
+                    return Assets().InputStream(absFilename, AssetType::Bundled, stream, out);
+                },
             .user_data = this,
         };
         gltfLoader.SetFsCallbacks(fsCallbacks);
         Assert(asset->BufferSize() <= UINT_MAX, "Buffer size overflows max uint");
         if (asset->extension == "gltf") {
+            ZoneScopedN("GltfLoadASCIIFromString");
             ret = gltfLoader.LoadASCIIFromString(model.get(),
                 &err,
                 &warn,
@@ -160,6 +172,7 @@ namespace sp {
                 (uint32_t)asset->BufferSize(),
                 baseDir);
         } else if (asset->extension == "glb") {
+            ZoneScopedN("GltfLoadBinaryFromMemory");
             ret = gltfLoader.LoadBinaryFromMemory(model.get(),
                 &err,
                 &warn,

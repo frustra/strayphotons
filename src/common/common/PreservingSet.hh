@@ -99,7 +99,7 @@ namespace sp {
             auto intervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(tickInterval).count();
             last_tick = now;
 
-            InlineVector<size_t, 100> cleanupList;
+            InlineVector<size_t, 10000> cleanupList;
             {
                 std::shared_lock lock(mutex);
                 for (size_t i = 0; i < storage.size(); i++) {

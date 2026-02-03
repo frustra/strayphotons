@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Tecs.hh>
+#include <cstring>
 #include <ecs/EcsImpl.hh>
 #include <ecs/StructFieldTypes.hh>
 #include <fstream>
@@ -10,7 +11,8 @@
 
 template<typename T>
 auto EmbedTypeIntoSignature() {
-    return std::string_view{std::source_location::current().function_name()};
+    const char *funcName = std::source_location::current().function_name();
+    return std::string_view(std::strcmp("EmbedTypeIntoSignature", funcName) == 0 ? typeid(T).name() : funcName);
 }
 
 template<typename T>
@@ -38,6 +40,8 @@ std::string TypeToString() {
             return "ecs::EventName";
         } else if constexpr (std::is_same<T, ecs::EventString>()) {
             return "ecs::EventString";
+        } else if constexpr (std::is_same<T, ecs::EventBytes>()) {
+            return "ecs::EventBytes";
         } else if constexpr (std::is_same<typename T::value_type, char>()) {
             return "sp::InlineString<" + std::to_string(T::max_size()) + ">";
         } else {

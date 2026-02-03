@@ -15,6 +15,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
+#include "gui/GuiDrawData.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
@@ -39,6 +40,7 @@ namespace ecs {
         // ScriptName, // Duplicate of sp::InlineString<63>
         EventName,
         EventString,
+        EventBytes,
         size_t,
         VisibilityMask,
         sp::color_alpha_t,
@@ -50,6 +52,8 @@ namespace ecs {
         // Basic types
         bool,
         char,
+        uint8_t,
+        uint16_t,
         int32_t,
         uint32_t,
         sp::angle_t,
@@ -88,6 +92,10 @@ namespace ecs {
         SignalRef,
         Sound,
         StructField,
+        sp::GenericCompositor,
+        sp::GuiDrawData,
+        sp::GuiDrawCommand,
+        sp::GuiDrawVertex,
         sp::SceneRef,
         TypeInfo,
         std::vector<float>,
@@ -95,8 +103,12 @@ namespace ecs {
         std::vector<std::string>,
         std::vector<SignalExpression>,
         std::vector<EventName>,
+        std::vector<EventString>,
         std::vector<EventDest>,
         std::vector<EventBinding>,
+        std::vector<sp::GuiDrawCommand>,
+        std::vector<sp::GuiDrawIndex>,
+        std::vector<sp::GuiDrawVertex>,
         std::vector<AnimationState>,
         std::vector<PhysicsJoint>,
         std::vector<PhysicsShape>,
@@ -120,7 +132,7 @@ namespace ecs {
         // Enums
         FieldAction,
         FocusLayer,
-        GuiTarget,
+        GuiLayoutAnchor,
         InterpolationMode,
         PhysicsGroup,
         PhysicsActorType,
@@ -149,11 +161,20 @@ namespace ecs {
         // Function pointers
         void *(*)(const void *),
         void (*)(void *),
-        void (*)(void *, ScriptState *),
-        void (*)(void *, ScriptState *),
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, uint64_t),
-        void (*)(void *, ScriptState *, DynamicLock<> *, Entity, Event *),
-        void (*)(const ScriptState *, DynamicLock<> *, Entity, const sp::SceneRef *)>;
+        void (*)(void *, ScriptState &),
+        void (*)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t), // OnTick
+        void (*)(void *, ScriptState &, DynamicLock<> &, Entity, Event &), // OnEvent
+        void (*)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &), // RunPrefab
+        bool (*)(void *, sp::GenericCompositor &, ScriptState &, Entity), // BeforeFrame
+        void (*)(void *,
+            sp::GenericCompositor &,
+            ScriptState &,
+            Entity,
+            glm::vec2,
+            glm::vec2,
+            float,
+            sp::GuiDrawData &) // RenderGui
+        >;
 
     namespace detail {
         template<typename Func, typename T, typename... Tn>

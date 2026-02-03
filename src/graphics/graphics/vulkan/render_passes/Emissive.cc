@@ -15,7 +15,7 @@
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Screen, ecs::Gui, ecs::LaserLine, ecs::TransformSnapshot>> lock,
+        ecs::Lock<ecs::Read<ecs::Screen, ecs::LaserLine, ecs::TransformSnapshot>> lock,
         chrono_clock::duration elapsedTime) {
         screens.clear();
 
@@ -73,11 +73,9 @@ namespace sp::vulkan::renderer {
                     ResourceName textureName;
                     if (!screenComp.textureName.empty()) {
                         textureName = screenComp.textureName;
-                    } else if (ent.Has<ecs::Gui>(lock)) {
-                        auto &gui = ent.Get<ecs::Gui>(lock);
-                        if (gui.target != ecs::GuiTarget::World) continue;
+                    } else if (ent.Has<ecs::RenderOutput>(lock)) {
                         ecs::EntityRef ref(ent);
-                        textureName = ResourceName("gui:") + ref.Name().String();
+                        textureName = ResourceName("/ent:") + ref.Name().String() + "/RenderOutput";
                     } else {
                         continue;
                     }
@@ -87,21 +85,16 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
-                    if (starts_with(textureName, "gui:")) {
+                    if (starts_with(textureName, "/ent:")) {
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
-                        }
-                    } else if (auto it = scene.textureCache.find(textureName); it != scene.textureCache.end()) {
-                        if (starts_with(it->first, "graph:")) {
-                            auto resourceID = builder.ReadPreviousFrame(textureName.substr(6),
-                                Access::FragmentShaderSampleImage);
+                        } else {
+                            resourceID = builder.ReadPreviousFrame(textureName, Access::FragmentShaderSampleImage);
                             if (resourceID != InvalidResource) {
                                 screen.texture = resourceID;
                             }
-                        } else if (it->second.Ready()) {
-                            screen.texture = it->second.index;
                         }
                     }
 
@@ -118,7 +111,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetBlending(true);
-                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOne);
+                cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha,
+                    vk::BlendFactor::eOne,
+                    vk::BlendFactor::eOne,
+                    vk::BlendFactor::eOneMinusSrcAlpha);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
 
                 {

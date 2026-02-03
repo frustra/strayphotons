@@ -15,15 +15,11 @@
 #include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/gui/MenuGuiManager.hh"
-#include "graphics/gui/OverlayGuiManager.hh"
+#include "gui/OverlayGuiManager.hh"
 
-#include <algorithm>
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
-#include <optional>
-#include <system_error>
-#include <thread>
 
 namespace sp {
     static CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
@@ -61,11 +57,13 @@ namespace sp {
 
     void GraphicsManager::Init() {
         ZoneScoped;
+        Assert(context, "GraphicsManager::Init Invalid vulkan context");
         Assert(!initialized, "GraphicsManager initialized twice");
         initialized = true;
 
-        overlayGui = std::make_shared<OverlayGuiManager>();
-        menuGui = std::make_shared<MenuGuiManager>(*this);
+        windowGuiContext = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
+        // TODO: GuiContext is copied into ECS and might read-after-free on shutdown
+        menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"), *this);
     }
 
     void GraphicsManager::StartThread(bool startPaused) {
@@ -85,11 +83,10 @@ namespace sp {
         ZoneScoped;
         renderStart = chrono_clock::now();
 
-        Assert(context, "Invalid vulkan context on init");
+        Assert(context, "GraphicsManager::ThreadInit Invalid vulkan context");
 
         context->InitRenderer(game);
-        context->SetOverlayGui(overlayGui.get());
-        context->SetMenuGui(menuGui.get());
+        context->AttachWindow(windowGuiContext);
 
         return true;
     }
@@ -99,8 +96,8 @@ namespace sp {
         FrameMarkNamed("Input");
         if (!HasActiveContext()) return false;
 
-        if (!flatviewName || CVarFlatviewEntity.Changed()) {
-            flatviewName = ecs::Name(CVarFlatviewEntity.Get(true), ecs::Name());
+        if (!flatviewEntity || CVarFlatviewEntity.Changed()) {
+            flatviewEntity = ecs::Name(CVarFlatviewEntity.Get(true), ecs::Name());
         }
 
         if (windowHandlers.set_title) {
@@ -120,34 +117,40 @@ namespace sp {
         }
 
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::View, ecs::RenderOutput>>();
 
-            for (const ecs::Entity &ent : lock.EntitiesWith<ecs::View>()) {
-                if (!ent.Has<ecs::Name>(lock)) continue;
-                auto &name = ent.Get<ecs::Name>(lock);
-                if (name == flatviewName) {
-                    auto &view = ent.Get<ecs::View>(lock);
-                    if (windowHandlers.update_window_view) {
-                        windowHandlers.update_window_view(this, &view.extents.x, &view.extents.y);
-                    }
-
-                    if (view.extents == glm::ivec2(0)) view.extents = CVarWindowSize.Get();
-                    view.fov = glm::radians(CVarFieldOfView.Get());
-                    view.UpdateProjectionMatrix();
-
-                    context->AttachView(ent);
+            ecs::Entity ent = flatviewEntity.Get(lock);
+            glm::ivec2 outputExtents = CVarWindowSize.Get();
+            if (ent.Has<ecs::RenderOutput>(lock)) {
+                auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
+                // TODO: Replace with combined window / overlay entity
+                if (windowHandlers.update_window_view) {
+                    windowHandlers.update_window_view(this, &renderOutput.outputSize.x, &renderOutput.outputSize.y);
                 }
+
+                if (renderOutput.outputSize.x <= 0.0f || renderOutput.outputSize.y <= 0.0f) {
+                    renderOutput.outputSize = CVarWindowSize.Get();
+                }
+                outputExtents = renderOutput.outputSize;
+            }
+            if (ent.Has<ecs::View>(lock)) {
+                auto &view = ent.Get<ecs::View>(lock);
+                view.extents = outputExtents;
+                view.fov = glm::radians(CVarFieldOfView.Get());
+                view.UpdateProjectionMatrix();
             }
         }
         return true;
+    }
+
+    GenericCompositor &GraphicsManager::GetCompositor() {
+        return context->GetCompositor();
     }
 
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;
         if (context->RequiresReset()) return false;
-        if (overlayGui) overlayGui->BeforeFrame();
-        if (menuGui) menuGui->BeforeFrame();
 
         return context->BeginFrame();
     }

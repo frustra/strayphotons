@@ -10,6 +10,7 @@
 #include "common/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
+#include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
@@ -23,6 +24,7 @@
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <robin_hood.h>
 
 namespace sp {
@@ -35,42 +37,42 @@ namespace sp::xr {
 }
 
 namespace sp::vulkan {
-    class Mesh;
-    class GuiRenderer;
-
     extern CVar<string> CVarWindowViewTarget;
 
     class Renderer {
     public:
-        Renderer(Game &game, DeviceContext &context);
+        Renderer(Game &game, DeviceContext &context, rg::RenderGraph &graph, Compositor &compositor);
         ~Renderer();
+
+        void AttachWindow(const std::shared_ptr<GuiContext> &context);
 
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
-        void SetOverlayGui(GuiContext *gui);
-        void SetMenuGui(GuiContext *gui);
-
     private:
         Game &game;
         DeviceContext &device;
-        rg::RenderGraph graph;
+        rg::RenderGraph &graph;
+        Compositor &compositor;
 
         void BuildFrameGraph(chrono_clock::duration elapsedTime);
-        ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock);
+        void AddViewOutputs(ecs::Lock<ecs::Read<ecs::Name,
+                                ecs::TransformSnapshot,
+                                ecs::View,
+                                ecs::Screen,
+                                ecs::LaserLine,
+                                ecs::GuiElement,
+                                ecs::XrView>> lock,
+            chrono_clock::duration elapsedTime);
+        ecs::View AddFlatView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View>> lock, ecs::Entity ent);
         void AddWindowOutput();
 
         ecs::View AddXrView(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::View, ecs::XrView>> lock);
         void AddXrSubmit(ecs::Lock<ecs::Read<ecs::XrView>> lock);
 
-        void AddGui(ecs::Entity ent, const ecs::Gui &gui, const ecs::Scripts *scripts);
-        void AddWorldGuis(
-            ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Gui, ecs::Screen, ecs::Name, ecs::Scripts>> lock);
-        void AddMenuGui(ecs::Lock<ecs::Read<ecs::View>> lock);
-        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::Gui, ecs::LaserLine>> lock,
+        void AddDeferredPasses(ecs::Lock<ecs::Read<ecs::TransformSnapshot, ecs::Screen, ecs::LaserLine>> lock,
             const ecs::View &view,
             chrono_clock::duration elapsedTime);
-        void AddMenuOverlay();
 
         CFuncCollection funcs;
         vk::Format depthStencilFormat;
@@ -84,19 +86,10 @@ namespace sp::vulkan {
         renderer::SMAA smaa;
         renderer::Screenshots screenshots;
 
-        unique_ptr<GuiRenderer> guiRenderer;
-        struct RenderableGui {
-            ecs::Entity entity;
-            glm::vec2 scale;
-            GuiContext *context;
-            shared_ptr<GuiContext> contextShared;
-            rg::ResourceID renderGraphID = rg::InvalidResource;
-        };
-        vector<RenderableGui> guis;
-        GuiContext *overlayGui = nullptr, *menuGui = nullptr;
+        std::weak_ptr<GuiContext> windowGuiContext;
+        std::shared_ptr<GuiContext> activeGuiContext;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentAddRemoveObserver<ecs::Gui> guiObserver;
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 

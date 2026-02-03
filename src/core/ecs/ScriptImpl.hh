@@ -8,20 +8,24 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/components/Gui.hh"
-#include "ecs/components/Scripts.hh"
+#include "ecs/ScriptManager.hh"
+#include "ecs/components/RenderOutput.hh"
+
+#include <utility>
+
+namespace sp {
+    class GenericCompositor;
+}
 
 namespace ecs {
     template<typename LockType>
     static inline ScriptDefinition CreateLogicScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
         auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
-                             DynamicLock<ReadSignalsLock> lock,
+                             const LogicUpdateLock &lock,
                              Entity ent,
                              chrono_clock::duration interval) {
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "LogicScript invoked without lock permissions: %s", typeid(LockType).name());
-            return callback(state, *tryLock, ent, interval);
+            return callback(state, (LockType)lock, ent, interval);
         };
         return ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
     }
@@ -29,12 +33,10 @@ namespace ecs {
     static inline ScriptDefinition CreatePhysicsScript(
         std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
         auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
-                             DynamicLock<ReadSignalsLock> lock,
+                             const PhysicsUpdateLock &lock,
                              Entity ent,
                              chrono_clock::duration interval) {
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "PhysicsScript invoked without lock permissions: %s", typeid(LockType).name());
-            return callback(state, *tryLock, ent, interval);
+            return callback(state, (LockType)lock, ent, interval);
         };
         return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
     }
@@ -103,21 +105,25 @@ namespace ecs {
         }
 
         static void OnTick(ScriptState &state,
-            const DynamicLock<ReadSignalsLock> &lock,
+            const LogicUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.scriptData);
             if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "Failed to lock ontick script lock: %s", typeid(LockType).name());
-            ptr->OnTick(state, *tryLock, ent, interval);
+            ptr->OnTick(state, (LockType)lock, ent, interval);
         }
 
         LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::LogicScript, {}, false, savedPtr, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::LogicScript,
+                {},
+                false,
+                savedPtr,
+                ScriptInitFunc(&Init),
+                {},
+                LogicTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -131,7 +137,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                OnTickFunc(&OnTick)});
+                LogicTickFunc(&OnTick)});
         }
     };
 
@@ -167,21 +173,25 @@ namespace ecs {
         }
 
         static void OnTick(ScriptState &state,
-            const DynamicLock<ReadSignalsLock> &lock,
+            const PhysicsUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
             T *ptr = std::any_cast<T>(&state.scriptData);
             if (!ptr) ptr = &state.scriptData.emplace<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
-            auto tryLock = lock.TryLock<LockType>();
-            Assertf(tryLock, "Failed to lock ontick physics script lock: %s", typeid(LockType).name());
-            ptr->OnTick(state, *tryLock, ent, interval);
+            ptr->OnTick(state, (LockType)lock, ent, interval);
         }
 
         PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::PhysicsScript, {}, false, savedPtr, ScriptInitFunc(&Init), {}, OnTickFunc(&OnTick)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::PhysicsScript,
+                {},
+                false,
+                savedPtr,
+                ScriptInitFunc(&Init),
+                {},
+                PhysicsTickFunc(&OnTick)});
         }
 
         template<typename... Events>
@@ -195,7 +205,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                OnTickFunc(&OnTick)});
+                PhysicsTickFunc(&OnTick)});
         }
     };
 
@@ -290,86 +300,27 @@ namespace ecs {
         }
     };
 
-    // Checks if the script has an Init(ScriptState &state, GuiRenderable &gui) function
+    // Checks if the script has an BeforeFrame() function
     template<typename T, typename = void>
-    struct script_has_gui_init_func : std::false_type {};
+    struct script_has_before_frame_func : std::false_type {};
     template<typename T>
-    struct script_has_gui_init_func<T,
-        std::void_t<decltype(std::declval<T>().Init(std::declval<ScriptState &>(), std::declval<GuiRenderable &>()))>>
-        : std::true_type {};
+    struct script_has_before_frame_func<T,
+        std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<sp::GenericCompositor &>(),
+            std::declval<ScriptState &>(),
+            std::declval<Entity>()))>> : std::true_type {};
 
-    // Checks if the script has a PreDefine(), DefineContents(), or PostDefine() function
+    // Checks if the script has a RenderGui() function
     template<typename T, typename = void>
-    struct script_has_predefine_func : std::false_type {};
+    struct script_has_render_gui_func : std::false_type {};
     template<typename T>
-    struct script_has_predefine_func<T,
-        std::void_t<decltype(std::declval<T>().PreDefine(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
-    template<typename T, typename = void>
-    struct script_has_definecontents_func : std::false_type {};
-    template<typename T>
-    struct script_has_definecontents_func<T,
-        std::void_t<decltype(std::declval<T>().DefineContents(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
-    template<typename T, typename = void>
-    struct script_has_postdefine_func : std::false_type {};
-    template<typename T>
-    struct script_has_postdefine_func<T,
-        std::void_t<decltype(std::declval<T>().PostDefine(std::declval<ScriptState &>(), std::declval<Entity>()))>>
-        : std::true_type {};
-
-    template<typename T>
-    class ScriptGuiRenderable final : public GuiRenderable {
-    public:
-        ScriptGuiRenderable(std::string_view name)
-            : GuiRenderable(name, GuiLayoutAnchor::Floating), scriptData({}), state(nullptr) {}
-
-        T scriptData;
-
-        void Init(ScriptState &state) {
-            this->state = &state;
-            if constexpr (script_has_init_func<T>()) scriptData.Init(state);
-            if constexpr (script_has_gui_init_func<T>()) scriptData.Init(state, *(GuiRenderable *)this);
-            savedPtr = std::shared_ptr<ScriptGuiRenderable<T>>(this, [](auto *) {});
-        }
-
-        void Destroy(ScriptState &state) {
-            Assertf(savedPtr.use_count() == 1,
-                "Destroying ScriptGuiRenderable that's in use: %s",
-                state.definition.name);
-            savedPtr.reset();
-            if constexpr (script_has_destroy_func<T>()) scriptData.Destroy(state);
-            this->state = nullptr;
-        }
-
-        bool PreDefine(Entity ent) override {
-            if (!state) return false;
-            if constexpr (script_has_predefine_func<T>()) {
-                return scriptData.PreDefine(*state, ent);
-            } else {
-                return true;
-            }
-        }
-
-        void DefineContents(Entity ent) override {
-            Assertf(state != nullptr, "ScriptGuiRenderable::DefineContents called without state init");
-            scriptData.DefineContents(*state, ent);
-        }
-
-        void PostDefine(Entity ent) override {
-            Assertf(state != nullptr, "ScriptGuiRenderable::PostDefine called without state init");
-            if constexpr (script_has_postdefine_func<T>()) scriptData.PostDefine(*state, ent);
-        }
-
-        std::shared_ptr<GuiRenderable> GetGuiRenderable(ScriptState &state) {
-            Assertf(savedPtr, "ScriptGuiRenderable::GetGuiRenderable called without state init");
-            return savedPtr;
-        }
-
-    private:
-        ScriptState *state = nullptr;
-        std::shared_ptr<ScriptGuiRenderable<T>> savedPtr;
-    };
+    struct script_has_render_gui_func<T,
+        std::void_t<decltype(std::declval<T>().RenderGui(std::declval<sp::GenericCompositor &>(),
+            std::declval<ScriptState &>(),
+            std::declval<Entity>(),
+            std::declval<glm::vec2>(),
+            std::declval<glm::vec2>(),
+            std::declval<float>(),
+            std::declval<sp::GuiDrawData &>()))>> : std::true_type {};
 
     template<typename T>
     struct GuiScript final : public ScriptDefinitionBase {
@@ -380,31 +331,54 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            return &ptr->scriptData;
+            auto *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            return ptr ? &ptr->scriptData : &defaultValue;
+            const auto *ptr = std::any_cast<T>(&state.scriptData);
+            return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            ptr->Init(state);
+            auto *ptr = std::any_cast<T>(&state.scriptData);
+            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void Destroy(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (ptr) ptr->Destroy(state);
+        static void Destroy([[maybe_unused]] ScriptState &state) {
+            if constexpr (script_has_destroy_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (ptr) ptr->Destroy(state);
+            }
         }
 
-        static std::shared_ptr<GuiRenderable> GetGuiRenderable(ScriptState &state) {
-            auto *ptr = std::any_cast<ScriptGuiRenderable<T>>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<ScriptGuiRenderable<T>>(state.definition.name);
-            return ptr->GetGuiRenderable(state);
+        static bool BeforeFrame([[maybe_unused]] sp::GenericCompositor &compositor,
+            [[maybe_unused]] ScriptState &state,
+            [[maybe_unused]] Entity ent) {
+            if constexpr (script_has_before_frame_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                return ptr->BeforeFrame(compositor, state, ent);
+            } else {
+                Warnf("GuiScript %s has no BeforeFrame function", state.definition.name);
+                return false;
+            }
+        }
+
+        static void RenderGui([[maybe_unused]] sp::GenericCompositor &compositor,
+            [[maybe_unused]] ScriptState &state,
+            [[maybe_unused]] Entity ent,
+            [[maybe_unused]] glm::vec2 displaySize,
+            [[maybe_unused]] glm::vec2 scale,
+            [[maybe_unused]] float deltaTime,
+            [[maybe_unused]] sp::GuiDrawData &result) {
+            if constexpr (script_has_render_gui_func<T>()) {
+                auto *ptr = std::any_cast<T>(&state.scriptData);
+                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                ptr->RenderGui(compositor, state, ent, displaySize, scale, deltaTime, result);
+            }
         }
 
         GuiScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
@@ -416,7 +390,7 @@ namespace ecs {
                 savedPtr,
                 ScriptInitFunc(&Init),
                 ScriptDestroyFunc(&Destroy),
-                GuiRenderableFunc(&GetGuiRenderable)});
+                GuiRenderFuncs(&BeforeFrame, &RenderGui)});
         }
     };
 } // namespace ecs

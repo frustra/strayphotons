@@ -107,7 +107,7 @@ For example, the following binding is evaluated for each `/keyboard/key/v` input
 "event_bindings": {
     "/keyboard/key/v": {
         "outputs": "console:input/action/run_command",
-        "filter": "is_focused(Game) && event",
+        "filter": "is_primary_focus(Game) && event",
         "set_value": "togglesignal player:player/move_noclip"
     }
 }
@@ -153,6 +153,7 @@ The `event_bindings` component has type: map&lt;string (max 127 chars), vector&l
 | **namedEntity** | [NamedEntity](#NamedEntity-type) | {} | No description |
 | **ent** | [Entity](#Entity-type) | "" | No description |
 | **str** | string (max 255 chars) | "" | No description |
+| **bytes** | bytes (max 256) | null | No description |
 
 Stores a variety of possible data types for sending in events (JSON supported values are: **bool**, **double**, **vec2**, **vec3**, **vec4**, and **string**).
 
@@ -180,6 +181,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 - "**NamedEntity**" - No description
 - "**Entity**" - No description
 - "**String**" - No description
+- "**Bytes**" - No description
 
 </div>
 
@@ -461,9 +463,11 @@ Signal expressions support the following operations and functions:
   - `sin(x)`, `cos(x)`, `tan(x)` (Input in radians)
   - `floor(x)`, `ceil(x)`, `abs(x)`
   - `min(a, b)`, `max(a, b)`
-- **Focus functions**: (Possible focus layers: `Game`, `Menu`, `Overlay`)
-  - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active, else `0.0`.
-  - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active, else `0.0`.
+- **Focus functions**: (Possible focus layers: `Game`, `HUD`, `Menu`, `Overlay`)
+  - `is_primary_focus(FocusLayer)`: Returns `1.0` if the layer is the primary active layer, else `0.0`.
+  - `if_primary_focus(FocusLayer, x)`: Returns `x` if the layer is the primary active layer, else `0.0`.
+  - `is_focused(FocusLayer)`: Returns `1.0` if the layer is active (may be background foucused), else `0.0`.
+  - `if_focused(FocusLayer, x)`: Returns `x` if the layer is active (may be background foucused), else `0.0`.
 - **Entity signal access**:
   - `<entity_name>/<signal_name>`: Read a signal on a specific entity. If the signal or entity is missing, returns `0.0`.
 - **Component field access**:  

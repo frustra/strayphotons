@@ -7,10 +7,12 @@
 
 #include "ScriptManager.hh"
 
+#include "common/Common.hh"
 #include "common/Defer.hh"
 #include "console/CVar.hh"
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/ScriptGuiDefinition.hh"
 
 #include <shared_mutex>
 
@@ -90,13 +92,13 @@ namespace ecs {
         auto &scriptSet = scripts[state.definition.type];
         switch (state.definition.type) {
         case ScriptType::LogicScript:
-            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: LogicScript != OnTick",
+            Assertf(std::holds_alternative<LogicTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: LogicScript != LogicTickFunc",
                 state.definition.name);
             break;
         case ScriptType::PhysicsScript:
-            Assertf(std::holds_alternative<OnTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: PhysicsScript != OnTick",
+            Assertf(std::holds_alternative<PhysicsTickFunc>(state.definition.callback),
+                "New script %s has mismatched callback type: PhysicsScript != PhysicsTickFunc",
                 state.definition.name);
             break;
         case ScriptType::EventScript:
@@ -110,8 +112,8 @@ namespace ecs {
                 state.definition.name);
             break;
         case ScriptType::GuiScript:
-            Assertf(std::holds_alternative<GuiRenderableFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: GuiScript != GuiRenderable",
+            Assertf(std::holds_alternative<GuiRenderFuncs>(state.definition.callback),
+                "New script %s has mismatched callback type: GuiScript != GuiRender",
                 state.definition.name);
             break;
         default:
@@ -132,6 +134,7 @@ namespace ecs {
                 scriptSet.freeScriptList.pop();
                 scriptSet.scripts[newIndex] = {Entity(), state};
             }
+            scriptSet.activeScriptList.emplace_back(newIndex);
             auto &newState = scriptSet.scripts[newIndex].second;
             newState.index = newIndex;
             if (runInit) {
@@ -146,7 +149,9 @@ namespace ecs {
             std::shared_lock l1(dynamicLibraryMutex);
             std::lock_guard l2(scriptSet.mutex);
             if (state->index < scriptSet.scripts.size()) {
+                // TODO: unregister event queue if applicable
                 if (state->initialized && state->definition.destroyFunc) (*state->definition.destroyFunc)(*state);
+                sp::erase(scriptSet.activeScriptList, state->index);
                 scriptSet.freeScriptList.push(state->index);
                 scriptSet.scripts[state->index] = {};
             }
@@ -185,7 +190,8 @@ namespace ecs {
             std::vector<ScriptDefinition> previousList;
             // Destroy existing script contexts before reloading
             for (auto &scriptSet : scripts) {
-                for (auto &script : scriptSet.scripts) {
+                for (size_t i : scriptSet.activeScriptList) {
+                    auto &script = scriptSet.scripts[i];
                     auto &scriptCtx = script.second.definition.context;
                     if (scriptCtx.expired()) continue;
                     for (auto &dynamicScript : dynamicLibrary->scripts) {
@@ -225,7 +231,8 @@ namespace ecs {
                 if (oldDefinition) {
                     // Replace instance definitions and reinit
                     for (auto &scriptSet : scripts) {
-                        for (auto &script : scriptSet.scripts) {
+                        for (size_t i : scriptSet.activeScriptList) {
+                            auto &script = scriptSet.scripts[i];
                             auto &scriptCtx = script.second.definition.context;
                             if (!oldDefinition->context.owner_before(scriptCtx) &&
                                 !scriptCtx.owner_before(oldDefinition->context)) {
@@ -254,9 +261,11 @@ namespace ecs {
         return result;
     }
 
-    void ScriptManager::internalRegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock,
+    void ScriptManager::internalRegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock,
         const Entity &ent,
-        ScriptState &state) {
+        std::shared_ptr<ScriptState> instance) {
+        Assertf(instance, "ScriptManager::internalRegisterActive called with null instance");
+        ScriptState &state = *instance;
         auto &scriptSet = scripts[state.definition.type];
         Assertf(state.index < scriptSet.scripts.size(), "Invalid script index: %s", state.definition.name);
 
@@ -268,18 +277,23 @@ namespace ecs {
                     if (!state.eventQueue) state.eventQueue = EventQueue::New();
                     eventInput.Register(lock, state.eventQueue, event);
                 }
-                entry.first = ent;
             } else if (!state.definition.events.empty()) {
                 Warnf("Script %s has events but %s has no EventInput component",
                     state.definition.name,
                     ecs::ToString(lock, ent));
-            } else {
-                entry.first = ent;
+                return;
             }
+            if (state.definition.type == ScriptType::GuiScript && ent.Has<GuiElement>(lock)) {
+                auto &guiElement = ent.Get<GuiElement>(lock);
+                if (!guiElement.definition) {
+                    guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance, ent);
+                }
+            }
+            entry.first = ent;
         }
     }
 
-    void ScriptManager::RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock) {
+    void ScriptManager::RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock) {
         ZoneScoped;
         for (size_t i = 0; i < scripts.size(); i++) {
             scripts.at(i).mutex.lock_shared();
@@ -288,7 +302,7 @@ namespace ecs {
             if (!ent.Has<Scripts>(lock)) continue;
             for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
                 if (!instance) continue;
-                internalRegisterEvents(lock, ent, *instance.state);
+                internalRegisterActive(lock, ent, instance.state);
             }
         }
         for (size_t i = 0; i < scripts.size(); i++) {
@@ -296,25 +310,27 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RegisterEvents(const Lock<Read<Name>, Write<EventInput, Scripts>> &lock, const Entity &ent) {
+    void ScriptManager::RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock,
+        const Entity &ent) {
         ZoneScoped;
         if (!ent.Has<Scripts>(lock)) return;
         for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
             if (!instance) continue;
             std::shared_lock l1(dynamicLibraryMutex);
             std::shared_lock l2(scripts[instance.state->definition.type].mutex);
-            internalRegisterEvents(lock, ent, *instance.state);
+            internalRegisterActive(lock, ent, instance.state);
         }
     }
 
-    void ScriptManager::RunOnTick(const Lock<WriteAll> &lock, const chrono_clock::duration &interval) {
+    void ScriptManager::RunLogicUpdate(const LogicUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
         auto &scriptSet = scripts[ScriptType::LogicScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
-        for (auto &[ent, state] : scriptSet.scripts) {
+        for (size_t i : scriptSet.activeScriptList) {
+            auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            auto *callback = std::get_if<LogicTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnTick");
@@ -324,14 +340,15 @@ namespace ecs {
         }
     }
 
-    void ScriptManager::RunOnPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
+    void ScriptManager::RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
         auto &scriptSet = scripts[ScriptType::PhysicsScript];
         std::shared_lock l1(dynamicLibraryMutex);
         std::shared_lock l2(scriptSet.mutex);
-        for (auto &[ent, state] : scriptSet.scripts) {
+        for (size_t i : scriptSet.activeScriptList) {
+            auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<OnTickFunc>(&state.definition.callback);
+            auto *callback = std::get_if<PhysicsTickFunc>(&state.definition.callback);
             if (!callback || !*callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnPhysicsUpdate");

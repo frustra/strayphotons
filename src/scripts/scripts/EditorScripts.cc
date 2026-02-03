@@ -146,7 +146,10 @@ namespace sp::scripts {
         glm::vec3 faceNormal = glm::vec3(0);
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        bool performUpdate(Lock<WriteAll> lock, float toolDepth, int editMode, bool snapToFace) {
+        bool performUpdate(Lock<Read<TransformSnapshot>, Write<TransformTree>> lock,
+            float toolDepth,
+            int editMode,
+            bool snapToFace) {
             auto deltaDepth = toolDepth;
             if (!snapToFace) {
                 deltaDepth = std::round(toolDepth / CVarEditTranslateSnap.Get()) * CVarEditTranslateSnap.Get();
@@ -187,19 +190,22 @@ namespace sp::scripts {
                 if (angle == 0.0f) return false;
                 targetTree.pose.RotateAxis(angle, relativeNormal);
             }
-            selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
+            // selectedEntity.Set<TransformSnapshot>(lock, parentTransform * targetTree.pose);
             return true;
         }
 
-        void performRotateToFace(Lock<WriteAll> lock, glm::vec3 targetNormal) {
+        void performRotateToFace(Lock<Read<TransformSnapshot>, Write<TransformTree>> lock, glm::vec3 targetNormal) {
             auto &targetTree = selectedEntity.Get<TransformTree>(lock);
             auto worldToLocalRotation = glm::inverse(targetTree.GetGlobalRotation(lock));
             auto deltaRotation = glm::rotation(worldToLocalRotation * faceNormal, worldToLocalRotation * -targetNormal);
             targetTree.pose.Rotate(deltaRotation);
-            selectedEntity.Set<TransformSnapshot>(lock, targetTree.GetGlobalTransform(lock));
+            // selectedEntity.Set<TransformSnapshot>(lock, targetTree.GetGlobalTransform(lock));
         }
 
-        void OnTick(ScriptState &state, Lock<WriteAll> lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state,
+            Lock<ReadSignalsLock, Read<TransformSnapshot>, Write<LaserLine, TransformTree, PhysicsQuery, Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TransformTree, PhysicsQuery>(lock)) return;
             auto &query = ent.Get<PhysicsQuery>(lock);
             auto &transform = ent.Get<TransformTree>(lock);

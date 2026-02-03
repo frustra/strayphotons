@@ -12,7 +12,7 @@
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 
-#include <picojson/picojson.h>
+#include <picojson.h>
 
 namespace ecs {
     template<>

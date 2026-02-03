@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/FlatSet.hh"
 #include "common/Hashing.hh"
 #include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Access.hh"
@@ -15,6 +16,7 @@
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 
 #include <robin_hood.h>
+#include <thread>
 
 namespace sp::vulkan::render_graph {
     typedef uint32 ResourceID;
@@ -67,6 +69,7 @@ namespace sp::vulkan::render_graph {
 
         ResourceID id = InvalidResource;
         Type type = Type::Undefined;
+        bool externalResource = false;
 
     private:
         union {
@@ -99,13 +102,19 @@ namespace sp::vulkan::render_graph {
 
         const Resource &GetResource(string_view name) const;
         const Resource &GetResource(ResourceID id) const;
+        const ResourceName &GetName(ResourceID id) const;
         ResourceID GetID(string_view name, bool assertExists = true, uint32 framesAgo = 0) const;
+
+        ResourceID AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace = false);
 
         ResourceID LastOutputID() const {
             return lastOutputID;
         }
         const Resource &LastOutput() const {
             return GetResource(lastOutputID);
+        }
+        const ResourceName &LastOutputName() const {
+            return GetName(lastOutputID);
         }
 
     private:
@@ -120,7 +129,7 @@ namespace sp::vulkan::render_graph {
         void AddUsageFromAccess(ResourceID id, Access access);
 
         ResourceID ReserveID(string_view name);
-        void Register(string_view name, Resource &resource);
+        bool Register(string_view name, Resource &resource);
 
         void BeginScope(string_view name);
         void EndScope();
@@ -135,6 +144,7 @@ namespace sp::vulkan::render_graph {
 
         DeviceContext &device;
         uint32 frameIndex = 0;
+        mutable std::thread::id renderThread;
 
         struct Scope {
             ResourceName name;
@@ -143,7 +153,7 @@ namespace sp::vulkan::render_graph {
                 robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
                 // std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
             };
-            std::array<PerFrame, RESOURCE_FRAME_COUNT> frames;
+            std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
             ResourceID GetID(string_view name, uint32 frameIndex) const;
             void SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace = false);
@@ -156,6 +166,7 @@ namespace sp::vulkan::render_graph {
         vector<Resource> resources;
         vector<ResourceName> resourceNames;
         vector<ResourceID> freeIDs;
+        vector<ResourceID> externalIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
         vector<int32> refCounts;

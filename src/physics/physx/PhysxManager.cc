@@ -24,12 +24,12 @@
 #include "game/SceneManager.hh"
 #include "physx/ForceConstraint.hh"
 
+#include <MurmurHash3.h>
 #include <PxScene.h>
 #include <chrono>
 #include <cmath>
 #include <fstream>
 #include <glm/ext/matrix_relational.hpp>
-#include <murmurhash/MurmurHash3.h>
 
 namespace sp {
     using namespace physx;
@@ -220,8 +220,7 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::Signals>,
-                ecs::PhysicsUpdateLock>();
+                    ecs::Signals>>();
 
             GameLogic::UpdateInputEvents(lock, windowInputQueue);
 
@@ -359,8 +358,13 @@ namespace sp {
             physicsQuerySystem.Frame(lock);
             laserSystem.Frame(lock);
             UpdateDebugLines(lock);
+        }
 
-            ecs::GetScriptManager().RunOnPhysicsUpdate(lock, interval);
+        {
+            ZoneScopedN("RunPhysicsUpdate");
+            auto lock = ecs::StartTransaction<ecs::PhysicsUpdateLock>();
+
+            ecs::GetScriptManager().RunPhysicsUpdate(lock, interval);
         }
 
         { // Simulate 1 physics frame (blocking)

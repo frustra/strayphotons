@@ -11,9 +11,11 @@
 #include "common/Hashing.hh"
 #include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/SignalExpression.hh"
 #include "ecs/SignalManager.hh"
 
 #include <optional>
+#include <vector>
 
 namespace ecs {
     SignalKey::SignalKey(const EntityRef &entity, const std::string_view &signalName)
@@ -149,48 +151,58 @@ namespace ecs {
 
     void Signals::FreeEntitySignals(const Lock<Write<Signals>> &lock, Entity entity) {
         ZoneScoped;
+        std::vector<size_t> updatedIndexes;
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
             if (signal.ref && signal.ref.GetEntity() == entity) {
                 MarkStorageDirty(lock, i);
                 signal.value = -std::numeric_limits<double>::infinity();
-                signal.expr = {};
-                if (signal.subscribers.empty()) {
-                    DebugAssertf(i == signal.ref.GetIndex(), "FreeEntitySignals index missmatch");
-                    signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
-                    signal = Signal();
-                    freeIndexes.push(i);
-                } else {
-                    if (signal.lastValue != 0.0 || signal.lastValueDirty) {
-                        signal.lastValue = 0.0;
-                        signal.ref.MarkDirty(lock);
-                        signal.lastValueDirty = false;
-                    }
+                signal.expr = SignalExpression();
+                signal.ref.UnsubscribeDependencies(lock);
+                if (signal.lastValue != 0.0 || signal.lastValueDirty) {
+                    signal.lastValue = 0.0;
+                    signal.ref.MarkDirty(lock);
+                    signal.lastValueDirty = false;
                 }
+                updatedIndexes.emplace_back(i);
+            }
+        }
+        for (size_t i : updatedIndexes) {
+            Signal &signal = signals[i];
+            if (signal.subscribers.empty()) {
+                DebugAssertf(i == signal.ref.GetIndex(), "FreeEntitySignals index missmatch");
+                signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+                signal = Signal();
+                freeIndexes.push(i);
             }
         }
     }
 
     void Signals::UpdateMissingEntitySignals(const Lock<Write<Signals>> &lock) {
         ZoneScoped;
+        std::vector<size_t> updatedIndexes;
         for (size_t i = 0; i < signals.size(); i++) {
             Signal &signal = signals[i];
             if (signal.ref && !signal.ref.GetEntity().Get(lock).Exists(lock)) {
                 MarkStorageDirty(lock, i);
                 signal.value = -std::numeric_limits<double>::infinity();
-                signal.expr = {};
-                if (signal.subscribers.empty()) {
-                    DebugAssertf(i == signal.ref.GetIndex(), "UpdateMissingEntitySignals index missmatch");
-                    signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
-                    signal = Signal();
-                    freeIndexes.push(i);
-                } else {
-                    if (signal.lastValue != 0.0 || signal.lastValueDirty) {
-                        signal.lastValue = 0.0;
-                        signal.ref.MarkDirty(lock);
-                        signal.lastValueDirty = false;
-                    }
+                signal.expr = SignalExpression();
+                signal.ref.UnsubscribeDependencies(lock);
+                if (signal.lastValue != 0.0 || signal.lastValueDirty) {
+                    signal.lastValue = 0.0;
+                    signal.ref.MarkDirty(lock);
+                    signal.lastValueDirty = false;
                 }
+                updatedIndexes.emplace_back(i);
+            }
+        }
+        for (size_t i : updatedIndexes) {
+            Signal &signal = signals[i];
+            if (signal.subscribers.empty()) {
+                DebugAssertf(i == signal.ref.GetIndex(), "UpdateMissingEntitySignals index missmatch");
+                signal.ref.GetIndex() = std::numeric_limits<size_t>::max();
+                signal = Signal();
+                freeIndexes.push(i);
             }
         }
     }

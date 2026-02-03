@@ -35,7 +35,7 @@ foreach(SCRIPT_NAME ${C_SCRIPT_LIST})
     if(WIN32)
         add_custom_command(TARGET ${SCRIPT_NAME} PRE_LINK
             COMMAND
-                ./extra/remove_in_use.py ${SCRIPT_NAME} dll pdb
+                ./extra/remove_in_use.py plugins/${SCRIPT_NAME} dll pdb
             WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
         )
     endif()
@@ -44,13 +44,13 @@ endforeach()
 foreach(SCRIPT_NAME ${CPP_SCRIPT_LIST})
     add_library(${SCRIPT_NAME} SHARED ${SCRIPT_NAME}.cpp)
 
-    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm)
+    target_link_libraries(${SCRIPT_NAME} PRIVATE ${PROJECT_LIB_NAME} ${PROJECT_COMMON_LIB} glm ImGui)
 
     if(WIN32)
         target_compile_definitions(${SCRIPT_NAME} PUBLIC _CRT_SECURE_NO_WARNINGS)
         add_custom_command(TARGET ${SCRIPT_NAME} PRE_LINK
             COMMAND
-                ./extra/remove_in_use.py ${SCRIPT_NAME} dll pdb
+                ./extra/remove_in_use.py plugins/${SCRIPT_NAME} dll pdb
             WORKING_DIRECTORY ${PROJECT_ROOT_DIR}
         )
     endif()

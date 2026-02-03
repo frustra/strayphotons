@@ -15,7 +15,6 @@
 namespace sp {
     class GpuTexture {
     public:
-        virtual uintptr_t GetHandle() const = 0;
         virtual int GetWidth() const = 0;
         virtual int GetHeight() const = 0;
     };

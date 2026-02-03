@@ -7,7 +7,7 @@
 
 add_library(dynalo INTERFACE)
 
-target_include_directories(dynalo INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/dynalo/include)
+target_include_directories(dynalo INTERFACE ./dynalo/include)
 
 if(UNIX)
     target_link_libraries(dynalo INTERFACE dl)

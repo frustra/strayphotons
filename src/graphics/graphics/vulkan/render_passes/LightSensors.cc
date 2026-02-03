@@ -61,7 +61,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("LightSensors")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read("ShadowMap.Linear", Access::ComputeShaderSampleImage);
+                builder.Read("ShadowMap/Linear", Access::ComputeShaderSampleImage);
                 builder.Read("LightState", Access::ComputeShaderReadUniform);
                 builder.CreateBuffer("LightSensorValues",
                     {sizeof(glm::vec4), MAX_LIGHT_SENSORS},
@@ -71,7 +71,7 @@ namespace sp::vulkan::renderer {
             .Execute([data, textureSet = &scene.textures](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("light_sensor.comp");
 
-                cmd.SetImageView("shadowMap", "ShadowMap.Linear");
+                cmd.SetImageView("shadowMap", "ShadowMap/Linear");
                 cmd.SetStorageBuffer("LightSensorResults", "LightSensorValues");
                 cmd.SetUniformBuffer("LightData", "LightState");
                 cmd.UploadUniformData("LightSensorData", &data->gpu);
@@ -82,14 +82,18 @@ namespace sp::vulkan::renderer {
 
         AddBufferReadback(graph, "LightSensorValues", 0, {}, [data](BufferPtr buffer) {
             auto illuminanceValues = (glm::vec4 *)buffer->Mapped();
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::LightSensor>>();
-            for (int i = 0; i < data->gpu.sensorCount; i++) {
-                auto entity = data->entities[i];
-                if (entity.Has<ecs::LightSensor>(lock)) {
-                    auto &sensor = entity.Get<ecs::LightSensor>(lock);
-                    sensor.illuminance = illuminanceValues[i];
+            InlineVector<glm::vec4, MAX_LIGHT_SENSORS> sensorValues(data->gpu.sensorCount);
+            InlineVector<ecs::Entity, MAX_LIGHT_SENSORS> sensorEntities(data->gpu.sensorCount);
+            std::copy_n(illuminanceValues, data->gpu.sensorCount, sensorValues.data());
+            std::copy_n(data->entities, data->gpu.sensorCount, sensorEntities.data());
+            ecs::QueueTransaction<ecs::Write<ecs::LightSensor>>([sensorValues, sensorEntities](auto &lock) {
+                for (size_t i = 0; i < sensorValues.size(); i++) {
+                    if (sensorEntities[i].Has<ecs::LightSensor>(lock)) {
+                        auto &sensor = sensorEntities[i].Get<ecs::LightSensor>(lock);
+                        sensor.illuminance = sensorValues[i];
+                    }
                 }
-            }
+            });
         });
     }
 } // namespace sp::vulkan::renderer

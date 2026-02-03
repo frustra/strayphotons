@@ -194,8 +194,8 @@ namespace ecs {
                         node = manager.GetNode(Node(OneInputOperation{"!", ""}, "!" + inputNode->text, {inputNode}));
                     }
                 }
-            } else if (token == "is_focused" || token == "sin" || token == "cos" || token == "tan" ||
-                       token == "floor" || token == "ceil" || token == "abs") {
+            } else if (token == "is_primary_focus" || token == "is_focused" || token == "sin" || token == "cos" ||
+                       token == "tan" || token == "floor" || token == "ceil" || token == "abs") {
                 // Parse as 1 argument function
                 if (node) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
@@ -228,7 +228,7 @@ namespace ecs {
                 }
 
                 tokenIndex++;
-                if (token == "is_focused") {
+                if (token == "is_primary_focus" || token == "is_focused") {
                     std::string &focusStr = inputNode->text;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
@@ -236,18 +236,19 @@ namespace ecs {
                         if (opt) {
                             focus = *opt;
                         } else {
-                            Errorf("Unknown enum value specified for is_focused: %s", focusStr);
+                            Errorf("Unknown enum value specified for %s: %s", std::string(token), focusStr);
                         }
                     } else {
-                        Errorf("Blank focus layer specified for is_focused: %s", focusStr);
+                        Errorf("Blank focus layer specified for %s: %s", std::string(token), focusStr);
                     }
-                    node = manager.GetNode(Node(FocusCondition{focus}, "is_focused( " + inputNode->text + " )"));
+                    node = manager.GetNode(Node(FocusCondition{focus, token == "is_primary_focus"},
+                        std::string(token) + "( " + inputNode->text + " )"));
                 } else {
                     node = manager.GetNode(Node(OneInputOperation{std::string(token) + "( ", " )"},
                         std::string(token) + "( " + inputNode->text + " )",
                         {inputNode}));
                 }
-            } else if (token == "if_focused" || token == "min" || token == "max") {
+            } else if (token == "if_primary_focus" || token == "if_focused" || token == "min" || token == "max") {
                 // Parse as 2 argument function
                 if (node) {
                     Errorf("Failed to parse signal expression, unexpected function '%s': %s",
@@ -295,7 +296,7 @@ namespace ecs {
                 }
 
                 tokenIndex++;
-                if (token == "if_focused") {
+                if (token == "if_primary_focus" || token == "if_focused") {
                     std::string &focusStr = aNode->text;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
@@ -303,13 +304,15 @@ namespace ecs {
                         if (opt) {
                             focus = *opt;
                         } else {
-                            Errorf("Unknown enum value specified for if_focused: %s", std::string(focusStr));
+                            Errorf("Unknown enum value specified for %s: %s",
+                                std::string(token),
+                                std::string(focusStr));
                         }
                     } else {
-                        Errorf("Blank focus layer specified for if_focused: %s", std::string(focusStr));
+                        Errorf("Blank focus layer specified for %s: %s", std::string(token), std::string(focusStr));
                     }
-                    node = manager.GetNode(Node(FocusCondition{focus},
-                        "if_focused( " + aNode->text + " , " + bNode->text + " )",
+                    node = manager.GetNode(Node(FocusCondition{focus, token == "if_primary_focus"},
+                        std::string(token) + "( " + aNode->text + " , " + bNode->text + " )",
                         {bNode}));
                 } else {
                     node = manager.GetNode(Node(TwoInputOperation{std::string(token) + "( ", " , ", " )"},
@@ -627,9 +630,14 @@ namespace ecs {
     CompiledFunc FocusCondition::Compile() const {
         return [](const Context &ctx, const Node &node, size_t depth) {
             auto &focusNode = std::get<FocusCondition>(node);
-            if (!ctx.lock.Has<FocusLock>() || !ctx.lock.Get<FocusLock>().HasPrimaryFocus(focusNode.ifFocused)) {
-                return 0.0;
-            } else if (node.childNodes.empty()) {
+            if (!ctx.lock.Has<FocusLock>()) return 0.0;
+
+            auto &focusLock = ctx.lock.Get<FocusLock>();
+            bool hasFocus = focusNode.checkPrimaryFocus ? focusLock.HasPrimaryFocus(focusNode.ifFocused)
+                                                        : focusLock.HasFocus(focusNode.ifFocused);
+            if (!hasFocus) return 0.0;
+
+            if (node.childNodes.empty()) {
                 return 1.0;
             } else {
                 DebugAssertf(node.childNodes.size() > 0, "FocusCondition::Compile null input node: %s", node.text);
@@ -912,8 +920,8 @@ namespace ecs {
             if (setNode) {
                 SignalManager &manager = GetSignalManager();
                 return manager.GetNode(Node(FocusCondition(focusNode.ifFocused),
-                    "if_focused( " + std::string(magic_enum::enum_name(focusNode.ifFocused)) + " , " + setNode->text +
-                        " )",
+                    (focusNode.checkPrimaryFocus ? "if_primary_focus( " : "if_focus( ") +
+                        std::string(magic_enum::enum_name(focusNode.ifFocused)) + " , " + setNode->text + " )",
                     {setNode}));
             }
         } else if (std::holds_alternative<OneInputOperation>(*this)) {

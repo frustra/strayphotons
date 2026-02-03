@@ -3,6 +3,14 @@
 	"libraries": ["camera_view", "game_scripts"],
 	"entities": [
 		{
+			"name": "gui:menu",
+			"render_output": {
+				"source": "/ent:player:flatview",
+				"effect": "background_blur",
+				"effect_if": "is_focused(Menu)"
+			}
+		},
+		{
 			"name": "player",
 			"transform": {},
 			"physics_joints": {},
@@ -25,6 +33,10 @@
 			"view": {
 				"clip": [0.05, 350],
 				"visibility_mask": "DirectCamera"
+			},
+			"event_input": {},
+			"render_output": {
+				"gui_elements": ["editor:entity_picker", "editor:inspector"]
 			}
 		},
 		{
@@ -61,7 +73,7 @@
 					}
 				},
 				{
-					"name": "camera_view2"
+					"name": "camera_view"
 				}
 			]
 		},

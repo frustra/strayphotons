@@ -10,6 +10,8 @@
 #include "export.h"
 
 #ifdef __cplusplus
+    #include <cstdint>
+
 namespace sp::logging {
     enum class Level : uint8_t;
 }
@@ -17,6 +19,8 @@ namespace sp::logging {
 extern "C" {
 typedef sp::logging::Level sp_log_level_t;
 #else
+    #include <stdint.h>
+
 const uint8_t SP_LOG_LEVEL_ERROR = 0;
 const uint8_t SP_LOG_LEVEL_WARN = 1;
 const uint8_t SP_LOG_LEVEL_LOG = 2;

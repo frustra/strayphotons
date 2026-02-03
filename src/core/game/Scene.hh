@@ -72,7 +72,7 @@ namespace sp {
             const ecs::EntityScope &scope);
 
         // Should only be called from SceneManager thread
-        void RemovePrefabEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
+        void RemoveEntity(ecs::Lock<ecs::AddRemove> stagingLock, ecs::Entity ent);
 
         using SceneApplyCallback = std::function<void(const ecs::Lock<ecs::ReadAll, ecs::Write<ecs::SceneInfo>> &,
             const ecs::Lock<ecs::AddRemove> &)>;

@@ -26,9 +26,14 @@ namespace sp::vulkan {
     void CommandContext::SetDefaultOpaqueState() {
         SetDepthTest(true, true);
         SetDepthRange(0.0f, 1.0f);
+        SetColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                          vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
         SetStencilTest(false);
         SetBlending(false);
-        SetBlendFunc(vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha);
+        SetBlendFunc(vk::BlendFactor::eSrcAlpha,
+            vk::BlendFactor::eOneMinusSrcAlpha,
+            vk::BlendFactor::eOne,
+            vk::BlendFactor::eOneMinusSrcAlpha);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
         SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
@@ -182,6 +187,12 @@ namespace sp::vulkan {
         Draw(3); // vertices are defined as constants in the vertex shader
     }
 
+    void CommandContext::DrawScreenCover(const color_alpha_t &color) {
+        SetShaders("screen_cover.vert", "solid_color.frag");
+        PushConstants((glm::vec4)color);
+        Draw(3); // vertices are defined as constants in the vertex shader
+    }
+
     void CommandContext::SetScissorArray(vk::ArrayProxy<const vk::Rect2D> newScissors) {
         Assert(newScissors.size() <= scissors.size(), "too many scissors");
         Assert(newScissors.size() <= device.Limits().maxViewports, "too many scissors for device");
@@ -245,6 +256,24 @@ namespace sp::vulkan {
                 "can't track image layout when specifying a subresource range");
             image->SetLayout(oldLayout, newLayout);
         }
+    }
+
+    void CommandContext::ImageBarrier(const ImagePtr &image,
+        vk::ImageLayout newLayout,
+        vk::PipelineStageFlags dstStages,
+        vk::AccessFlags dstAccess,
+        const ImageBarrierInfo &options) {
+        Assertf(options.trackImageLayout, "CommandContext::ImageBarrier requires trackImageLayout or oldLayout");
+        auto last = GetAccessInfo(image->LastAccess());
+        if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
+        ImageBarrier(image,
+            image->LastLayout(),
+            newLayout,
+            last.stageMask,
+            last.accessMask,
+            dstStages,
+            dstAccess,
+            options);
     }
 
     void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders) {
@@ -676,7 +705,9 @@ namespace sp::vulkan {
             std::array<vk::Rect2D, MAX_VIEWPORTS> scs;
             for (size_t i = 0; i < pipelineInput.state.scissorCount; i++) {
                 scs[i] = scissors[i];
-                scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+                if (viewportYDirection == YDirection::Up) {
+                    scs[i].offset.y = framebuffer->Extent().height - scs[i].offset.y - scs[i].extent.height;
+                }
             }
             cmd->setScissor(0, pipelineInput.state.scissorCount, scs.data());
         }

@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2025 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -10,14 +10,23 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan {
+    enum class YDirection {
+        Up,
+        Down,
+    };
+
     glm::mat4 MakeOrthographicProjection(float left,
         float right,
         float bottom,
         float top,
         float near = 0.0f,
         float far = 1.0f);
-    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport, float near = 0.0f, float far = 1.0f);
-    glm::mat4 MakeOrthographicProjection(const vk::Rect2D &viewport,
+    glm::mat4 MakeOrthographicProjection(YDirection yDir,
+        const vk::Rect2D &viewport,
+        float near = 0.0f,
+        float far = 1.0f);
+    glm::mat4 MakeOrthographicProjection(YDirection yDir,
+        const vk::Rect2D &viewport,
         const glm::vec2 &scale,
         float near = 0.0f,
         float far = 1.0f);

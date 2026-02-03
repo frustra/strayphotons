@@ -14,6 +14,7 @@
 #include <future>
 #include <memory>
 #include <mutex>
+#include <type_traits>
 
 namespace sp {
     template<typename T>

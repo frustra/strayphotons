@@ -12,38 +12,76 @@
 #include "console/CVar.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
+#include "game/SceneManager.hh"
+#include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "input/BindingNames.hh"
 
 #include <glm/glm.hpp>
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <sstream>
 
 namespace sp {
     static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-    MenuGuiManager::MenuGuiManager(GraphicsManager &graphics) : FlatViewGuiContext("menu"), graphics(graphics) {
-        {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::Name>, ecs::Write<ecs::EventInput, ecs::FocusLock>>();
+    MenuGuiManager::MenuGuiManager(const ecs::EntityRef &guiEntity, GraphicsManager &graphics)
+        : GuiContext(guiEntity), graphics(graphics) {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    ecs::Entity ent = guiEntity.Get(lock);
+                    Assertf(ent.Has<ecs::EventInput>(lock),
+                        "Expected menu gui to start with an EventInput: %s",
+                        guiEntity.Name().String());
 
-            ecs::Entity gui = guiEntity.Get(lock);
-            Assertf(gui.Has<ecs::EventInput>(lock),
-                "Expected menu gui to start with an EventInput: %s",
-                guiEntity.Name().String());
-
-            auto &eventInput = gui.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
-            eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
+                    eventInput.Register(lock, events, INPUT_EVENT_MENU_BACK);
+                });
         }
     }
 
-    void MenuGuiManager::BeforeFrame() {
-        FlatViewGuiContext::BeforeFrame();
+    MenuGuiManager::~MenuGuiManager() {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    ecs::Entity ent = guiEntity.Get(lock);
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
+                        eventInput.Unregister(events, INPUT_EVENT_MENU_BACK);
+                    }
+                });
+        }
+    }
 
-        ImGui::StyleColorsClassic();
+    std::shared_ptr<GuiContext> MenuGuiManager::CreateContext(const ecs::Name &guiName, GraphicsManager &graphics) {
+        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            "gui",
+            [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                ecs::Entity ent = scene->NewSystemEntity(lock, scene, name);
+                ent.Set<ecs::EventInput>(lock);
+                ent.Set<ecs::RenderOutput>(lock);
+            });
+
+        ecs::EntityRef ref(guiName);
+        auto guiContext = std::shared_ptr<MenuGuiManager>(new MenuGuiManager(ref, graphics));
+        {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
+
+            ecs::Entity ent = ref.Get(lock);
+            Assert(ent.Has<ecs::RenderOutput>(lock), "Expected menu gui to start with a RenderOutput");
+
+            ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
+        }
+        return guiContext;
+    }
+
+    bool MenuGuiManager::BeforeFrame(GenericCompositor &compositor) {
+        GuiContext::BeforeFrame(compositor);
 
         ImGuiIO &io = ImGui::GetIO();
 
@@ -80,14 +118,19 @@ namespace sp {
                 focusLock.ReleaseFocus(ecs::FocusLayer::Menu);
             }
         }
+        if (!logoTex) {
+            logoTex = graphics.GetCompositor().UploadStaticImage(Assets().LoadImage("logos/sp-menu.png")->Get());
+        }
+        if (MenuOpen()) {
+            if (logoTex) logoResourceID = compositor.AddStaticImage("logos_sp-menu.png", logoTex);
+            return true;
+        }
+        return false;
     }
 
-    static bool StringVectorGetter(void *data, int idx, const char **out_text) {
-        auto vec = (vector<string> *)data;
-        if (out_text) {
-            *out_text = vec->at(idx).c_str();
-        }
-        return true;
+    static const char *StringVectorGetter(void *data, int idx) {
+        auto *vec = (vector<string> *)data;
+        return vec->at(idx).c_str();
     }
 
     static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes) {
@@ -133,7 +176,6 @@ namespace sp {
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar |
                                  ImGuiWindowFlags_AlwaysAutoResize;
 
-        if (!logoTex) logoTex = graphics.context->LoadTexture(Assets().LoadImage("logos/sp-menu.png")->Get());
         ImVec2 logoSize(logoTex->GetWidth() * 0.5f, logoTex->GetHeight() * 0.5f);
 
         ImGui::SetNextWindowSizeConstraints(ImVec2(-1.0f, -1.0f), ImVec2(io.DisplaySize.x, io.DisplaySize.y));
@@ -143,7 +185,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuMain", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             if (ImGui::Button("Resume")) {
                 CVarMenuOpen.Set(false);
@@ -181,7 +223,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSceneSelect", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -213,7 +255,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuSaveSelect", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -245,7 +287,7 @@ namespace sp {
                 ImVec2(0.5f, 0.5f));
             ImGui::Begin("MenuOptions", nullptr, flags);
 
-            ImGui::Image((ImTextureID)logoTex->GetHandle(), logoSize);
+            ImGui::Image((ImTextureID)logoResourceID, logoSize);
 
             PushFont(GuiFont::Monospace, 32);
 
@@ -285,7 +327,7 @@ namespace sp {
                 vector<string> resLabels = MakeResolutionLabels(modes);
 
                 ImGui::PushItemWidth(300.0f);
-                if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, modes.size())) {
+                if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, (int)modes.size())) {
                     CVarWindowSize.Set(modes[resIndex]);
                 }
                 ImGui::PopItemWidth();
@@ -334,7 +376,7 @@ namespace sp {
                 auto &lightingModeCVar = GetConsoleManager().GetCVar<int>("r.lightingmode");
                 int voxelLighting = lightingModeCVar.Get();
                 int voxelLightingIndex = 0;
-                for (int i = 0; i < voxelLightingModes.size(); i++) {
+                for (size_t i = 0; i < voxelLightingModes.size(); i++) {
                     if (voxelLightingModes[i].second == voxelLighting) {
                         voxelLightingIndex = i;
                         break;
@@ -380,18 +422,18 @@ namespace sp {
                 int shadowMapSizeOffset = shadowMapSizeOffsetCVar.Get();
                 int shadowMapSampleCount = shadowMapSampleCountCVar.Get();
                 float shadowMapSampleWidth = shadowMapSampleWidthCVar.Get();
-                int shadowResolutionModeIndex = shadowResolutions.size();
-                for (int i = 0; i < shadowResolutions.size(); i++) {
+                int shadowResolutionModeIndex = (int)shadowResolutions.size();
+                for (int i = 0; i < (int)shadowResolutions.size(); i++) {
                     if (shadowResolutions[i].sizeOffset == shadowMapSizeOffset) {
                         shadowResolutionModeIndex = i;
                         break;
                     }
                 }
-                if (shadowResolutionModeIndex < shadowResolutions.size()) {
+                if (shadowResolutionModeIndex < (int)shadowResolutions.size()) {
                     auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
                     if (shadowSetting.sampleCount != shadowMapSampleCount ||
                         shadowSetting.sampleWidth != shadowMapSampleWidth) {
-                        shadowResolutionModeIndex = shadowResolutions.size();
+                        shadowResolutionModeIndex = (int)shadowResolutions.size();
                     }
                 }
                 int itemCount = std::max((int)shadowResolutions.size(), shadowResolutionModeIndex + 1);
@@ -400,12 +442,12 @@ namespace sp {
                         "##shadowqualitypicker",
                         &shadowResolutionModeIndex,
                         [](void *, int i) {
-                            if (i < 0 || i >= shadowResolutions.size()) return "Custom";
+                            if (i < 0 || i >= (int)shadowResolutions.size()) return "Custom";
                             return shadowResolutions[i].name;
                         },
                         nullptr,
                         itemCount)) {
-                    if (shadowResolutionModeIndex >= 0 && shadowResolutionModeIndex < shadowResolutions.size()) {
+                    if (shadowResolutionModeIndex >= 0 && shadowResolutionModeIndex < (int)shadowResolutions.size()) {
                         auto &shadowSetting = shadowResolutions[shadowResolutionModeIndex];
                         shadowMapSizeOffsetCVar.Set(shadowSetting.sizeOffset);
                         shadowMapSampleCountCVar.Set(shadowSetting.sampleCount);

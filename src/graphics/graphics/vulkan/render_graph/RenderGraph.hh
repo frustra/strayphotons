@@ -120,8 +120,7 @@ namespace sp::vulkan::render_graph {
         void BeginScope(string_view name);
         void EndScope();
 
-        // TODO: add SetImage etc. on Resources, allowing importing arbitrary resources in Execute
-        void SetTargetImageView(string_view name, ImageViewPtr view);
+        ResourceID AddImageView(string_view name, ImageViewPtr view);
 
         void RequireResource(string_view name) {
             RequireResource(resources.GetID(name));
@@ -144,6 +143,9 @@ namespace sp::vulkan::render_graph {
         }
         Resource LastOutput() const {
             return resources.LastOutput();
+        }
+        const ResourceName &LastOutputName() const {
+            return resources.GetName(resources.lastOutputID);
         }
 
         bool HasResource(string_view name) const {

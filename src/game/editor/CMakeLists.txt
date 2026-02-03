@@ -6,5 +6,8 @@
 #
 
 target_sources(${PROJECT_GAME_LIB} PRIVATE
+    EditorControls.cc
     EditorSystem.cc
+    EntityPickerGui.cc
+    InspectorGui.cc
 )

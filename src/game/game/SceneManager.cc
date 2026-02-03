@@ -25,7 +25,7 @@
 #include <filesystem>
 #include <fstream>
 #include <glm/glm.hpp>
-#include <picojson/picojson.h>
+#include <picojson.h>
 #include <robin_hood.h>
 #include <shared_mutex>
 
@@ -333,6 +333,9 @@ namespace sp {
                             "Expected to remove %u scenes, got %u",
                             reloadScenes.size(),
                             removedCount);
+
+                        // TODO: Scripts that start transactions in destructor / threads can deadlock when removed from
+                        // the scene
                     }
 
                     for (auto &[path, type] : reloadScenes) {
@@ -640,7 +643,7 @@ namespace sp {
                 auto &sceneInfo = e.Get<ecs::SceneInfo>(lock);
                 if (sceneInfo.scene != scene) continue;
 
-                if (sceneInfo.prefabStagingId) scene->RemovePrefabEntity(lock, e);
+                if (sceneInfo.prefabStagingId) scene->RemoveEntity(lock, e);
             }
             auto &scriptManager = ecs::GetScriptManager();
             for (auto &e : lock.EntitiesWith<ecs::Scripts>()) {
