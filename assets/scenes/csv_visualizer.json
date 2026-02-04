@@ -33,9 +33,9 @@
 				"parent": "track_root"
 			},
 			"signal_bindings": {
-				"x": "(visualizer/Latitude - 47.254946) * 111176 - 46700",
-				"y": "visualizer/Altitude",
-				"z": "(visualizer/Longitude + 123.191740) * 75693 - 82100",
+				"x": "(visualizer/Latitude - 47.254946) * 111176",
+				"y": "visualizer/Altitude - 300",
+				"z": "(visualizer/Longitude + 123.191740) * 75693",
 				"accel_x": "visualizer/AccelX * 0.3",
 				"accel_y": "-visualizer/AccelZ",
 				"accel_z": "visualizer/AccelY * 0.3"
@@ -45,7 +45,7 @@
 				{
 					"name": "csv_visualizer2",
 					"parameters": {
-						"filename": "C:/Users/xthexder/Downloads/rc_79_limpmode.log"
+						"filename": "./rc_8.log"
 					}
 				}
 			]

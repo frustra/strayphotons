@@ -618,32 +618,32 @@ struct GraphDisplayGui {
 
         Tecs_lock_release(lock);
 
-        if (compositor) {
-            if (hasFocus && io.DisplaySize.x > 0 && io.DisplaySize.y > 0) {
-                uint32_t imageWidth = io.DisplaySize.x;
-                uint32_t imageHeight = io.DisplaySize.y;
-                std::vector<uint8_t> imageBuffer(imageWidth * imageHeight * 4u);
-                size_t i = 0;
-                auto now = chrono_clock::now().time_since_epoch().count();
-                for (uint32_t y = 0; y < imageHeight; y++) {
-                    for (uint32_t x = 0; x < imageWidth; x++) {
-                        imageBuffer[i++] = (uint32_t)std::fmod(y, 256);
-                        imageBuffer[i++] = (std::sin(now / 1e9) + 1) * 128u;
-                        imageBuffer[i++] = (uint32_t)std::fmod(x + now / 1e7, 256);
-                        imageBuffer[i++] = 255;
-                    }
-                }
+        // if (compositor) {
+        //     if (hasFocus && io.DisplaySize.x > 0 && io.DisplaySize.y > 0) {
+        //         uint32_t imageWidth = io.DisplaySize.x;
+        //         uint32_t imageHeight = io.DisplaySize.y;
+        //         std::vector<uint8_t> imageBuffer(imageWidth * imageHeight * 4u);
+        //         size_t i = 0;
+        //         auto now = chrono_clock::now().time_since_epoch().count();
+        //         for (uint32_t y = 0; y < imageHeight; y++) {
+        //             for (uint32_t x = 0; x < imageWidth; x++) {
+        //                 imageBuffer[i++] = (uint32_t)std::fmod(y, 256);
+        //                 imageBuffer[i++] = (std::sin(now / 1e9) + 1) * 128u;
+        //                 imageBuffer[i++] = (uint32_t)std::fmod(x + now / 1e7, 256);
+        //                 imageBuffer[i++] = 255;
+        //             }
+        //         }
 
-                sp_compositor_upload_source_image(compositor,
-                    ent,
-                    imageBuffer.data(),
-                    imageBuffer.size(),
-                    imageWidth,
-                    imageHeight);
-            } else {
-                sp_compositor_clear_source_image(compositor, ent);
-            }
-        }
+        //         sp_compositor_upload_source_image(compositor,
+        //             ent,
+        //             imageBuffer.data(),
+        //             imageBuffer.size(),
+        //             imageWidth,
+        //             imageHeight);
+        //     } else {
+        //         sp_compositor_clear_source_image(compositor, ent);
+        //     }
+        // }
     }
 
     void PostDefine(sp_script_state_t *state, tecs_entity_t ent) {
