@@ -44,6 +44,7 @@ namespace sp {
         virtual void AttachWindow(const std::shared_ptr<GuiContext> &context) = 0;
 
         virtual void InitRenderer(Game &game) = 0;
+        virtual void Shutdown() {}
 
         virtual GenericCompositor &GetCompositor() = 0;
 

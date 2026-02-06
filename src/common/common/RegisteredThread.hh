@@ -53,6 +53,8 @@ namespace sp {
             return true;
         }
 
+        virtual void ThreadShutdown() {}
+
         enum class ThreadState : uint32_t {
             Stopped = 0,
             Started,

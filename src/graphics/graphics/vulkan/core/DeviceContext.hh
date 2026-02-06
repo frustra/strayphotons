@@ -98,6 +98,7 @@ namespace sp::vulkan {
         void AttachWindow(const std::shared_ptr<GuiContext> &context) override;
 
         void InitRenderer(Game &game) override;
+        void Shutdown() override;
         std::shared_ptr<Renderer> GetRenderer() const;
 
         GenericCompositor &GetCompositor() override;

@@ -75,11 +75,14 @@ namespace sp {
             tracy::SetThreadName(threadName.c_str());
             Tracef("RegisteredThread Started %s", threadName);
             Defer exit([this] {
+                Tracef("Thread stopping: %s", threadName);
                 ThreadState current = state;
                 if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopped)) {
                     Errorf("RegisteredThread %s state already Stopped", threadName);
+                } else {
+                    ThreadShutdown();
                 }
-                Tracef("Thread stopping: %s", threadName);
+                Tracef("Thread stopped: %s", threadName);
                 state.notify_all();
             });
 
