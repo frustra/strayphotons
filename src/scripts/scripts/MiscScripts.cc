@@ -364,13 +364,13 @@ namespace sp::scripts {
     PhysicsScript<SignalFromSignal> physicsSignalFromSignal("physics_signal_from_signal", MetadataSignalFromSignal);
 
     struct DebounceSignal {
-        size_t delayFrames = 1;
-        size_t delayMs = 0;
+        uint64_t delayFrames = 1;
+        uint64_t delayMs = 0;
         SignalExpression input;
         std::string output;
 
         std::optional<double> lastSignal;
-        size_t frameCount = 0;
+        uint64_t frameCount = 0;
 
         void OnTick(ScriptState &state,
             DynamicLock<Write<Signals>, ReadSignalsLock> lock,
@@ -390,7 +390,7 @@ namespace sp::scripts {
                 frameCount = 0;
                 lastSignal = currentInput;
             }
-            if (frameCount >= std::max(delayFrames, (size_t)(std::chrono::milliseconds(delayMs) / interval))) {
+            if (frameCount >= std::max(delayFrames, (uint64_t)(std::chrono::milliseconds(delayMs) / interval))) {
                 ref.SetValue(lock, currentInput);
             }
         }

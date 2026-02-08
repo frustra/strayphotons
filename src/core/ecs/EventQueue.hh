@@ -222,9 +222,9 @@ namespace ecs {
         template<typename T>
         Event(std::string_view name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
 
-        static size_t Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event);
-        static size_t SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event);
-        static size_t SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event);
+        static uint64_t Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event);
+        static uint64_t SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event);
+        static uint64_t SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event);
 
         std::string ToString() const;
     };

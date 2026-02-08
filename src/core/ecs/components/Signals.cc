@@ -80,7 +80,7 @@ namespace ecs {
         subscribers.emplace_back(subscriber.GetWeakRef());
     }
 
-    double Signals::Signal::Value(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    double Signals::Signal::Value(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         if (!std::isinf(value)) {
             return value;
         } else {

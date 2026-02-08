@@ -169,15 +169,15 @@ namespace ecs {
         }
     }
 
-    size_t Event::Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event) {
+    uint64_t Event::Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event) {
         return EventBindings::SendEvent(lock, target, event);
     }
 
-    size_t Event::SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event) {
+    uint64_t Event::SendNamed(const DynamicLock<SendEventsLock> &lock, const NamedEntity &target, const Event &event) {
         return EventBindings::SendEvent(lock, target, event);
     }
 
-    size_t Event::SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event) {
+    uint64_t Event::SendRef(const DynamicLock<SendEventsLock> &lock, const EntityRef &target, const Event &event) {
         return EventBindings::SendEvent(lock, target, event);
     }
 

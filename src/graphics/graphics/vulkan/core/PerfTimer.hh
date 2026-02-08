@@ -20,7 +20,7 @@ namespace sp::vulkan {
 
     struct TimeResult {
         string name;
-        size_t depth = 0;
+        uint32_t depth = 0;
         chrono_clock::duration cpuElapsed;
         uint64_t gpuElapsed = 0;
 

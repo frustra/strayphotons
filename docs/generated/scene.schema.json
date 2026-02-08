@@ -826,9 +826,7 @@
 							},
 							"mesh_index": {
 								"default": 0,
-								"description": "The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab.",
-								"minimum": 0,
-								"type": "integer"
+								"description": "The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab."
 							},
 							"metallic_roughness_override": {
 								"default": [-1, -1],

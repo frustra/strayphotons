@@ -73,7 +73,7 @@ namespace ecs {
             return TypeInfo{
                 .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
-                             std::is_reference<T>() || std::is_same<T, Entity>(),
+                             std::is_reference<T>() || std::is_same<T, Entity>() || std::is_same<T, uint64_t>(),
                 .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
                            std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
                 .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
@@ -212,8 +212,8 @@ namespace ecs {
     struct StructField {
         std::string name, desc;
         TypeInfo type;
-        size_t size;
-        size_t offset = 0;
+        uint64_t size;
+        uint64_t offset = 0;
         int fieldIndex = -1;
         FieldAction actions = ~FieldAction::None;
         std::optional<StructFunction> functionPointer;
@@ -222,15 +222,15 @@ namespace ecs {
         StructField(const std::string &name,
             const std::string &desc,
             const TypeInfo &type,
-            size_t size,
-            size_t offset,
+            uint64_t size,
+            uint64_t offset,
             FieldAction actions,
             const std::optional<StructFunction> &functionPointer)
             : name(name), desc(sp::trim(desc)), type(type), size(size), offset(offset), actions(actions),
               functionPointer(functionPointer) {}
 
         template<typename T, typename F>
-        static size_t OffsetOf(const F T::*M) {
+        static uint64_t OffsetOf(const F T::*M) {
             // This is technically undefined behavior, but this is how the offsetof() macro works in MSVC.
             return reinterpret_cast<size_t>(&(reinterpret_cast<T const volatile *>(NULL)->*M));
         }
@@ -284,7 +284,7 @@ namespace ecs {
         template<typename T>
         static const StructField New(const std::string &name,
             const std::string &desc,
-            size_t offset,
+            uint64_t offset,
             FieldAction actions = FieldAction::None,
             const std::optional<StructFunction> &functionPointer = {}) {
             return StructField(name,
@@ -383,7 +383,7 @@ namespace ecs {
         static constexpr bool foo = std::is_trivially_copy_constructible_v<std::type_index>;
 
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, size_t size, const char *name, const char *desc, Fields &&...fields)
+        StructMetadata(const std::type_index &idx, uint64_t size, const char *name, const char *desc, Fields &&...fields)
             : type(idx), size(size), name(name), description(sp::trim(desc)) {
             (
                 [&] {
@@ -422,7 +422,7 @@ namespace ecs {
         }
 
         const std::type_index type;
-        const size_t size;
+        const uint64_t size;
         const std::string name;
         const std::string description;
         std::vector<StructField> fields;

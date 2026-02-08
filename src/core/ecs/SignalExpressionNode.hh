@@ -31,7 +31,7 @@ namespace ecs {
 
     namespace expression {
         struct Context;
-        using CompiledFunc = double (*)(const Context &, const Node &, size_t);
+        using CompiledFunc = double (*)(const Context &, const Node &, uint32_t);
 
         struct ConstantNode {
             double value = 0.0f;
@@ -141,8 +141,8 @@ namespace ecs {
 
             CompiledFunc Compile();
             void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;
-            double Evaluate(const Context &ctx, size_t depth) const;
-            bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
+            double Evaluate(const Context &ctx, uint32_t depth) const;
+            bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const;
             SignalNodePtr SetScope(const EntityScope &scope) const;
             size_t Hash() const;
 

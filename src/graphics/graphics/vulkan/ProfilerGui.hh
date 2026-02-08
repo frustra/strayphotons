@@ -134,7 +134,7 @@ namespace sp::vulkan {
 
         struct Scope {
             std::string name;
-            size_t depth = 0;
+            uint32_t depth = 0;
             size_t sampleOffset = 0, sampleCount = 0;
             bool truncated = false;
 
@@ -154,7 +154,7 @@ namespace sp::vulkan {
             return spacePadding.data() + paddingOffset;
         }
 
-        size_t AddResults(size_t offset = 0, size_t depth = 1) {
+        size_t AddResults(size_t offset = 0, uint32_t depth = 1) {
             while (offset < resultCount) {
                 const auto &scope = resultScopes[offset];
 

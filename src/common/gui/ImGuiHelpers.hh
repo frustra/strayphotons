@@ -51,7 +51,7 @@ namespace sp {
                     cmd.ClipRect.y - drawData->DisplayPos.y,
                     cmd.ClipRect.z - drawData->DisplayPos.x,
                     cmd.ClipRect.w - drawData->DisplayPos.y};
-                cmdIter->textureId = cmd.TextureId;
+                cmdIter->textureId = (uint64_t)cmd.TextureId;
                 cmdIter->indexCount = cmd.ElemCount;
                 cmdIter->vertexOffset = vertexOffset + cmd.VtxOffset;
                 cmdIter++;
