@@ -257,6 +257,7 @@ namespace sp::vulkan {
                 VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
                 VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
                 VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+                "VK_KHR_portability_subset",
             };
 
             if (enableSwapchain) {
