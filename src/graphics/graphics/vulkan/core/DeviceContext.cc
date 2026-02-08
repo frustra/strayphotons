@@ -252,13 +252,12 @@ namespace sp::vulkan {
                 queueInfos.push_back(queueInfo);
             }
 
-            vector<const char *> enabledDeviceExtensions = {
-                VK_KHR_MULTIVIEW_EXTENSION_NAME,
+            vector<const char *> enabledDeviceExtensions = {VK_KHR_MULTIVIEW_EXTENSION_NAME,
                 // VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
                 VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
                 VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
                 VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
-            };
+                "VK_KHR_portability_subset"};
 
             if (enableSwapchain) {
                 enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
