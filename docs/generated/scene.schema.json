@@ -628,6 +628,7 @@
 						"description": "An entity name in the form `<scene_name>:<entity_name>`",
 						"type": "string"
 					},
+					"network": {},
 					"optic": {
 						"properties": {
 							"pass_tint": {

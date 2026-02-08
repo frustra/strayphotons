@@ -1,0 +1,3 @@
+loadscene networktest
+steplogic
+jsondump networktest:network_test

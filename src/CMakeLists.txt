@@ -14,6 +14,8 @@ set(PROJECT_ECS_C_ABI_LIB ${PROJECT_BASE_NAME}-ecs-c-abi CACHE INTERNAL "Shared 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
 set(PROJECT_GRAPHICS_VULKAN_CORE_LIB ${PROJECT_BASE_NAME}-graphics-vulkan-core CACHE INTERNAL "Library containing a Vulkan-based graphics implementation")
 
+set(PROJECT_NETWORK_LIB ${PROJECT_BASE_NAME}-network CACHE INTERNAL "Library implementing networking using Valve's GameNetworkingSockets")
+
 set(PROJECT_PHYSICS_PHYSX_LIB ${PROJECT_BASE_NAME}-physics-physx CACHE INTERNAL "Library implementing physics using PhysX")
 set(PROJECT_PHYSICS_COOKING_LIB ${PROJECT_BASE_NAME}-physics-cooking CACHE INTERNAL "Library implementing convex hull generation")
 
@@ -36,6 +38,7 @@ target_link_libraries(${PROJECT_LIB_NAME}
         ${PROJECT_GAME_LIB}
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
+        ${PROJECT_NETWORK_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         "$<IF:$<BOOL:${SP_BUILD_RUST}>,sp-rs-wasm,>"
@@ -78,6 +81,7 @@ add_subdirectory(core)
 add_subdirectory(exports)
 add_subdirectory(game)
 add_subdirectory(graphics)
+add_subdirectory(network)
 add_subdirectory(physics)
 add_subdirectory(scripts)
 add_subdirectory(xr)

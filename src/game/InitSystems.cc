@@ -20,6 +20,10 @@
     #include "graphics/vulkan/core/DeviceContext.hh"
 #endif
 
+#ifdef SP_NETWORK_SUPPORT
+    #include "network/NetworkManager.hh"
+#endif
+
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
     #include "physx/PhysxManager.hh"
 #endif
@@ -60,6 +64,12 @@ namespace sp {
             game.graphics->Init();
             game.graphics->StartThread(scriptMode);
         }
+#endif
+    }
+
+    void InitNetworkManager(Game &game) {
+#ifdef SP_NETWORK_SUPPORT
+        game.network = make_shared<NetworkManager>();
 #endif
     }
 

@@ -13,6 +13,7 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     LaserLine.cc
     Light.cc
     Name.cc
+    Network.cc
     Physics.cc
     PhysicsJoints.cc
     PhysicsQuery.cc

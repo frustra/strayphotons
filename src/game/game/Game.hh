@@ -36,6 +36,7 @@ namespace sp {
     class GraphicsManager;
     class PhysxManager;
     class AudioManager;
+    class NetworkManager;
 
     class Game {
         LogOnExit logOnExit = "Game shut down ========================================================";
@@ -67,6 +68,7 @@ namespace sp {
         std::shared_ptr<GraphicsManager> graphics;
         std::shared_ptr<PhysxManager> physics;
         std::shared_ptr<AudioManager> audio;
+        std::shared_ptr<NetworkManager> network;
 
         ConsoleBindingManager consoleBinding;
         EditorSystem editor;
@@ -77,6 +79,7 @@ namespace sp {
     void InitAudioManager(Game &game);
     void InitGraphicsManager(Game &game);
     void StartGraphicsThread(Game &game, bool scriptMode);
+    void InitNetworkManager(Game &game);
     void InitPhysicsManager(Game &game);
     void StartPhysicsThread(Game &game, bool scriptMode);
     void LoadXrSystem(Game &game);

@@ -73,3 +73,6 @@
 [submodule "ext/dynalo"]
 	path = ext/dynalo
 	url = https://github.com/maddouri/dynalo.git
+[submodule "ext/GameNetworkingSockets"]
+	path = ext/GameNetworkingSockets
+	url = https://github.com/ValveSoftware/GameNetworkingSockets.git

@@ -60,6 +60,7 @@ namespace sp {
         InitGraphicsManager(*this);
         InitPhysicsManager(*this);
         InitAudioManager(*this);
+        InitNetworkManager(*this);
     }
 
     Game::ShutdownManagers::~ShutdownManagers() {

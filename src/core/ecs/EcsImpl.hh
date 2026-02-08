@@ -29,6 +29,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/LightSensor.hh"
 #include "ecs/components/Name.hh"
+#include "ecs/components/Network.hh"
 #include "ecs/components/OpticalElement.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/PhysicsJoints.hh"
