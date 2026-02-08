@@ -42,8 +42,7 @@ namespace ecs {
         EventName,
         EventString,
         EventBytes,
-        uint64_t,
-        // uint64_t, // size_t
+        uint64_t, // size_t
         VisibilityMask,
         sp::color_alpha_t,
         double,
