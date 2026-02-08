@@ -176,13 +176,21 @@ namespace sp::vulkan {
             }
 
             auto physicalDevices = instance.enumeratePhysicalDevices();
+
+            for (auto &device : physicalDevices) {
+                auto properties = device.getProperties();
+                Logf("Found graphics device: %s %u", properties.deviceName.data(), properties.deviceID);
+            }
+
             // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
             if (physicalDevices.size() > 0) {
                 // TODO: Check device extension support
                 physicalDeviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
                 physicalDevices.front().getProperties2(&physicalDeviceProperties);
                 // auto features = device.getFeatures();
-                Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
+                Logf("Using graphics device: %s %u",
+                    physicalDeviceProperties.properties.deviceName.data(),
+                    physicalDeviceProperties.properties.deviceID);
                 physicalDevice = physicalDevices.front();
             }
             Assert(physicalDevice, "No suitable graphics device found!");
