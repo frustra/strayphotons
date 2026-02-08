@@ -24,7 +24,7 @@ namespace sp {
     public:
         virtual ~GenericCompositor() = default;
 
-        typedef uint32 ResourceID;
+        typedef uint32_t ResourceID;
         typedef InlineString<127> ResourceName;
 
         static constexpr uint64_t FontAtlasID = (uint64_t)std::numeric_limits<ResourceID>::max() + 1;

@@ -11,7 +11,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan::render_graph {
-    const ImageViewPtr &PooledImage::LayerImageView(uint32 layer) {
+    const ImageViewPtr &PooledImage::LayerImageView(uint32_t layer) {
         Assert(layer < desc.arrayLayers, "render target image layer too high");
         if (layerImageViews.empty()) layerImageViews.resize(desc.arrayLayers);
 
@@ -26,7 +26,7 @@ namespace sp::vulkan::render_graph {
         return view;
     }
 
-    const ImageViewPtr &PooledImage::MipImageView(uint32 mip) {
+    const ImageViewPtr &PooledImage::MipImageView(uint32_t mip) {
         Assert(mip < desc.mipLevels, "render target image layer too high");
         if (mipImageViews.empty()) mipImageViews.resize(desc.mipLevels);
 

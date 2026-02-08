@@ -16,7 +16,7 @@
 
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), textures(device) {
-        indexBuffer = device.AllocateBuffer({sizeof(uint32), 64 * 1024 * 1024},
+        indexBuffer = device.AllocateBuffer({sizeof(uint32_t), 64 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
 
@@ -254,7 +254,7 @@ namespace sp::vulkan {
 
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
         ecs::VisibilityMask viewMask,
-        uint32 instanceCount) {
+        uint32_t instanceCount) {
         DrawBufferIDs bufferIDs;
 
         graph.AddPass("GenerateDrawsForView")
@@ -264,14 +264,14 @@ namespace sp::vulkan {
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
                         auto drawCmds = builder.CreateBuffer(
-                            {sizeof(uint32), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
+                            {sizeof(uint32_t), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
                             Residency::GPU_ONLY,
                             Access::TransferWrite);
                         bufferIDs.drawCommandsBuffer = drawCmds.id;
                     })
                     .Execute([bufferIDs](rg::Resources &resources, CommandContext &cmd) {
                         auto drawBuffer = resources.GetBuffer(bufferIDs.drawCommandsBuffer);
-                        cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32), 0);
+                        cmd.Raw().fillBuffer(*drawBuffer, 0, sizeof(uint32_t), 0);
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
@@ -292,9 +292,9 @@ namespace sp::vulkan {
                 cmd.SetStorageBuffer("DrawParamsList", bufferIDs.drawParamsBuffer);
 
                 struct {
-                    uint32 renderableCount;
-                    uint32 instanceCount;
-                    uint32 visibilityMask;
+                    uint32_t renderableCount;
+                    uint32_t instanceCount;
+                    uint32_t visibilityMask;
                 } constants;
                 constants.renderableCount = renderableCount;
                 constants.instanceCount = instanceCount;
@@ -310,14 +310,14 @@ namespace sp::vulkan {
         glm::vec3 viewPosition,
         ecs::VisibilityMask viewMask,
         bool reverseSort,
-        uint32 instanceCount) {
+        uint32_t instanceCount) {
         DrawBufferIDs bufferIDs;
 
         graph.AddPass("GenerateSortedDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
 
-                auto drawCmds = builder.CreateBuffer({sizeof(uint32), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
+                auto drawCmds = builder.CreateBuffer({sizeof(uint32_t), sizeof(VkDrawIndexedIndirectCommand), maxDraws},
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
                 bufferIDs.drawCommandsBuffer = drawCmds.id;
@@ -413,7 +413,7 @@ namespace sp::vulkan {
 
         if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
         cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
-            sizeof(uint32),
+            sizeof(uint32_t),
             drawCommandsBuffer,
             0,
             drawCommandsBuffer->ArraySize());
@@ -427,12 +427,12 @@ namespace sp::vulkan {
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
                         builder.CreateBuffer("WarpedVertexDrawCmds",
-                            {sizeof(uint32), sizeof(VkDrawIndirectCommand), maxDraws},
+                            {sizeof(uint32_t), sizeof(VkDrawIndirectCommand), maxDraws},
                             Residency::GPU_ONLY,
                             Access::TransferWrite);
                     })
                     .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                        cmd.Raw().fillBuffer(*resources.GetBuffer("WarpedVertexDrawCmds"), 0, sizeof(uint32), 0);
+                        cmd.Raw().fillBuffer(*resources.GetBuffer("WarpedVertexDrawCmds"), 0, sizeof(uint32_t), 0);
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
@@ -455,7 +455,7 @@ namespace sp::vulkan {
                 cmd.SetStorageBuffer("DrawParamsList", "WarpedVertexDrawParams");
 
                 struct {
-                    uint32 renderableCount;
+                    uint32_t renderableCount;
                 } constants;
                 constants.renderableCount = renderableCount;
                 cmd.PushConstants(constants);
@@ -490,7 +490,7 @@ namespace sp::vulkan {
                 cmd.SetVertexLayout(SceneVertex::Layout());
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::ePointList);
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
-                cmd.DrawIndirect(cmdBuffer, sizeof(uint32), primitiveCount);
+                cmd.DrawIndirect(cmdBuffer, sizeof(uint32_t), primitiveCount);
                 cmd.EndRenderPass();
             });
     }

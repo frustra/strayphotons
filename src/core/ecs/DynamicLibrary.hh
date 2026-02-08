@@ -67,7 +67,7 @@ namespace ecs {
         std::vector<EventName> events;
         std::vector<StructField> fields;
 
-        size_t contextSize = 0;
+        uint64_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;
         void (*defaultFreeFunc)(void *) = nullptr;
         void (*initFunc)(void *, ScriptState &) = nullptr;

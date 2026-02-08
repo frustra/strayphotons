@@ -32,12 +32,12 @@ namespace sp::vulkan {
         }
 
         indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);
-        staging.indexBuffer = device.AllocateBuffer({sizeof(uint32), indexCount},
+        staging.indexBuffer = device.AllocateBuffer({sizeof(uint32_t), indexCount},
             vk::BufferUsageFlagBits::eTransferSrc,
             VMA_MEMORY_USAGE_CPU_ONLY);
         Assertf(indexBuffer->ByteSize() == staging.indexBuffer->ByteSize(), "index staging buffer size mismatch");
 
-        auto indexData = (uint32 *)staging.indexBuffer->Mapped();
+        auto indexData = (uint32_t *)staging.indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
@@ -157,14 +157,14 @@ namespace sp::vulkan {
         transfer.emplace_back(staging.modelEntry, modelEntry);
 
         // TODO replace with span constructor in vk-hpp v1.2.189
-        staging.transferComplete = device.TransferBuffers({(uint32)transfer.size(), transfer.data()});
+        staging.transferComplete = device.TransferBuffers({(uint32_t)transfer.size(), transfer.data()});
     }
 
     Mesh::~Mesh() {
         Tracef("Destroying Vulkan model %s", modelName);
     }
 
-    uint32 Mesh::SceneIndex() const {
+    uint32_t Mesh::SceneIndex() const {
         return modelEntry->ArrayOffset();
     }
 } // namespace sp::vulkan

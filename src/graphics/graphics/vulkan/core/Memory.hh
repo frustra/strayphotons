@@ -59,12 +59,12 @@ namespace sp::vulkan {
     };
 
     struct InitialData {
-        const uint8 *data = nullptr;
+        const uint8_t *data = nullptr;
         size_t dataSize = 0;
         shared_ptr<const void> dataOwner;
 
         InitialData() = default;
-        InitialData(const uint8 *data, size_t dataSize, const shared_ptr<const void> &dataOwner = nullptr)
+        InitialData(const uint8_t *data, size_t dataSize, const shared_ptr<const void> &dataOwner = nullptr)
             : data(data), dataSize(dataSize), dataOwner(dataOwner) {}
     };
 

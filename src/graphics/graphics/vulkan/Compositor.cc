@@ -74,13 +74,13 @@ namespace sp::vulkan {
             fontAtlas->AddFont(&cfg);
         }
 
-        uint8 *fontData;
+        uint8_t *fontData;
         int fontWidth, fontHeight;
         fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
 
         ImageCreateInfo fontImageInfo;
         fontImageInfo.imageType = vk::ImageType::e2D;
-        fontImageInfo.extent = vk::Extent3D{(uint32)fontWidth, (uint32)fontHeight, 1};
+        fontImageInfo.extent = vk::Extent3D{(uint32_t)fontWidth, (uint32_t)fontHeight, 1};
         fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
         fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
@@ -689,7 +689,7 @@ namespace sp::vulkan {
                 cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
-                uint32 idxOffset = 0;
+                uint32_t idxOffset = 0;
                 for (const auto &pcmd : drawData.drawCommands) {
                     if (pcmd.textureId == FontAtlasID) {
                         cmd.SetImageView("tex", fontView->Get());
@@ -711,8 +711,8 @@ namespace sp::vulkan {
                         glm::ivec2(viewportExtents) - 1);
                     clipExtents = glm::clamp(clipExtents, glm::uvec2(0), viewportExtents - glm::uvec2(clipOffset));
 
-                    cmd.SetScissor(vk::Rect2D{{(int32)clipOffset.x, (int32)clipOffset.y},
-                        {(uint32)clipExtents.x, (uint32)clipExtents.y}});
+                    cmd.SetScissor(vk::Rect2D{{(int32_t)clipOffset.x, (int32_t)clipOffset.y},
+                        {(uint32_t)clipExtents.x, (uint32_t)clipExtents.y}});
 
                     cmd.DrawIndexed(pcmd.indexCount, 1, idxOffset, pcmd.vertexOffset, 0);
                     idxOffset += pcmd.indexCount;
@@ -799,7 +799,7 @@ namespace sp::vulkan {
                 cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
-                uint32 idxOffset = 0, vtxOffset = 0;
+                uint32_t idxOffset = 0, vtxOffset = 0;
                 for (const auto &cmdList : drawData->CmdLists) {
                     for (const auto &pcmd : cmdList->CmdBuffer) {
                         if (pcmd.UserCallback) continue;
@@ -823,8 +823,8 @@ namespace sp::vulkan {
                         clipRect.w -= drawData->DisplayPos.y;
                         // TODO: Clamp to viewport
 
-                        cmd.SetScissor(vk::Rect2D{{(int32)clipRect.x, (int32)clipRect.y},
-                            {(uint32)(clipRect.z - clipRect.x), (uint32)(clipRect.w - clipRect.y)}});
+                        cmd.SetScissor(vk::Rect2D{{(int32_t)clipRect.x, (int32_t)clipRect.y},
+                            {(uint32_t)(clipRect.z - clipRect.x), (uint32_t)(clipRect.w - clipRect.y)}});
 
                         cmd.DrawIndexed(pcmd.ElemCount, 1, idxOffset, vtxOffset, 0);
                         idxOffset += pcmd.ElemCount;

@@ -41,21 +41,21 @@ namespace sp::vulkan {
     static_assert(sizeof(GPUViewState) % 16 == 0, "std140 alignment");
 
     struct GPUMeshPrimitive {
-        uint32 firstIndex, vertexOffset;
-        uint32 indexCount, vertexCount; // count of elements in the index/vertex buffers
-        uint32 jointsVertexOffset;
-        uint16 baseColorTexID, metallicRoughnessTexID;
+        uint32_t firstIndex, vertexOffset;
+        uint32_t indexCount, vertexCount; // count of elements in the index/vertex buffers
+        uint32_t jointsVertexOffset;
+        uint16_t baseColorTexID, metallicRoughnessTexID;
         // other material properties of the primitive can be stored here (or material ID)
     };
-    static_assert(sizeof(GPUMeshPrimitive) % sizeof(uint32) == 0, "std430 alignment");
+    static_assert(sizeof(GPUMeshPrimitive) % sizeof(uint32_t) == 0, "std430 alignment");
 
     struct GPUMeshModel {
-        uint32 primitiveOffset;
-        uint32 primitiveCount;
-        uint32 indexOffset;
-        uint32 vertexOffset;
+        uint32_t primitiveOffset;
+        uint32_t primitiveCount;
+        uint32_t indexOffset;
+        uint32_t vertexOffset;
     };
-    static_assert(sizeof(GPUMeshModel) % sizeof(uint32) == 0, "std430 alignment");
+    static_assert(sizeof(GPUMeshModel) % sizeof(uint32_t) == 0, "std430 alignment");
 
     struct GPURenderableEntity {
         glm::mat4 modelToWorld;
@@ -99,14 +99,14 @@ namespace sp::vulkan {
 
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
             ecs::VisibilityMask viewMask,
-            uint32 instanceCount = 1);
+            uint32_t instanceCount = 1);
 
         // Sort primitives nearest first by default.
         DrawBufferIDs GenerateSortedDrawsForView(rg::RenderGraph &graph,
             glm::vec3 viewPosition,
             ecs::VisibilityMask viewMask,
             bool reverseSort = false,
-            uint32 instanceCount = 1);
+            uint32_t instanceCount = 1);
 
         void DrawSceneIndirect(CommandContext &cmd,
             BufferPtr vertexBuffer,
@@ -131,13 +131,13 @@ namespace sp::vulkan {
             bool operator==(const OpticInstance &) const = default;
         };
 
-        uint32 renderableCount = 0;
+        uint32_t renderableCount = 0;
         std::vector<OpticInstance> opticEntities;
         std::vector<glm::mat4> jointPoses;
 
-        uint32 vertexCount = 0;
-        uint32 primitiveCount = 0;
-        uint32 primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
+        uint32_t vertexCount = 0;
+        uint32_t primitiveCount = 0;
+        uint32_t primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
 
         TextureSet textures;
         robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> liveTextureCache;

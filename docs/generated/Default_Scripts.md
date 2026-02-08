@@ -68,8 +68,8 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **delay_frames** | size_t | 1 | No description |
-| **delay_ms** | size_t | 0 | No description |
+| **delay_frames** | uint64 | 1 | No description |
+| **delay_ms** | uint64 | 0 | No description |
 | **input** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output** | string | "" | No description |
 
@@ -260,8 +260,8 @@ The `physics_component_from_signal` script has parameter type: map&lt;string, [S
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **delay_frames** | size_t | 1 | No description |
-| **delay_ms** | size_t | 0 | No description |
+| **delay_frames** | uint64 | 1 | No description |
+| **delay_ms** | uint64 | 0 | No description |
 | **input** | [SignalExpression](#SignalExpression-type) | "" | No description |
 | **output** | string | "" | No description |
 

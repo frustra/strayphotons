@@ -60,9 +60,9 @@ namespace sp::vulkan {
         ReflectShaders();
 
         vk::DescriptorSetLayout layouts[MAX_BOUND_DESCRIPTOR_SETS] = {};
-        uint32 layoutCount = 0;
+        uint32_t layoutCount = 0;
 
-        for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
+        for (uint32_t set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
             if (!HasDescriptorSet(set)) continue;
             descriptorPools[set] = manager.GetDescriptorPool(info.descriptorSets[set]);
             layouts[set] = descriptorPools[set]->GetDescriptorSetLayout();
@@ -83,7 +83,7 @@ namespace sp::vulkan {
     }
 
     void PipelineLayout::ReflectShaders() {
-        uint32 count;
+        uint32_t count;
 
         for (auto &stageStage : magic_enum::enum_values<ShaderStage>()) {
             auto &shader = shaders[stageStage];
@@ -108,13 +108,13 @@ namespace sp::vulkan {
             SpvReflectDescriptorSet *descriptorSets[MAX_BOUND_DESCRIPTOR_SETS];
             reflect.EnumerateDescriptorSets(&count, descriptorSets);
 
-            for (uint32 setIndex = 0; setIndex < count; setIndex++) {
+            for (uint32_t setIndex = 0; setIndex < count; setIndex++) {
                 auto descriptorSet = descriptorSets[setIndex];
                 auto set = descriptorSet->set;
                 Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "too many descriptor sets");
 
                 auto &setInfo = info.descriptorSets[set];
-                for (uint32 bindingIndex = 0; bindingIndex < descriptorSet->binding_count; bindingIndex++) {
+                for (uint32_t bindingIndex = 0; bindingIndex < descriptorSet->binding_count; bindingIndex++) {
                     auto &desc = descriptorSet->bindings[bindingIndex];
                     if (!desc->accessed) continue;
 
@@ -181,15 +181,15 @@ namespace sp::vulkan {
     }
 
     void PipelineLayout::CreateDescriptorUpdateTemplates(DeviceContext &device) {
-        for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
+        for (uint32_t set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
             if (!HasDescriptorSet(set)) continue;
             if (IsBindlessSet(set)) continue; // bindless sets have variable size and must be updated manually
 
             vk::DescriptorUpdateTemplateEntry entries[MAX_BINDINGS_PER_DESCRIPTOR_SET];
-            uint32 entryCount = 0;
+            uint32_t entryCount = 0;
 
             auto &setInfo = info.descriptorSets[set];
-            auto setEntry = [&](uint32 binding, vk::DescriptorType type, size_t structOffset) {
+            auto setEntry = [&](uint32_t binding, vk::DescriptorType type, size_t structOffset) {
                 Assert(entryCount < MAX_BINDINGS_PER_DESCRIPTOR_SET, "too many descriptors");
                 auto &entry = entries[entryCount++];
                 entry.descriptorType = type;
@@ -201,16 +201,16 @@ namespace sp::vulkan {
                 entry.stride = sizeof(DescriptorBinding);
             };
 
-            ForEachBit(setInfo.sampledImagesMask, [&](uint32 binding) {
+            ForEachBit(setInfo.sampledImagesMask, [&](uint32_t binding) {
                 setEntry(binding, vk::DescriptorType::eCombinedImageSampler, offsetof(DescriptorBinding, image));
             });
-            ForEachBit(setInfo.storageImagesMask, [&](uint32 binding) {
+            ForEachBit(setInfo.storageImagesMask, [&](uint32_t binding) {
                 setEntry(binding, vk::DescriptorType::eStorageImage, offsetof(DescriptorBinding, image));
             });
-            ForEachBit(setInfo.uniformBuffersMask, [&](uint32 binding) {
+            ForEachBit(setInfo.uniformBuffersMask, [&](uint32_t binding) {
                 setEntry(binding, vk::DescriptorType::eUniformBuffer, offsetof(DescriptorBinding, buffer));
             });
-            ForEachBit(setInfo.storageBuffersMask, [&](uint32 binding) {
+            ForEachBit(setInfo.storageBuffersMask, [&](uint32_t binding) {
                 setEntry(binding, vk::DescriptorType::eStorageBuffer, offsetof(DescriptorBinding, buffer));
             });
 
@@ -227,7 +227,7 @@ namespace sp::vulkan {
         }
     }
 
-    vk::DescriptorSet PipelineLayout::GetFilledDescriptorSet(uint32 set, const DescriptorSetBindings &setBindings) {
+    vk::DescriptorSet PipelineLayout::GetFilledDescriptorSet(uint32_t set, const DescriptorSetBindings &setBindings) {
         if (!HasDescriptorSet(set)) return VK_NULL_HANDLE;
         Assertf(!IsBindlessSet(set), "can't automatically fill bindless descriptor set %d", set);
 
@@ -237,8 +237,8 @@ namespace sp::vulkan {
         // Hash of the subset of data that is actually accessed by the pipeline.
         Hash64 hash = 0;
 
-        ForEachBit(setLayout.sampledImagesMask | setLayout.storageImagesMask, [&](uint32 binding) {
-            for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
+        ForEachBit(setLayout.sampledImagesMask | setLayout.storageImagesMask, [&](uint32_t binding) {
+            for (uint32_t i = 0; i < setLayout.descriptorCount[binding]; i++) {
                 hash_combine(hash, bindings[binding + i].uniqueID);
                 hash_combine(hash, bindings[binding + i].image.imageView);
                 hash_combine(hash, bindings[binding + i].image.sampler);
@@ -246,8 +246,8 @@ namespace sp::vulkan {
             }
         });
 
-        ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
-            for (uint32 i = 0; i < setLayout.descriptorCount[binding]; i++) {
+        ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32_t binding) {
+            for (uint32_t i = 0; i < setLayout.descriptorCount[binding]; i++) {
                 hash_combine(hash, bindings[binding + i].uniqueID);
                 hash_combine(hash, bindings[binding + i].buffer.buffer);
                 hash_combine(hash, bindings[binding + i].buffer.offset);
@@ -260,7 +260,7 @@ namespace sp::vulkan {
             auto &sizes = info.sizes[set];
             bool errors = false;
 
-            ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32 binding) {
+            ForEachBit(setLayout.uniformBuffersMask | setLayout.storageBuffersMask, [&](uint32_t binding) {
                 auto size = bindings[binding].buffer.range;
                 auto minSize = sizes[binding].sizeBase;
                 if (size == minSize) return;
@@ -384,7 +384,7 @@ namespace sp::vulkan {
                 specOut.mapEntryCount = 0;
                 for (size_t i = 0; i < MAX_SPEC_CONSTANTS; i++) {
                     if (!specIn.set[i]) continue;
-                    specializationValues.emplace_back(i, i * sizeof(uint32), sizeof(uint32));
+                    specializationValues.emplace_back(i, i * sizeof(uint32_t), sizeof(uint32_t));
                     specOut.mapEntryCount++;
                 }
 
@@ -448,7 +448,7 @@ namespace sp::vulkan {
             colorBlending.pAttachments = colorBlendAttachments.data();
 
             // TODO: support configuring each attachment
-            for (uint32 i = 0; i < colorBlending.attachmentCount; i++) {
+            for (uint32_t i = 0; i < colorBlending.attachmentCount; i++) {
                 auto &blendState = colorBlendAttachments[i];
                 blendState.blendEnable = state.blendEnable;
                 if (state.blendEnable) {
@@ -522,7 +522,7 @@ namespace sp::vulkan {
     DescriptorPool::DescriptorPool(DeviceContext &device, const DescriptorSetLayoutInfo &layoutInfo) : device(device) {
         vector<vk::DescriptorBindingFlags> bindingFlags;
 
-        for (uint32 binding = 0; binding < layoutInfo.lastBinding + 1; binding++) {
+        for (uint32_t binding = 0; binding < layoutInfo.lastBinding + 1; binding++) {
             auto bindingBit = 1 << binding;
             vk::DescriptorType type;
             int count = 0;
@@ -549,7 +549,7 @@ namespace sp::vulkan {
                 Assert(!bindless, "Variable length binding arrays must be the last binding in the set");
 
                 auto stages = layoutInfo.stages[binding];
-                uint32 descriptorCount = layoutInfo.descriptorCount[binding];
+                uint32_t descriptorCount = layoutInfo.descriptorCount[binding];
                 if (descriptorCount == 0) {
                     bindless = true;
                     descriptorCount = MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET;
@@ -628,7 +628,7 @@ namespace sp::vulkan {
 
         // for now, just allocate the maximum
         // if we have multiple bindless sets, it would be good to tailor the sizes depending on the usage
-        uint32 variableCount = bindings.back().descriptorCount;
+        uint32_t variableCount = bindings.back().descriptorCount;
         vk::DescriptorSetVariableDescriptorCountAllocateInfo countAllocInfo;
         countAllocInfo.descriptorSetCount = 1;
         countAllocInfo.pDescriptorCounts = &variableCount;

@@ -40,16 +40,16 @@ namespace sp::vulkan {
 
     namespace render_graph {
         class Resources;
-        typedef uint32 ResourceID;
+        typedef uint32_t ResourceID;
     } // namespace render_graph
 
     struct ImageBarrierInfo {
-        uint32 baseMipLevel = 0;
-        uint32 mipLevelCount = 0; // default: use all levels
-        uint32 baseArrayLayer = 0;
-        uint32 arrayLayerCount = 0; // default: use all layers
-        uint32 srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        uint32 dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        uint32_t baseMipLevel = 0;
+        uint32_t mipLevelCount = 0; // default: use all levels
+        uint32_t baseArrayLayer = 0;
+        uint32_t arrayLayerCount = 0; // default: use all layers
+        uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
         // false skips checking and saving the image layout,
         // caller must set the image's layout before passing the image to other code
@@ -86,35 +86,35 @@ namespace sp::vulkan {
             PushConstants(&data, offset, sizeof(T));
         }
 
-        void Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ);
+        void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
         // indirectBuffer stores a VkDispatchIndirectCommand object
         void DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset);
-        void Draw(uint32 vertexes, uint32 instances = 1, int32 firstVertex = 0, uint32 firstInstance = 0);
-        void DrawIndexed(uint32 indexes,
-            uint32 instances = 1,
-            uint32 firstIndex = 0,
-            int32 vertexOffset = 0,
-            uint32 firstInstance = 0);
+        void Draw(uint32_t vertexes, uint32_t instances = 1, int32_t firstVertex = 0, uint32_t firstInstance = 0);
+        void DrawIndexed(uint32_t indexes,
+            uint32_t instances = 1,
+            uint32_t firstIndex = 0,
+            int32_t vertexOffset = 0,
+            uint32_t firstInstance = 0);
         void DrawIndirect(BufferPtr drawCommands,
             vk::DeviceSize offset,
-            uint32 drawCount,
-            uint32 stride = sizeof(VkDrawIndirectCommand));
+            uint32_t drawCount,
+            uint32_t stride = sizeof(VkDrawIndirectCommand));
         void DrawIndirectCount(BufferPtr drawCommands,
             vk::DeviceSize offset,
             BufferPtr countBuffer,
             vk::DeviceSize countOffset,
-            uint32 maxDrawCount,
-            uint32 stride = sizeof(VkDrawIndirectCommand));
+            uint32_t maxDrawCount,
+            uint32_t stride = sizeof(VkDrawIndirectCommand));
         void DrawIndexedIndirect(BufferPtr drawCommands,
             vk::DeviceSize offset,
-            uint32 drawCount,
-            uint32 stride = sizeof(VkDrawIndexedIndirectCommand));
+            uint32_t drawCount,
+            uint32_t stride = sizeof(VkDrawIndexedIndirectCommand));
         void DrawIndexedIndirectCount(BufferPtr drawCommands,
             vk::DeviceSize offset,
             BufferPtr countBuffer,
             vk::DeviceSize countOffset,
-            uint32 maxDrawCount,
-            uint32 stride = sizeof(VkDrawIndexedIndirectCommand));
+            uint32_t maxDrawCount,
+            uint32_t stride = sizeof(VkDrawIndexedIndirectCommand));
 
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
         void DrawScreenCover(const color_alpha_t &color);
@@ -141,15 +141,15 @@ namespace sp::vulkan {
         // Sets the shaders to a standard compute pipeline.
         void SetComputeShader(string_view name);
 
-        void SetShaderConstant(ShaderStage stage, string_view name, uint32 data);
+        void SetShaderConstant(ShaderStage stage, string_view name, uint32_t data);
 
-        template<typename T, std::enable_if_t<sizeof(T) == sizeof(uint32), int> = 0>
+        template<typename T, std::enable_if_t<sizeof(T) == sizeof(uint32_t), int> = 0>
         void SetShaderConstant(ShaderStage stage, string_view name, T data) {
-            SetShaderConstant(stage, name, std::bit_cast<uint32>(data));
+            SetShaderConstant(stage, name, std::bit_cast<uint32_t>(data));
         }
 
         void SetShaderConstant(ShaderStage stage, string_view name, bool data) {
-            SetShaderConstant(stage, name, (uint32)data);
+            SetShaderConstant(stage, name, (uint32_t)data);
         }
 
         void SetDefaultOpaqueState();
@@ -259,7 +259,7 @@ namespace sp::vulkan {
             }
         }
 
-        void SetStencilWriteMask(vk::StencilFaceFlags faces, uint32 mask) {
+        void SetStencilWriteMask(vk::StencilFaceFlags faces, uint32_t mask) {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (mask != stencilState[0].writeMask) {
                     stencilState[0].writeMask = mask;
@@ -274,7 +274,7 @@ namespace sp::vulkan {
             }
         }
 
-        void SetStencilCompareMask(vk::StencilFaceFlags faces, uint32 mask) {
+        void SetStencilCompareMask(vk::StencilFaceFlags faces, uint32_t mask) {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (mask != stencilState[0].compareMask) {
                     stencilState[0].compareMask = mask;
@@ -289,7 +289,7 @@ namespace sp::vulkan {
             }
         }
 
-        void SetStencilReference(vk::StencilFaceFlags faces, uint32 value) {
+        void SetStencilReference(vk::StencilFaceFlags faces, uint32_t value) {
             if (faces & vk::StencilFaceFlagBits::eFront) {
                 if (value != stencilState[0].reference) {
                     stencilState[0].reference = value;
@@ -378,18 +378,18 @@ namespace sp::vulkan {
             }
         }
 
-        void SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view);
-        void SetImageView(uint32 set, uint32 binding, const ImageView *view);
+        void SetImageView(uint32_t set, uint32_t binding, const ImageViewPtr &view);
+        void SetImageView(uint32_t set, uint32_t binding, const ImageView *view);
         void SetImageView(string_view bindingName, const ImageViewPtr &view);
         void SetImageView(string_view bindingName, const ImageView *view);
         void SetImageView(string_view bindingName, render_graph::ResourceID resourceID);
         void SetImageView(string_view bindingName, string_view resourceName);
-        void SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler);
+        void SetSampler(uint32_t set, uint32_t binding, const vk::Sampler &sampler);
         void SetSampler(string_view bindingName, const vk::Sampler &sampler);
 
         // Binds a buffer as to a uniform descriptor. Defaults to the whole buffer.
-        void SetUniformBuffer(uint32 set,
-            uint32 binding,
+        void SetUniformBuffer(uint32_t set,
+            uint32_t binding,
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
@@ -407,8 +407,8 @@ namespace sp::vulkan {
             vk::DeviceSize range = 0);
 
         // Binds a buffer as to a storage descriptor. Defaults to the whole buffer.
-        void SetStorageBuffer(uint32 set,
-            uint32 binding,
+        void SetStorageBuffer(uint32_t set,
+            uint32_t binding,
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
@@ -426,29 +426,29 @@ namespace sp::vulkan {
             vk::DeviceSize range = 0);
 
         // Buffer is stored in a pool for this frame, and reused in later frames.
-        BufferPtr AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size);
+        BufferPtr AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size);
         BufferPtr AllocUniformBuffer(string_view bindingName, vk::DeviceSize size);
 
         // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
         template<typename T>
-        T *AllocUniformData(uint32 set, uint32 binding, uint32 count = 1) {
+        T *AllocUniformData(uint32_t set, uint32_t binding, uint32_t count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
             return static_cast<T *>(buffer->Mapped());
         }
 
         template<typename T>
-        void UploadUniformData(uint32 set, uint32 binding, const T *data, uint32 count = 1) {
+        void UploadUniformData(uint32_t set, uint32_t binding, const T *data, uint32_t count = 1) {
             auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
             buffer->CopyFrom(data, count);
         }
 
         template<typename T>
-        void UploadUniformData(string_view bindingName, const T *data, uint32 count = 1) {
+        void UploadUniformData(string_view bindingName, const T *data, uint32_t count = 1) {
             auto buffer = AllocUniformBuffer(bindingName, sizeof(T) * count);
             buffer->CopyFrom(data, count);
         }
 
-        void SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet);
+        void SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet);
 
         bool WritesToSwapchain() {
             return writesToSwapchain;
@@ -485,7 +485,7 @@ namespace sp::vulkan {
     private:
         void SetSingleShader(ShaderStage stage, ShaderHandle handle);
         void SetSingleShader(ShaderStage stage, string_view name);
-        void SetShaderConstant(ShaderStage stage, uint32 index, uint32 data);
+        void SetShaderConstant(ShaderStage stage, uint32_t index, uint32_t data);
 
         bool TestDirty(DirtyFlags flags) {
             return static_cast<bool>(dirty & flags);
@@ -501,17 +501,17 @@ namespace sp::vulkan {
             dirty |= flags;
         }
 
-        bool TestDescriptorDirty(uint32 set) {
+        bool TestDescriptorDirty(uint32_t set) {
             return static_cast<bool>(dirtyDescriptorSets & (1 << set));
         }
 
-        bool ResetDescriptorDirty(uint32 set) {
+        bool ResetDescriptorDirty(uint32_t set) {
             bool ret = TestDescriptorDirty(set);
             dirtyDescriptorSets &= ~(1 << set);
             return ret;
         }
 
-        void SetDescriptorDirty(uint32 set) {
+        void SetDescriptorDirty(uint32_t set) {
             dirtyDescriptorSets |= (1 << set);
         }
 
@@ -531,7 +531,7 @@ namespace sp::vulkan {
         float minDepth = 0.0f, maxDepth = 1.0f;
 
         struct StencilDynamicState {
-            uint32 writeMask = 0, compareMask = 0, reference = 0;
+            uint32_t writeMask = 0, compareMask = 0, reference = 0;
         } stencilState[2] = {}; // front and back
 
         PipelineCompileInput pipelineInput;
@@ -542,7 +542,7 @@ namespace sp::vulkan {
         bool writesToSwapchain = false;
 
         DirtyFlags dirty;
-        uint32 dirtyDescriptorSets = 0;
+        uint32_t dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
         std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;

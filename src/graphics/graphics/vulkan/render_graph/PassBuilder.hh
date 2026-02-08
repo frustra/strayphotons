@@ -27,7 +27,7 @@ namespace sp::vulkan::render_graph {
 
         void Read(ResourceID id, Access access);
         ResourceID Read(string_view name, Access access);
-        ResourceID ReadPreviousFrame(string_view name, Access access, uint32 framesAgo = 1);
+        ResourceID ReadPreviousFrame(string_view name, Access access, uint32_t framesAgo = 1);
 
         void Write(ResourceID id, Access access);
         ResourceID Write(string_view name, Access access);
@@ -36,16 +36,16 @@ namespace sp::vulkan::render_graph {
         const Resource &ReadUniform(string_view name);
         const Resource &ReadUniform(ResourceID id);
 
-        void SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info);
-        void SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
-        Resource OutputColorAttachment(uint32 index, string_view name, ImageDesc desc, const AttachmentInfo &info);
+        void SetColorAttachment(uint32_t index, string_view name, const AttachmentInfo &info);
+        void SetColorAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info);
+        Resource OutputColorAttachment(uint32_t index, string_view name, ImageDesc desc, const AttachmentInfo &info);
 
         void SetDepthAttachment(string_view name, const AttachmentInfo &info);
         void SetDepthAttachment(ResourceID id, const AttachmentInfo &info);
         Resource OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info);
 
         // The attachment at this index will become the LastOutput of the graph after the pass, defaults to 0
-        void SetPrimaryAttachment(uint32 index);
+        void SetPrimaryAttachment(uint32_t index);
 
         Resource CreateImage(string_view name, const ImageDesc &desc, Access access);
 
@@ -84,9 +84,9 @@ namespace sp::vulkan::render_graph {
         }
 
     private:
-        Resource OutputAttachment(uint32 index, string_view name, const ImageDesc &desc, const AttachmentInfo &info);
+        Resource OutputAttachment(uint32_t index, string_view name, const ImageDesc &desc, const AttachmentInfo &info);
 
-        void SetAttachment(uint32 index, ResourceID id, const AttachmentInfo &info);
+        void SetAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info);
 
         Resources &resources;
         Pass &pass;

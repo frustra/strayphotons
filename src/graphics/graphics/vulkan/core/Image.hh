@@ -31,8 +31,8 @@ namespace sp::vulkan {
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::Format format = vk::Format::eUndefined;
         vk::Extent3D extent = {};
-        uint32 mipLevels = 0; // defaults to 1 if genMipmap is false, defaults to CalculateMipmapLevels otherwise
-        uint32 arrayLayers = 1;
+        uint32_t mipLevels = 0; // defaults to 1 if genMipmap is false, defaults to CalculateMipmapLevels otherwise
+        uint32_t arrayLayers = 1;
         vk::SampleCountFlagBits samples = vk::SampleCountFlagBits::e1;
         vk::ImageTiling tiling = vk::ImageTiling::eOptimal;
         vk::ImageUsageFlags usage = {};
@@ -60,7 +60,7 @@ namespace sp::vulkan {
         }
 
         vk::ImageFormatListCreateInfo GetVkFormatList() const {
-            return {(uint32)formats.size(), formats.data()};
+            return {(uint32_t)formats.size(), formats.data()};
         }
     };
 
@@ -76,11 +76,11 @@ namespace sp::vulkan {
             vk::ImageUsageFlags declaredUsage);
 
         // Creates an image reference, destructor does not destroy the image
-        Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)
+        Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32_t mipLevels = 1, uint32_t arrayLayers = 1)
             : UniqueMemory(VK_NULL_HANDLE), image(image), format(format), extent(extent), mipLevels(mipLevels),
               arrayLayers(arrayLayers) {}
 
-        Image(vk::Image image, vk::Format format, vk::Extent2D extent, uint32 mipLevels = 1, uint32 arrayLayers = 1)
+        Image(vk::Image image, vk::Format format, vk::Extent2D extent, uint32_t mipLevels = 1, uint32_t arrayLayers = 1)
             : Image(image, format, vk::Extent3D(extent, 1)) {}
 
         vk::Image operator*() const {
@@ -99,11 +99,11 @@ namespace sp::vulkan {
             return extent;
         }
 
-        uint32 MipLevels() const {
+        uint32_t MipLevels() const {
             return mipLevels;
         }
 
-        uint32 ArrayLayers() const {
+        uint32_t ArrayLayers() const {
             return arrayLayers;
         }
 
@@ -125,19 +125,19 @@ namespace sp::vulkan {
             return declaredUsage;
         }
 
-        uint32 LastQueueFamily() const {
+        uint32_t LastQueueFamily() const {
             return lastQueueFamilyIndex;
         }
 
         const vk::Semaphore &SetPendingCommand(std::shared_ptr<vk::UniqueSemaphore> pendingCmd,
-            uint32 queueFamilyIndex) {
+            uint32_t queueFamilyIndex) {
             static const vk::Semaphore emptySemaphore = {};
             pendingCommand = pendingCmd;
             if (queueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) lastQueueFamilyIndex = queueFamilyIndex;
             return pendingCommand ? pendingCommand->get() : emptySemaphore;
         }
 
-        const vk::Semaphore &GetWaitSemaphore(uint32 queueFamilyIndex = ~0u) {
+        const vk::Semaphore &GetWaitSemaphore(uint32_t queueFamilyIndex = ~0u) {
             static const vk::Semaphore emptySemaphore = {};
             if (lastQueueFamilyIndex == queueFamilyIndex && queueFamilyIndex != ~0u) return emptySemaphore;
             return pendingCommand ? pendingCommand->get() : emptySemaphore;
@@ -150,12 +150,12 @@ namespace sp::vulkan {
         vk::Image image;
         vk::Format format;
         vk::Extent3D extent;
-        uint32 mipLevels = 0, arrayLayers = 0;
+        uint32_t mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         Access lastAccess = Access::None;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 
-        uint32 lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         std::shared_ptr<vk::UniqueSemaphore> pendingCommand;
     };
 
@@ -181,7 +181,7 @@ namespace sp::vulkan {
         // Creates a view to an image, retaining a reference to the image while the view is alive
         ImageView(vk::UniqueImageView &&view, const ImageViewCreateInfo &info = {}) : info(info) {
             extent = info.image->Extent();
-            for (uint32 i = 0; i < info.baseMipLevel; i++) {
+            for (uint32_t i = 0; i < info.baseMipLevel; i++) {
                 extent.width = (extent.width + 1) / 2;
                 extent.height = (extent.height + 1) / 2;
                 extent.depth = (extent.depth + 1) / 2;
@@ -213,19 +213,19 @@ namespace sp::vulkan {
             return info.defaultSampler;
         }
 
-        uint32 BaseMipLevel() const {
+        uint32_t BaseMipLevel() const {
             return info.baseMipLevel;
         }
 
-        uint32 MipLevels() const {
+        uint32_t MipLevels() const {
             return info.mipLevelCount;
         }
 
-        uint32 BaseArrayLayer() const {
+        uint32_t BaseArrayLayer() const {
             return info.baseArrayLayer;
         }
 
-        uint32 ArrayLayers() const {
+        uint32_t ArrayLayers() const {
             return info.arrayLayerCount;
         }
 
@@ -250,12 +250,12 @@ namespace sp::vulkan {
         vk::Extent3D extent;
     };
 
-    vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors = true);
+    vk::Format FormatFromTraits(uint32_t components, uint32_t bits, bool preferSrgb, bool logErrors = true);
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
-    uint32 FormatComponentCount(vk::Format format);
-    uint32 FormatByteSize(vk::Format format);
+    uint32_t FormatComponentCount(vk::Format format);
+    uint32_t FormatByteSize(vk::Format format);
     bool FormatIsSRGB(vk::Format format);
     vk::Format FormatSRGBToUnorm(vk::Format format);
-    uint32 CalculateMipmapLevels(vk::Extent3D extent);
+    uint32_t CalculateMipmapLevels(vk::Extent3D extent);
     vk::SamplerCreateInfo GLSamplerToVKSampler(int minFilter, int magFilter, int wrapS, int wrapT, int wrapR);
 } // namespace sp::vulkan

@@ -29,7 +29,7 @@ namespace sp::vulkan {
         InlineVector<Shader::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> descriptorSets;
         for (auto *descriptorSet : reflectBuffer) {
             auto &set = descriptorSets.emplace_back(Shader::DescriptorSet{descriptorSet->set, {}});
-            for (uint32 bindingIndex = 0; bindingIndex < descriptorSet->binding_count; bindingIndex++) {
+            for (uint32_t bindingIndex = 0; bindingIndex < descriptorSet->binding_count; bindingIndex++) {
                 auto &binding = descriptorSet->bindings[bindingIndex];
                 std::string bindingName = binding->name ? binding->name : "";
                 if (bindingName.empty() && binding->type_description) {

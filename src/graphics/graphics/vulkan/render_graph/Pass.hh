@@ -27,7 +27,7 @@ namespace sp::vulkan::render_graph {
     struct ResourceIDFutureAccess {
         ResourceID id;
         Access access;
-        uint32 framesFromNow;
+        uint32_t framesFromNow;
     };
 
     struct AttachmentInfo {
@@ -37,7 +37,7 @@ namespace sp::vulkan::render_graph {
         StoreOp storeOp = StoreOp::DontCare;
         vk::ClearColorValue clearColor = {};
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
-        uint32 arrayIndex = ~0u; // if the attachment is an array image, this can be set to render to a specific index
+        uint32_t arrayIndex = ~0u; // if the attachment is an array image, this can be set to render to a specific index
 
         void SetClearColor(glm::vec4 clear) {
             std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
@@ -57,7 +57,7 @@ namespace sp::vulkan::render_graph {
         void AddAccess(ResourceID id, Access access) {
             accesses.push_back({id, access});
         }
-        void AddFutureRead(ResourceID id, Access access, uint32 framesFromNow) {
+        void AddFutureRead(ResourceID id, Access access, uint32_t framesFromNow) {
             futureReads.push_back({id, access, framesFromNow});
         }
 
@@ -85,7 +85,7 @@ namespace sp::vulkan::render_graph {
         InlineVector<ResourceIDFutureAccess, 128> futureReads;
         std::array<AttachmentInfo, MAX_COLOR_ATTACHMENTS + 1> attachments;
         bool active = false, required = false;
-        uint8 primaryAttachmentIndex = 0;
+        uint8_t primaryAttachmentIndex = 0;
         bool isRenderPass = false;
         bool flushCommands = false; // true will submit pending command buffers
 
@@ -94,6 +94,6 @@ namespace sp::vulkan::render_graph {
             std::function<void(Resources &, DeviceContext &)>>
             executeFunc;
 
-        InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopes;
+        InlineVector<uint8_t, MAX_RESOURCE_SCOPE_DEPTH> scopes;
     };
 } // namespace sp::vulkan::render_graph

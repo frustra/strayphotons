@@ -19,12 +19,12 @@
 #include <thread>
 
 namespace sp::vulkan::render_graph {
-    typedef uint32 ResourceID;
+    typedef uint32_t ResourceID;
     typedef InlineString<127> ResourceName;
 
-    const uint32 MAX_RESOURCE_SCOPES = sizeof(uint8);
-    const uint32 MAX_RESOURCE_SCOPE_DEPTH = 4;
-    const uint32 RESOURCE_FRAME_COUNT = 2;
+    const uint32_t MAX_RESOURCE_SCOPES = sizeof(uint8_t);
+    const uint32_t MAX_RESOURCE_SCOPE_DEPTH = 4;
+    const uint32_t RESOURCE_FRAME_COUNT = 2;
 
     const ResourceID InvalidResource = ~0u;
 
@@ -59,7 +59,7 @@ namespace sp::vulkan::render_graph {
             return imageDesc.extent;
         }
 
-        uint32 ImageLayers() const {
+        uint32_t ImageLayers() const {
             return imageDesc.arrayLayers;
         }
 
@@ -90,10 +90,10 @@ namespace sp::vulkan::render_graph {
 
         ImageViewPtr GetImageView(ResourceID id);
         ImageViewPtr GetImageView(string_view name);
-        ImageViewPtr GetImageLayerView(ResourceID id, uint32 layer);
-        ImageViewPtr GetImageLayerView(string_view name, uint32 layer);
-        ImageViewPtr GetImageMipView(ResourceID id, uint32 mip);
-        ImageViewPtr GetImageMipView(string_view name, uint32 mip);
+        ImageViewPtr GetImageLayerView(ResourceID id, uint32_t layer);
+        ImageViewPtr GetImageLayerView(string_view name, uint32_t layer);
+        ImageViewPtr GetImageMipView(ResourceID id, uint32_t mip);
+        ImageViewPtr GetImageMipView(string_view name, uint32_t mip);
         ImageViewPtr GetImageDepthView(ResourceID id);
         ImageViewPtr GetImageDepthView(string_view name);
 
@@ -103,7 +103,7 @@ namespace sp::vulkan::render_graph {
         const Resource &GetResource(string_view name) const;
         const Resource &GetResource(ResourceID id) const;
         const ResourceName &GetName(ResourceID id) const;
-        ResourceID GetID(string_view name, bool assertExists = true, uint32 framesAgo = 0) const;
+        ResourceID GetID(string_view name, bool assertExists = true, uint32_t framesAgo = 0) const;
 
         ResourceID AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace = false);
 
@@ -123,7 +123,7 @@ namespace sp::vulkan::render_graph {
 
         void ResizeIfNeeded();
 
-        uint32 RefCount(ResourceID id);
+        uint32_t RefCount(ResourceID id);
         void IncrementRef(ResourceID id);
         void DecrementRef(ResourceID id);
         void AddUsageFromAccess(ResourceID id, Access access);
@@ -143,7 +143,7 @@ namespace sp::vulkan::render_graph {
         }
 
         DeviceContext &device;
-        uint32 frameIndex = 0;
+        uint32_t frameIndex = 0;
         mutable std::thread::id renderThread;
 
         struct Scope {
@@ -155,13 +155,13 @@ namespace sp::vulkan::render_graph {
             };
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
-            ResourceID GetID(string_view name, uint32 frameIndex) const;
-            void SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace = false);
+            ResourceID GetID(string_view name, uint32_t frameIndex) const;
+            void SetID(string_view name, ResourceID id, uint32_t frameIndex, bool replace = false);
             void ClearID(ResourceID id);
         };
 
         vector<Scope> nameScopes;
-        InlineVector<uint8, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
+        InlineVector<uint8_t, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
 
         vector<Resource> resources;
         vector<ResourceName> resourceNames;
@@ -169,7 +169,7 @@ namespace sp::vulkan::render_graph {
         vector<ResourceID> externalIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
-        vector<int32> refCounts;
+        vector<int32_t> refCounts;
         vector<PooledImagePtr> images;
         vector<BufferPtr> buffers;
 

@@ -12,7 +12,7 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {
-    static const uint32 MAX_VOXEL_FRAGMENT_LISTS = 16;
+    static const uint32_t MAX_VOXEL_FRAGMENT_LISTS = 16;
 
     class Lighting;
 
@@ -42,10 +42,10 @@ namespace sp::vulkan::renderer {
         GPUScene &scene;
 
         struct FragmentListSize {
-            uint32 capacity, offset;
+            uint32_t capacity, offset;
         };
         std::array<FragmentListSize, MAX_VOXEL_FRAGMENT_LISTS> fragmentListSizes;
-        uint32 fragmentListCount;
+        uint32_t fragmentListCount;
 
         ecs::Transform voxelToWorld;
         glm::ivec3 voxelGridSize = glm::ivec3(0);

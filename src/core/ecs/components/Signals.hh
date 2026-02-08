@@ -43,7 +43,7 @@ namespace ecs {
             Signal(const SignalRef &ref, const SignalExpression &expr);
             Signal(const SignalRef &ref, const SignalRef &subscriber);
 
-            double Value(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
+            double Value(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth = 0) const;
         };
 
         uint32_t changeCount = 0;

@@ -14,8 +14,8 @@
 namespace sp::vulkan::render_graph {
     struct ImageDesc {
         vk::Extent3D extent;
-        uint32 mipLevels = 1;
-        uint32 arrayLayers = 1;
+        uint32_t mipLevels = 1;
+        uint32_t arrayLayers = 1;
         vk::Format format = vk::Format::eUndefined;
         vk::ImageType imageType = vk::ImageType::e2D;
         vk::ImageViewType primaryViewType = vk::ImageViewType::e2D; // when e2D, derived from imageType
@@ -48,8 +48,8 @@ namespace sp::vulkan::render_graph {
             return imageView;
         }
 
-        const ImageViewPtr &LayerImageView(uint32 layer);
-        const ImageViewPtr &MipImageView(uint32 mip);
+        const ImageViewPtr &LayerImageView(uint32_t layer);
+        const ImageViewPtr &MipImageView(uint32_t mip);
         const ImageViewPtr &DepthImageView();
 
         const ImageDesc &Desc() const {

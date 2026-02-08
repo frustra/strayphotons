@@ -98,7 +98,7 @@ namespace sp::vulkan::render_graph {
         private:
             RenderGraph &graph;
             ResourceName name;
-            uint32 passIndex = ~0u;
+            uint32_t passIndex = ~0u;
         };
 
         class GraphScope {

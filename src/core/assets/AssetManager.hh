@@ -52,7 +52,7 @@ namespace sp {
         std::filesystem::path GetExternalPath(std::string_view path) const;
         std::vector<std::string> ListBundledAssets(std::string_view prefix,
             std::string_view extension = "",
-            size_t maxDepth = 4) const;
+            uint32_t maxDepth = 4) const;
 
         AsyncPtr<Asset> Load(std::string_view path, AssetType type = AssetType::Bundled, bool reload = false);
         AsyncPtr<Gltf> LoadGltf(std::string_view name);

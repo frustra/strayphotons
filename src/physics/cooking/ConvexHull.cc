@@ -106,7 +106,7 @@ namespace sp {
             params);
         Assert(res, "building convex decomposition");
 
-        for (uint32 i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
+        for (uint32_t i = 0; i < interfaceVHACD->GetNConvexHulls(); i++) {
             VHACD::IVHACD::ConvexHull ihull;
             interfaceVHACD->GetConvexHull(i, ihull);
             if (ihull.m_points.size() < 3) continue;
@@ -193,7 +193,7 @@ namespace sp {
     }
 
     // Increment if the Collision Cache format ever changes
-    const uint32 hullCacheMagic = 0xc044;
+    const uint32_t hullCacheMagic = 0xc044;
 
 #pragma pack(push, 1)
     struct hullCacheHeader {

@@ -50,7 +50,7 @@ namespace sp::vulkan {
         lastAccess = newAccess;
     }
 
-    vk::Format FormatFromTraits(uint32 components, uint32 bits, bool preferSrgb, bool logErrors) {
+    vk::Format FormatFromTraits(uint32_t components, uint32_t bits, bool preferSrgb, bool logErrors) {
         if (bits != 8 && bits != 16) {
             if (logErrors) Errorf("can't infer format with bits=%d", bits);
             return vk::Format::eUndefined;
@@ -97,10 +97,10 @@ namespace sp::vulkan {
         }
     }
 
-    uint32 CalculateMipmapLevels(vk::Extent3D extent) {
-        uint32 dim = std::max(std::max(extent.width, extent.height), extent.depth);
+    uint32_t CalculateMipmapLevels(vk::Extent3D extent) {
+        uint32_t dim = std::max(std::max(extent.width, extent.height), extent.depth);
         if (dim <= 0) return 1;
-        uint32 cmp = 31;
+        uint32_t cmp = 31;
         while (!(dim >> cmp))
             cmp--;
         return cmp + 1;
@@ -161,8 +161,8 @@ namespace sp::vulkan {
     }
 
     struct FormatInfo {
-        uint32 sizeBytes;
-        uint32 componentCount;
+        uint32_t sizeBytes;
+        uint32_t componentCount;
         bool srgbTransfer = false;
     };
 
@@ -428,11 +428,11 @@ namespace sp::vulkan {
     };
     // clang-format on
 
-    uint32 FormatComponentCount(vk::Format format) {
+    uint32_t FormatComponentCount(vk::Format format) {
         return formatTable.at((VkFormat)format).componentCount;
     }
 
-    uint32 FormatByteSize(vk::Format format) {
+    uint32_t FormatByteSize(vk::Format format) {
         return formatTable.at((VkFormat)format).sizeBytes;
     }
 

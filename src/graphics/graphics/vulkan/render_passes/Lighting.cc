@@ -265,23 +265,24 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AllocateShadowMap() {
-        uint64 totalPixels = 0;
-        for (uint32 i = 0; i < lights.size(); i++) {
+        uint64_t totalPixels = 0;
+        for (uint32_t i = 0; i < lights.size(); i++) {
             auto extents = views[i].extents;
-            auto allocExtents = std::max(CeilToPowerOfTwo((uint32)extents.x), CeilToPowerOfTwo((uint32)extents.y));
+            auto allocExtents = std::max(CeilToPowerOfTwo((uint32_t)extents.x), CeilToPowerOfTwo((uint32_t)extents.y));
             totalPixels += allocExtents * allocExtents;
         }
 
-        uint32 width = CeilToPowerOfTwo((uint32)ceil(sqrt((double)totalPixels)));
+        uint32_t width = CeilToPowerOfTwo((uint32_t)ceil(sqrt((double)totalPixels)));
         shadowAtlasSize = glm::ivec2(width, width);
 
         freeRectangles.clear();
         freeRectangles.push_back({{0, 0}, {width, width}});
 
         glm::vec4 mapOffsetScale(shadowAtlasSize, shadowAtlasSize);
-        for (uint32 i = 0; i < lights.size(); i++) {
+        for (uint32_t i = 0; i < lights.size(); i++) {
             auto extents = views[i].extents;
-            auto allocExtents = glm::ivec2(CeilToPowerOfTwo((uint32)extents.x), CeilToPowerOfTwo((uint32)extents.y));
+            auto allocExtents = glm::ivec2(CeilToPowerOfTwo((uint32_t)extents.x),
+                CeilToPowerOfTwo((uint32_t)extents.y));
             int rectIndex = -1;
             for (int r = freeRectangles.size() - 1; r >= 0; r--) {
                 if (glm::all(glm::greaterThanEqual(freeRectangles[r].second, extents))) {
@@ -490,7 +491,7 @@ namespace sp::vulkan::renderer {
                 auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
                 for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
                     for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
-                        uint32 visible = visibility[lightIndex][opticIndex];
+                        uint32_t visible = visibility[lightIndex][opticIndex];
                         if (visible == 1) {
                             Assertf(opticIndex < optics.size(), "Optic index out of range");
                         } else if (visible != 0) {

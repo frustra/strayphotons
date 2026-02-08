@@ -15,7 +15,7 @@ namespace sp::vulkan::renderer {
     ResourceID AddGaussianBlur1D(RenderGraph &graph,
         ResourceID sourceID,
         glm::ivec2 direction,
-        uint32 downsample,
+        uint32_t downsample,
         float scale,
         float clip) {
 

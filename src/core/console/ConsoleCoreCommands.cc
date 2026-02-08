@@ -54,9 +54,11 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         }
     });
 
-    funcs.Register<uint64, string>("wait", "Queue command for later (wait <ms> <command>)", [](uint64 dt, string cmd) {
-        GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
-    });
+    funcs.Register<uint64_t, string>("wait",
+        "Queue command for later (wait <ms> <command>)",
+        [](uint64_t dt, string cmd) {
+            GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
+        });
 
     funcs.Register<string, string>("toggle",
         "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",

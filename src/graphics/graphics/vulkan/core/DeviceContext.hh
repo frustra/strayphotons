@@ -42,7 +42,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    const uint32 MAX_FRAMES_IN_FLIGHT = 2;
+    const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
     class DescriptorPool;
     class PerfTimer;
@@ -224,7 +224,7 @@ namespace sp::vulkan {
         tracy::VkCtx *GetTracyContext(CommandContextType type);
 #endif
 
-        uint32 QueueFamilyIndex(CommandContextType type) const {
+        uint32_t QueueFamilyIndex(CommandContextType type) const {
             return queueFamilyIndex[QueueType(type)];
         }
 
@@ -307,8 +307,8 @@ namespace sp::vulkan {
         shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
-        std::array<uint32, QUEUE_TYPES_COUNT> queueFamilyIndex;
-        std::array<uint32, QUEUE_TYPES_COUNT> queueLastSubmit;
+        std::array<uint32_t, QUEUE_TYPES_COUNT> queueFamilyIndex;
+        std::array<uint32_t, QUEUE_TYPES_COUNT> queueLastSubmit;
         vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;
@@ -319,7 +319,7 @@ namespace sp::vulkan {
         };
 
         vector<SwapchainImageContext> swapchainImageContexts;
-        uint32 swapchainImageIndex = 0;
+        uint32_t swapchainImageIndex = 0;
 
         SwapchainImageContext &SwapchainImage() {
             return swapchainImageContexts[swapchainImageIndex];
@@ -353,7 +353,7 @@ namespace sp::vulkan {
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
-        uint32 frameIndex = 0;
+        uint32_t frameIndex = 0;
 
         FrameContext &Frame() {
             return frameContexts[frameIndex];
@@ -395,7 +395,7 @@ namespace sp::vulkan {
         glm::ivec2 systemWindowSize = glm::ivec2(0);
         glm::ivec4 storedWindowRect = glm::ivec4(0); // Remember window position and size when returning from fullscreen
         double lastFrameEnd = 0, fpsTimer = 0;
-        uint32 frameCounter = 0, frameCounterThisSecond = 0;
+        uint32_t frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;
 
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;

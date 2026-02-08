@@ -29,14 +29,14 @@ namespace sp {
         HashKey(const T &input) : input(input) {}
 
         T input;
-        uint64 words[(sizeof(input) + sizeof(uint64) - 1) / sizeof(uint64)] = {0};
+        uint64_t words[(sizeof(input) + sizeof(uint64_t) - 1) / sizeof(uint64_t)] = {0};
 
         bool operator==(const HashKey<T> &other) const {
             return std::memcmp(words, other.words, sizeof(words)) == 0;
         }
 
         Hash64 Hash() const {
-            uint64 hash = 0;
+            uint64_t hash = 0;
             for (size_t i = 0; i < std::size(words); i++) {
                 // TODO: benchmark vs murmur3 for varying sized inputs
                 hash_combine(hash, words[i]);
@@ -54,7 +54,7 @@ namespace sp {
         }
 
         struct Hasher {
-            uint64 operator()(const HashKey<T> &key) const {
+            uint64_t operator()(const HashKey<T> &key) const {
                 return key.Hash();
             }
         };

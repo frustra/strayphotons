@@ -18,7 +18,7 @@ namespace sp::vulkan::render_graph {
         return id;
     }
 
-    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, uint32 framesAgo) {
+    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, uint32_t framesAgo) {
         auto thisFrameID = resources.GetID(name, false);
         if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
         if (thisFrameID == InvalidResource) return InvalidResource;
@@ -58,18 +58,18 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    void PassBuilder::SetColorAttachment(uint32 index, string_view name, const AttachmentInfo &info) {
+    void PassBuilder::SetColorAttachment(uint32_t index, string_view name, const AttachmentInfo &info) {
         SetColorAttachment(index, GetID(name), info);
     }
 
-    void PassBuilder::SetColorAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
+    void PassBuilder::SetColorAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info) {
         auto &res = resources.GetResourceRef(id);
         Assert(res.type == Resource::Type::Image, "resource must be a render target");
         Write(id, Access::ColorAttachmentReadWrite);
         SetAttachment(index, id, info);
     }
 
-    Resource PassBuilder::OutputColorAttachment(uint32 index,
+    Resource PassBuilder::OutputColorAttachment(uint32_t index,
         string_view name,
         ImageDesc desc,
         const AttachmentInfo &info) {
@@ -95,7 +95,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    void PassBuilder::SetPrimaryAttachment(uint32 index) {
+    void PassBuilder::SetPrimaryAttachment(uint32_t index) {
         Assert(index < pass.attachments.size(), "index must point to a valid attachment");
         pass.primaryAttachmentIndex = index;
     }
@@ -117,7 +117,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    Resource PassBuilder::OutputAttachment(uint32 index,
+    Resource PassBuilder::OutputAttachment(uint32_t index,
         string_view name,
         const ImageDesc &desc,
         const AttachmentInfo &info) {
@@ -126,7 +126,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    void PassBuilder::SetAttachment(uint32 index, ResourceID id, const AttachmentInfo &info) {
+    void PassBuilder::SetAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info) {
         auto &attachment = pass.attachments[index];
         attachment = info;
         attachment.resourceID = id;

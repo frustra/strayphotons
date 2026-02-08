@@ -148,6 +148,9 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (sp::is_vector<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_" + subtype + "_vector_t";
+        } else if constexpr (sp::is_array<T>()) {
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
+            return "sp_" + subtype + "_array_" + std::to_string(std::tuple_size<T>()) + "_t";
         } else if constexpr (sp::is_pair<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
@@ -667,6 +670,13 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_resize(sp_" << subtype
                 << "_vector_t *v, size_t new_size);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_array<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subtype = StripTypeDecorators(fullSubtype);
+            out << "typedef " << fullSubtype << " sp_" << subtype
+                << "_array_" + std::to_string(std::tuple_size<T>()) + "_t[" << std::to_string(std::tuple_size<T>())
+                << "];" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::first_type));
             GenerateCTypeDefinition(out, typeid(typename T::second_type));
@@ -898,6 +908,13 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT " << fullCSubtype << " *sp_" << subCType << "_vector_resize(sp_" << subCType
                 << "_vector_t *v, size_t new_size);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_array<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subCType = StripTypeDecorators(fullCSubtype);
+            std::string subCppType = TypeToString<typename T::value_type>();
+            out << "typedef std::array<" << subCppType << ", " << std::to_string(std::tuple_size<T>()) << "> sp_"
+                << subCType << "_array_" + std::to_string(std::tuple_size<T>()) + "_t;" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::first_type));
             GenerateCppTypeDefinition(out, typeid(typename T::second_type));

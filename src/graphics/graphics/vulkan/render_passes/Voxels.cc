@@ -32,12 +32,12 @@ namespace sp::vulkan::renderer {
     static CVar<float> CVarLightLowPass("r.LightLowPass",
         0.95,
         "Blend this amount of light in from the previous frame");
-    static CVar<uint32> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
+    static CVar<uint32_t> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
     static CVar<bool> CVarReprojectVoxelGrid("r.VoxelReprojectGrid",
         true,
         "Account for the voxel grid moving when sampling previous frames");
 
-    static CVar<uint32> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
+    static CVar<uint32_t> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
         "The number of fragments that can be written to a voxel.");
 
@@ -202,10 +202,10 @@ namespace sp::vulkan::renderer {
         fragmentListCount = std::min(MAX_VOXEL_FRAGMENT_LISTS, CVarVoxelFragmentBuckets.Get());
         auto voxelFillIndex = std::min(CVarVoxelFillIndex.Get(), voxelLayerCount - 1);
 
-        uint32 totalFragmentListSize = 0;
+        uint32_t totalFragmentListSize = 0;
         {
             auto fragmentListSize = (voxelGridSize.x * voxelGridSize.y * voxelGridSize.z) / 2;
-            for (uint32 i = 0; i < fragmentListCount; i++) {
+            for (uint32_t i = 0; i < fragmentListCount; i++) {
                 fragmentListSizes[i].capacity = fragmentListSize;
                 fragmentListSizes[i].offset = totalFragmentListSize;
                 totalFragmentListSize += fragmentListSize;
@@ -503,7 +503,7 @@ namespace sp::vulkan::renderer {
                 auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
                 bool printDebug = debugThisFrame.test();
                 debugThisFrame.clear();
-                for (uint32 i = 0; i < listCount; i++) {
+                for (uint32_t i = 0; i < listCount; i++) {
                     if (printDebug) {
                         Logf("fragment list %d, count: %u, capacity %u", i, map[i].count, map[i].capacity);
                     }

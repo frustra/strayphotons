@@ -135,7 +135,7 @@ namespace ecs {
         RefreshUncacheable(lock);
     }
 
-    void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, size_t depth) const {
+    void SignalRef::MarkDirty(const Lock<Write<Signals>> &lock, uint32_t depth) const {
         DebugZoneScoped;
         DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
@@ -196,7 +196,7 @@ namespace ecs {
     }
 
     void SignalRef::UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock,
-        size_t depth) const {
+        uint32_t depth) const {
         ZoneScoped;
         DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::MarkDirty() called with staging lock");
@@ -388,7 +388,7 @@ namespace ecs {
         return signals[index].expr;
     }
 
-    double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    double SignalRef::GetSignal(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         DebugZoneScoped;
         DebugZoneStr(String());
         Assertf(IsLive(lock), "SiganlRef::GetSignal() called with staging lock. Use SignalBindings instead");

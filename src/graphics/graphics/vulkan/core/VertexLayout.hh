@@ -16,15 +16,15 @@ namespace sp::vulkan {
     struct VertexLayout {
         VertexLayout() {}
 
-        VertexLayout(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
+        VertexLayout(uint32_t binding, uint32_t stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
             PushBinding(binding, stride, inputRate);
         }
 
-        VertexLayout(uint32 binding, size_t stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
-            PushBinding(binding, (uint32)stride, inputRate);
+        VertexLayout(uint32_t binding, size_t stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
+            PushBinding(binding, (uint32_t)stride, inputRate);
         }
 
-        void PushAttribute(uint32 location, uint32 binding, vk::Format format, uint32 offset) {
+        void PushAttribute(uint32_t location, uint32_t binding, vk::Format format, uint32_t offset) {
             PushAttribute(vk::VertexInputAttributeDescription(location, binding, format, offset));
         }
 
@@ -33,7 +33,9 @@ namespace sp::vulkan {
             attributes[attributeCount++] = attribute;
         }
 
-        void PushBinding(uint32 binding, uint32 stride, vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
+        void PushBinding(uint32_t binding,
+            uint32_t stride,
+            vk::VertexInputRate inputRate = vk::VertexInputRate::eVertex) {
             PushBinding(vk::VertexInputBindingDescription(binding, stride, inputRate));
         }
 

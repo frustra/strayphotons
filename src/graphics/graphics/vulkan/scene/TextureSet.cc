@@ -142,9 +142,9 @@ namespace sp::vulkan {
         if (textureIndex < 0 || (size_t)textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
-            auto data = make_shared<std::array<uint8, 4>>();
+            auto data = make_shared<std::array<uint8_t, 4>>();
             for (size_t i = 0; i < 4; i++) {
-                (*data)[i] = uint8(255.0 * factor.at(std::min(factor.size() - 1, i)));
+                (*data)[i] = uint8_t(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
 
             // Create a single pixel texture based on the factor data provided
@@ -253,7 +253,7 @@ namespace sp::vulkan {
             descriptorWrite.dstArrayElement = texturesToFlush[queueIndex];
 
             // compact consecutive descriptors into one write
-            uint32 descriptorCount = 0;
+            uint32_t descriptorCount = 0;
             do {
                 descriptorCount++;
                 queueIndex++;
@@ -288,7 +288,7 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr TextureSet::CreateSinglePixel(glm::u8vec4 value) {
-        static_assert(sizeof(value) == sizeof(uint8[4]));
+        static_assert(sizeof(value) == sizeof(uint8_t[4]));
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;

@@ -144,14 +144,14 @@ their own event queues as needed.
         EventBinding &Bind(std::string_view source, EntityRef target, std::string_view dest);
         void Unbind(std::string_view source, EntityRef target, std::string_view dest);
 
-        static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
+        static uint64_t SendEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const Event &event,
-            size_t depth = 0);
-        static size_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
+            uint32_t depth = 0);
+        static uint64_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const AsyncEvent &event,
-            size_t depth = 0);
+            uint32_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;

@@ -97,6 +97,6 @@ namespace sp::vulkan {
 
         std::vector<glm::mat4> xrRenderPoses;
         std::array<BufferPtr, 2> hiddenAreaMesh;
-        std::array<uint32, 2> hiddenAreaTriangleCount;
+        std::array<uint32_t, 2> hiddenAreaTriangleCount;
     };
 } // namespace sp::vulkan

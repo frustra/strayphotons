@@ -56,7 +56,7 @@ namespace sp {
                                 if (arg.maxHits == 1) {
                                     hit.maxNbTouches = 0;
                                 } else {
-                                    hit.maxNbTouches = std::min((uint32)touches.size(), arg.maxHits);
+                                    hit.maxNbTouches = std::min((uint32_t)touches.size(), arg.maxHits);
                                 }
 
                                 manager.scene->raycast(GlmVec3ToPxVec3(rayStart),

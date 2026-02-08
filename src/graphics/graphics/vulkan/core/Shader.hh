@@ -15,13 +15,13 @@
 #include <spirv_reflect.h>
 
 namespace sp::vulkan {
-    const uint32 MAX_PUSH_CONSTANT_SIZE = 128;
-    const uint32 MAX_PUSH_CONSTANT_BLOCKS = 1;
-    const uint32 MAX_SPEC_CONSTANTS = 16;
-    const uint32 MAX_BOUND_DESCRIPTOR_SETS = 4;
-    const uint32 MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
-    const uint32 MAX_DESCRIPTOR_SETS_PER_POOL = 16;
-    const uint32 MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET = 65535;
+    const uint32_t MAX_PUSH_CONSTANT_SIZE = 128;
+    const uint32_t MAX_PUSH_CONSTANT_BLOCKS = 1;
+    const uint32_t MAX_SPEC_CONSTANTS = 16;
+    const uint32_t MAX_BOUND_DESCRIPTOR_SETS = 4;
+    const uint32_t MAX_BINDINGS_PER_DESCRIPTOR_SET = 32;
+    const uint32_t MAX_DESCRIPTOR_SETS_PER_POOL = 16;
+    const uint32_t MAX_BINDINGS_PER_BINDLESS_DESCRIPTOR_SET = 65535;
 
     class Model;
 
@@ -56,23 +56,23 @@ namespace sp::vulkan {
         struct DescriptorSetBinding {
             std::string name;
             vk::DescriptorType type;
-            uint32 bindingId;
+            uint32_t bindingId;
             bool accessed;
         };
 
         struct DescriptorSet {
-            uint32 setId;
+            uint32_t setId;
             InlineVector<DescriptorSetBinding, MAX_BINDINGS_PER_DESCRIPTOR_SET> bindings;
         };
 
         struct SpecConstant {
             std::string name;
-            uint32 constantId;
+            uint32_t constantId;
         };
 
         struct PushConstant {
-            uint32 offset;
-            uint32 size;
+            uint32_t offset;
+            uint32_t size;
         };
 
         const InlineVector<DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> descriptorSets;
@@ -99,7 +99,7 @@ namespace sp::vulkan {
             VkDescriptorImageInfo image;
         };
         UniqueID uniqueID = 0;
-        uint32 arrayStride = 0;
+        uint32_t arrayStride = 0;
     };
 
     struct DescriptorSetBindings {
@@ -107,7 +107,7 @@ namespace sp::vulkan {
     };
 
     struct ShaderDataBindings {
-        uint8 pushConstants[MAX_PUSH_CONSTANT_SIZE];
+        uint8_t pushConstants[MAX_PUSH_CONSTANT_SIZE];
         DescriptorSetBindings sets[MAX_BOUND_DESCRIPTOR_SETS];
     };
 } // namespace sp::vulkan

@@ -11,9 +11,11 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 
 namespace sp::vulkan::renderer {
-    static CVar<uint32> CVarWindowViewChannel("r.WindowViewChannel", 0, "A specific channel to view. 0-3 maps to RGBA");
+    static CVar<uint32_t> CVarWindowViewChannel("r.WindowViewChannel",
+        0,
+        "A specific channel to view. 0-3 maps to RGBA");
 
-    ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32 arrayLayer) {
+    ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32_t arrayLayer) {
         ResourceID outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](PassBuilder &builder) {
@@ -43,10 +45,10 @@ namespace sp::vulkan::renderer {
                 }
 
                 auto format = source->Format();
-                uint32 comp = FormatComponentCount(format);
-                uint32 swizzle = 0b11000000; // rrra
+                uint32_t comp = FormatComponentCount(format);
+                uint32_t swizzle = 0b11000000; // rrra
                 if (comp > 1) {
-                    uint32 channel = CVarWindowViewChannel.Get();
+                    uint32_t channel = CVarWindowViewChannel.Get();
                     switch (channel) {
                     case 3:
                         swizzle = 0b11111111; // aaaa

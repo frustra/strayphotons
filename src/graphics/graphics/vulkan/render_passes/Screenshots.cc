@@ -87,7 +87,7 @@ namespace sp::vulkan::renderer {
         outputDesc.arrayLayers = 1;
         outputDesc.tiling = vk::ImageTiling::eLinear;
 
-        uint32 components = FormatComponentCount(view->Format());
+        uint32_t components = FormatComponentCount(view->Format());
         if (components == 1) {
             outputDesc.format = vk::Format::eR8Srgb;
         } else if (components == 2) {
@@ -171,11 +171,11 @@ namespace sp::vulkan::renderer {
             fpng_init = true;
         }
 
-        uint8 *data;
+        uint8_t *data;
         outputImage->Map((void **)&data);
 
         size_t fpngInputRowPitch = extent.width * components;
-        std::vector<uint8> fpngInput(extent.height * fpngInputRowPitch);
+        std::vector<uint8_t> fpngInput(extent.height * fpngInputRowPitch);
 
         data += subResourceLayout.offset;
         for (size_t row = 0; row < extent.height; row++) {

@@ -20,12 +20,12 @@ namespace sp::vulkan {
 
     struct TimeResult {
         string name;
-        size_t depth = 0;
+        uint32_t depth = 0;
         chrono_clock::duration cpuElapsed;
-        uint64 gpuElapsed = 0;
+        uint64_t gpuElapsed = 0;
 
         // used to propagate GPU elapsed time down the phase stack
-        uint64 gpuStart = ~0llu, gpuEnd = 0;
+        uint64_t gpuStart = ~0llu, gpuEnd = 0;
     };
 
     struct TimeQuery {
@@ -71,19 +71,19 @@ namespace sp::vulkan {
 
         struct FrameContext {
             vk::UniqueQueryPool queryPool;
-            uint32 queryOffset = 0;
-            uint32 queryCount = 0;
-            uint32 requiredQueryCount = 0;
+            uint32_t queryOffset = 0;
+            uint32_t queryCount = 0;
+            uint32_t requiredQueryCount = 0;
 
             std::stack<TimeQuery *> stack;
             std::deque<TimeQuery> pending;
 
-            vector<uint64> gpuTimestamps;
+            vector<uint64_t> gpuTimestamps;
             vector<TimeResult> results;
         };
 
         std::array<FrameContext, 4> frames;
-        uint32 frameIndex = 0;
+        uint32_t frameIndex = 0;
 
         FrameContext &Frame() {
             return frames[frameIndex];

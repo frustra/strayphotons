@@ -12,7 +12,7 @@
 
 namespace sp::vulkan {
     RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) : state(info.state) {
-        uint32 attachmentCount = 0;
+        uint32_t attachmentCount = 0;
         vk::AttachmentDescription attachments[MAX_COLOR_ATTACHMENTS + 1] = {};
         vk::AttachmentReference colorAttachmentRefs[MAX_COLOR_ATTACHMENTS];
         vk::AttachmentReference depthAttachmentRef;
@@ -20,7 +20,7 @@ namespace sp::vulkan {
         auto &state = info.state;
         Assert(state.colorAttachmentCount < MAX_COLOR_ATTACHMENTS, "too many attachments");
 
-        for (uint32 i = 0; i < state.colorAttachmentCount; i++) {
+        for (uint32_t i = 0; i < state.colorAttachmentCount; i++) {
             vk::AttachmentDescription &colorAttachment = attachments[i];
             colorAttachment.samples = vk::SampleCountFlagBits::e1;
             colorAttachment.format = state.colorFormats[i];
@@ -141,7 +141,7 @@ namespace sp::vulkan {
     }
 
     void RenderPass::RecordImplicitImageLayoutTransitions(const RenderPassInfo &info) {
-        for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
+        for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
             info.colorAttachments[i]->Image()->SetLayout(initialLayouts[i], finalLayouts[i]);
         }
         if (info.HasDepthStencil()) {
@@ -155,9 +155,9 @@ namespace sp::vulkan {
 
         extent = vk::Extent2D{UINT32_MAX, UINT32_MAX};
         vk::ImageView attachments[MAX_COLOR_ATTACHMENTS + 1];
-        uint32 attachmentCount = info.state.colorAttachmentCount;
+        uint32_t attachmentCount = info.state.colorAttachmentCount;
 
-        for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
+        for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
             auto &image = *info.colorAttachments[i];
             attachments[i] = image;
             extent.width = std::min(extent.width, image.Extent().width);
@@ -201,7 +201,7 @@ namespace sp::vulkan {
         FramebufferKey key;
         key.input.renderPass = info.state;
 
-        for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
+        for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
             auto imageView = info.colorAttachments[i];
             Assert(!!imageView, "render pass is missing a color image");
             key.input.imageViewIDs[i] = imageView->GetUniqueID();

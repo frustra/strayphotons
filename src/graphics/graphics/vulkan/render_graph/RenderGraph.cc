@@ -78,7 +78,7 @@ namespace sp::vulkan::render_graph {
             }
 
             if (!pendingCmds.empty()) {
-                device.Submit({(uint32)pendingCmds.size(), pendingCmds.data()}, {}, {}, {}, {}, lastSubmit);
+                device.Submit({(uint32_t)pendingCmds.size(), pendingCmds.data()}, {}, {}, {}, {}, lastSubmit);
                 pendingCmds.clear();
             }
         };
@@ -92,7 +92,7 @@ namespace sp::vulkan::render_graph {
 
             RenderPassInfo renderPassInfo;
 
-            for (uint32 i = 0; i < pass.attachments.size(); i++) {
+            for (uint32_t i = 0; i < pass.attachments.size(); i++) {
                 auto &attachment = pass.attachments[i];
                 if (attachment.resourceID == InvalidResource) continue;
                 pass.isRenderPass = true;
@@ -120,8 +120,8 @@ namespace sp::vulkan::render_graph {
             }
 
             for (int i = std::max(pass.scopes.size(), frameScopeStack.size()) - 1; i >= 0; i--) {
-                uint8 passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
-                uint8 resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
+                uint8_t passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
+                uint8_t resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
                 if (resScope != passScope) {
                     if (resScope != 255) {
 #ifdef TRACY_ENABLE_GRAPHICS
