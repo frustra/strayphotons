@@ -58,6 +58,7 @@ std::string TypeToString() {
 
         auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        Logf("Embedding Signature on is_lock: %s", embeddingSignature);
         auto structStart = embeddingSignature.find("struct ", charStart);
         if (structStart == charStart) typeStart += "struct "s.size();
 
@@ -72,6 +73,8 @@ std::string TypeToString() {
 
         auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        Logf("Embedding Signature on is_dynamic_lock: %s", embeddingSignature);
+
         auto structStart = embeddingSignature.find("struct ", charStart);
         if (structStart == charStart) typeStart += "struct "s.size();
 
@@ -84,6 +87,8 @@ std::string TypeToString() {
 
         auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        Logf("Embedding Signature on else: %s", embeddingSignature);
+
         auto enumStart = embeddingSignature.find("enum ", charStart);
         if (enumStart == charStart) typeStart += "enum "s.size();
         auto classStart = embeddingSignature.find("class ", charStart);
@@ -92,7 +97,9 @@ std::string TypeToString() {
         if (structStart == charStart) typeStart += "struct "s.size();
 
         auto typeLength = embeddingSignature.size() - typeStart - tailLength;
-        return std::string(embeddingSignature.substr(typeStart, typeLength));
+        auto result = std::string(embeddingSignature.substr(typeStart, typeLength));
+        Logf("Result from TypeToString: %s", result);
+        return result;
     }
 }
 

@@ -87,6 +87,8 @@ std::string LookupCTypeName(std::type_index type) {
             return "uint32_t"s;
         } else if constexpr (std::is_same<T, uint64_t>()) {
             return "uint64_t"s;
+        } else if constexpr (std::is_same<T, size_t>()) {
+            return "size_t"s;
         } else if constexpr (std::is_same<T, float>()) {
             return "float"s;
         } else if constexpr (std::is_same<T, double>()) {
@@ -166,6 +168,7 @@ std::string LookupCTypeName(std::type_index type) {
             return "sp_compositor_ctx_t"s;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
+            Logf("gen_types SnakeCaseTypeName got %s", scn);
             if (ecs::LookupComponent(type)) {
                 if (!sp::starts_with(scn, "ecs_")) {
                     scn = "ecs_" + scn;
@@ -586,6 +589,8 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, uint64_t>()) {
             // Built-in
+        } else if constexpr (std::is_same<T, size_t>()) {
+            // Built-in
         } else if constexpr (std::is_same<T, float>()) {
             // Built-in
         } else if constexpr (std::is_same<T, double>()) {
@@ -815,6 +820,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (std::is_same<T, uint32_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, uint64_t>()) {
+            // Built-in
+        } else if constexpr (std::is_same<T, size_t>()) {
             // Built-in
         } else if constexpr (std::is_same<T, float>()) {
             // Built-in
