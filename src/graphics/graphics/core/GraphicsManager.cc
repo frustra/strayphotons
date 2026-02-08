@@ -26,7 +26,7 @@ namespace sp {
         "player:flatview",
         "The entity with a View component to display");
 
-    static CVar<uint32> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
+    static CVar<uint32_t> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
 
     GraphicsManager::GraphicsManager(Game &game)
         : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
@@ -52,7 +52,6 @@ namespace sp {
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
-        if (context) context->WaitIdle();
     }
 
     void GraphicsManager::Init() {
@@ -89,6 +88,17 @@ namespace sp {
         context->AttachWindow(windowGuiContext);
 
         return true;
+    }
+
+    void GraphicsManager::ThreadShutdown() {
+        if (context) {
+            context->Shutdown();
+            windowGuiContext.reset();
+            menuGui.reset();
+            profilerGui.reset();
+            context->WaitIdle();
+            context.reset();
+        }
     }
 
     bool GraphicsManager::InputFrame() {

@@ -51,10 +51,10 @@ namespace ecs {
         static SignalRef Lookup(const char *str, const EntityScope *scope = nullptr);
 
         void AddSubscriber(const Lock<Write<Signals>> &lock, const SignalRef &ref) const;
-        void MarkDirty(const Lock<Write<Signals>> &lock, size_t depth = 0) const;
+        void MarkDirty(const Lock<Write<Signals>> &lock, uint32_t depth = 0) const;
         bool IsCacheable(const Lock<Read<Signals>> &lock) const;
         void RefreshUncacheable(const Lock<Write<Signals>> &lock) const;
-        void UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock, size_t depth = 0) const;
+        void UpdateDirtySubscribers(const DynamicLock<Write<Signals>, ReadSignalsLock> &lock, uint32_t depth = 0) const;
 
         double &SetValue(const Lock<Write<Signals>> &lock, double value) const;
         void ClearValue(const Lock<Write<Signals>> &lock) const;
@@ -69,7 +69,7 @@ namespace ecs {
         bool HasBinding(const Lock<Read<Signals>> &lock) const;
         const SignalExpression &GetBinding(const Lock<Read<Signals>> &lock) const;
 
-        double GetSignal(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
+        double GetSignal(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth = 0) const;
 
         explicit operator bool() const {
             return !!ptr;

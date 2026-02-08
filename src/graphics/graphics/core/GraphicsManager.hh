@@ -68,6 +68,7 @@ namespace sp {
 
     private:
         bool ThreadInit() override;
+        void ThreadShutdown() override;
         bool PreFrame() override;
         void PostFrame(bool stepMode) override;
         void Frame() override;
@@ -77,7 +78,7 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        std::shared_ptr<GuiContext> windowGuiContext, menuGui;
+        shared_ptr<GuiContext> windowGuiContext, menuGui;
         shared_ptr<ProfilerGui> profilerGui;
 
         bool initialized = false;

@@ -96,6 +96,7 @@ namespace sp {
                     });
                 }
                 ImGui::EndChild();
+                if (!context->scene) ImGui::BeginDisabled();
                 if (ImGui::Button("New Entity") && context->scene) {
                     GetSceneManager().QueueAction(SceneAction::ApplySystemScene,
                         context->scene.data->name,
@@ -112,9 +113,15 @@ namespace sp {
                                         ecs::Event{EDITOR_EVENT_EDIT_TARGET,
                                             pickerEntity.GetLive(),
                                             newTarget.GetLive()});
+                                    context->RefreshEntityTree();
                                 });
                             });
                         });
+                }
+                if (!context->scene) {
+                    ImGui::EndDisabled();
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted("No scene selected");
                 }
                 ImGui::EndTabItem();
             }

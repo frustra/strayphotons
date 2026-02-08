@@ -87,8 +87,6 @@ std::string LookupCTypeName(std::type_index type) {
             return "uint32_t"s;
         } else if constexpr (std::is_same<T, uint64_t>()) {
             return "uint64_t"s;
-        } else if constexpr (std::is_same<T, size_t>()) {
-            return "size_t"s;
         } else if constexpr (std::is_same<T, float>()) {
             return "float"s;
         } else if constexpr (std::is_same<T, double>()) {
@@ -150,6 +148,9 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (sp::is_vector<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_" + subtype + "_vector_t";
+        } else if constexpr (sp::is_array<T>()) {
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
+            return "sp_" + subtype + "_array_" + std::to_string(std::tuple_size<T>()) + "_t";
         } else if constexpr (sp::is_pair<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::first_type)));
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
@@ -168,7 +169,6 @@ std::string LookupCTypeName(std::type_index type) {
             return "sp_compositor_ctx_t"s;
         } else {
             std::string scn = SnakeCaseTypeName(TypeToString<T>());
-            Logf("gen_types SnakeCaseTypeName got %s", scn);
             if (ecs::LookupComponent(type)) {
                 if (!sp::starts_with(scn, "ecs_")) {
                     scn = "ecs_" + scn;
@@ -589,8 +589,6 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, uint64_t>()) {
             // Built-in
-        } else if constexpr (std::is_same<T, size_t>()) {
-            // Built-in
         } else if constexpr (std::is_same<T, float>()) {
             // Built-in
         } else if constexpr (std::is_same<T, double>()) {
@@ -672,6 +670,13 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT " << fullSubtype << " *sp_" << subtype << "_vector_resize(sp_" << subtype
                 << "_vector_t *v, size_t new_size);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_array<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subtype = StripTypeDecorators(fullSubtype);
+            out << "typedef " << fullSubtype << " sp_" << subtype
+                << "_array_" + std::to_string(std::tuple_size<T>()) + "_t[" << std::to_string(std::tuple_size<T>())
+                << "];" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::first_type));
             GenerateCTypeDefinition(out, typeid(typename T::second_type));
@@ -821,8 +826,6 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             // Built-in
         } else if constexpr (std::is_same<T, uint64_t>()) {
             // Built-in
-        } else if constexpr (std::is_same<T, size_t>()) {
-            // Built-in
         } else if constexpr (std::is_same<T, float>()) {
             // Built-in
         } else if constexpr (std::is_same<T, double>()) {
@@ -905,6 +908,13 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT " << fullCSubtype << " *sp_" << subCType << "_vector_resize(sp_" << subCType
                 << "_vector_t *v, size_t new_size);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_array<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::value_type));
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
+            std::string subCType = StripTypeDecorators(fullCSubtype);
+            std::string subCppType = TypeToString<typename T::value_type>();
+            out << "typedef std::array<" << subCppType << ", " << std::to_string(std::tuple_size<T>()) << "> sp_"
+                << subCType << "_array_" + std::to_string(std::tuple_size<T>()) + "_t;" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::first_type));
             GenerateCppTypeDefinition(out, typeid(typename T::second_type));

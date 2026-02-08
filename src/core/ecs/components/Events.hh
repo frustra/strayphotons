@@ -35,8 +35,8 @@ namespace ecs {
          * A transactionId can be provided to synchronize event visibility with transactions.
          * If no transactionId is provided, this event will be immediately visible to all transactions.
          */
-        size_t Add(const Event &event, size_t transactionId = 0) const;
-        size_t Add(const AsyncEvent &event) const;
+        uint64_t Add(const Event &event, uint64_t transactionId = 0) const;
+        uint64_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
         robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
@@ -144,14 +144,14 @@ their own event queues as needed.
         EventBinding &Bind(std::string_view source, EntityRef target, std::string_view dest);
         void Unbind(std::string_view source, EntityRef target, std::string_view dest);
 
-        static size_t SendEvent(const DynamicLock<SendEventsLock> &lock,
+        static uint64_t SendEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const Event &event,
-            size_t depth = 0);
-        static size_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
+            uint32_t depth = 0);
+        static uint64_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const AsyncEvent &event,
-            size_t depth = 0);
+            uint32_t depth = 0);
 
         using BindingList = typename std::vector<EventBinding>;
         robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;

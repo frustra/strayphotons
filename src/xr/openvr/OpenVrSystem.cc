@@ -190,8 +190,8 @@ namespace sp::xr {
 
         vulkanData.m_nImage = (uint64_t)(VkImage)(**image);
         vulkanData.m_unArraySize = image->ArrayLayers();
-        vulkanData.m_unArrayIndex = (uint32)eye;
-        vulkanData.m_nFormat = (uint32)image->Format();
+        vulkanData.m_unArrayIndex = (uint32_t)eye;
+        vulkanData.m_nFormat = (uint32_t)image->Format();
         vulkanData.m_nWidth = tex->GetWidth();
         vulkanData.m_nHeight = tex->GetHeight();
         vulkanData.m_nSampleCount = 1;

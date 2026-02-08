@@ -129,12 +129,12 @@ namespace sp::vulkan {
 
     private:
         struct Sample {
-            uint64 cpuElapsed = 0, gpuElapsed = 0;
+            uint64_t cpuElapsed = 0, gpuElapsed = 0;
         };
 
         struct Scope {
             std::string name;
-            size_t depth = 0;
+            uint32_t depth = 0;
             size_t sampleOffset = 0, sampleCount = 0;
             bool truncated = false;
 
@@ -143,7 +143,7 @@ namespace sp::vulkan {
 
         struct Stats {
             struct {
-                uint64 avg = 0, p95 = 0, max = 0, min = std::numeric_limits<uint64>::max();
+                uint64_t avg = 0, p95 = 0, max = 0, min = std::numeric_limits<uint64_t>::max();
             } cpu, gpu;
         };
 
@@ -154,7 +154,7 @@ namespace sp::vulkan {
             return spacePadding.data() + paddingOffset;
         }
 
-        size_t AddResults(size_t offset = 0, size_t depth = 1) {
+        size_t AddResults(size_t offset = 0, uint32_t depth = 1) {
             while (offset < resultCount) {
                 const auto &scope = resultScopes[offset];
 
@@ -229,7 +229,7 @@ namespace sp::vulkan {
                 newWindow = true;
                 lastWindowStart = now;
 
-                uint64 dhWindow = drawHistogram.max - drawHistogram.min;
+                uint64_t dhWindow = drawHistogram.max - drawHistogram.min;
                 drawHistogram.min += dhWindow * 0.05;
                 drawHistogram.max -= dhWindow * 0.05;
             }
@@ -302,7 +302,7 @@ namespace sp::vulkan {
         void UpdateDrawHistogram(const Scope &scope, const Stats &stats) {
             if (drawHistogramIndex != lastDrawHistogramIndex || drawHistogramMode != lastDrawHistogramMode) {
                 drawHistogram.max = 0;
-                drawHistogram.min = std::numeric_limits<uint64>::max();
+                drawHistogram.min = std::numeric_limits<uint64_t>::max();
                 lastDrawHistogramIndex = drawHistogramIndex;
                 lastDrawHistogramMode = drawHistogramMode;
             }

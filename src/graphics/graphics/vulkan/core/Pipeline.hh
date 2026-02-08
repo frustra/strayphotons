@@ -21,7 +21,7 @@ namespace sp::vulkan {
     class RenderPass;
 
     struct SpecializationData {
-        std::array<uint32, MAX_SPEC_CONSTANTS> values = {};
+        std::array<uint32_t, MAX_SPEC_CONSTANTS> values = {};
         std::bitset<MAX_SPEC_CONSTANTS> set = {};
     };
 
@@ -41,8 +41,8 @@ namespace sp::vulkan {
         unsigned depthTest : 1;
         unsigned blendEnable : 1;
         unsigned stencilTest : 1;
-        uint8 viewportCount = 1;
-        uint8 scissorCount = 1;
+        uint8_t viewportCount = 1;
+        uint8_t scissorCount = 1;
         vk::CompareOp depthCompareOp = vk::CompareOp::eLess;
         vk::CompareOp stencilCompareOp = vk::CompareOp::eAlways;
         vk::StencilOp stencilFailOp = vk::StencilOp::eKeep;
@@ -57,23 +57,23 @@ namespace sp::vulkan {
     };
 
     struct DescriptorSetLayoutInfo {
-        uint32 sampledImagesMask = 0;
-        uint32 uniformBuffersMask = 0;
-        uint32 storageBuffersMask = 0;
-        uint32 storageImagesMask = 0;
-        uint32 lastBinding = 0;
+        uint32_t sampledImagesMask = 0;
+        uint32_t uniformBuffersMask = 0;
+        uint32_t storageBuffersMask = 0;
+        uint32_t storageImagesMask = 0;
+        uint32_t lastBinding = 0;
 
         vk::ShaderStageFlags stages[MAX_BINDINGS_PER_DESCRIPTOR_SET] = {};
 
         // count is usually 1, can be higher for array bindings, or 0 for an unbounded array
-        uint8 descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET] = {};
+        uint8_t descriptorCount[MAX_BINDINGS_PER_DESCRIPTOR_SET] = {};
     };
 
     struct PipelineLayoutInfo {
         vk::PushConstantRange pushConstantRange;
 
-        uint32 descriptorSetsMask = 0;
-        uint32 bindlessMask = 0;
+        uint32_t descriptorSetsMask = 0;
+        uint32_t bindlessMask = 0;
         DescriptorSetLayoutInfo descriptorSets[MAX_BOUND_DESCRIPTOR_SETS] = {};
 
         struct MemorySize {
@@ -119,22 +119,22 @@ namespace sp::vulkan {
             return info;
         }
 
-        vk::DescriptorUpdateTemplate GetDescriptorUpdateTemplate(uint32 set) const {
+        vk::DescriptorUpdateTemplate GetDescriptorUpdateTemplate(uint32_t set) const {
             if (HasDescriptorSet(set)) {
                 return *descriptorUpdateTemplates[set];
             }
             return VK_NULL_HANDLE;
         }
 
-        bool HasDescriptorSet(uint32 set) const {
+        bool HasDescriptorSet(uint32_t set) const {
             return info.descriptorSetsMask & (1 << set);
         }
 
-        bool IsBindlessSet(uint32 set) const {
+        bool IsBindlessSet(uint32_t set) const {
             return info.bindlessMask & (1 << set);
         }
 
-        vk::DescriptorSet GetFilledDescriptorSet(uint32 set, const DescriptorSetBindings &setBindings);
+        vk::DescriptorSet GetFilledDescriptorSet(uint32_t set, const DescriptorSetBindings &setBindings);
 
     private:
         void ReflectShaders();

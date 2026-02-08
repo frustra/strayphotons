@@ -17,6 +17,7 @@
 #include "ecs/SignalRef.hh"
 #include "gui/GuiDrawData.hh"
 
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <robin_hood.h>
 #include <type_traits>
@@ -41,8 +42,7 @@ namespace ecs {
         EventName,
         EventString,
         EventBytes,
-        size_t,
-        uint64_t,
+        uint64_t, // size_t
         VisibilityMask,
         sp::color_alpha_t,
         double,

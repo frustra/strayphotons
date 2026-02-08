@@ -46,7 +46,7 @@ namespace sp::vulkan {
 
     static CVar<bool> CVarMirrorXR("r.MirrorXR", false, "Mirror XR in primary window");
 
-    static CVar<uint32> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
+    static CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
     static CVar<string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
@@ -386,7 +386,7 @@ namespace sp::vulkan {
             }
         }
 
-        auto executeHiddenAreaStencil = [this](uint32 eyeIndex) {
+        auto executeHiddenAreaStencil = [this](uint32_t eyeIndex) {
             return [this, eyeIndex](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("basic_ortho_stencil.vert", "noop.frag");
 

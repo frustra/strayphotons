@@ -27,7 +27,7 @@ namespace sp {
         throw std::runtime_error("sp::Abort() called");
     }
 
-    uint32 CeilToPowerOfTwo(uint32 v) {
+    uint32_t CeilToPowerOfTwo(uint32_t v) {
         v--;
         v |= v >> 1;
         v |= v >> 2;
@@ -38,15 +38,15 @@ namespace sp {
         return v;
     }
 
-    uint32 Uint32Log2(uint32 v) {
-        uint32 r = 0;
+    uint32_t Uint32Log2(uint32_t v) {
+        uint32_t r = 0;
         while (v >>= 1)
             r++;
         return r;
     }
 
-    uint64 Uint64Log2(uint64 v) {
-        uint64 r = 0;
+    uint64_t Uint64Log2(uint64_t v) {
+        uint64_t r = 0;
         while (v >>= 1)
             r++;
         return r;

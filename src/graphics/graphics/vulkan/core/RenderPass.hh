@@ -17,32 +17,32 @@ namespace sp::vulkan {
     const size_t MAX_COLOR_ATTACHMENTS = 4;
 
     struct RenderPassState {
-        uint32 colorAttachmentCount = 0;
+        uint32_t colorAttachmentCount = 0;
 
         vk::Format colorFormats[MAX_COLOR_ATTACHMENTS] = {};
         vk::Format depthStencilFormat = {};
 
         // depth/stencil bit is at DEPTH_STENCIL_INDEX, not the actual depth attachment index
-        uint32 clearAttachments = 0;
-        uint32 loadAttachments = 0;
-        uint32 storeAttachments = 0;
-        uint32 readOnlyAttachments = 0;
+        uint32_t clearAttachments = 0;
+        uint32_t loadAttachments = 0;
+        uint32_t storeAttachments = 0;
+        uint32_t readOnlyAttachments = 0;
 
         // each bit represents a specific array layer to enable rendering to
-        uint32 multiviewMask = 0;
+        uint32_t multiviewMask = 0;
         // Vulkan allows you to specify an arbitrary number of correlation masks, to indicate that
         // multiple subsets of attachments are spatially correlated in different ways. We currently support a single
         // correlation mask, since all our attachments are spatially correlated in the same way.
-        uint32 multiviewCorrelationMask = 0;
+        uint32_t multiviewCorrelationMask = 0;
 
-        static const uint32 DEPTH_STENCIL_INDEX = 31;
+        static const uint32_t DEPTH_STENCIL_INDEX = 31;
 
         bool HasDepthStencil() const {
             return depthStencilFormat != vk::Format::eUndefined;
         }
 
-        void SetLoadStore(uint32 index, LoadOp loadOp, StoreOp storeOp) {
-            uint32 attachmentBit = 1 << index;
+        void SetLoadStore(uint32_t index, LoadOp loadOp, StoreOp storeOp) {
+            uint32_t attachmentBit = 1 << index;
             if (loadOp == LoadOp::Clear) {
                 clearAttachments |= attachmentBit;
             } else {
@@ -65,26 +65,26 @@ namespace sp::vulkan {
             }
         }
 
-        vk::AttachmentLoadOp LoadOp(uint32 index) const {
-            uint32 attachmentBit = 1 << index;
+        vk::AttachmentLoadOp LoadOp(uint32_t index) const {
+            uint32_t attachmentBit = 1 << index;
             if (clearAttachments & attachmentBit) return vk::AttachmentLoadOp::eClear;
             if (loadAttachments & attachmentBit) return vk::AttachmentLoadOp::eLoad;
             return vk::AttachmentLoadOp::eDontCare;
         }
 
-        vk::AttachmentStoreOp StoreOp(uint32 index) const {
-            uint32 attachmentBit = 1 << index;
+        vk::AttachmentStoreOp StoreOp(uint32_t index) const {
+            uint32_t attachmentBit = 1 << index;
             if (storeAttachments & attachmentBit) return vk::AttachmentStoreOp::eStore;
             return vk::AttachmentStoreOp::eDontCare;
         }
 
-        bool ReadOnly(uint32 index) const {
-            uint32 attachmentBit = 1 << index;
+        bool ReadOnly(uint32_t index) const {
+            uint32_t attachmentBit = 1 << index;
             return readOnlyAttachments & attachmentBit;
         }
 
-        bool ShouldClear(uint32 index) const {
-            uint32 attachmentBit = 1 << index;
+        bool ShouldClear(uint32_t index) const {
+            uint32_t attachmentBit = 1 << index;
             return clearAttachments & attachmentBit;
         }
     };
@@ -93,7 +93,7 @@ namespace sp::vulkan {
         RenderPassState state;
         ImageViewPtr colorAttachments[MAX_COLOR_ATTACHMENTS] = {};
         ImageViewPtr depthStencilAttachment;
-        uint32 minAttachmentLayers = ~0u;
+        uint32_t minAttachmentLayers = ~0u;
 
         vk::ClearColorValue clearColors[MAX_COLOR_ATTACHMENTS] = {};
         vk::ClearDepthStencilValue clearDepthStencil = {1.0f, 0};
@@ -103,7 +103,7 @@ namespace sp::vulkan {
             StoreOp storeOp,
             vk::ClearColorValue clear = {}) {
             Assert(state.colorAttachmentCount < MAX_COLOR_ATTACHMENTS, "too many color attachments");
-            uint32 index = state.colorAttachmentCount++;
+            uint32_t index = state.colorAttachmentCount++;
             SetColorAttachment(index, view, loadOp, storeOp, clear);
         }
 
@@ -112,7 +112,7 @@ namespace sp::vulkan {
             PushColorAttachment(view, loadOp, storeOp, clearValues);
         }
 
-        void SetColorAttachment(uint32 index,
+        void SetColorAttachment(uint32_t index,
             const ImageViewPtr &view,
             LoadOp loadOp,
             StoreOp storeOp,
@@ -138,7 +138,7 @@ namespace sp::vulkan {
         }
 
         void EnableMultiviewForAllLayers(const ImageViewPtr &view) {
-            uint32 layers = view->ArrayLayers();
+            uint32_t layers = view->ArrayLayers();
             if (layers < minAttachmentLayers) {
                 minAttachmentLayers = layers;
             }
@@ -146,7 +146,7 @@ namespace sp::vulkan {
             state.multiviewMask = 0;
 
             if (minAttachmentLayers >= 2) {
-                for (uint32 i = 0; i < minAttachmentLayers; i++) {
+                for (uint32_t i = 0; i < minAttachmentLayers; i++) {
                     state.multiviewMask |= (1 << i);
                 }
             }
@@ -168,7 +168,7 @@ namespace sp::vulkan {
         // Updates the cached layout of the framebuffer attachment images
         void RecordImplicitImageLayoutTransitions(const RenderPassInfo &info);
 
-        uint32 ColorAttachmentCount() const {
+        uint32_t ColorAttachmentCount() const {
             return state.colorAttachmentCount;
         }
 

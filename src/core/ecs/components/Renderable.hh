@@ -42,13 +42,13 @@ namespace ecs {
 
     struct Renderable {
         Renderable() {}
-        Renderable(const std::string &modelName, size_t meshIndex = 0);
-        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, size_t meshIndex = 0)
+        Renderable(const std::string &modelName, uint64_t meshIndex = 0);
+        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, uint64_t meshIndex = 0)
             : modelName(modelName), model(model), meshIndex(meshIndex) {}
 
         std::string modelName;
         sp::AsyncPtr<sp::Gltf> model;
-        size_t meshIndex = 0;
+        uint64_t meshIndex = 0;
 
         struct Joint {
             EntityRef entity;
