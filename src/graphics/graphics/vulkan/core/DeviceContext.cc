@@ -655,6 +655,11 @@ namespace sp::vulkan {
         vkRenderer = make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
     }
 
+    void DeviceContext::Shutdown() {
+        vkRenderer.reset();
+        compositor.reset();
+    }
+
     std::shared_ptr<Renderer> DeviceContext::GetRenderer() const {
         return vkRenderer;
     }

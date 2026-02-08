@@ -10,9 +10,9 @@
 namespace sp {
     void EditorContext::RefreshEntityTree() {
         ZoneScoped;
-        entityTree.clear();
-
         ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>([this](auto &lock) {
+            ZoneScopedN("RefreshEntityTree");
+            entityTree.clear();
             for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::TransformTree>()) {
                 auto &name = ent.Get<ecs::Name>(lock);
                 auto &tree = ent.Get<ecs::TransformTree>(lock);
@@ -460,7 +460,7 @@ namespace sp {
                 ImGui::EndDisabled();
             }
             ImGui::SameLine();
-            if (ImGui::BeginCombo("##componentSelector", "...")) {
+            if (ImGui::BeginCombo("##componentSelector", selectedComponent ? selectedComponent->name.c_str() : "...")) {
                 for (auto *comp : missingComponents) {
                     bool isSelected = comp == selectedComponent;
                     if (ImGui::Selectable(comp->name.c_str(), isSelected)) {

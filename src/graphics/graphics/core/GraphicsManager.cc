@@ -52,7 +52,6 @@ namespace sp {
 
     GraphicsManager::~GraphicsManager() {
         StopThread();
-        if (context) context->WaitIdle();
     }
 
     void GraphicsManager::Init() {
@@ -89,6 +88,17 @@ namespace sp {
         context->AttachWindow(windowGuiContext);
 
         return true;
+    }
+
+    void GraphicsManager::ThreadShutdown() {
+        if (context) {
+            context->Shutdown();
+            windowGuiContext.reset();
+            menuGui.reset();
+            profilerGui.reset();
+            context->WaitIdle();
+            context.reset();
+        }
     }
 
     bool GraphicsManager::InputFrame() {
