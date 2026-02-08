@@ -39,14 +39,14 @@ namespace sp::vulkan {
         Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
         ~Mesh();
 
-        uint32 SceneIndex() const;
-        uint32 PrimitiveCount() const {
+        uint32_t SceneIndex() const;
+        uint32_t PrimitiveCount() const {
             return primitives.size();
         }
-        uint32 IndexCount() const {
+        uint32_t IndexCount() const {
             return indexCount;
         }
-        uint32 VertexCount() const {
+        uint32_t VertexCount() const {
             return vertexCount;
         }
 
@@ -70,7 +70,7 @@ namespace sp::vulkan {
 
         vector<Primitive> primitives;
 
-        uint32 vertexCount = 0, indexCount = 0, jointsCount = 0;
+        uint32_t vertexCount = 0, indexCount = 0, jointsCount = 0;
         struct {
             BufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
             AsyncPtr<void> transferComplete;

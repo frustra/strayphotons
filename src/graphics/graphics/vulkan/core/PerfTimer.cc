@@ -102,12 +102,12 @@ namespace sp::vulkan {
     }
 
     struct GPUQueryResult {
-        uint64 timestamp;
+        uint64_t timestamp;
     };
 
     void PerfTimer::Tick() {
         // flush results from two frames ago
-        uint32 flushFrameIndex = (frameIndex + frames.size() - 2) % frames.size();
+        uint32_t flushFrameIndex = (frameIndex + frames.size() - 2) % frames.size();
         auto &frame = frames[flushFrameIndex];
 
         if (!FlushResults(frame)) return;
@@ -138,16 +138,16 @@ namespace sp::vulkan {
         auto gpuQueryResult = device->getQueryPoolResults(*frame.queryPool,
             0,
             queryCount,
-            sizeof(uint64) * queryCount,
+            sizeof(uint64_t) * queryCount,
             frame.gpuTimestamps.data(),
-            sizeof(uint64),
+            sizeof(uint64_t),
             vk::QueryResultFlagBits::e64);
 
         if (gpuQueryResult == vk::Result::eNotReady) return false;
 
         while (!frame.pending.empty()) {
             auto query = frame.pending.front();
-            uint64 gpuStart, gpuEnd;
+            uint64_t gpuStart, gpuEnd;
 
             if (query.gpuQueries[0] == ~0u) {
                 gpuStart = ~0llu;

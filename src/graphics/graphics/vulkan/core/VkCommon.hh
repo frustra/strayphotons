@@ -17,7 +17,7 @@
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan {
-    typedef uint32 ShaderHandle;
+    typedef uint32_t ShaderHandle;
 
     class DeviceContext;
     class CommandContext;

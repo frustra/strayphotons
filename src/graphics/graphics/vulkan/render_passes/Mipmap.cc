@@ -50,11 +50,11 @@ namespace sp::vulkan::renderer {
 
                 auto baseMipExtent = image->Extent();
 
-                vk::Offset3D currentExtent = {(int32)baseMipExtent.width,
-                    (int32)baseMipExtent.height,
-                    (int32)baseMipExtent.depth};
+                vk::Offset3D currentExtent = {(int32_t)baseMipExtent.width,
+                    (int32_t)baseMipExtent.height,
+                    (int32_t)baseMipExtent.depth};
 
-                for (uint32 i = 1; i < image->MipLevels(); i++) {
+                for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
                     currentExtent.x = std::max(currentExtent.x >> 1, 1);
                     currentExtent.y = std::max(currentExtent.y >> 1, 1);

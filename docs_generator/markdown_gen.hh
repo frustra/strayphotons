@@ -38,8 +38,8 @@ private:
             return "int32";
         } else if constexpr (std::is_same<T, uint32_t>()) {
             return "uint32";
-        } else if constexpr (std::is_same<T, size_t>()) {
-            return "size_t";
+        } else if constexpr (std::is_same<T, uint64_t>()) {
+            return "uint64";
         } else if constexpr (std::is_same<T, sp::angle_t>()) {
             return "float (degrees)";
         } else if constexpr (std::is_same<T, float>()) {

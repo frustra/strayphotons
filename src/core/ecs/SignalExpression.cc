@@ -508,12 +508,12 @@ namespace ecs {
         return !rootNode->uncacheable;
     }
 
-    bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         if (!rootNode) return true;
         return rootNode->CanEvaluate(lock, depth);
     }
 
-    double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         DebugZoneScoped;
         DebugZoneStr(expr);
         if (!rootNode) return 0.0;
@@ -541,7 +541,7 @@ namespace ecs {
         }
     }
 
-    double Node::Evaluate(const Context &ctx, size_t depth) const {
+    double Node::Evaluate(const Context &ctx, uint32_t depth) const {
         DebugAssertf(evaluate, "Node::Evaluate null compiled function: %s", text);
         double result = this->evaluate(ctx, *this, depth);
         DebugAssertf(std::isfinite(result), "expression::Node::Evaluate() returned non-finite value: %f", result);
@@ -563,7 +563,7 @@ namespace ecs {
     }
 
     CompiledFunc ConstantNode::Compile() const {
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             return std::get<ConstantNode>(node).value;
         };
     }
@@ -573,7 +573,7 @@ namespace ecs {
             Errorf("SignalExpression has undefined identifier: %s", field.name);
             return nullptr;
         }
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             DebugZoneScoped;
             auto &identNode = std::get<IdentifierNode>(node);
             if (identNode.field.type != typeid(EventData)) {
@@ -585,7 +585,7 @@ namespace ecs {
     }
 
     CompiledFunc SignalNode::Compile() const {
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             DebugZoneScoped;
             auto &signalNode = std::get<SignalNode>(node);
             if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
@@ -597,7 +597,7 @@ namespace ecs {
     }
 
     CompiledFunc ComponentNode::Compile() const {
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             DebugZoneScoped;
             auto &componentNode = std::get<ComponentNode>(node);
             if (!componentNode.component) return 0.0;
@@ -628,7 +628,7 @@ namespace ecs {
     }
 
     CompiledFunc FocusCondition::Compile() const {
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             auto &focusNode = std::get<FocusCondition>(node);
             if (!ctx.lock.Has<FocusLock>()) return 0.0;
 
@@ -648,47 +648,47 @@ namespace ecs {
 
     CompiledFunc OneInputOperation::Compile() const {
         if (prefixStr == "( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return node.childNodes[0]->Evaluate(ctx, depth);
             };
         } else if (prefixStr == "-") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return -node.childNodes[0]->Evaluate(ctx, depth);
             };
         } else if (prefixStr == "!") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return node.childNodes[0]->Evaluate(ctx, depth) >= 0.5 ? 0.0 : 1.0;
             };
         } else if (prefixStr == "sin( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::sin(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "cos( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::cos(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "tan( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::tan(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "floor( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::floor(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "ceil( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::ceil(node.childNodes[0]->Evaluate(ctx, depth));
             };
         } else if (prefixStr == "abs( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 0, "OneInputOperation::Compile null input node: %s", node.text);
                 return std::abs(node.childNodes[0]->Evaluate(ctx, depth));
             };
@@ -699,14 +699,14 @@ namespace ecs {
 
     CompiledFunc TwoInputOperation::Compile() const {
         if (prefixStr == "min( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
                 double inputA = node.childNodes[0]->Evaluate(ctx, depth);
                 double inputB = node.childNodes[1]->Evaluate(ctx, depth);
                 return std::min(inputA, inputB);
             };
         } else if (prefixStr == "max( ") {
-            return [](const Context &ctx, const Node &node, size_t depth) {
+            return [](const Context &ctx, const Node &node, uint32_t depth) {
                 DebugAssertf(node.childNodes.size() > 1, "TwoInputOperation::Compile null input node: %s", node.text);
                 double inputA = node.childNodes[0]->Evaluate(ctx, depth);
                 double inputB = node.childNodes[1]->Evaluate(ctx, depth);
@@ -714,7 +714,7 @@ namespace ecs {
             };
         } else if (prefixStr == "") {
             if (middleStr == " + ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -728,7 +728,7 @@ namespace ecs {
                     return result;
                 };
             } else if (middleStr == " - ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -742,7 +742,7 @@ namespace ecs {
                     return result;
                 };
             } else if (middleStr == " * ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -756,7 +756,7 @@ namespace ecs {
                     return result;
                 };
             } else if (middleStr == " / ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -770,7 +770,7 @@ namespace ecs {
                     return result;
                 };
             } else if (middleStr == " && ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -779,7 +779,7 @@ namespace ecs {
                     return (double)(inputA >= 0.5 && inputB >= 0.5);
                 };
             } else if (middleStr == " || ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -788,7 +788,7 @@ namespace ecs {
                     return (double)(inputA >= 0.5 || inputB >= 0.5);
                 };
             } else if (middleStr == " > ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -797,7 +797,7 @@ namespace ecs {
                     return (double)(inputA > inputB);
                 };
             } else if (middleStr == " >= ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -806,7 +806,7 @@ namespace ecs {
                     return (double)(inputA >= inputB);
                 };
             } else if (middleStr == " < ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -815,7 +815,7 @@ namespace ecs {
                     return (double)(inputA < inputB);
                 };
             } else if (middleStr == " <= ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -824,7 +824,7 @@ namespace ecs {
                     return (double)(inputA <= inputB);
                 };
             } else if (middleStr == " == ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -833,7 +833,7 @@ namespace ecs {
                     return (double)(inputA == inputB);
                 };
             } else if (middleStr == " != ") {
-                return [](const Context &ctx, const Node &node, size_t depth) {
+                return [](const Context &ctx, const Node &node, uint32_t depth) {
                     DebugAssertf(node.childNodes.size() > 1,
                         "TwoInputOperation::Compile null input node: %s",
                         node.text);
@@ -850,7 +850,7 @@ namespace ecs {
     }
 
     CompiledFunc DeciderOperation::Compile() const {
-        return [](const Context &ctx, const Node &node, size_t depth) {
+        return [](const Context &ctx, const Node &node, uint32_t depth) {
             DebugAssertf(node.childNodes.size() > 2, "DeciderOperation::Compile null input node: %s", node.text);
             double condition = node.childNodes[0]->Evaluate(ctx, depth);
             if (condition >= 0.5) {
@@ -861,7 +861,7 @@ namespace ecs {
         };
     }
 
-    bool Node::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const {
+    bool Node::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         if (std::holds_alternative<SignalNode>(*this)) {
             const SignalNode &signalNode = std::get<SignalNode>(*this);
             if (signalNode.signal.HasValue(lock)) return true;

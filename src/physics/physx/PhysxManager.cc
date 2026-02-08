@@ -35,7 +35,7 @@ namespace sp {
     using namespace physx;
 
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
-    static CVar<uint32> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
+    static CVar<uint32_t> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
 
     PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
         : RegisteredThread("PhysX", CVarPhysicsFPS.Get(), true), windowInputQueue(windowInputQueue),
@@ -922,7 +922,7 @@ namespace sp {
         InlineVector<PxShape *, 256> shapes(nShapes);
         actor->getShapes(shapes.data(), shapes.size());
 
-        for (uint32 i = 0; i < nShapes; ++i) {
+        for (uint32_t i = 0; i < nShapes; ++i) {
             SetCollisionGroup(shapes[i], group);
         }
 

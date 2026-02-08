@@ -99,7 +99,7 @@ Signal expressions support the following operations and functions:
         bool Compile();
 
         template<typename LockType>
-        bool CanEvaluate(const LockType &lock, size_t depth = 0) const {
+        bool CanEvaluate(const LockType &lock, uint32_t depth = 0) const {
             if constexpr (LockType::template has_permissions<ReadAll>()) {
                 return true;
             } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
@@ -110,8 +110,8 @@ Signal expressions support the following operations and functions:
         }
 
         bool IsCacheable() const;
-        bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth) const;
-        double Evaluate(const DynamicLock<ReadSignalsLock> &lock, size_t depth = 0) const;
+        bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const;
+        double Evaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth = 0) const;
         double EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;
 
         bool operator==(const SignalExpression &other) const {

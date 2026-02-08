@@ -68,7 +68,7 @@ namespace sp {
             std::array<ecs::EntityRef, vr::k_unMaxTrackedDeviceCount> reservedEntities = {};
             std::array<ecs::EntityRef *, vr::k_unMaxTrackedDeviceCount> trackedDevices = {};
 
-            uint32 frameCountWorkaround = 0;
+            uint32_t frameCountWorkaround = 0;
             int texWidth = 0, texHeight = 0;
 
             friend class EventHandler;

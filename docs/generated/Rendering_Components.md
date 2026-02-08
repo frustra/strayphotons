@@ -12,7 +12,7 @@ It is usually preferred to load the model using the [gltf Prefab Script](#gltf-p
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **model** | string | "" | Name of the GLTF model to display. Models are loaded from the `assets/models/` folder. |
-| **mesh_index** | size_t | 0 | The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab. |
+| **mesh_index** | uint64 | 0 | The index of the mesh to render from the GLTF model. Note, multi-mesh GLTF models can be automatically expanded into entities using the `gltf` prefab. |
 | **visibility** | enum flags [VisibilityMask](#VisibilityMask-type) | "DirectCamera\|DirectEye\|LightingShadow\|LightingVoxel" | Visibility mask for different render passes. |
 | **emissive** | float | 0 | Emissive multiplier to turn this model into a light source |
 | **color_override** | vec4 (red, green, blue, alpha) | [-1, -1, -1, -1] | Override the mesh's texture to a flat RGBA color. Values are in the range 0.0 to 1.0. -1 means the original color is used. |

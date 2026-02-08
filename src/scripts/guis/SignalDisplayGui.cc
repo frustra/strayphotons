@@ -56,7 +56,7 @@ namespace sp::scripts {
                 fontAtlas->AddFont(&cfg);
             }
 
-            uint8 *fontData;
+            uint8_t *fontData;
             int fontWidth, fontHeight;
             fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
         }

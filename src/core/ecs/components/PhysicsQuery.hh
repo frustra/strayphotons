@@ -35,7 +35,7 @@ namespace ecs {
 
             glm::vec3 position = {0, 0, 0};
             bool relativePosition = true;
-            uint32 maxHits = 1;
+            uint32_t maxHits = 1;
 
             bool operator==(const Raycast &other) const {
                 return filterGroup == other.filterGroup && maxDistance == other.maxDistance &&
@@ -48,7 +48,7 @@ namespace ecs {
                 Entity target, subTarget;
                 glm::vec3 position, normal;
                 float distance;
-                uint32 hits;
+                uint32_t hits;
             };
             std::optional<Result> result;
 

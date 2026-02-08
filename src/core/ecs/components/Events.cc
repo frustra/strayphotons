@@ -169,14 +169,14 @@ namespace ecs {
         }
     }
 
-    size_t EventInput::Add(const Event &event, size_t transactionId) const {
+    uint64_t EventInput::Add(const Event &event, uint64_t transactionId) const {
         AsyncEvent asyncEvent(event.name, event.source, event.data);
         asyncEvent.transactionId = transactionId;
         return Add(asyncEvent);
     }
 
-    size_t EventInput::Add(const AsyncEvent &event) const {
-        size_t eventsSent = 0;
+    uint64_t EventInput::Add(const AsyncEvent &event) const {
+        uint64_t eventsSent = 0;
         auto it = events.find(event.name);
         if (it != events.end()) {
             for (auto &queuePtr : it->second) {
@@ -343,19 +343,19 @@ namespace ecs {
         return true;
     }
 
-    size_t EventBindings::SendEvent(const DynamicLock<SendEventsLock> &lock,
+    uint64_t EventBindings::SendEvent(const DynamicLock<SendEventsLock> &lock,
         const EntityRef &target,
         const Event &event,
-        size_t depth) {
+        uint32_t depth) {
         AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
         asyncEvent.transactionId = lock.GetTransactionId();
         return SendAsyncEvent(lock, target, asyncEvent, depth);
     }
 
-    size_t EventBindings::SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
+    uint64_t EventBindings::SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
         const EntityRef &target,
         const AsyncEvent &event,
-        size_t depth) {
+        uint32_t depth) {
         ZoneScoped;
         Entity ent = target.Get(lock);
         if (!ent.Exists(lock)) {
@@ -363,7 +363,7 @@ namespace ecs {
             return 0;
         }
 
-        size_t eventsSent = 0;
+        uint64_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<const EventInput>(lock);
             eventsSent += eventInput.Add(event);
