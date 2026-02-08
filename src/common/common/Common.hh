@@ -34,25 +34,16 @@ typedef std::chrono::steady_clock chrono_clock;
 #include <robin_hood.h>
 #include <variant>
 
-typedef unsigned char uint8;
-typedef signed char int8;
-typedef uint16_t uint16;
-typedef int16_t int16;
-typedef uint32_t uint32;
-typedef int32_t int32;
-typedef uint64_t uint64;
-typedef int64_t int64;
-
 namespace sp {
     [[noreturn]] void Abort();
 
-    uint32 CeilToPowerOfTwo(uint32 v);
-    uint32 Uint32Log2(uint32 v);
-    uint64 Uint64Log2(uint64 v);
+    uint32_t CeilToPowerOfTwo(uint32_t v);
+    uint32_t Uint32Log2(uint32_t v);
+    uint64_t Uint64Log2(uint64_t v);
 
     template<typename T>
-    void ForEachBit(uint32 value, const T &func) {
-        uint32 bit = 1, index = 0;
+    void ForEachBit(uint32_t value, const T &func) {
+        uint32_t bit = 1, index = 0;
         while (value) {
             if (value & bit) func(index);
             value &= ~bit;
@@ -75,8 +66,8 @@ namespace sp {
         NonMoveable &operator=(NonMoveable &&) = delete;
     };
 
-    typedef std::array<uint64, 2> Hash128;
-    typedef uint64 Hash64;
+    typedef std::array<uint64_t, 2> Hash128;
+    typedef uint64_t Hash64;
 
     class angle_t {
     public:
@@ -201,6 +192,11 @@ namespace sp {
     struct is_vector : std::false_type {};
     template<typename T>
     struct is_vector<std::vector<T>> : std::true_type {};
+
+    template<typename T>
+    struct is_array : std::false_type {};
+    template<typename T, size_t N>
+    struct is_array<std::array<T, N>> : std::true_type {};
 
     template<typename T>
     struct is_pair : std::false_type {};

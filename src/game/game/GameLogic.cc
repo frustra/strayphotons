@@ -16,7 +16,7 @@
 #include "input/KeyCodes.hh"
 
 namespace sp {
-    static CVar<uint32> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
+    static CVar<uint32_t> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
 
     GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
         : RegisteredThread("GameLogic", CVarLogicFPS.Get(), true), windowInputQueue(windowInputQueue) {

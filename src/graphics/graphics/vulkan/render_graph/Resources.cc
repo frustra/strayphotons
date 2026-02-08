@@ -82,22 +82,22 @@ namespace sp::vulkan::render_graph {
         return pooledImage->ImageView();
     }
 
-    ImageViewPtr Resources::GetImageLayerView(string_view name, uint32 layer) {
+    ImageViewPtr Resources::GetImageLayerView(string_view name, uint32_t layer) {
         return GetImageLayerView(GetID(name), layer);
     }
 
-    ImageViewPtr Resources::GetImageLayerView(ResourceID id, uint32 layer) {
+    ImageViewPtr Resources::GetImageLayerView(ResourceID id, uint32_t layer) {
         if (id >= resources.size()) return nullptr;
         auto pooledImage = GetPooledImage(id);
         if (!pooledImage) return nullptr;
         return pooledImage->LayerImageView(layer);
     }
 
-    ImageViewPtr Resources::GetImageMipView(string_view name, uint32 mip) {
+    ImageViewPtr Resources::GetImageMipView(string_view name, uint32_t mip) {
         return GetImageMipView(GetID(name), mip);
     }
 
-    ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32 mip) {
+    ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32_t mip) {
         if (id >= resources.size()) return nullptr;
         auto pooledImage = GetPooledImage(id);
         if (!pooledImage) return nullptr;
@@ -175,7 +175,7 @@ namespace sp::vulkan::render_graph {
         return invalidResourceName;
     }
 
-    ResourceID Resources::GetID(string_view name, bool assertExists, uint32 framesAgo) const {
+    ResourceID Resources::GetID(string_view name, bool assertExists, uint32_t framesAgo) const {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -183,7 +183,7 @@ namespace sp::vulkan::render_graph {
         }
 
         ResourceID result = InvalidResource;
-        uint32 getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
+        uint32_t getFrameIndex = (frameIndex + RESOURCE_FRAME_COUNT - framesAgo) % RESOURCE_FRAME_COUNT;
 
         auto lastSep = name.rfind('/');
         if (starts_with(name, "/")) {
@@ -257,7 +257,7 @@ namespace sp::vulkan::render_graph {
         return resource.id;
     }
 
-    uint32 Resources::RefCount(ResourceID id) {
+    uint32_t Resources::RefCount(ResourceID id) {
         Assert(id < resources.size(), "id out of range");
         return refCounts[id];
     }
@@ -426,7 +426,7 @@ namespace sp::vulkan::render_graph {
         }
 
         Assert(scopeStack.size() < MAX_RESOURCE_SCOPE_DEPTH, "too many nested scopes");
-        scopeStack.push_back((uint8)scopeIndex);
+        scopeStack.push_back((uint8_t)scopeIndex);
     }
 
     void Resources::EndScope() {
@@ -436,14 +436,14 @@ namespace sp::vulkan::render_graph {
         scopeStack.pop_back();
     }
 
-    ResourceID Resources::Scope::GetID(string_view name, uint32 frameIndex) const {
+    ResourceID Resources::Scope::GetID(string_view name, uint32_t frameIndex) const {
         auto &resourceNames = frames[frameIndex].resourceNames;
         auto it = resourceNames.find(name);
         if (it != resourceNames.end()) return it->second;
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(string_view name, ResourceID id, uint32 frameIndex, bool replace) {
+    void Resources::Scope::SetID(string_view name, ResourceID id, uint32_t frameIndex, bool replace) {
         auto &resourceNames = frames[frameIndex].resourceNames;
         auto &nameID = resourceNames[name.data()];
         if (!replace) Assert(!nameID, "resource already registered");

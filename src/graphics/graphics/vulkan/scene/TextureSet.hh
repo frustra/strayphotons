@@ -18,7 +18,7 @@
 #include <string_view>
 
 namespace sp::vulkan {
-    typedef uint16 TextureIndex;
+    typedef uint16_t TextureIndex;
 
     struct TextureHandle {
         TextureIndex index = 0;

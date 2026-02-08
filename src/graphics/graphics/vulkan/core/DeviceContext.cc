@@ -187,9 +187,9 @@ namespace sp::vulkan {
             }
             Assert(physicalDevice, "No suitable graphics device found!");
 
-            std::array<uint32, QUEUE_TYPES_COUNT> queueIndex;
+            std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-            vector<uint32> queuesUsedCount(queueFamilies.size());
+            vector<uint32_t> queuesUsedCount(queueFamilies.size());
             vector<vector<float>> queuePriority(queueFamilies.size());
 
             const auto findQueue = [&](QueueType queueType,
@@ -242,7 +242,7 @@ namespace sp::vulkan {
                 "transfer queue family overlaps graphics queue");
 
             std::vector<vk::DeviceQueueCreateInfo> queueInfos;
-            for (uint32 i = 0; i < queueFamilies.size(); i++) {
+            for (uint32_t i = 0; i < queueFamilies.size(); i++) {
                 if (queuesUsedCount[i] == 0) continue;
 
                 vk::DeviceQueueCreateInfo queueInfo;
@@ -373,7 +373,7 @@ namespace sp::vulkan {
             tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
 #endif
 
-            for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+            for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                 auto familyIndex = queueFamilyIndex[queueType];
                 auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
                 queues[queueType] = queue;
@@ -414,7 +414,7 @@ namespace sp::vulkan {
                 frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
                 frame.inFlightFence = device->createFenceUnique(fenceInfo);
 
-                for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                     vk::CommandPoolCreateInfo poolInfo;
                     poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
                     poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient;
@@ -470,7 +470,7 @@ namespace sp::vulkan {
 
                 threadContext->bufferPool = make_unique<BufferPool>(*this);
 
-                for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                     vk::CommandPoolCreateInfo poolInfo;
                     poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
                     poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
@@ -1334,13 +1334,13 @@ namespace sp::vulkan {
                     vk::AccessFlagBits::eTransferWrite,
                     transferMips);
 
-                vk::Offset3D currentExtent = {(int32)image->Extent().width,
-                    (int32)image->Extent().height,
-                    (int32)image->Extent().depth};
+                vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
+                    (int32_t)image->Extent().height,
+                    (int32_t)image->Extent().depth};
 
                 transferMips.mipLevelCount = 1;
 
-                for (uint32 i = 1; i < image->MipLevels(); i++) {
+                for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
                     currentExtent.x = std::max(currentExtent.x >> 1, 1);
                     currentExtent.y = std::max(currentExtent.y >> 1, 1);
@@ -1642,7 +1642,7 @@ namespace sp::vulkan {
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
         ZoneScoped;
-        for (uint32 queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+        for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
             erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
                 auto &cmd = cmdHandle.Get();
                 auto fence = cmd->Fence();

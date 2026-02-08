@@ -64,9 +64,9 @@ namespace sp::vulkan {
         renderPass = device.GetRenderPass(info);
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
-        uint32 clearValueCount = info.state.colorAttachmentCount;
+        uint32_t clearValueCount = info.state.colorAttachmentCount;
 
-        for (uint32 i = 0; i < info.state.colorAttachmentCount; i++) {
+        for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
             if (info.state.ShouldClear(i)) {
                 clearValues[i].color = info.clearColors[i];
             }
@@ -119,7 +119,7 @@ namespace sp::vulkan {
         }
     }
 
-    void CommandContext::Dispatch(uint32 groupCountX, uint32 groupCountY, uint32 groupCountZ) {
+    void CommandContext::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
         FlushComputeState();
         cmd->dispatch(groupCountX, groupCountY, groupCountZ);
     }
@@ -129,21 +129,24 @@ namespace sp::vulkan {
         cmd->dispatchIndirect(*indirectBuffer, offset);
     }
 
-    void CommandContext::Draw(uint32 vertexes, uint32 instances, int32 firstVertex, uint32 firstInstance) {
+    void CommandContext::Draw(uint32_t vertexes, uint32_t instances, int32_t firstVertex, uint32_t firstInstance) {
         FlushGraphicsState();
         cmd->draw(vertexes, instances, firstVertex, firstInstance);
     }
 
-    void CommandContext::DrawIndexed(uint32 indexes,
-        uint32 instances,
-        uint32 firstIndex,
-        int32 vertexOffset,
-        uint32 firstInstance) {
+    void CommandContext::DrawIndexed(uint32_t indexes,
+        uint32_t instances,
+        uint32_t firstIndex,
+        int32_t vertexOffset,
+        uint32_t firstInstance) {
         FlushGraphicsState();
         cmd->drawIndexed(indexes, instances, firstIndex, vertexOffset, firstInstance);
     }
 
-    void CommandContext::DrawIndirect(BufferPtr drawCommands, vk::DeviceSize offset, uint32 drawCount, uint32 stride) {
+    void CommandContext::DrawIndirect(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        uint32_t drawCount,
+        uint32_t stride) {
         FlushGraphicsState();
         cmd->drawIndirect(*drawCommands, offset, drawCount, stride);
     }
@@ -152,16 +155,16 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         BufferPtr countBuffer,
         vk::DeviceSize countOffset,
-        uint32 maxDrawCount,
-        uint32 stride) {
+        uint32_t maxDrawCount,
+        uint32_t stride) {
         FlushGraphicsState();
         cmd->drawIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
     }
 
     void CommandContext::DrawIndexedIndirect(BufferPtr drawCommands,
         vk::DeviceSize offset,
-        uint32 drawCount,
-        uint32 stride) {
+        uint32_t drawCount,
+        uint32_t stride) {
         FlushGraphicsState();
         cmd->drawIndexedIndirect(*drawCommands, offset, drawCount, stride);
     }
@@ -170,8 +173,8 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         BufferPtr countBuffer,
         vk::DeviceSize countOffset,
-        uint32 maxDrawCount,
-        uint32 stride) {
+        uint32_t maxDrawCount,
+        uint32_t stride) {
         FlushGraphicsState();
         cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
     }
@@ -338,7 +341,7 @@ namespace sp::vulkan {
         SetSingleShader(stage, device.LoadShader(name));
     }
 
-    void CommandContext::SetShaderConstant(ShaderStage stage, uint32 index, uint32 data) {
+    void CommandContext::SetShaderConstant(ShaderStage stage, uint32_t index, uint32_t data) {
         Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
         auto &spec = pipelineInput.state.specializations[stage];
         spec.values[index] = data;
@@ -346,7 +349,7 @@ namespace sp::vulkan {
         SetDirty(DirtyFlags::Pipeline);
     }
 
-    void CommandContext::SetShaderConstant(ShaderStage stage, string_view name, uint32 data) {
+    void CommandContext::SetShaderConstant(ShaderStage stage, string_view name, uint32_t data) {
         Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
         auto shader = device.GetShader(pipelineInput.state.shaders[stage]);
         Assertf(shader, "bound shader is null when setting constant");
@@ -373,7 +376,7 @@ namespace sp::vulkan {
         SetDirty(DirtyFlags::PushConstants);
     }
 
-    void CommandContext::SetSampler(uint32 set, uint32 binding, const vk::Sampler &sampler) {
+    void CommandContext::SetSampler(uint32_t set, uint32_t binding, const vk::Sampler &sampler) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &image = shaderData.sets[set].bindings[binding].image;
@@ -402,11 +405,11 @@ namespace sp::vulkan {
         Errorf("SetSampler binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
     }
 
-    void CommandContext::SetImageView(uint32 set, uint32 binding, const ImageViewPtr &view) {
+    void CommandContext::SetImageView(uint32_t set, uint32_t binding, const ImageViewPtr &view) {
         SetImageView(set, binding, view.get());
     }
 
-    void CommandContext::SetImageView(uint32 set, uint32 binding, const ImageView *view) {
+    void CommandContext::SetImageView(uint32_t set, uint32_t binding, const ImageView *view) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
@@ -466,8 +469,8 @@ namespace sp::vulkan {
             buffer->ByteSize());
     }
 
-    void CommandContext::SetUniformBuffer(uint32 set,
-        uint32 binding,
+    void CommandContext::SetUniformBuffer(uint32_t set,
+        uint32_t binding,
         const BufferPtr &buffer,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -533,8 +536,8 @@ namespace sp::vulkan {
         SetUniformBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
     }
 
-    void CommandContext::SetStorageBuffer(uint32 set,
-        uint32 binding,
+    void CommandContext::SetStorageBuffer(uint32_t set,
+        uint32_t binding,
         const BufferPtr &buffer,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -600,7 +603,7 @@ namespace sp::vulkan {
         SetStorageBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
     }
 
-    BufferPtr CommandContext::AllocUniformBuffer(uint32 set, uint32 binding, vk::DeviceSize size) {
+    BufferPtr CommandContext::AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size) {
         BufferDesc desc;
         desc.layout = size;
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
@@ -620,7 +623,7 @@ namespace sp::vulkan {
         return buffer;
     }
 
-    void CommandContext::SetBindlessDescriptors(uint32 set, vk::DescriptorSet descriptorSet) {
+    void CommandContext::SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         bindlessSets[set] = descriptorSet;
         SetDescriptorDirty(set);
@@ -629,7 +632,7 @@ namespace sp::vulkan {
     void CommandContext::FlushDescriptorSets(vk::PipelineBindPoint bindPoint) {
         auto layout = currentPipeline->GetLayout();
 
-        for (uint32 set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
+        for (uint32_t set = 0; set < MAX_BOUND_DESCRIPTOR_SETS; set++) {
             if (!ResetDescriptorDirty(set)) continue;
             if (!layout->HasDescriptorSet(set)) continue;
 
