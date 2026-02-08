@@ -383,7 +383,11 @@ namespace ecs {
         static constexpr bool foo = std::is_trivially_copy_constructible_v<std::type_index>;
 
         template<typename... Fields>
-        StructMetadata(const std::type_index &idx, uint64_t size, const char *name, const char *desc, Fields &&...fields)
+        StructMetadata(const std::type_index &idx,
+            uint64_t size,
+            const char *name,
+            const char *desc,
+            Fields &&...fields)
             : type(idx), size(size), name(name), description(sp::trim(desc)) {
             (
                 [&] {
