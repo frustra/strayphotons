@@ -1,0 +1,40 @@
+x.PhysicsFPS 120
+g.LogicFPS 120
+loadscene test1
+screenshot reload-before1.png
+stepgraphics
+steplogic
+stepphysics
+stepgraphics 120
+screenshot reload-before2.png
+stepgraphics
+assert_position test1:animbox 0 1.5 -4.875
+
+reloadscene
+screenshot reload-after1.png
+stepgraphics
+assert_position test1:animbox 0 1.5 -4.875
+steplogic
+stepphysics
+stepgraphics
+
+reloadscene
+reloadscene
+reloadscene
+reloadscene
+screenshot reload-after2.png
+stepgraphics
+assert_position test1:animbox 0 1.5 -4.875
+steplogic 2700
+stepphysics 2
+stepgraphics 120
+screenshot reload-after3.png
+stepgraphics
+assert_position test1:animbox 0 1.5 -4.875
+stepphysics 120
+assert_position test1:animbox 0 2 -4.875
+stepphysics 120
+assert_position test1:animbox 0 5 -4.875
+stepgraphics 120
+screenshot reload-after4.png
+stepgraphics
