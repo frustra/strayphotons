@@ -95,6 +95,7 @@ namespace sp::vulkan {
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
             rg::ResourceID drawParamsBuffer = 0;
+            size_t commandCount = 0;
         };
 
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
@@ -111,7 +112,8 @@ namespace sp::vulkan {
         void DrawSceneIndirect(CommandContext &cmd,
             BufferPtr vertexBuffer,
             BufferPtr drawCommandsBuffer,
-            BufferPtr drawParamsBuffer);
+            BufferPtr drawParamsBuffer,
+            size_t commandCount);
 
         void AddGeometryWarp(rg::RenderGraph &graph);
 
