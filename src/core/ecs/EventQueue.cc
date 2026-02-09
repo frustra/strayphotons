@@ -246,13 +246,13 @@ namespace ecs {
         return true;
     }
 
-    bool EventQueue::Add(const Event &event, size_t transactionId) {
+    bool EventQueue::Add(const Event &event, uint64_t transactionId) {
         AsyncEvent asyncEvent(event.name, event.source, event.data);
         asyncEvent.transactionId = transactionId;
         return Add(asyncEvent);
     }
 
-    bool EventQueue::Poll(Event &eventOut, size_t transactionId) {
+    bool EventQueue::Poll(Event &eventOut, uint64_t transactionId) {
         bool outputSet = false;
         while (!outputSet) {
             State s = state.load();
@@ -291,7 +291,7 @@ namespace ecs {
         return s.head == s.tail;
     }
 
-    size_t EventQueue::Size() {
+    uint32_t EventQueue::Size() {
         State s = state.load();
         if (s.head > s.tail) {
             return s.tail + events.size() - s.head;
