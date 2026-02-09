@@ -314,7 +314,7 @@ namespace sp::vulkan {
             Assert(availableVulkan12Features.shaderOutputViewportIndex,
                 "device must support shaderOutputViewportIndex");
             Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
-            Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
+            // Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
             Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
             Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
                 "device must support descriptorBindingPartiallyBound");
@@ -328,7 +328,7 @@ namespace sp::vulkan {
             vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
             enabledVulkan12Features.shaderOutputViewportIndex = true;
             enabledVulkan12Features.shaderOutputLayer = true;
-            enabledVulkan12Features.drawIndirectCount = true;
+            // enabledVulkan12Features.drawIndirectCount = true;
             enabledVulkan12Features.runtimeDescriptorArray = true;
             enabledVulkan12Features.descriptorBindingPartiallyBound = true;
             enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
