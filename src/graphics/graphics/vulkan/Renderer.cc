@@ -360,7 +360,7 @@ namespace sp::vulkan {
         if (!view) return {};
         view.UpdateViewMatrix(lock, ent);
 
-        GPUScene::DrawBufferIDs drawIDs;
+        GPUScene::DrawBufferIDs drawIDs = {};
         if (CVarSortedDraw.Get()) {
             glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
             drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, view.visibilityMask, CVarDrawReverseOrder.Get());
@@ -404,7 +404,8 @@ namespace sp::vulkan {
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
-                    resources.GetBuffer(drawIDs.drawParamsBuffer));
+                    resources.GetBuffer(drawIDs.drawParamsBuffer),
+                    drawIDs.commandCount);
             });
         return view;
     }
@@ -537,7 +538,8 @@ namespace sp::vulkan {
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
-                    resources.GetBuffer(drawIDs.drawParamsBuffer));
+                    resources.GetBuffer(drawIDs.drawParamsBuffer),
+                    drawIDs.commandCount);
 
                 GPUViewState *viewState;
                 viewStateBuf->Map((void **)&viewState);
