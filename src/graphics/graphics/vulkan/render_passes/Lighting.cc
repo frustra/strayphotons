@@ -436,7 +436,8 @@ namespace sp::vulkan::renderer {
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
-                        resources.GetBuffer(drawAllIDs.drawParamsBuffer));
+                        resources.GetBuffer(drawAllIDs.drawParamsBuffer),
+                        drawAllIDs.commandCount);
                 }
             });
 
@@ -478,7 +479,8 @@ namespace sp::vulkan::renderer {
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
-                        resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
+                        resources.GetBuffer(drawOpticIDs.drawParamsBuffer),
+                        drawOpticIDs.commandCount);
                 }
             });
 
