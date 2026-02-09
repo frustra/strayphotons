@@ -455,7 +455,7 @@ namespace sp::vulkan::render_graph {
             auto it = frame.resourceNames.begin();
             while (it != frame.resourceNames.end()) {
                 if (it->second == id) {
-                    frame.resourceNames.erase(it++);
+                    it = frame.resourceNames.erase(it);
                 } else {
                     it++;
                 }
