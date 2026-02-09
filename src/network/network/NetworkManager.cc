@@ -10,10 +10,13 @@
 // #include "assets/AssetManager.hh"
 // #include "common/Tracing.hh"
 // #include "console/CVar.hh"
-#include "ecs/EcsImpl.hh"
 // #include "game/GameEntities.hh"
+#include "common/InlineString.hh"
+#include "ecs/EcsImpl.hh"
 
-#include <steam/isteamnetworkingmessages.h>
+#include <steam/isteamnetworkingsockets.h>
+#include <steam/isteamnetworkingutils.h>
+#include <steam/steamnetworkingsockets.h>
 
 namespace sp {
     NetworkManager::NetworkManager()
@@ -27,15 +30,32 @@ namespace sp {
         StartThread();
     }
 
+    void debugOutput(ESteamNetworkingSocketsDebugOutputType eType, const char *pszMsg) {
+        Logf("Network: %s %s", eType, pszMsg);
+    }
+
     bool NetworkManager::ThreadInit() {
         ZoneScoped;
 
-        // Start listening on ports / connect to server
-        auto *gameServerNetworking = SteamGameServerNetworkingMessages();
-        if (gameServerNetworking) {
-            gameServerNetworking->
+        // Init GameNetworkingSockets the same for both client and server
+        SteamDatagramErrMsg errMsg;
+        SteamNetworkingIdentity identity = {};
+        bool success = GameNetworkingSockets_Init(nullptr, errMsg);
+        if (success) {
+            sockets = SteamNetworkingSockets();
+            if (sockets) success = sockets->GetIdentity(&identity);
         }
-        return true;
+        if (success) {
+            SteamNetworkingUtils()->SetDebugOutputFunction(k_ESteamNetworkingSocketsDebugOutputType_Msg, debugOutput);
+        } else {
+            Errorf("Network init failed: %s", errMsg);
+        }
+        return success;
+    }
+
+    void NetworkManager::ThreadShutdown() {
+        GameNetworkingSockets_Kill();
+        sockets = nullptr;
     }
 
     void NetworkManager::Shutdown(bool waitForExit) {

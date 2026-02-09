@@ -10,6 +10,8 @@
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 
+class ISteamNetworkingSockets;
+
 namespace sp {
     class NetworkManager : public RegisteredThread {
     public:
@@ -18,10 +20,13 @@ namespace sp {
 
     protected:
         bool ThreadInit() override;
+        void ThreadShutdown() override;
         void Frame() override;
 
     private:
         void Shutdown(bool waitForExit);
+
+        ISteamNetworkingSockets *sockets;
 
         ecs::ComponentModifiedObserver<ecs::Network> networkObserver;
 
