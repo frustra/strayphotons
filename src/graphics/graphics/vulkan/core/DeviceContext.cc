@@ -1092,8 +1092,9 @@ namespace sp::vulkan {
         auto cmd = device.GetFencedCommandContext(type);
         auto info = GetAccessInfo(access);
         cmd->ImageBarrier(image, info.imageLayout, info.stageMask, info.accessMask, transferToQueue);
-        device.PushInFlightObject(image, cmd->Fence());
-        auto transferComplete = image->SetPendingCommand(device.GetEmptySemaphore(cmd->Fence()),
+        auto fence = cmd->Fence();
+        device.PushInFlightObject(image, fence);
+        auto transferComplete = image->SetPendingCommand(device.GetEmptySemaphore(fence),
             transferToQueue.dstQueueFamilyIndex);
         if (waitSemaphore) {
             device.Submit(cmd, {transferComplete}, {waitSemaphore}, {info.stageMask});
@@ -1171,6 +1172,7 @@ namespace sp::vulkan {
                         transferToCompute.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     }
 
+                    ImageViewPtr factorView;
                     {
                         GPUZone(this, factorCmd, "ApplyFactor");
 
@@ -1186,7 +1188,7 @@ namespace sp::vulkan {
                         factorViewInfo.format = factorFormat;
                         factorViewInfo.mipLevelCount = 1;
                         factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-                        auto factorView = CreateImageView(factorViewInfo);
+                        factorView = CreateImageView(factorViewInfo);
 
                         factorCmd->SetComputeShader("texture_factor.comp");
                         factorCmd->SetImageView("texture", factorView);
@@ -1207,9 +1209,10 @@ namespace sp::vulkan {
                         factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
                             (createInfo.extent.height + 15) / 16,
                             1);
-                        PushInFlightObject(factorView, factorCmd->Fence());
                     }
-                    auto factorComplete = image->SetPendingCommand(GetEmptySemaphore(factorCmd->Fence()),
+                    auto fence = factorCmd->Fence();
+                    PushInFlightObject(factorView, fence);
+                    auto factorComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
                         transferToCompute.dstQueueFamilyIndex);
                     if (waitSemaphore) {
                         Submit(factorCmd,
@@ -1273,8 +1276,9 @@ namespace sp::vulkan {
                     vk::ImageLayout::eTransferDstOptimal,
                     {region});
 
-                PushInFlightObject(stagingBuf, transferCmd->Fence());
-                auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(transferCmd->Fence()),
+                auto fence = transferCmd->Fence();
+                PushInFlightObject(stagingBuf, fence);
+                auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
                     transferToTransferAsync.dstQueueFamilyIndex);
                 {
                     ZoneScopedN("CopyBufferToImage");
@@ -1380,8 +1384,9 @@ namespace sp::vulkan {
                     vk::PipelineStageFlagBits::eFragmentShader,
                     vk::AccessFlagBits::eShaderRead);
             }
-            PushInFlightObject(image, graphicsCmd->Fence());
-            auto mipmapComplete = image->SetPendingCommand(GetEmptySemaphore(graphicsCmd->Fence()),
+            auto fence = graphicsCmd->Fence();
+            PushInFlightObject(image, fence);
+            auto mipmapComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
                 transferToGeneral.dstQueueFamilyIndex);
             if (waitSemaphore) {
                 Submit(graphicsCmd, {mipmapComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});

@@ -16,14 +16,14 @@ layout(binding = 0) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 
-layout(std430, binding = 1) buffer VoxelFragmentListMetadata {
+layout(std430, binding = 1) readonly buffer VoxelFragmentListMetadata {
     uint count;
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 2) buffer VoxelFragmentList {
+layout(std430, binding = 2) readonly buffer VoxelFragmentList {
     VoxelFragment fragmentLists[];
 };
 
