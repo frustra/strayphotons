@@ -222,7 +222,13 @@ namespace sp::vulkan::renderer {
                 desc.mipLevels = voxelGridMips;
 
                 desc.format = vk::Format::eR32Uint;
-                builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
+
+                builder.CreateBuffer("FillCounters",
+                    {sizeof(uint32_t), static_cast<size_t>(voxelGridSize.x * voxelGridSize.y * voxelGridSize.z)},
+                    Residency::GPU_ONLY,
+                    clearCounters ? Access::TransferWrite : Access::None);
+
+                // builder.CreateImage("FillCounters", desc, clearCounters ? Access::TransferWrite : Access::None);
 
                 desc.sampler = SamplerType::TrilinearClampBorder;
                 desc.format = vk::Format::eR16G16B16A16Sfloat;
@@ -254,16 +260,19 @@ namespace sp::vulkan::renderer {
                         {range});
                 }
                 if (clearCounters) {
-                    auto counterView = resources.GetImageView("FillCounters");
-                    vk::ClearColorValue clear;
-                    vk::ImageSubresourceRange range;
-                    range.layerCount = 1;
-                    range.levelCount = counterView->MipLevels();
-                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
-                    cmd.Raw().clearColorImage(*counterView->Image(),
+                    // vk::ClearColorValue clear;
+                    // clear.setUint32({0u, 0u, 0u, 0u});
+                    // vk::ImageSubresourceRange range;
+                    // range.layerCount = 1;
+                    //  range.levelCount = counterView->MipLevels();
+                    // range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    /*cmd.Raw().clearColorImage(*counterView->Image(),
                         vk::ImageLayout::eTransferDstOptimal,
                         clear,
-                        {range});
+                        {range});*/
+                    auto counterView = resources.GetBuffer("FillCounters");
+                    // auto size = static_cast<size_t>(voxelGridSize.x * voxelGridSize.y * voxelGridSize.z);
+                    cmd.Raw().fillBuffer(*counterView, 0, vk::WholeSize, 0);
                 }
                 if (clearNormals) {
                     auto normalsView = resources.GetImageView("Normals");
@@ -321,6 +330,7 @@ namespace sp::vulkan::renderer {
 
                 builder.Write("FragmentListMetadata", Access::FragmentShaderWrite);
                 builder.Write("FragmentLists", Access::FragmentShaderWrite);
+                builder.Write("FillCounters", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
@@ -366,7 +376,10 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer("VoxelStateUniform", resources.GetBuffer("VoxelState"));
                 cmd.SetUniformBuffer("LightData", "LightState");
                 cmd.SetImageView("shadowMap", "ShadowMap/Linear");
-                cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
+
+                // cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
+                cmd.SetStorageBuffer("VoxelFillCounters", "FillCounters");
+
                 cmd.SetImageView("radianceOut", resources.GetImageMipView("Radiance", 0));
                 cmd.SetImageView("normalsOut", resources.GetImageMipView("Normals", 0));
                 cmd.SetStorageBuffer("VoxelFragmentListMetadata", "FragmentListMetadata");
@@ -395,7 +408,8 @@ namespace sp::vulkan::renderer {
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawID.drawCommandsBuffer),
-                    resources.GetBuffer(drawID.drawParamsBuffer));
+                    resources.GetBuffer(drawID.drawParamsBuffer),
+                    drawID.commandCount);
 
                 cmd.EndRenderPass();
             });
@@ -461,8 +475,13 @@ namespace sp::vulkan::renderer {
                         fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
                         fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
 
-                    cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
+                    cmd.SetStorageBuffer("VoxelFragmentList",
+                        "FragmentLists",
+                        fragmentListSizes[i].offset * sizeof(GPUVoxelFragment),
+                        fragmentListSizes[i].capacity * sizeof(GPUVoxelFragment));
+                    cmd.SetStorageBuffer("VoxelFillCounters", "FillCounters");
 
+                    cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                     cmd.Dispatch(1, 1, 1);
                 });
 
@@ -854,7 +873,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                 cmd.SetStorageBuffer("ExposureState", "ExposureState");
                 cmd.SetImageView("overlayTex", resources.LastOutputID());
-                cmd.SetImageView("fillCounters", "Voxels/FillCounters");
+                // cmd.SetImageView("fillCounters", "Voxels/FillCounters");
+                cmd.SetStorageBuffer("VoxelFillCounters", "Voxels/FillCounters");
                 cmd.SetImageView("voxelRadiance", "Voxels/Radiance");
                 cmd.SetImageView("voxelNormals", "Voxels/Normals");
 

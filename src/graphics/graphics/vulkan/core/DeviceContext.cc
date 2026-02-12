@@ -195,6 +195,20 @@ namespace sp::vulkan {
             }
             Assert(physicalDevice, "No suitable graphics device found!");
 
+            const auto props = physicalDevice.getFormatProperties(vk::Format::eR32Uint);
+
+            const bool hasStorageImage = (props.optimalTilingFeatures & vk::FormatFeatureFlagBits::eStorageImage) ==
+                                         vk::FormatFeatureFlagBits::eStorageImage;
+
+            const bool hasStorageImageAtomic = (props.optimalTilingFeatures &
+                                                   vk::FormatFeatureFlagBits::eStorageImageAtomic) ==
+                                               vk::FormatFeatureFlagBits::eStorageImageAtomic;
+
+            Logf("VK_FORMAT_R32_UINT optimalTilingFeatures: %s", vk::to_string(props.optimalTilingFeatures).c_str());
+            Assert(hasStorageImage, "VK_FORMAT_R32_UINT missing VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT");
+            Assert(hasStorageImageAtomic,
+                "VK_FORMAT_R32_UINT missing VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT (imageAtomicAdd undefined)");
+
             std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
             vector<uint32_t> queuesUsedCount(queueFamilies.size());
@@ -323,7 +337,7 @@ namespace sp::vulkan {
             vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
             enabledVulkan12Features.shaderOutputViewportIndex = true;
             enabledVulkan12Features.shaderOutputLayer = true;
-            enabledVulkan12Features.drawIndirectCount = false;
+            // enabledVulkan12Features.drawIndirectCount = true;
             enabledVulkan12Features.runtimeDescriptorArray = true;
             enabledVulkan12Features.descriptorBindingPartiallyBound = true;
             enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
@@ -557,6 +571,7 @@ namespace sp::vulkan {
             if (enableSwapchain) CreateSwapchain();
 
             compositor = std::make_unique<Compositor>(*this, graph);
+
         } catch (const vk::InitializationFailedError &err) {
             Errorf("Device initialization failed! %s", err.what());
             deviceResetRequired = true;
@@ -1128,6 +1143,7 @@ namespace sp::vulkan {
         vk::Format factorFormat = createInfo.format;
 
         if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
+
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
 
         if (!uploadBuffer) {

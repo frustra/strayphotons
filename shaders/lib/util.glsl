@@ -56,6 +56,13 @@ vec2 bilinearMix(vec2 v00, vec2 v10, vec2 v01, vec2 v11, vec2 alpha) {
     return mix(x1, x2, alpha.y);
 }
 
+uint FlattenIndex(ivec3 pos, ivec3 gridSize) {
+    uint x = pos.x;
+    uint y = pos.y * gridSize.x;
+    uint z = pos.z * gridSize.x * gridSize.y;
+    return x + y + z;
+}
+
 #include "color_util.glsl"
 #include "spatial_util.glsl"
 

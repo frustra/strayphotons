@@ -27,13 +27,15 @@ INCLUDE_LAYOUT(binding = 2)
 #include "lib/exposure_state.glsl"
 
 layout(binding = 3) uniform sampler2DArray overlayTex;
-layout(binding = 4, r32ui) readonly uniform uimage3D fillCounters;
+layout(std430, binding = 4) buffer VoxelFillCounters {
+    uint fillCounters[];
+};
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
 
 layout(set = 1, binding = 0) uniform sampler3D voxelLayers[6];
 
-layout(constant_id = 0) const int DEBUG_MODE = 0;
+layout(constant_id = 0) const int DEBUG_MODE = 1;
 layout(constant_id = 1) const float BLEND_WEIGHT = 0;
 layout(constant_id = 2) const int VOXEL_MIP = 0;
 

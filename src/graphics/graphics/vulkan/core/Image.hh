@@ -151,7 +151,7 @@ namespace sp::vulkan {
         vk::Format format;
         vk::Extent3D extent;
         uint32_t mipLevels = 0, arrayLayers = 0;
-        vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
+        vk::ImageLayout lastLayout = vk::ImageLayout::eGeneral;
         Access lastAccess = Access::None;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 

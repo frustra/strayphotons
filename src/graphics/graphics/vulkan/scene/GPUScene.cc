@@ -255,7 +255,9 @@ namespace sp::vulkan {
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
         ecs::VisibilityMask viewMask,
         uint32_t instanceCount) {
-        DrawBufferIDs bufferIDs;
+
+        return GenerateSortedDrawsForView(graph, glm::vec3(0), viewMask, false, instanceCount);
+        DrawBufferIDs bufferIDs = {};
 
         graph.AddPass("GenerateDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
@@ -282,6 +284,17 @@ namespace sp::vulkan {
                     Residency::GPU_ONLY,
                     Access::ComputeShaderWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
+
+                bufferIDs.commandCount = 0;
+                for (size_t i = 0; i < renderables.size(); i++) {
+                    auto &renderable = renderables[i];
+                    if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
+
+                    auto mesh = meshes[i].lock();
+                    if (!mesh || !mesh->CheckReady()) continue;
+
+                    bufferIDs.commandCount += mesh->PrimitiveCount();
+                }
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetComputeShader("generate_draws_for_view.comp");
@@ -311,7 +324,7 @@ namespace sp::vulkan {
         ecs::VisibilityMask viewMask,
         bool reverseSort,
         uint32_t instanceCount) {
-        DrawBufferIDs bufferIDs;
+        DrawBufferIDs bufferIDs = {};
 
         graph.AddPass("GenerateSortedDrawsForView")
             .Build([&](rg::PassBuilder &builder) {
@@ -326,6 +339,17 @@ namespace sp::vulkan {
                     Residency::CPU_TO_GPU,
                     Access::HostWrite);
                 bufferIDs.drawParamsBuffer = drawParams.id;
+
+                bufferIDs.commandCount = 0;
+                for (size_t i = 0; i < renderables.size(); i++) {
+                    auto &renderable = renderables[i];
+                    if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
+
+                    auto mesh = meshes[i].lock();
+                    if (!mesh || !mesh->CheckReady()) continue;
+
+                    bufferIDs.commandCount += mesh->PrimitiveCount();
+                }
             })
             .Execute([this, viewMask, viewPosition, bufferIDs, instanceCount, reverseSort](rg::Resources &resources,
                          CommandContext &cmd) {
@@ -402,8 +426,13 @@ namespace sp::vulkan {
     void GPUScene::DrawSceneIndirect(CommandContext &cmd,
         BufferPtr vertexBuffer,
         BufferPtr drawCommandsBuffer,
-        BufferPtr drawParamsBuffer) {
-        if (vertexCount == 0) return;
+        BufferPtr drawParamsBuffer,
+        size_t commandCount) {
+        if (vertexCount == 0 || !drawCommandsBuffer) return;
+        Assertf(commandCount <= drawCommandsBuffer->ArraySize(),
+            "GPUScene::DrawSceneIndirect called with too many commands: %llu/%llu",
+            commandCount,
+            drawParamsBuffer->ArraySize());
 
         cmd.SetBindlessDescriptors(2, textures.GetDescriptorSet());
 
@@ -412,11 +441,12 @@ namespace sp::vulkan {
         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
         if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
-        cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
-            sizeof(uint32_t),
-            drawCommandsBuffer,
-            0,
-            drawCommandsBuffer->ArraySize());
+        // cmd.DrawIndexedIndirectCount(drawCommandsBuffer,
+        //     sizeof(uint32_t),
+        //     drawCommandsBuffer,
+        //     0,
+        //     drawCommandsBuffer->ArraySize());
+        cmd.DrawIndexedIndirect(drawCommandsBuffer, sizeof(uint32_t), commandCount);
     }
 
     void GPUScene::AddGeometryWarp(rg::RenderGraph &graph) {
