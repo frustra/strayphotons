@@ -63,7 +63,7 @@ namespace ecs {
         ECS staging;
         ECS live;
         EntityReferenceManager refManager;
-        sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue", 2, std::chrono::milliseconds(1));
+        sp::DispatchQueue transactionQueue = sp::DispatchQueue("ECSTransactionQueue", 1, std::chrono::milliseconds(1));
     };
 
     // Define these special components here to solve circular includes

@@ -251,7 +251,7 @@ namespace ecs {
         Entity source;
         sp::AsyncPtr<EventData> data;
 
-        size_t transactionId = 0;
+        uint64_t transactionId = 0;
 
         AsyncEvent() {}
         AsyncEvent(std::string_view name, const Entity &source, const sp::AsyncPtr<EventData> &data)
@@ -280,16 +280,16 @@ namespace ecs {
         // Returns false if the queue is full
         bool Add(const AsyncEvent &event);
         // Returns false if the queue is full
-        bool Add(const Event &event, size_t transactionId = 0);
+        bool Add(const Event &event, uint64_t transactionId = 0);
 
         // Returns false if the queue is empty
-        bool Poll(Event &eventOut, size_t transactionId = 0);
+        bool Poll(Event &eventOut, uint64_t transactionId = 0);
 
         bool Empty();
         void Clear();
-        size_t Size();
+        uint32_t Size();
 
-        size_t Capacity() const {
+        uint32_t Capacity() const {
             return events.size();
         }
 
