@@ -212,8 +212,10 @@ int main(int argc, char **argv) {
         sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
 
-        glm::vec2 monitorScale;
+        glm::vec2 monitorScale(1.0f);
+    #ifndef _WIN32
         glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+    #endif
         GLFWwindow *window = glfwCreateWindow(initialSize.x / monitorScale.x,
             initialSize.y / monitorScale.y,
             "STRAY PHOTONS",
@@ -356,8 +358,10 @@ int main(int argc, char **argv) {
                 if (sp_cvar_get_bool(cvarWindowFullscreen)) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
-                    glm::vec2 monitorScale;
+                    glm::vec2 monitorScale(1.0f);
+    #ifndef _WIN32
                     glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+    #endif
                     glfwSetWindowSize(window, windowSize.x / monitorScale.x, windowSize.y / monitorScale.y);
                 }
 
