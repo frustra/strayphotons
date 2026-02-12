@@ -9,8 +9,8 @@
 
 layout(local_size_x = 1, local_size_y = 1) in;
 
-#include "../lib/voxel_shared.glsl"
 #include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
 
 layout(binding = 0, rgba16f) uniform image3D voxelRadiance;
 layout(binding = 1, rgba16f) uniform image3D voxelNormals;
@@ -48,7 +48,8 @@ void main() {
         vec4 existingNormal = imageLoad(voxelNormals, position);
 
         // uint overflowCount = imageLoad(fillCounters, position).r - FRAGMENT_LIST_COUNT + 1;
-        int fillIndex = int(position.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z + int(position.y) * voxelInfo.gridSize.z + int(position.z);
+        int fillIndex = int(position.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z +
+                        int(position.y) * voxelInfo.gridSize.z + int(position.z);
         uint overflowCount = fillCounters[fillIndex] - FRAGMENT_LIST_COUNT + 1;
         float weight = 1.0f / (FRAGMENT_LIST_COUNT + existingRadiance.w - 1);
         // isNotLast = true if existingRadiance.w - 1 < overflowCount
