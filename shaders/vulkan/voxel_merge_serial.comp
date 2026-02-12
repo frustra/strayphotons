@@ -10,33 +10,32 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 
 #include "../lib/voxel_shared.glsl"
+#include "../lib/types_common.glsl"
 
 layout(binding = 0, rgba16f) uniform image3D voxelRadiance;
 layout(binding = 1, rgba16f) uniform image3D voxelNormals;
 
-layout(std430, binding = 2) buffer VoxelFragmentListMetadata {
+layout(std430, binding = 2) readonly buffer VoxelFragmentListMetadata {
     uint count;
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
 };
 
-layout(std430, binding = 3) buffer VoxelFragmentList {
+layout(std430, binding = 3) readonly buffer VoxelFragmentList {
     VoxelFragment fragmentList[];
 };
 
-layout(std430, binding = 4) buffer VoxelFillCounters {
+// layout(binding = 4, r32ui) uniform uimage3D fillCounters;
+layout(std430, binding = 4) readonly buffer FillCounters {
     uint fillCounters[];
 };
 
-#include "../lib/types_common.glsl"
-
-layout(binding = 5) uniform VoxelStateUniform {
+layout(binding = 8) uniform VoxelStateUniform {
     VoxelState voxelInfo;
 };
 
 #include "../lib/util.glsl"
-#include "../lib/voxel_shared.glsl"
 
 layout(constant_id = 0) const int FRAGMENT_LIST_COUNT = 1;
 
@@ -48,7 +47,9 @@ void main() {
         vec4 existingRadiance = imageLoad(voxelRadiance, position);
         vec4 existingNormal = imageLoad(voxelNormals, position);
 
-        uint overflowCount = fillCounters[FlattenIndex(position, voxelInfo.gridSize)] - FRAGMENT_LIST_COUNT + 1;
+        // uint overflowCount = imageLoad(fillCounters, position).r - FRAGMENT_LIST_COUNT + 1;
+        int fillIndex = int(position.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z + int(position.y) * voxelInfo.gridSize.z + int(position.z);
+        uint overflowCount = fillCounters[fillIndex] - FRAGMENT_LIST_COUNT + 1;
         float weight = 1.0f / (FRAGMENT_LIST_COUNT + existingRadiance.w - 1);
         // isNotLast = true if existingRadiance.w - 1 < overflowCount
         float isNotLast = 1 - step(overflowCount, existingRadiance.w - 1);

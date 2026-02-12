@@ -36,7 +36,7 @@ namespace sp::vulkan::renderer {
                 auto desc = builder.DeriveImage(sourceID);
                 desc.extent.width = std::max(desc.extent.width / downsample, 1u);
                 desc.extent.height = std::max(desc.extent.height / downsample, 1u);
-                desc.mipLevels = CalculateMipmapLevels(vk::Extent3D(desc.extent.width, desc.extent.height, 1));
+                desc.mipLevels = CalculateMipmapLevels(desc.extent);
                 builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([sourceID, constants](Resources &resources, CommandContext &cmd) {
