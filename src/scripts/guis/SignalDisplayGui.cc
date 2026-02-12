@@ -63,8 +63,10 @@ namespace sp::scripts {
 
         void Destroy(ScriptState &state) {
             Debugf("Destroying signal display: %llu", state.GetInstanceId());
-            ImGui::DestroyContext(imCtx);
-            imCtx = nullptr;
+            if (imCtx) {
+                ImGui::DestroyContext(imCtx);
+                imCtx = nullptr;
+            }
         }
 
         bool PreDefine(ScriptState &state, Entity ent) {

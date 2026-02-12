@@ -7,6 +7,8 @@
 
 #include "PassBuilder.hh"
 
+#include "graphics/vulkan/render_graph/Resources.hh"
+
 namespace sp::vulkan::render_graph {
     void PassBuilder::Read(ResourceID id, Access access) {
         pass.AddAccess(id, access);

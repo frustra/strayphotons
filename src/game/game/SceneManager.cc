@@ -12,8 +12,6 @@
 #include "assets/JsonHelpers.hh"
 #include "common/Logging.hh"
 #include "common/Tracing.hh"
-#include "console/Console.hh"
-#include "console/ConsoleBindingManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
@@ -23,7 +21,6 @@
 
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include <glm/glm.hpp>
 #include <picojson.h>
 #include <robin_hood.h>

@@ -35,8 +35,8 @@ namespace ecs {
          * A transactionId can be provided to synchronize event visibility with transactions.
          * If no transactionId is provided, this event will be immediately visible to all transactions.
          */
-        size_t Add(const Event &event, size_t transactionId = 0) const;
-        size_t Add(const AsyncEvent &event) const;
+        uint64_t Add(const Event &event, uint64_t transactionId = 0) const;
+        uint64_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
         robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
