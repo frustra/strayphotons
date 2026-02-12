@@ -42,7 +42,10 @@ layout(set = 2, binding = 0) uniform sampler2D textures[];
 
 #include "../lib/shading.glsl"
 
-layout(binding = 4, r32ui) uniform uimage3D fillCounters;
+// layout(binding = 4, r32ui) uniform uimage3D fillCounters;
+layout(std430, binding = 4) buffer FillCounters {
+    uint fillCounters[];
+};
 layout(binding = 5, rgba16f) writeonly uniform image3D radianceOut;
 layout(binding = 6, rgba16f) writeonly uniform image3D normalsOut;
 
@@ -103,7 +106,9 @@ void main() {
         pixelRadiance = clamp(pixelRadiance, vec3(-8192), vec3(8192));
     }
 
-    uint bucket = min(FRAGMENT_LIST_COUNT - 1, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
+    // uint bucket = min(FRAGMENT_LIST_COUNT - 1, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
+    int fillIndex = int(inVoxelPos.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z + int(inVoxelPos.y) * voxelInfo.gridSize.z + int(inVoxelPos.z);
+    uint bucket = min(FRAGMENT_LIST_COUNT - 1, atomicAdd(fillCounters[fillIndex], 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
     if (index >= fragmentListMetadata[bucket].capacity) return;
     if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentListMetadata[bucket].cmd.x, 1);
