@@ -255,6 +255,8 @@ namespace sp::vulkan {
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
         ecs::VisibilityMask viewMask,
         uint32_t instanceCount) {
+
+        return GenerateSortedDrawsForView(graph, glm::vec3(0), viewMask, false, instanceCount);
         DrawBufferIDs bufferIDs = {};
 
         graph.AddPass("GenerateDrawsForView")

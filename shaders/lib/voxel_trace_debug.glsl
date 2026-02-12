@@ -10,6 +10,12 @@
 
 #extension GL_EXT_nonuniform_qualifier : enable
 
+uint FlattenIndex2(ivec3 pos, ivec3 gridSize) {
+    uint x = pos.x;
+    uint y = pos.y * gridSize.x;
+    uint z = pos.z * gridSize.x * gridSize.y;
+    return x + y + z;
+}
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
     // uint count = imageLoad(fillCounters, ivec3(position)).r;
     // int fillIndex = int(position.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z + int(position.y) *
@@ -23,6 +29,7 @@ float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
 }
 
 float GetVoxelNearest2(vec3 position, vec3 dir, out vec3 radiance) {
+    uint count = fillCounters[FlattenIndex(ivec3(position), voxelInfo.gridSize)]; //imageLoad(fillCounters, ivec3(position)).r;
     int axis = DominantAxis(dir);
     if (axis < 0) {
         axis = -axis + 2;
@@ -31,6 +38,10 @@ float GetVoxelNearest2(vec3 position, vec3 dir, out vec3 radiance) {
     }
     vec4 voxelData = texelFetch(voxelLayers[axis], ivec3(position), 0);
     radiance = voxelData.rgb;
+    /*float hits = count / 1.0;
+    radiance.x = hits;
+    radiance.y = hits;
+    radiance.z = hits;*/
     return voxelData.a;
 }
 

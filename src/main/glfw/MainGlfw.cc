@@ -207,6 +207,8 @@ int main(int argc, char **argv) {
             extensions.emplace_back(requiredExtensions[i]);
         }
 
+        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
 #ifndef SP_GRAPHICS_SUPPORT_HEADLESS
         // Create window and surface
         glm::ivec2 initialSize = glm::ivec2(0);
@@ -247,7 +249,7 @@ int main(int argc, char **argv) {
 
         createInfo.setPNext((VkDebugUtilsMessengerCreateInfoEXT *)&debugInfo);
 #endif
-
+        createInfo.flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
         vk::Instance vkInstance = vk::createInstance(createInfo);
         sp_graphics_set_vulkan_instance(GameGraphics, vkInstance, [](sp_graphics_ctx_t *graphics, VkInstance instance) {
             if (instance) ((vk::Instance)instance).destroy();

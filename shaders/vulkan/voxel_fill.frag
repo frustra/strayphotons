@@ -111,6 +111,7 @@ void main() {
                     int(inVoxelPos.y) * voxelInfo.gridSize.z + int(inVoxelPos.z);
     uint bucket = min(FRAGMENT_LIST_COUNT - 1, atomicAdd(fillCounters[fillIndex], 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
+    
     if (index >= fragmentListMetadata[bucket].capacity) return;
     if (index % MipmapWorkGroupSize == 0) atomicAdd(fragmentListMetadata[bucket].cmd.x, 1);
 

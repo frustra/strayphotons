@@ -271,10 +271,7 @@ namespace sp::vulkan::renderer {
                     //     clear,
                     //     {range});
                     auto counterBuffer = resources.GetBuffer("FillCounters");
-                    cmd.Raw().fillBuffer(*counterBuffer,
-                        0,
-                        sizeof(uint32_t) * voxelGridExtents.width * voxelGridExtents.height * voxelGridExtents.depth,
-                        0);
+                    cmd.Raw().fillBuffer(*counterBuffer, 0, vk::WholeSize, 0);
                 }
                 if (clearNormals) {
                     auto normalsView = resources.GetImageView("Normals");
@@ -332,6 +329,7 @@ namespace sp::vulkan::renderer {
 
                 builder.Write("FragmentListMetadata", Access::FragmentShaderWrite);
                 builder.Write("FragmentLists", Access::FragmentShaderWrite);
+                builder.Write("FillCounters", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
@@ -478,6 +476,7 @@ namespace sp::vulkan::renderer {
                     // cmd.SetImageView("fillCounters", resources.GetImageMipView("FillCounters", 0));
                     cmd.SetStorageBuffer("FillCounters", "FillCounters");
 
+                    cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
                     cmd.Dispatch(1, 1, 1);
                 });
 

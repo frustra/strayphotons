@@ -7,6 +7,7 @@
 
 #include "console/Console.hh"
 
+#include <unistd.h>
 #ifdef _WIN32
     #include <windows.h>
 #else

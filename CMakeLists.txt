@@ -84,7 +84,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
     set(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wformat-security -Wno-deprecated-volatile -fPIC")
+    set(CMAKE_CXX_FLAGS                 "-Wall -Wformat-security -Wno-deprecated-volatile -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
     set(CMAKE_CXX_FLAGS_DEBUG           "-g3 -ggdb3 -O0")
@@ -97,7 +97,12 @@ endif()
 
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(CMAKE_INSTALL_RPATH $ORIGIN)
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@executable_path;/usr/local/lib")
+elseif(UNIX)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # Put RUNTIME and LIBRARY outputs into a folder where we can run them without installing
