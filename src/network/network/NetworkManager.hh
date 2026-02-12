@@ -11,6 +11,7 @@
 #include "ecs/Ecs.hh"
 
 class ISteamNetworkingSockets;
+struct SteamNetConnectionStatusChangedCallback_t;
 
 namespace sp {
     class NetworkManager : public RegisteredThread {
@@ -25,11 +26,22 @@ namespace sp {
 
     private:
         void Shutdown(bool waitForExit);
+        void SteamNetConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t *pInfo);
+        void SendStringToClient(uint32_t conn, const char *str);
+        void SendStringToAllClients(const char *str, uint32_t except = 0);
 
-        ISteamNetworkingSockets *sockets;
+        struct Client {
+            std::string m_sNick;
+        };
+
+        ISteamNetworkingSockets *sockets = nullptr;
+        uint32_t listenSocket, pollGroup;
+        std::map<uint32_t, Client> clientsMap;
 
         ecs::ComponentModifiedObserver<ecs::Network> networkObserver;
 
         DispatchQueue networkQueue;
+
+        friend void steamNetConnectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t *);
     };
 } // namespace sp
