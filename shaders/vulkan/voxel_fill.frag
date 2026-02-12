@@ -107,7 +107,8 @@ void main() {
     }
 
     // uint bucket = min(FRAGMENT_LIST_COUNT - 1, imageAtomicAdd(fillCounters, ivec3(inVoxelPos), 1));
-    int fillIndex = int(inVoxelPos.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z + int(inVoxelPos.y) * voxelInfo.gridSize.z + int(inVoxelPos.z);
+    int fillIndex = int(inVoxelPos.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z +
+                    int(inVoxelPos.y) * voxelInfo.gridSize.z + int(inVoxelPos.z);
     uint bucket = min(FRAGMENT_LIST_COUNT - 1, atomicAdd(fillCounters[fillIndex], 1));
     uint index = atomicAdd(fragmentListMetadata[bucket].count, 1);
     if (index >= fragmentListMetadata[bucket].capacity) return;
