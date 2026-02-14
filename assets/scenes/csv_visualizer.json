@@ -14,6 +14,23 @@
 			}
 		},
 		{
+			"name": "input:keyboard",
+			"event_bindings": {
+				"/keyboard/key/i": [
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && !is_focused(HUD)",
+						"set_value": "acquirefocus HUD"
+					},
+					{
+						"outputs": "console:input/action/run_command",
+						"filter": "event && is_primary_focus(HUD)",
+						"set_value": "releasefocus HUD"
+					}
+				]
+			}
+		},
+		{
 			"name": "track_map",
 			"transform": {
 				"parent": "track_root",
