@@ -7,11 +7,13 @@
 
 #include "shared_events.h"
 
+#include <algorithm>
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
 #include <common/InlineString.hh>
 #include <common/Logging.hh>
+#include <cstdint>
 #include <fstream>
 #include <glm/glm.hpp>
 #include <gui/ImGuiHelpers.hh>
@@ -121,7 +123,7 @@ struct ScriptGuiContext {
             }
         }
 
-        uint8 *fontData;
+        uint8_t *fontData;
         int fontWidth, fontHeight;
         ctx->fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
 
@@ -292,6 +294,7 @@ struct GraphDisplayGui {
     bool awaitingResponse = false;
     std::vector<ColumnData> columns;
 
+    bool zooming = false;
     bool draggingView = false;
     ImVec2 dragStartPos;
     bool hasFocus;
@@ -453,7 +456,7 @@ struct GraphDisplayGui {
                         if (ImPlot::BeginPlot(("##graphPlot_" + column.name).c_str(),
                                 ImVec2(-1, 100),
                                 ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus |
-                                    ImPlotFlags_NoBoxSelect | ImPlotFlags_NoFrame)) {
+                                    ImPlotFlags_NoBoxSelect | ImPlotFlags_NoFrame | ImPlotFlags_NoMouseText)) {
                             ImPlot::SetupAxes(nullptr,
                                 column.name.c_str(),
                                 ImPlotAxisFlags_NoDecorations,
@@ -511,6 +514,15 @@ struct GraphDisplayGui {
                                 &column,
                                 column.data.size());
                             ImPlot::PopStyleColor();
+
+                            if (ImPlot::IsPlotHovered()) {
+                                ImPlotPoint mousePoint = ImPlot::PixelsToPlot(io.MousePos.x, io.MousePos.y);
+                                ImPlot::Annotation(mousePoint.x,
+                                    mousePoint.y,
+                                    ImPlot::GetStyleColorVec4(ImPlotCol_InlayText),
+                                    ImVec2(),
+                                    true);
+                            }
                             ImPlot::EndPlot();
                         }
                         ImPlot::PopStyleVar(5);
@@ -552,6 +564,31 @@ struct GraphDisplayGui {
                 }
                 ImGui::EndChild();
 
+                if (io.KeyShift && io.MouseWheel != 0.0f) {
+                    float mouseXRatio = (io.MousePos.x - plotOffset.x) / (float)viewResolution;
+                    int64_t beforeDelta = mouseXRatio * viewSize * 0.1f * io.MouseWheel;
+                    int64_t afterDelta = (1.0f - mouseXRatio) * viewSize * 0.1f * -io.MouseWheel;
+
+                    if (beforeDelta - afterDelta > (int64_t)viewSize) {
+                        viewStart += (io.MousePos.x - plotOffset.x) / viewResolution * viewSize - 1;
+                        viewSize = 1;
+                    } else {
+                        if (-beforeDelta > (int64_t)viewStart) {
+                            viewSize += viewStart;
+                            viewStart = 0;
+                        } else {
+                            viewSize -= beforeDelta;
+                            viewStart += beforeDelta;
+                        }
+                        viewSize += afterDelta;
+                    }
+                    reloadingColumn = selectedColumn;
+                    zooming = true;
+                } else if (zooming) {
+                    reloadingColumn = 0;
+                    reloadingColumns = true;
+                    zooming = false;
+                }
                 if (io.MouseDown[ImGuiMouseButton_Left]) {
                     if (io.MousePos.y > plotOffset.y) {
                         size_t prevStart = viewStart;

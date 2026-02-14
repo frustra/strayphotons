@@ -69,7 +69,7 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **filename** | string | "" | No description |
-| **current_time_ns** | size_t | 0 | No description |
+| **current_time_ns** | uint64 | 0 | No description |
 
 </div>
 
