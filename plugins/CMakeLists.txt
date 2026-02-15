@@ -15,6 +15,7 @@ set(C_SCRIPT_LIST
 set(CPP_SCRIPT_LIST
     hello_cpp
     imgui_graph
+    imgui_heatmap
     racecapture_csv
 )
 

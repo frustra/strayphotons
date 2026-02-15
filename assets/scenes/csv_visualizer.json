@@ -1,5 +1,5 @@
 {
-	"libraries": ["imgui_graph", "racecapture_csv"],
+	"libraries": ["imgui_graph", "imgui_heatmap", "racecapture_csv"],
 	"entities": [
 		{
 			"name": "player:flatview",
@@ -62,7 +62,7 @@
 				{
 					"name": "csv_visualizer2",
 					"parameters": {
-						"filename": "./rc_8.log"
+						"filename": "./rs_8.log"
 					}
 				}
 			]
@@ -341,13 +341,22 @@
 				"luminance": [3, 3, 3]
 			},
 			"event_input": {},
-			"script": {
-				"name": "signal_graph",
-				"parameters": {
-					"data_entity": "visualizer",
-					"gui_definition_entity": "graph_display"
+			"script": [
+				{
+					"_name": "signal_graph",
+					"parameters": {
+						"data_entity": "visualizer",
+						"gui_definition_entity": "graph_display"
+					}
+				},
+				{
+					"name": "csv_heatmap",
+					"parameters": {
+						"data_entity": "visualizer",
+						"gui_definition_entity": "graph_display"
+					}
 				}
-			}
+			]
 		},
 		{
 			"renderable": {
