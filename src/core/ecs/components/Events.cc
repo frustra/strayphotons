@@ -359,7 +359,7 @@ namespace ecs {
         ZoneScoped;
         Entity ent = target.Get(lock);
         if (!ent.Exists(lock)) {
-            Errorf("Tried to send event to missing entity: %s", target.Name().String());
+            Debugf("Tried to send event to missing entity: %s", target.Name().String());
             return 0;
         }
 

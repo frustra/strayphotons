@@ -5,8 +5,10 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "glm/vector_relational.hpp"
 #include "shared_events.h"
 
+#include <array>
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
@@ -181,7 +183,7 @@ struct CSVVisualizer {
                         size_t rangeSize = event->data.vec4.v[3];
                         size_t rangeEnd = rangeStart + rangeSize;
 
-                        size_t offset = 9;
+                        size_t offset = 0;
                         ColumnRange rangeOutput = {};
                         while (offset < resolution) {
                             uint32_t count = (*columns)[columnIndex].SampleRange(rangeStart,
@@ -206,6 +208,82 @@ struct CSVVisualizer {
                         sp_event_send(lock, event->source, &eventOut);
                     } else {
                         sp_event_t eventOut = {"/csv/column_range", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                        eventOut.data.b = false;
+                        sp_event_send(lock, event->source, &eventOut);
+                    }
+                }
+            } else if (strcmp(event->name, "/csv/query_heatmap") == 0) {
+                if (event->data.type != SP_EVENT_DATA_TYPE_BYTES) {
+                    Warnf("Invalid event type: %s %s", event->name, event->data.type);
+                    continue;
+                }
+                if (!columnsPtr || !columnsPtr->Ready()) {
+                    sp_event_t eventOut = {"/csv/loading_progress", ent, {SP_EVENT_DATA_TYPE_INT}};
+                    eventOut.data.i = loadingProgress.load();
+                    sp_event_send(lock, event->source, &eventOut);
+                } else {
+                    auto columns = columnsPtr->Get();
+                    if (columns) {
+                        HeatmapQuery query = *(const HeatmapQuery *)&event->data.bytes[0];
+                        if (glm::all(glm::greaterThanEqual(query.axisIndex, glm::ivec3(0))) &&
+                            glm::all(glm::lessThan(query.axisIndex, glm::ivec3(columns->size())))) {
+                            auto &xColumn = (*columns)[query.axisIndex.x];
+                            auto &yColumn = (*columns)[query.axisIndex.y];
+                            auto &zColumn = (*columns)[query.axisIndex.z];
+
+                            query.rangeStart = zColumn.firstTimestamp;
+                            query.rangeSize = zColumn.lastTimestamp - zColumn.firstTimestamp;
+
+                            Logf("Columns: %s %s %s %llu size %llu",
+                                xColumn.name,
+                                yColumn.name,
+                                zColumn.name,
+                                query.rangeStart,
+                                query.rangeSize);
+
+                            std::vector<SampleAverage> heatmapData(query.extents.x * query.extents.y);
+                            for (auto &[timestampMs, z] : zColumn.data) {
+                                double x = xColumn.SampleTimestamp(timestampMs);
+                                double y = yColumn.SampleTimestamp(timestampMs);
+                                uint32_t bucketX = std::clamp(
+                                    (uint32_t)((x - xColumn.min) * query.extents.x / (xColumn.max - xColumn.min)),
+                                    0u,
+                                    query.extents.x - 1);
+                                uint32_t bucketY = std::clamp(
+                                    (uint32_t)((y - yColumn.min) * query.extents.y / (yColumn.max - yColumn.min)),
+                                    0u,
+                                    query.extents.y - 1);
+                                size_t index = bucketX + bucketY * query.extents.x;
+                                heatmapData[index].sum += z;
+                                heatmapData[index].sampleCount++;
+                            }
+
+                            for (size_t offset = 0; offset < heatmapData.size(); offset += HeatmapSamples::capacity()) {
+                                sp_event_t eventOut = {"/csv/heatmap_data", ent, {SP_EVENT_DATA_TYPE_BYTES}};
+                                static_assert(sizeof(HeatmapSamples) <= sizeof(event_bytes_t));
+                                HeatmapSamples *samples = (HeatmapSamples *)&eventOut.data.bytes[0];
+                                samples->sampleCount = std::min(HeatmapSamples::capacity(),
+                                    heatmapData.size() - offset);
+                                if (samples->sampleCount <= 0) break;
+                                samples->indexOffset = offset;
+                                std::copy_n(heatmapData.data() + offset, samples->sampleCount, samples->data());
+                                sp_event_send(lock, event->source, &eventOut);
+                            }
+
+                            sp_event_t eventOut = {"/csv/heatmap_data", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                            eventOut.data.b = true;
+                            sp_event_send(lock, event->source, &eventOut);
+                        } else {
+                            Warnf("Heatmap query out of range: %d %d %d",
+                                query.axisIndex.x,
+                                query.axisIndex.y,
+                                query.axisIndex.z);
+                            sp_event_t eventOut = {"/csv/heatmap_data", ent, {SP_EVENT_DATA_TYPE_BOOL}};
+                            eventOut.data.b = false;
+                            sp_event_send(lock, event->source, &eventOut);
+                        }
+                    } else {
+                        sp_event_t eventOut = {"/csv/heatmap_data", ent, {SP_EVENT_DATA_TYPE_BOOL}};
                         eventOut.data.b = false;
                         sp_event_send(lock, event->source, &eventOut);
                     }
@@ -402,9 +480,10 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].destroy_func = &CSVVisualizer::Destroy;
         output[0].on_tick_func = &CSVVisualizer::OnTickLogic;
         output[0].filter_on_event = false;
-        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
+        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 3);
         std::strncpy(events[0], "/csv/get_metadata", sizeof(events[0]) - 1);
         std::strncpy(events[1], "/csv/query_range", sizeof(events[1]) - 1);
+        std::strncpy(events[2], "/csv/query_heatmap", sizeof(events[2]) - 1);
 
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 2);
         sp_string_set(&fields[0].name, "filename");
