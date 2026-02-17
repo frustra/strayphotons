@@ -8,7 +8,7 @@
 #include <ecs.h>
 #include <ecs/components/Transform.h>
 
-// If this changes, make sure it is the same in C++ and Rust
+// If this changes, make sure it is the same in C++
 static_assert(sizeof(ecs::Transform) == 60, "Wrong Transform size");
 
 int add(int a, int b) {

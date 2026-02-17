@@ -38,7 +38,6 @@ target_link_libraries(${PROJECT_LIB_NAME}
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
-        "$<IF:$<BOOL:${SP_BUILD_RUST}>,sp-rs-wasm,>"
         ${PROJECT_SCRIPTS_LIB}
     PUBLIC
         ${PROJECT_ECS_C_ABI_LIB}
