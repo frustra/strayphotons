@@ -26,7 +26,7 @@ namespace ecs {
     struct GuiElement;
 
     using LogicUpdateLock = Lock<SendEventsLock,
-        Read<TransformSnapshot, VoxelArea, SceneInfo>,
+        Read<TransformSnapshot, VoxelArea, SceneInfo, SceneProperties>,
         Write<TransformTree,
             ActiveScene,
             Audio,
