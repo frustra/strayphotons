@@ -39,16 +39,3 @@ withTracy:
       long: Don't include Tracy profiling
       settings: 
         SP_ENABLE_TRACY: off
-buildRust:
-  default: yes
-  choices:
-    yes:
-      short: With Rust
-      long: Build and link against rust modules
-      settings:
-        SP_BUILD_RUST: on
-    no:
-      short: Without Rust
-      long: Don't build any rust modules
-      settings:
-        SP_BUILD_RUST: off

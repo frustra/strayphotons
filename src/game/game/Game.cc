@@ -73,8 +73,6 @@ namespace sp {
 
         GetConsoleManager().StartInputLoop();
 
-        InitRust(*this);
-
         bool scriptMode = options.count("run") > 0;
         StartGraphicsThread(*this, scriptMode);
         StartPhysicsThread(*this, scriptMode);

@@ -75,7 +75,7 @@ namespace ecs {
     void transform_get_scale(GlmVec3 *out, const Transform *t);
 
 #ifdef __cplusplus
-    // If this changes, make sure it is the same in Rust and WASM
+    // If this changes, make sure it is the same in WASM
     static_assert(sizeof(Transform) == 60, "Wrong Transform size");
 
     } // extern "C"
