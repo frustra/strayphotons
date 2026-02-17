@@ -482,6 +482,17 @@ namespace sp {
                 std::string text = entry.data->name + " (" + std::string(magic_enum::enum_name(entry.data->type)) + ")";
                 if (ImGui::Selectable(text.c_str(), entry == this->scene)) {
                     this->scene = entry;
+
+                    if (lock.Has<ecs::ActiveScene>()) {
+                        auto &active = lock.Get<ecs::ActiveScene>();
+                        if (active.scene != entry) {
+                            ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>([scene = entry](auto &lock) {
+                                if (lock.template Has<ecs::ActiveScene>()) {
+                                    lock.template Set<ecs::ActiveScene>(scene);
+                                }
+                            });
+                        }
+                    }
                 }
             }
             ImGui::EndListBox();

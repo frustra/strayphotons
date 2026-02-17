@@ -11,8 +11,12 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/SceneProperties.hh"
+#include "ecs/components/Transform.h"
 #include "game/GameEntities.hh"
+#include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "glm/gtx/string_cast.hpp"
 #include "input/BindingNames.hh"
 
 #include <glm/gtx/quaternion.hpp>
@@ -31,7 +35,9 @@ namespace sp::scripts {
         bool resetScale = false;
 
         void OnTick(ScriptState &state,
-            Lock<Write<ActiveScene>, Read<TransformTree, TransformSnapshot, SceneInfo>, ReadSignalsLock> lock,
+            Lock<Write<ActiveScene>,
+                Read<TransformTree, TransformSnapshot, SceneInfo, SceneProperties>,
+                ReadSignalsLock> lock,
             Entity ent,
             chrono_clock::duration interval) {
             Event event;
@@ -89,11 +95,14 @@ namespace sp::scripts {
                     continue;
                 }
 
+                auto spawnSceneProperties = scene.data->GetProperties(lock);
+
                 auto sharedEntity = make_shared<EntityRef>();
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
                     scene.data->name,
                     [source = templateSource,
                         transform,
+                        spawnSceneProperties,
                         signalOutputs,
                         signalBindings,
                         baseName = sourceName.entity,
@@ -107,7 +116,7 @@ namespace sp::scripts {
                         Logf("TraySpawner new entity: %s", name.String());
 
                         auto newEntity = scene->NewRootEntity(lock, scene, name);
-                        newEntity.Set<TransformTree>(lock, transform);
+                        newEntity.Set<TransformTree>(lock, spawnSceneProperties.rootTransform.GetInverse() * transform);
                         if (signalOutputs) {
                             newEntity.Set<SignalOutput>(lock, *signalOutputs);
                         }
@@ -121,13 +130,13 @@ namespace sp::scripts {
 
                         *sharedEntity = newEntity;
                     });
-                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene, scene.data->name);
-                GetSceneManager().QueueAction([ent, target = event.source, sharedEntity] {
-                    auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-                    ecs::EventBindings::SendEvent(lock,
-                        target,
-                        ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
-                });
+                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
+                    scene.data->name,
+                    [ent, target = event.source, sharedEntity](ecs::Lock<ecs::AddRemove> lock) {
+                        ecs::EventBindings::SendEvent(lock,
+                            target,
+                            ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
+                    });
             }
         }
     };
