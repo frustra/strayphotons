@@ -7,6 +7,8 @@
 
 # Downgrade external packages to C++17
 set(CMAKE_CXX_STANDARD 17)
+# Force minimum policy version to 3.10 for compatibility with CMake 4.0+
+set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
 
 add_subdirectory(magic_enum)
 add_subdirectory(robin-hood-hashing)
