@@ -16,10 +16,8 @@
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
 
-#include <chrono>
 #include <memory>
 #include <strayphotons.h>
-#include <vector>
 
 namespace cxxopts {
     class ParseResult;
@@ -80,5 +78,4 @@ namespace sp {
     void InitPhysicsManager(Game &game);
     void StartPhysicsThread(Game &game, bool scriptMode);
     void LoadXrSystem(Game &game);
-    void InitRust(Game &game);
 } // namespace sp

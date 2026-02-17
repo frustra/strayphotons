@@ -7,7 +7,6 @@ Stray Photons relies on several dependencies which must be installed manually:
 - A C++20 compatible compiler (currently supported are MSVC 2019, MSVC 2022, Clang 12+, and GCC 11+)
 - CMake Version 3.20 or higher
 - [Ninja build](https://ninja-build.org/) is the preferred build system to use with CMake for cross-platform development
-- Rust (optional for building the Rust module)
 - Python 3 (used in the CI pipeline, but not necessary for development)
 - VSCode is recommended for development, but building with CMake from the command line is also possible.
 
@@ -40,8 +39,6 @@ After installing the recommended VSCode extensions, a CMake build variant can be
   Package Build bundles assets into a single file, and is meant to be suitable for distribution. Developer Build is recommended for most purposes.
 - **Tracy Profiler**: On, Off  
   The Tracy C++ Profiler is a powerful live debugging tool, however it rapidly consumes ram making longer play sessions an issue. This setting can remove it from the build.
-- **Rust Shared Library**: On, Off  
-  Rust library linking is supported, however this can be disable if Rust is not installed on the system.
 
 Once the build variant is selected, CMake Configure will usually run automatically, however you can also manually reconfigure the project using `>CMake: Delete Cache and Reconfigure` in the Ctrl-Shift-P menu.
 
@@ -67,7 +64,6 @@ Build Options:
 - `-DCMAKE_BUILD_TYPE=` Debug, RelWithDebInfo, or Release (default: Debug)
 - `-DSP_PACKAGE_RELEASE=` 0 or 1 (default: 0)
 - `-DSP_ENABLE_TRACY=` 0 or 1 (default: 1)
-- `-DSP_BUILD_RUST=` 0 or 1 (default: 1)
 
 Ninja Build is the recommended build system for Stray Photons. See VSCode cmake variants for more info on build options.
 

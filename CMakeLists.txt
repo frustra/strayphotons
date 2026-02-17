@@ -15,11 +15,6 @@ set(SP_VERSION_MINOR "${CMAKE_PROJECT_VERSION_MINOR}")
 set(SP_VERSION "${SP_VERSION_MAJOR}.${SP_VERSION_MINOR}")
 
 option(SP_PACKAGE_RELEASE "Build packaged release" OFF)
-set(SP_BUILD_RUST_DEFAULT ON)
-if(DEFINED ENV{SP_BUILD_RUST})
-    set(SP_BUILD_RUST_DEFAULT $ENV{SP_BUILD_RUST})
-endif()
-option(SP_BUILD_RUST "Build and link against rust modules" ${SP_BUILD_RUST_DEFAULT})
 option(SP_ENABLE_TRACY "Enable Tracy profiler" ON)
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
@@ -185,16 +180,6 @@ if(NOT SP_DEBUG AND NOT UNIX)
         )
     else()
         message(STATUS "IPO / LTO not supported:\n${ipo_error}")
-    endif()
-endif()
-
-if(SP_BUILD_RUST)
-    message(STATUS "Building with Rust")
-    add_subdirectory(rust)
-    add_subdirectory(wasm)
-
-    if(ipo_supported)
-        set_target_properties(sp-rs-wasm PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
     endif()
 endif()
 

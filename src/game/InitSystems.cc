@@ -28,10 +28,6 @@
     #include "openvr/OpenVrSystem.hh"
 #endif
 
-#ifdef SP_RUST_WASM_SUPPORT
-    #include <wasm.rs.h>
-#endif
-
 #include <cxxopts.hpp>
 
 namespace sp {
@@ -91,12 +87,6 @@ namespace sp {
 
             game.xr = std::make_shared<xr::OpenVrSystem>(game.graphics->context.get());
         });
-#endif
-    }
-
-    void InitRust(Game &game) {
-#ifdef SP_RUST_WASM_SUPPORT
-        wasm::print_hello();
 #endif
     }
 } // namespace sp

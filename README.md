@@ -53,7 +53,6 @@ https://docs.strayphotons.net/ or on [GitHub](https://github.com/frustra/strayph
 - CMake and a C++20 compiler (Windows: MSVC, Linux: Clang or GCC).
 - Git submodules must be checked out using `git submodule update --init --recursive`
 - Python is used for CI automation
-- Rust is optional for building the test linked library
 - VSCode is recommended, most of the workspace config is included
 
 ## License
