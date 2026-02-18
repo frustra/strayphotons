@@ -98,7 +98,15 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "MouseMoveCallback occured without valid context");
 
-        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_POSITION.c_str(), xPos, yPos);
+        glm::vec2 monitorScale(1.0f);
+#ifndef _WIN32
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+#endif
+        sp_send_input_vec2(handler->ctx,
+            (uint64_t)handler->mouse,
+            INPUT_EVENT_MOUSE_POSITION.c_str(),
+            xPos * monitorScale.x,
+            yPos * monitorScale.y);
 
         int mouseMode = glfwGetInputMode(window, GLFW_CURSOR);
         if (!glm::any(glm::isinf(handler->prevMousePos)) && handler->prevMouseMode == mouseMode) {
