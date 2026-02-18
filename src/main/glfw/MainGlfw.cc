@@ -158,6 +158,8 @@ int main(int argc, char **argv) {
 #ifdef SP_GRAPHICS_SUPPORT_HEADLESS
         sp_cvar_t *maxFpsCvar = sp_get_cvar("r.MaxFPS");
         sp_cvar_set_uint32(maxFpsCvar, 90);
+
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_NULL);
 #else
         if (!sp_game_get_cli_flag(GameInstance, "no-vr")) sp_game_enable_xr_system(GameInstance, true);
 #endif
@@ -211,7 +213,16 @@ int main(int argc, char **argv) {
         glm::ivec2 initialSize = glm::ivec2(0);
         sp_cvar_t *cvarWindowSize = sp_get_cvar("r.windowsize");
         sp_cvar_get_ivec2(cvarWindowSize, &initialSize.x, &initialSize.y);
-        GLFWwindow *window = glfwCreateWindow(initialSize.x, initialSize.y, "STRAY PHOTONS", nullptr, nullptr);
+
+        glm::vec2 monitorScale(1.0f);
+    #ifndef _WIN32
+        glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+    #endif
+        GLFWwindow *window = glfwCreateWindow(initialSize.x / monitorScale.x,
+            initialSize.y / monitorScale.y,
+            "STRAY PHOTONS",
+            nullptr,
+            nullptr);
         Assert(window, "glfw window creation failed");
         sp_graphics_set_glfw_window(GameGraphics, window, [](GLFWwindow *window) {
             if (window) glfwDestroyWindow(window);
@@ -349,7 +360,11 @@ int main(int argc, char **argv) {
                 if (sp_cvar_get_bool(cvarWindowFullscreen)) {
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
-                    glfwSetWindowSize(window, windowSize.x, windowSize.y);
+                    glm::vec2 monitorScale(1.0f);
+    #ifndef _WIN32
+                    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+    #endif
+                    glfwSetWindowSize(window, windowSize.x / monitorScale.x, windowSize.y / monitorScale.y);
                 }
 
                 systemWindowSize = windowSize;
