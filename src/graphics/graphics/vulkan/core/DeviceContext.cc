@@ -254,7 +254,6 @@ namespace sp::vulkan {
 
             vector<const char *> enabledDeviceExtensions = {
                 VK_KHR_MULTIVIEW_EXTENSION_NAME,
-                VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
                 VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
                 VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
                 VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
@@ -263,6 +262,11 @@ namespace sp::vulkan {
             if (enableSwapchain) {
                 enabledDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
             }
+
+            std::array<const char *, 2> optionalDeviceExtensions = {
+                VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
+                "VK_KHR_portability_subset",
+            };
 
             auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
 
@@ -275,6 +279,14 @@ namespace sp::vulkan {
                     }
                 }
                 Assertf(found, "device must have extension %s", requiredExtension);
+            }
+            for (auto optionalExtension : optionalDeviceExtensions) {
+                for (auto &availableExtension : availableDeviceExtensions) {
+                    if (strncmp(optionalExtension, availableExtension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0) {
+                        enabledDeviceExtensions.push_back(optionalExtension);
+                        break;
+                    }
+                }
             }
 
             vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
