@@ -26,7 +26,6 @@ layout(std430, binding = 3) readonly buffer VoxelFragmentList {
     VoxelFragment fragmentList[];
 };
 
-// layout(binding = 4, r32ui) uniform uimage3D fillCounters;
 layout(std430, binding = 4) readonly buffer FillCounters {
     uint fillCounters[];
 };
@@ -47,10 +46,7 @@ void main() {
         vec4 existingRadiance = imageLoad(voxelRadiance, position);
         vec4 existingNormal = imageLoad(voxelNormals, position);
 
-        // uint overflowCount = imageLoad(fillCounters, position).r - FRAGMENT_LIST_COUNT + 1;
-        int fillIndex = int(position.x) * voxelInfo.gridSize.y * voxelInfo.gridSize.z +
-                        int(position.y) * voxelInfo.gridSize.z + int(position.z);
-        uint overflowCount = fillCounters[fillIndex] - FRAGMENT_LIST_COUNT + 1;
+        uint overflowCount = fillCounters[FlattenIndex(position, voxelInfo.gridSize)] - FRAGMENT_LIST_COUNT + 1;
         float weight = 1.0f / (FRAGMENT_LIST_COUNT + existingRadiance.w - 1);
         // isNotLast = true if existingRadiance.w - 1 < overflowCount
         float isNotLast = 1 - step(overflowCount, existingRadiance.w - 1);
