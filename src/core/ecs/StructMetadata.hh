@@ -69,7 +69,6 @@ namespace ecs {
 
         template<typename T>
         static inline TypeInfo Lookup() {
-            // Logf("Lookup: %s", typeid(T).name());
             using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
             return TypeInfo{
                 .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),

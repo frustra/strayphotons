@@ -49,4 +49,8 @@ int DominantAxis(vec3 normal) {
     return int(dot(vec3(mask) * sign(normal), vec3(1, 2, 3)));
 }
 
+int FlattenIndex(ivec3 position, ivec3 gridSize) {
+    return int(position.x) * gridSize.y * gridSize.z + int(position.y) * gridSize.z + int(position.z);
+}
+
 #endif
