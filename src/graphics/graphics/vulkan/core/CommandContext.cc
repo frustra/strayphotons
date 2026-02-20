@@ -151,15 +151,15 @@ namespace sp::vulkan {
         cmd->drawIndirect(*drawCommands, offset, drawCount, stride);
     }
 
-    // void CommandContext::DrawIndirectCount(BufferPtr drawCommands,
-    //     vk::DeviceSize offset,
-    //     BufferPtr countBuffer,
-    //     vk::DeviceSize countOffset,
-    //     uint32_t maxDrawCount,
-    //     uint32_t stride) {
-    //     FlushGraphicsState();
-    //     cmd->drawIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
-    // }
+    void CommandContext::DrawIndirectCount(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        BufferPtr countBuffer,
+        vk::DeviceSize countOffset,
+        uint32_t maxDrawCount,
+        uint32_t stride) {
+        FlushGraphicsState();
+        cmd->drawIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
+    }
 
     void CommandContext::DrawIndexedIndirect(BufferPtr drawCommands,
         vk::DeviceSize offset,
@@ -169,15 +169,15 @@ namespace sp::vulkan {
         cmd->drawIndexedIndirect(*drawCommands, offset, drawCount, stride);
     }
 
-    // void CommandContext::DrawIndexedIndirectCount(BufferPtr drawCommands,
-    //     vk::DeviceSize offset,
-    //     BufferPtr countBuffer,
-    //     vk::DeviceSize countOffset,
-    //     uint32_t maxDrawCount,
-    //     uint32_t stride) {
-    //     FlushGraphicsState();
-    //     cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
-    // }
+    void CommandContext::DrawIndexedIndirectCount(BufferPtr drawCommands,
+        vk::DeviceSize offset,
+        BufferPtr countBuffer,
+        vk::DeviceSize countOffset,
+        uint32_t maxDrawCount,
+        uint32_t stride) {
+        FlushGraphicsState();
+        cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
+    }
 
     void CommandContext::DrawScreenCover(const ImageViewPtr &view) {
         SetShaders("screen_cover.vert", "screen_cover.frag");

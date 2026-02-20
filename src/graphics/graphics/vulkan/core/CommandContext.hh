@@ -99,22 +99,22 @@ namespace sp::vulkan {
             vk::DeviceSize offset,
             uint32_t drawCount,
             uint32_t stride = sizeof(VkDrawIndirectCommand));
-        // void DrawIndirectCount(BufferPtr drawCommands,
-        //     vk::DeviceSize offset,
-        //     BufferPtr countBuffer,
-        //     vk::DeviceSize countOffset,
-        //     uint32_t maxDrawCount,
-        //     uint32_t stride = sizeof(VkDrawIndirectCommand));
+        void DrawIndirectCount(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            BufferPtr countBuffer,
+            vk::DeviceSize countOffset,
+            uint32_t maxDrawCount,
+            uint32_t stride = sizeof(VkDrawIndirectCommand));
         void DrawIndexedIndirect(BufferPtr drawCommands,
             vk::DeviceSize offset,
             uint32_t drawCount,
             uint32_t stride = sizeof(VkDrawIndexedIndirectCommand));
-        // void DrawIndexedIndirectCount(BufferPtr drawCommands,
-        //     vk::DeviceSize offset,
-        //     BufferPtr countBuffer,
-        //     vk::DeviceSize countOffset,
-        //     uint32_t maxDrawCount,
-        //     uint32_t stride = sizeof(VkDrawIndexedIndirectCommand));
+        void DrawIndexedIndirectCount(BufferPtr drawCommands,
+            vk::DeviceSize offset,
+            BufferPtr countBuffer,
+            vk::DeviceSize countOffset,
+            uint32_t maxDrawCount,
+            uint32_t stride = sizeof(VkDrawIndexedIndirectCommand));
 
         void DrawScreenCover(const ImageViewPtr &view = nullptr);
         void DrawScreenCover(const color_alpha_t &color);
