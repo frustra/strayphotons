@@ -91,7 +91,6 @@ std::string TypeToString() {
 
         auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-
         auto structStart = embeddingSignature.find("struct ", charStart);
         if (structStart == charStart) typeStart += "struct "s.size();
 
@@ -104,7 +103,6 @@ std::string TypeToString() {
 
         auto typeStart = charStart;
         auto embeddingSignature = EmbedTypeIntoSignature<T>();
-
         auto enumStart = embeddingSignature.find("enum ", charStart);
         if (enumStart == charStart) typeStart += "enum "s.size();
         auto classStart = embeddingSignature.find("class ", charStart);
