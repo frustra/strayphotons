@@ -13,9 +13,9 @@
 
 namespace sp {
     void LockFreeMutex::lock_shared() {
-        size_t retry = 0;
+        size_t retry = 1;
         while (true) {
-            if (try_lock_shared(retry < SPINLOCK_RETRY_YIELD)) return;
+            if (try_lock_shared(retry > 0)) return;
 
             if (retry++ > SPINLOCK_RETRY_YIELD) {
                 retry = 0;
