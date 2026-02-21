@@ -15,7 +15,7 @@ namespace sp {
     void LockFreeMutex::lock_shared() {
         size_t retry = 0;
         while (true) {
-            if (try_lock_shared()) return;
+            if (try_lock_shared(retry < SPINLOCK_RETRY_YIELD)) return;
 
             if (retry++ > SPINLOCK_RETRY_YIELD) {
                 retry = 0;
@@ -24,9 +24,9 @@ namespace sp {
         }
     }
 
-    bool LockFreeMutex::try_lock_shared() {
+    bool LockFreeMutex::try_lock_shared(bool yieldWaiting) {
         uint32_t current = lockState;
-        if (current != LOCK_STATE_EXCLUSIVE_LOCKED && !exclusiveWaiting) {
+        if (current != LOCK_STATE_EXCLUSIVE_LOCKED && (!yieldWaiting || !exclusiveWaiting)) {
             uint32_t next = current + 1;
             if (lockState.compare_exchange_weak(current, next)) {
                 // Lock aquired

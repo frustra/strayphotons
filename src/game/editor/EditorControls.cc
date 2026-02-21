@@ -7,11 +7,16 @@
 
 #include "EditorControlsImpl.hh"
 
+#include <mutex>
+#include <shared_mutex>
+
 namespace sp {
     void EditorContext::RefreshEntityTree() {
         ZoneScoped;
         ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>([this](auto &lock) {
             ZoneScopedN("RefreshEntityTree");
+            std::lock_guard l(mutex);
+
             entityTree.clear();
             for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::TransformTree>()) {
                 auto &name = ent.Get<ecs::Name>(lock);
@@ -26,6 +31,8 @@ namespace sp {
 
     bool EditorContext::ShowEntityTree(ecs::EntityRef &selected, ecs::Name root) {
         ZoneScoped;
+        std::shared_lock l(mutex);
+
         bool selectionChanged = false;
         if (!root) {
             if (ImGui::Button("Refresh List") || entityTree.empty()) {
@@ -404,22 +411,23 @@ namespace sp {
             }
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap;
             if (name != "scene_properties") flags |= ImGuiTreeNodeFlags_DefaultOpen;
-            if (ImGui::CollapsingHeader(name.c_str(), flags)) {
-                ImGui::SameLine(ImGui::GetColumnWidth() - 8);
-                std::string removeLabel = "X##" + name;
-                if (ImGui::Button(removeLabel.c_str())) {
-                    if (IsLive(lock)) {
-                        ecs::QueueTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
-                            if (!target.Exists(lock)) return;
-                            comp.UnsetComponent(lock, target);
-                        });
-                    } else {
-                        ecs::QueueStagingTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
-                            if (!target.Exists(lock)) return;
-                            comp.UnsetComponent(lock, target);
-                        });
-                    }
+            bool open = ImGui::CollapsingHeader(name.c_str(), flags);
+            ImGui::SameLine(ImGui::GetColumnWidth() - 8);
+            std::string removeLabel = "X##" + name;
+            if (ImGui::Button(removeLabel.c_str())) {
+                if (IsLive(lock)) {
+                    ecs::QueueTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
+                        if (!target.Exists(lock)) return;
+                        comp.UnsetComponent(lock, target);
+                    });
+                } else {
+                    ecs::QueueStagingTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
+                        if (!target.Exists(lock)) return;
+                        comp.UnsetComponent(lock, target);
+                    });
                 }
+            }
+            if (open) {
                 const void *component = comp.Access(lock, this->target);
                 for (auto &field : comp.metadata.fields) {
                     ecs::GetFieldType(field.type, [&](auto *typePtr) {
