@@ -17,8 +17,10 @@
 #include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
+#include "ecs/components/Physics.hh"
 #include "game/GameLogic.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -30,6 +32,8 @@
 #include <cmath>
 #include <fstream>
 #include <glm/ext/matrix_relational.hpp>
+#include <memory>
+#include <variant>
 
 namespace sp {
     using namespace physx;
@@ -519,7 +523,7 @@ namespace sp {
                         glm::notEqual(shapeTransform.scale, shapeUserData->shapeTransform.scale, 1e-4f));
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (mesh) {
-                        auto meshSettings = mesh->hullSettings->Get();
+                        auto meshSettings = mesh->hullSettings ? mesh->hullSettings->Get() : nullptr;
                         auto sourceSettings = shapeUserData->hullCache ? shapeUserData->hullCache->sourceSettings->Get()
                                                                        : nullptr;
                         if (!meshSettings || !sourceSettings) {
@@ -620,9 +624,15 @@ namespace sp {
                 shapesChanged = true;
             }
         }
+        auto dynamic = actor->is<PxRigidDynamic>();
         for (size_t i = 0; i < physics.shapes.size(); i++) {
             if (existingShapes[i]) continue;
             auto &shape = physics.shapes[i];
+            if (dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) &&
+                std::holds_alternative<ecs::PhysicsShape::Plane>(shape.shape)) {
+                Warnf("Plane shape not supported on Dynamic physics actor: %s", ecs::ToString(lock, actorEnt));
+                continue;
+            }
             PxMaterial *pxMaterial = pxPhysics->createMaterial(shape.material.staticFriction,
                 shape.material.dynamicFriction,
                 shape.material.restitution);
@@ -631,7 +641,10 @@ namespace sp {
             });
             auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
             if (mesh) {
-                auto shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
+                std::shared_ptr<ConvexHullSet> shapeCache;
+                if (mesh->model && mesh->hullSettings) {
+                    shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
+                }
 
                 if (shapeCache) {
                     auto shapeTransform = offset * shape.transform;
@@ -693,7 +706,6 @@ namespace sp {
             }
         }
 
-        auto dynamic = actor->is<PxRigidDynamic>();
         if (dynamic && shapesChanged) {
             Tracef("Updating actor inertia: %s", ecs::ToString(lock, actorEnt));
             auto &ph = actorEnt.Get<ecs::Physics>(lock);

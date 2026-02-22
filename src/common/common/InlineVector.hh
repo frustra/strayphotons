@@ -116,6 +116,28 @@ namespace sp {
             return insert(pos, ilist.begin(), ilist.end());
         }
 
+        iterator erase(const_iterator pos) {
+            return erase(pos, pos + 1);
+        }
+
+        iterator erase(const_iterator first, const_iterator last) {
+            size_type startOffset = first - begin();
+            size_type endOffset = last - begin();
+            Assertf(startOffset <= endOffset, "InlineVector::erase iterators out of order");
+            if (endOffset == offset) {
+                std::fill(begin() + startOffset, end(), T{});
+                offset = startOffset;
+                return end();
+            } else if (startOffset != endOffset) {
+                iterator newEnd = std::copy(begin() + endOffset, end(), begin() + startOffset);
+                std::fill(newEnd, end(), T{});
+                offset = newEnd - begin();
+                return begin() + endOffset;
+            } else {
+                return begin() + endOffset;
+            }
+        }
+
         void clear() {
             fill({});
             offset = 0;

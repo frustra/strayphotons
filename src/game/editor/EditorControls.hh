@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
@@ -21,6 +22,7 @@ namespace sp {
 
         // Persistent context
         std::string entitySearch, sceneEntry, signalSearch;
+        LockFreeMutex mutex;
         std::map<ecs::Name, TreeNode> entityTree;
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         const ecs::ComponentBase *selectedComponent = nullptr;

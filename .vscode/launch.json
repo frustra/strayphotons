@@ -5,19 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "StrayPhotons Cargo (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/target/release/sp-rs.exe",
-            "args": ["--assets", "../assets/"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin/",
-            "environment": [],
-            "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis"
-        },
-        {
-            "name": "StrayPhotons GLFW (vsdbg)",
+            "name": "StrayPhotons VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
@@ -32,7 +20,7 @@
             }
         },
         {
-            "name": "StrayPhotons GLFW (lldb)",
+            "name": "StrayPhotons VR (lldb)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
@@ -51,7 +39,7 @@
             ]
         },
         {
-            "name": "StrayPhotons GLFW No VR (vsdbg)",
+            "name": "StrayPhotons No VR (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk.exe",
@@ -66,60 +54,11 @@
             }
         },
         {
-            "name": "StrayPhotons GLFW No VR (lldb)",
+            "name": "StrayPhotons No VR (lldb)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
             "args": ["--assets", "../assets/", "--no-vr"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
-        },
-        {
-            "name": "StrayPhotons Winit (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-winit.exe",
-            "args": ["--with-validation-layers", "--assets", "../assets/"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
-            "sourceFileMap": {
-                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
-            }
-        },
-        {
-            "name": "StrayPhotons Winit No VR (vsdbg)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-winit.exe",
-            "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
-            "environment": [],
-            "console": "integratedTerminal",
-            "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
-            "sourceFileMap": {
-                "c:\\buildslave\\steamvr_rel_win64\\build\\src\\public\\vrsdk\\src\\": "${workspaceFolder}/ext/openvr/src"
-            }
-        },
-        {
-            "name": "StrayPhotons Winit No VR (lldb)",
-            "type": "lldb",
-            "request": "launch",
-            "program": "${workspaceFolder}/bin/sp-winit",
-            "args": ["--with-validation-layers", "--assets", "../assets/", "--no-vr"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
@@ -211,6 +150,25 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
+            "name": "StrayPhotons Scene Formatter (vsdbg)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/scene_formatter",
+            "args": ["--assets", "../assets/", "blackhole1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/docs/generated/",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
             "name": "StrayPhotons Components Codegen (vsdbg)",
             "type": "cppvsdbg",
             "request": "launch",
@@ -253,6 +211,25 @@
             "environment": [],
             "console": "integratedTerminal",
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
+        },
+        {
+            "name": "StrayPhotons Tecs Codegen (lldb)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/codegen/strayphotons-ecs-c-abi-codegen",
+            "args": ["include/c_abi/strayphotons_ecs_c_abi_lock_gen.h", "include/c_abi/strayphotons_ecs_c_abi_entity_gen.h", "strayphotons_ecs_c_abi_ecs_gen.cc", "strayphotons_ecs_c_abi_entity_gen.cc", "strayphotons_ecs_c_abi_lock_gen.cc"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/src/codegen",
+            "environment": [],
+            "console": "integratedTerminal",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         },
         {
             "name": "StrayPhotons Test (vsdbg)",
