@@ -7,11 +7,15 @@
 
 #include "LockFreeMutex.hh"
 
+#include "common/Common.hh"
+#include "common/InlineVector.hh"
 #include "common/Logging.hh"
 
 #include <thread>
 
 namespace sp {
+    thread_local InlineVector<LockFreeMutex *, 16> lockedVectors;
+
     void LockFreeMutex::lock_shared() {
         size_t retry = 0;
         while (true) {
@@ -26,10 +30,14 @@ namespace sp {
 
     bool LockFreeMutex::try_lock_shared() {
         uint32_t current = lockState;
-        if (current != LOCK_STATE_EXCLUSIVE_LOCKED && !exclusiveWaiting) {
+        if (current != LOCK_STATE_EXCLUSIVE_LOCKED) {
+            if (exclusiveWaiting && !sp::contains(lockedVectors, this)) {
+                return false;
+            }
             uint32_t next = current + 1;
             if (lockState.compare_exchange_weak(current, next)) {
                 // Lock aquired
+                lockedVectors.emplace_back(this);
                 return true;
             }
         }
@@ -43,6 +51,9 @@ namespace sp {
         Assert(current != LOCK_STATE_EXCLUSIVE_LOCKED,
             "LockFreeMutex::unlock_shared() called while exclusive lock held");
         lockState--;
+        auto it = std::find(lockedVectors.rbegin(), lockedVectors.rend(), this);
+        Assertf(it != lockedVectors.rend(), "LockFreeMutex::unlock_shared() mutex missing from thread_local list");
+        lockedVectors.erase(std::next(it).base());
     }
 
     void LockFreeMutex::lock() {

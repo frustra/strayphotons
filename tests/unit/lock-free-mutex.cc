@@ -33,15 +33,20 @@ namespace LockFreeMutexTests {
         }
         {
             Timer t("Try exclusive lock blocking on shared lock");
-            mutex.lock_shared();
-            mutex.lock_shared();
-            std::atomic_bool locked = true;
+            std::atomic_bool locked = false;
             std::thread worker([&] {
+                mutex.lock_shared();
+                mutex.lock_shared();
+                locked = true;
+                locked.notify_all();
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 locked = false;
                 mutex.unlock_shared();
                 mutex.unlock_shared();
             });
+            while (!locked.load()) {
+                locked.wait(false);
+            }
             std::unique_lock lock(mutex);
             AssertEqual(locked.load(), false, "Exclusive lock acquired before shared lock was released");
             worker.join();
@@ -58,6 +63,26 @@ namespace LockFreeMutexTests {
             std::shared_lock lock(mutex);
             AssertEqual(locked.load(), false, "Shared lock acquired before exclusive lock was released");
             worker.join();
+        }
+        {
+            Timer t("Test recursive shared lock with waiting exclusive lock");
+            std::thread worker;
+            std::atomic_bool completed = false;
+            {
+                std::shared_lock lock1(mutex);
+                worker = std::thread([&] {
+                    {
+                        std::lock_guard l(mutex);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+                    completed = true;
+                });
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::shared_lock lock2(mutex);
+                AssertEqual(completed.load(), false, "Exclusive lock acquired before shared lock was released");
+            }
+            worker.join();
+            AssertEqual(completed.load(), true, "Exclusive lock did not complete");
         }
         {
             Timer t("Test continuous overlapping shared locks");

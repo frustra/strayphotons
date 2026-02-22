@@ -16,6 +16,7 @@
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "ecs/components/Physics.hh"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
@@ -26,12 +27,14 @@
 #include <magic_enum.hpp>
 #include <map>
 #include <misc/cpp/imgui_stdlib.h>
+#include <string>
+#include <type_traits>
 
 namespace sp {
     using namespace ecs;
 
     template<typename T>
-    bool EditorContext::AddImGuiElement(const std::string &name, T &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, T &value) {
         bool changed = false;
         if constexpr (std::is_enum_v<T>) {
             auto items = magic_enum::enum_entries<T>();
@@ -105,6 +108,7 @@ namespace sp {
                 static_assert(!sizeof(U), "AddImGuiElement unsupported vector type");
             }
         } else {
+            ImGui::Indent();
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
             if (fieldName.empty()) {
@@ -112,42 +116,43 @@ namespace sp {
             } else {
                 ImGui::Text("%s: %s", fieldName.c_str(), jsonValue.serialize(true).c_str());
             }
+            ImGui::Unindent();
         }
         return changed;
     }
 
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, bool &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, bool &value) {
         return ImGui::Checkbox(name.c_str(), &value);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, int32_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, int32_t &value) {
         return ImGui::DragScalar(name.c_str(), ImGuiDataType_S32, &value, 1.0f, NULL, NULL, "%d");
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, uint32_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, uint32_t &value) {
         uint32_t min = 0;
         return ImGui::DragScalar(name.c_str(), ImGuiDataType_U32, &value, 1.0f, &min, NULL, "%u");
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, int64_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, int64_t &value) {
         return ImGui::DragScalar(name.c_str(), ImGuiDataType_S64, &value, 1.0f, NULL, NULL, "%lld");
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, uint64_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, uint64_t &value) {
         uint64_t min = 0;
         return ImGui::DragScalar(name.c_str(), ImGuiDataType_U64, &value, 1.0f, &min, NULL, "%llu");
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, sp::angle_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, sp::angle_t &value) {
         return ImGui::SliderAngle(name.c_str(), &value.radians(), 0.0f, 360.0f);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, float &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, float &value) {
         return ImGui::DragFloat(name.c_str(), &value, 0.01f);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, double &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, double &value) {
         float floatValue = value;
         if (ImGui::DragFloat(name.c_str(), &floatValue, 0.01f)) {
             value = floatValue;
@@ -156,15 +161,15 @@ namespace sp {
         return false;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, color_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, color_t &value) {
         return ImGui::ColorEdit3(name.c_str(), (float *)&value);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, color_alpha_t &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, color_alpha_t &value) {
         return ImGui::ColorEdit4(name.c_str(), (float *)&value);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, glm::quat &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, glm::quat &value) {
         // TODO: Add grab handle for orientation
         glm::vec3 angles = glm::degrees(glm::eulerAngles(value));
         for (glm::length_t i = 0; i < angles.length(); i++) {
@@ -178,17 +183,17 @@ namespace sp {
         return false;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::string &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, std::string &value) {
         return ImGui::InputText(name.c_str(), &value);
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, InlineString<127> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, InlineString<127> &value) {
         bool changed = ImGui::InputText(name.c_str(), value.data(), value.max_size());
         if (changed) value = InlineString<127>(value.data()); // Update size byte at end
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, SignalExpression &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, SignalExpression &value) {
         bool borderEnable = !value && !value.IsNull();
         if (borderEnable) {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
@@ -203,7 +208,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, EntityRef &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, EntityRef &value) {
         bool changed = false;
         if (!fieldName.empty()) {
             ImGui::Text("%s:", fieldName.c_str());
@@ -231,7 +236,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, Transform &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, Transform &value) {
         // TODO: Add grab handle in view
         bool groupTransformControls = !fieldName.empty();
         if (groupTransformControls) {
@@ -262,7 +267,7 @@ namespace sp {
         return changed;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<AnimationState> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<AnimationState> &value) {
         for (auto &state : value) {
             picojson::value jsonValue;
             json::Save({}, jsonValue, state);
@@ -271,7 +276,103 @@ namespace sp {
         return false;
     }
     template<>
-    bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ScriptInstance> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, PhysicsMaterial &value) {
+        std::string text = "staticFriction" + fieldId;
+        bool changed = ImGui::DragFloat(text.c_str(), &value.staticFriction, 0.01f);
+        text = "dynamicFriction" + fieldId;
+        changed |= ImGui::DragFloat(text.c_str(), &value.dynamicFriction, 0.01f);
+        text = "restitution" + fieldId;
+        changed |= ImGui::DragFloat(text.c_str(), &value.restitution, 0.01f);
+        return changed;
+    }
+    template<>
+    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<PhysicsShape> &value) {
+        bool changed = false;
+        ImGui::Indent();
+        for (size_t i = 0; i < value.size(); i++) {
+            auto &physicsShape = value[i];
+
+            std::string shapeLabel = physicsShape.name() + "##"s + std::to_string(i) + fieldId;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap;
+            if (value.size() < 2) flags |= ImGuiTreeNodeFlags_DefaultOpen;
+            bool open = ImGui::CollapsingHeader(shapeLabel.c_str(), flags);
+            ImGui::SameLine(ImGui::GetColumnWidth() - 8);
+            std::string removeLabel = "X##" + std::to_string(i) + fieldId;
+            if (ImGui::Button(removeLabel.c_str())) {
+                value.erase(value.begin() + i);
+                i--;
+                changed = true;
+                continue;
+            }
+            if (open) {
+                changed |= std::visit(
+                    [&](auto &shape) {
+                        using T = std::decay_t<decltype(shape)>;
+                        if constexpr (std::is_same<T, PhysicsShape::Sphere>()) {
+                            std::string radiusLabel = "Sphere Radius##radius" + std::to_string(i) + fieldId;
+                            return ImGui::DragFloat(radiusLabel.c_str(), &shape.radius, 0.01f);
+                        } else if constexpr (std::is_same<T, PhysicsShape::Capsule>()) {
+                            std::string radiusLabel = "Capsule Radius##radius" + std::to_string(i) + fieldId;
+                            std::string heightLabel = "Capsule Height##height" + std::to_string(i) + fieldId;
+                            bool changed = ImGui::DragFloat(radiusLabel.c_str(), &shape.radius, 0.01f);
+                            changed |= ImGui::DragFloat(heightLabel.c_str(), &shape.height, 0.01f);
+                            return changed;
+                        } else if constexpr (std::is_same<T, PhysicsShape::Box>()) {
+                            return AddImGuiElement("Box Size##extents" + std::to_string(i) + fieldId, shape.extents);
+                        } else if constexpr (std::is_same<T, PhysicsShape::Plane>()) {
+                            // Plane has no parameters
+                            return false;
+                        } else if constexpr (std::is_same<T, PhysicsShape::ConvexMesh>()) {
+                            std::string modelLabel = "Model Name##model" + std::to_string(i) + fieldId;
+                            std::string meshLabel = "Mesh Name##mesh" + std::to_string(i) + fieldId;
+                            bool changed = ImGui::InputText(modelLabel.c_str(), &shape.modelName);
+                            changed |= ImGui::InputText(meshLabel.c_str(), &shape.meshName);
+                            return changed;
+                        } else {
+                            Abortf("Unexpected PhysicsShape: %s", typeid(T).name());
+                            return false;
+                        }
+                    },
+                    physicsShape.shape);
+                auto parentFieldName = fieldName;
+                fieldName = "";
+                changed |= AddImGuiElement("transform"s + std::to_string(i) + fieldId, physicsShape.transform);
+                fieldName = parentFieldName;
+                changed |= AddImGuiElement("Shape Material##material"s + std::to_string(i) + fieldId,
+                    physicsShape.material);
+            }
+        }
+        ImGui::TextUnformatted("Add:");
+        ImGui::SameLine();
+        if (ImGui::Button("Sphere")) {
+            value.emplace_back(PhysicsShape::Sphere{});
+            changed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Capsule")) {
+            value.emplace_back(PhysicsShape::Capsule{});
+            changed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Box")) {
+            value.emplace_back(PhysicsShape::Box{});
+            changed = true;
+        }
+        // ImGui::SameLine();
+        // if (ImGui::Button("Plane")) {
+        //     value.emplace_back(PhysicsShape::Plane{});
+        //     changed = true;
+        // }
+        ImGui::SameLine();
+        if (ImGui::Button("ConvexMesh")) {
+            value.emplace_back(PhysicsShape::ConvexMesh{});
+            changed = true;
+        }
+        ImGui::Unindent();
+        return changed;
+    }
+    template<>
+    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
         robin_hood::unordered_map<size_t, std::string> changeList;

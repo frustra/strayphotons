@@ -15,6 +15,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <type_traits>
 #include <variant>
 
 namespace sp {
@@ -97,6 +98,10 @@ namespace ecs {
             float radius;
             Sphere(float radius = 1.0f) : radius(radius) {}
 
+            static const char *name() {
+                return "Sphere";
+            }
+
             bool operator==(const Sphere &other) const {
                 return glm::epsilonEqual(radius, other.radius, 1e-5f);
             }
@@ -107,6 +112,10 @@ namespace ecs {
             float height;
             Capsule(float height = 1.0f, float radius = 0.5f) : radius(radius), height(height) {}
 
+            static const char *name() {
+                return "Capsule";
+            }
+
             bool operator==(const Capsule &other) const {
                 return glm::epsilonEqual(radius, other.radius, 1e-5f) && glm::epsilonEqual(height, other.height, 1e-5f);
             }
@@ -116,6 +125,10 @@ namespace ecs {
             glm::vec3 extents;
             Box(glm::vec3 extents = glm::vec3(1)) : extents(extents) {}
 
+            static const char *name() {
+                return "Box";
+            }
+
             bool operator==(const Box &other) const {
                 return glm::all(glm::epsilonEqual(extents, other.extents, 1e-5f));
             }
@@ -123,6 +136,10 @@ namespace ecs {
 
         struct Plane {
             bool operator==(const Plane &) const = default;
+
+            static const char *name() {
+                return "Plane";
+            }
         };
 
         struct ConvexMesh {
@@ -135,6 +152,10 @@ namespace ecs {
             ConvexMesh(const std::string &modelName, const std::string &meshName);
             ConvexMesh(const std::string &modelName, size_t meshIndex)
                 : ConvexMesh(modelName, "convex" + std::to_string(meshIndex)) {}
+
+            static const char *name() {
+                return "ConvexMesh";
+            }
 
             bool operator==(const ConvexMesh &) const = default;
         };
@@ -150,6 +171,19 @@ namespace ecs {
         PhysicsShape(Plane plane, Transform transform = Transform()) : shape(plane), transform(transform) {}
         PhysicsShape(ConvexMesh mesh, Transform transform = Transform()) : shape(mesh), transform(transform) {}
         PhysicsShape(const std::string &fullMeshName) : shape(ConvexMesh(fullMeshName)), transform() {}
+
+        const char *name() const {
+            return std::visit(
+                [](auto &shape) {
+                    using T = std::decay_t<decltype(shape)>;
+                    if constexpr (!std::is_same<T, std::monostate>()) {
+                        return T::name();
+                    } else {
+                        return "Null";
+                    }
+                },
+                shape);
+        }
 
         explicit operator bool() const {
             return !std::holds_alternative<std::monostate>(shape);
