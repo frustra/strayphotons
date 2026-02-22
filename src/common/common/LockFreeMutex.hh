@@ -20,7 +20,7 @@ namespace sp {
     public:
         // Read locks
         void lock_shared();
-        bool try_lock_shared(bool yieldWaiting = true);
+        bool try_lock_shared();
         void unlock_shared();
 
         // Write locks
