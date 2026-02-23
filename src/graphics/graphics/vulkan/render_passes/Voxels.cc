@@ -389,7 +389,8 @@ namespace sp::vulkan::renderer {
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawID.drawCommandsBuffer),
-                    resources.GetBuffer(drawID.drawParamsBuffer));
+                    resources.GetBuffer(drawID.drawParamsBuffer),
+                    drawID.commandCount);
 
                 cmd.EndRenderPass();
             });
