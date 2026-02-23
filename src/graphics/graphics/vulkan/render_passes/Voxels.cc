@@ -242,8 +242,7 @@ namespace sp::vulkan::renderer {
                     Residency::GPU_ONLY,
                     Access::None);
             })
-            .Execute([this, clearRadiance, clearCounters, clearNormals, voxelGridExtents](rg::Resources &resources,
-                         CommandContext &cmd) {
+            .Execute([this, clearRadiance, clearCounters, clearNormals](rg::Resources &resources, CommandContext &cmd) {
                 if (clearRadiance) {
                     auto radianceView = resources.GetImageView("Radiance");
                     vk::ClearColorValue clear;
