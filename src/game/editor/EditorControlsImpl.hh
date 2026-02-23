@@ -11,12 +11,15 @@
 #include "assets/JsonHelpers.hh"
 #include "common/Common.hh"
 #include "common/Defer.hh"
+#include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructFieldTypes.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/SceneProperties.hh"
+#include "ecs/components/Transform.h"
 #include "game/SceneImpl.hh"
 #include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
@@ -637,6 +640,32 @@ namespace sp {
                     // Skip, this is handled by scene
                 } else if constexpr (std::is_same_v<T, TransformSnapshot>) {
                     // Skip, this is handled by TransformTree
+                } else if constexpr (std::is_same_v<T, TransformTree>) {
+                    if (!target.Has<TransformTree>(live)) return;
+                    TransformTree transformTree = target.Get<TransformTree>(live);
+                    if (target.Has<SceneProperties>(live) && !transformTree.parent) {
+                        const auto &sceneProperties = target.Get<const SceneProperties>(live);
+                        if (sceneProperties.rootTransform != Transform{}) {
+                            // Remove scene offset from transform before saving to staging
+                            transformTree.pose = sceneProperties.rootTransform.GetInverse() * transformTree.pose;
+                        }
+                    }
+
+                    auto &parentTransform = std::get<std::optional<TransformTree>>(flatParentEntity);
+                    TransformTree compareTransform = parentTransform.value_or(TransformTree{});
+
+                    picojson::value tmp;
+                    EntityScope scope(targetScene.data->name, "");
+                    auto changed = json::SaveIfChanged(scope, tmp, "", transformTree, &compareTransform);
+                    if (changed) {
+                        stagingId.Set<TransformTree>(staging, transformTree);
+                    } else if (parentTransform) {
+                        if (stagingId.Has<TransformTree>(staging)) stagingId.Unset<TransformTree>(staging);
+                    } else {
+                        TransformTree stagingTransform = {};
+                        StructMetadata::InitUndefined<TransformTree>(stagingTransform);
+                        stagingId.Set<TransformTree>(staging, stagingTransform);
+                    }
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     if (!target.Has<T>(live)) return;
                     auto &liveComp = target.Get<T>(live);

@@ -27,7 +27,9 @@ INCLUDE_LAYOUT(binding = 2)
 #include "lib/exposure_state.glsl"
 
 layout(binding = 3) uniform sampler2DArray overlayTex;
-layout(binding = 4, r32ui) readonly uniform uimage3D fillCounters;
+layout(std430, binding = 4) readonly buffer FillCounters {
+    uint fillCounters[];
+};
 layout(binding = 5) uniform sampler3D voxelRadiance;
 layout(binding = 6) uniform sampler3D voxelNormals;
 

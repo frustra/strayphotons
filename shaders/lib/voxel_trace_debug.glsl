@@ -11,7 +11,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 float GetVoxelNearest(vec3 position, int level, out vec3 radiance) {
-    // uint count = imageLoad(fillCounters, ivec3(position)).r;
+    // uint count = fillCounters[FlattenIndex(position, voxelInfo.gridSize)];
     vec4 radianceData = texelFetch(voxelRadiance, ivec3(position) >> level, level);
     vec4 normalData = texelFetch(voxelNormals, ivec3(position) >> level, level);
     // radiance = vec3(length(normalData.xyz / normalData.w));
