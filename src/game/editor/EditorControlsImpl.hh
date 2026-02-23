@@ -652,7 +652,7 @@ namespace sp {
                     }
 
                     auto &parentTransform = std::get<std::optional<TransformTree>>(flatParentEntity);
-                    TransformTree compareTransform = parentTransform.value_or({});
+                    TransformTree compareTransform = parentTransform.value_or(TransformTree{});
 
                     picojson::value tmp;
                     EntityScope scope(targetScene.data->name, "");
