@@ -86,8 +86,9 @@ namespace ecs {
                 Entity newEntity = scene->NewPrefabEntity(lock,
                     ent,
                     state.GetInstanceId(),
-                    getNodeName(nodeId),
+                    nodeName,
                     prefixName);
+                if (!newEntity) continue;
                 EntityRef newRef(newEntity);
 
                 auto &transform = newEntity.Set<TransformTree>(lock, node.transform);
