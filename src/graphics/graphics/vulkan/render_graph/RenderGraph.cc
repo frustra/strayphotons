@@ -7,11 +7,14 @@
 
 #include "RenderGraph.hh"
 
-#include "common/Logging.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "strayphotons/cpp/Logging.hh"
+
+#include <string_view>
+#include <vector>
 
 namespace sp::vulkan::render_graph {
     RenderGraph::RenderGraph(DeviceContext &device) : device(device), resources(device) {}
@@ -68,7 +71,7 @@ namespace sp::vulkan::render_graph {
         auto &frameScopeStack = resources.scopeStack;
         frameScopeStack.clear();
 
-        vector<CommandContextPtr> pendingCmds;
+        std::vector<CommandContextPtr> pendingCmds;
         CommandContextPtr cmd;
 
         auto submitPendingCmds = [&](bool lastSubmit) {
@@ -130,7 +133,7 @@ namespace sp::vulkan::render_graph {
                         phaseScopes.pop();
                     }
                     if (passScope != 255) {
-                        string_view name = resources.nameScopes[passScope].name;
+                        std::string_view name = resources.nameScopes[passScope].name;
                         if (!name.empty()) {
                             auto sep = name.rfind("/");
                             if (sep != name.npos) name = name.substr(sep + 1);
@@ -275,7 +278,7 @@ namespace sp::vulkan::render_graph {
         resources.AdvanceFrame();
     }
 
-    void RenderGraph::BeginScope(string_view name) {
+    void RenderGraph::BeginScope(std::string_view name) {
         resources.BeginScope(name);
     }
 
@@ -283,12 +286,12 @@ namespace sp::vulkan::render_graph {
         resources.EndScope();
     }
 
-    ResourceID RenderGraph::AddImageView(string_view name, ImageViewPtr view) {
+    ResourceID RenderGraph::AddImageView(std::string_view name, ImageViewPtr view) {
         return resources.AddExternalImageView(name, view);
     }
 
-    vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {
-        vector<PooledImageInfo> output;
+    std::vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {
+        std::vector<PooledImageInfo> output;
         for (const auto &[scope, frame] : resources.nameScopes) {
             for (const auto &[name, id] : frame[resources.frameIndex].resourceNames) {
                 const auto &res = resources.resources[id];

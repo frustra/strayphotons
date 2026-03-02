@@ -8,8 +8,6 @@
 #include "OpenVrSystem.hh"
 
 #include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
@@ -18,15 +16,13 @@
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "openvr/OpenVrSystem.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
 #include <openvr.h>
-#include <stdexcept>
-#include <thread>
 
 namespace sp::xr {
     vr::EVREye MapXrEyeToOpenVr(ecs::XrEye eye) {

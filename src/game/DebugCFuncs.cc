@@ -6,13 +6,10 @@
  */
 
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
 #include "common/Tracing.hh"
-#include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
-#include "game/Scene.hh"
 #include "game/SceneManager.hh"
 
 #ifdef SP_PHYSICS_SUPPORT_PHYSX

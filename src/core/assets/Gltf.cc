@@ -11,14 +11,13 @@
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
 #include "assets/JsonHelpers.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <filesystem>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
-#include <iostream>
 
 namespace sp {
     namespace gltf {

@@ -7,7 +7,6 @@
 
 #include "LaserSystem.hh"
 
-#include "common/Common.hh"
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"

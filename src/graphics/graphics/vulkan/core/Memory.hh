@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Hashing.hh"
 #include "common/Tracing.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
+#include <memory>
 #include <thread>
 
 #ifdef _MSC_VER
@@ -61,10 +61,10 @@ namespace sp::vulkan {
     struct InitialData {
         const uint8_t *data = nullptr;
         size_t dataSize = 0;
-        shared_ptr<const void> dataOwner;
+        std::shared_ptr<const void> dataOwner;
 
         InitialData() = default;
-        InitialData(const uint8_t *data, size_t dataSize, const shared_ptr<const void> &dataOwner = nullptr)
+        InitialData(const uint8_t *data, size_t dataSize, const std::shared_ptr<const void> &dataOwner = nullptr)
             : data(data), dataSize(dataSize), dataOwner(dataOwner) {}
     };
 
@@ -105,11 +105,11 @@ namespace sp::vulkan {
                 for (size_t offset = 0; offset < srcCount; offset += CopyBlockSize) {
                     auto srcBlock = srcData + offset;
 
-                    ClockTimer timer;
+                    chrono_clock::time_point start = chrono_clock::now();
                     std::copy(srcBlock, std::min(srcEnd, srcBlock + CopyBlockSize), dstData + dstOffset + offset);
 
                     if (offset + CopyBlockSize < srcCount) {
-                        auto elapsed = timer.Duration();
+                        auto elapsed = chrono_clock::now() - start;
                         if (elapsed > window) {
                             ZoneScopedN("sleep");
                             ZoneValue(elapsed.count());

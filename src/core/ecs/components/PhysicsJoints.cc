@@ -7,11 +7,6 @@
 
 #include "PhysicsJoints.hh"
 
-#include "assets/AssetManager.hh"
-#include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
-#include "ecs/EcsImpl.hh"
-
 namespace ecs {
     template<>
     void EntityComponent<PhysicsJoints>::Apply(PhysicsJoints &dst, const PhysicsJoints &src, bool liveTarget) {

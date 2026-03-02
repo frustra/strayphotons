@@ -9,6 +9,9 @@
 
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <memory>
+#include <string_view>
+
 namespace sp::vulkan::render_graph {
     Resources::Resources(DeviceContext &device) : device(device) {
         Reset();
@@ -71,7 +74,7 @@ namespace sp::vulkan::render_graph {
         return GetImageFromPool(desc);
     }
 
-    ImageViewPtr Resources::GetImageView(string_view name) {
+    ImageViewPtr Resources::GetImageView(std::string_view name) {
         return GetImageView(GetID(name));
     }
 
@@ -82,7 +85,7 @@ namespace sp::vulkan::render_graph {
         return pooledImage->ImageView();
     }
 
-    ImageViewPtr Resources::GetImageLayerView(string_view name, uint32_t layer) {
+    ImageViewPtr Resources::GetImageLayerView(std::string_view name, uint32_t layer) {
         return GetImageLayerView(GetID(name), layer);
     }
 
@@ -93,7 +96,7 @@ namespace sp::vulkan::render_graph {
         return pooledImage->LayerImageView(layer);
     }
 
-    ImageViewPtr Resources::GetImageMipView(string_view name, uint32_t mip) {
+    ImageViewPtr Resources::GetImageMipView(std::string_view name, uint32_t mip) {
         return GetImageMipView(GetID(name), mip);
     }
 
@@ -104,7 +107,7 @@ namespace sp::vulkan::render_graph {
         return pooledImage->MipImageView(mip);
     }
 
-    ImageViewPtr Resources::GetImageDepthView(string_view name) {
+    ImageViewPtr Resources::GetImageDepthView(std::string_view name) {
         return GetImageDepthView(GetID(name));
     }
 
@@ -138,7 +141,7 @@ namespace sp::vulkan::render_graph {
         return target;
     }
 
-    BufferPtr Resources::GetBuffer(string_view name) {
+    BufferPtr Resources::GetBuffer(std::string_view name) {
         return GetBuffer(GetID(name));
     }
 
@@ -159,7 +162,7 @@ namespace sp::vulkan::render_graph {
         return buf;
     }
 
-    const Resource &Resources::GetResource(string_view name) const {
+    const Resource &Resources::GetResource(std::string_view name) const {
         return GetResource(GetID(name, false));
     }
 
@@ -175,7 +178,7 @@ namespace sp::vulkan::render_graph {
         return invalidResourceName;
     }
 
-    ResourceID Resources::GetID(string_view name, bool assertExists, uint32_t framesAgo) const {
+    ResourceID Resources::GetID(std::string_view name, bool assertExists, uint32_t framesAgo) const {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -199,7 +202,7 @@ namespace sp::vulkan::render_graph {
             }
         } else {
             // The resource name is relative to the current or one of the parent scopes.
-            string_view relativeScope;
+            std::string_view relativeScope;
             if (lastSep != name.npos) {
                 relativeScope = name.substr(0, lastSep);
                 name = name.substr(lastSep + 1);
@@ -225,7 +228,7 @@ namespace sp::vulkan::render_graph {
         return result;
     }
 
-    ResourceID Resources::AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace) {
+    ResourceID Resources::AddExternalImageView(std::string_view name, ImageViewPtr view, bool allowReplace) {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -252,7 +255,7 @@ namespace sp::vulkan::render_graph {
         if (Register(name, resource)) {
             externalIDs.emplace_back(resource.id);
             IncrementRef(resource.id);
-            images[resource.id] = make_shared<PooledImage>(device, desc, view);
+            images[resource.id] = std::make_shared<PooledImage>(device, desc, view);
         }
         return resource.id;
     }
@@ -314,7 +317,7 @@ namespace sp::vulkan::render_graph {
         }
     }
 
-    ResourceID Resources::ReserveID(string_view name) {
+    ResourceID Resources::ReserveID(std::string_view name) {
         Assert(!name.empty(), "Reserving empty render graph resource id");
 
         Resource futureResource;
@@ -323,7 +326,7 @@ namespace sp::vulkan::render_graph {
         return futureResource.id;
     }
 
-    bool Resources::Register(string_view name, Resource &resource) {
+    bool Resources::Register(std::string_view name, Resource &resource) {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -405,7 +408,7 @@ namespace sp::vulkan::render_graph {
         return true;
     }
 
-    void Resources::BeginScope(string_view name) {
+    void Resources::BeginScope(std::string_view name) {
         DebugZoneScoped;
         Assert(!name.empty(), "scopes must have a name");
 
@@ -436,14 +439,14 @@ namespace sp::vulkan::render_graph {
         scopeStack.pop_back();
     }
 
-    ResourceID Resources::Scope::GetID(string_view name, uint32_t frameIndex) const {
+    ResourceID Resources::Scope::GetID(std::string_view name, uint32_t frameIndex) const {
         auto &resourceNames = frames[frameIndex].resourceNames;
         auto it = resourceNames.find(name);
         if (it != resourceNames.end()) return it->second;
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(string_view name, ResourceID id, uint32_t frameIndex, bool replace) {
+    void Resources::Scope::SetID(std::string_view name, ResourceID id, uint32_t frameIndex, bool replace) {
         auto &resourceNames = frames[frameIndex].resourceNames;
         auto &nameID = resourceNames[name.data()];
         if (!replace) Assert(!nameID, "resource already registered");
@@ -499,7 +502,7 @@ namespace sp::vulkan::render_graph {
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
         auto imageView = device.CreateImageAndView(imageInfo, viewInfo)->Get();
-        auto ptr = make_shared<PooledImage>(device, createDesc, imageView);
+        auto ptr = std::make_shared<PooledImage>(device, createDesc, imageView);
 
         list.push_back(ptr);
         return ptr;

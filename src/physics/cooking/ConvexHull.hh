@@ -8,10 +8,8 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
-#include "common/Async.hh"
-#include "common/Common.hh"
+#include "strayphotons/cpp/Async.hh"
 
-#include <atomic>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <memory>

@@ -7,15 +7,17 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/Common.hh"
-#include "common/Tracing.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/Utility.hh"
+
+#ifdef TRACY_ENABLE
+    #include "common/Tracing.hh"
+#endif
 
 #include <condition_variable>
-#include <cstdint>
 #include <cstdio>
-#include <functional>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -185,7 +187,7 @@ namespace sp {
         template<typename ReturnType, typename Fn, typename... Futures>
         AsyncPtr<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
-            auto item = make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(*this,
+            auto item = std::make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(*this,
                 std::move(func),
                 std::move(futures)...);
 
@@ -204,17 +206,21 @@ namespace sp {
         std::vector<std::thread> threads;
         chrono_clock::duration flushSleepInterval;
 
-        std::queue<shared_ptr<DispatchQueueWorkItemBase>> workQueue;
+        std::queue<std::shared_ptr<DispatchQueueWorkItemBase>> workQueue;
         std::condition_variable workReady;
         bool exit = false, dropPendingWork = false;
     };
 
     template<typename ReturnType, typename Fn, typename... Futures>
     void DispatchQueueWorkItem<ReturnType, Fn, Futures...>::Process() {
+#ifdef TRACY_ENABLE
         ZoneScoped;
+#endif
         ResultTuple args;
         {
+#ifdef TRACY_ENABLE
             ZoneScopedN("ResolveFutures");
+#endif
             args = std::apply(
                 [](auto &&...x) {
                     return std::make_tuple(x.Get()...);

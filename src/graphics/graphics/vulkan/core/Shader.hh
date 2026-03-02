@@ -7,12 +7,14 @@
 
 #pragma once
 
-#include "common/EnumTypes.hh"
-#include "common/Hashing.hh"
-#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
+#include <memory>
 #include <spirv_reflect.h>
+#include <string>
 
 namespace sp::vulkan {
     const uint32_t MAX_PUSH_CONSTANT_SIZE = 128;
@@ -41,12 +43,12 @@ namespace sp::vulkan {
 
     class Shader : public NonCopyable {
     public:
-        Shader(const string &name,
+        Shader(const std::string &name,
             vk::UniqueShaderModule &&module,
             spv_reflect::ShaderModule &&reflection,
             Hash64 hash);
 
-        const string name;
+        const std::string name;
         const Hash64 hash; // SPIR-V buffer hash
 
         vk::ShaderModule GetModule() {
@@ -87,7 +89,7 @@ namespace sp::vulkan {
     };
 
     // Sets that represent all of the shaders bound to one pipeline, indexed by stage
-    typedef sp::EnumArray<shared_ptr<Shader>, ShaderStage> ShaderSet;
+    typedef sp::EnumArray<std::shared_ptr<Shader>, ShaderStage> ShaderSet;
     typedef sp::EnumArray<ShaderHandle, ShaderStage> ShaderHandleSet;
     typedef sp::EnumArray<Hash64, ShaderStage> ShaderHashSet;
 

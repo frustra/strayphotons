@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/InlineString.hh"
 #include "ecs/StructMetadata.hh"
-#include "gui/GuiDrawData.hh"
+#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/cpp/gui/GuiDrawData.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>

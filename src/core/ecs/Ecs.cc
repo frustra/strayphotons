@@ -7,9 +7,9 @@
 
 #include "Ecs.hh"
 
-#include "common/DispatchQueue.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <typeindex>
 

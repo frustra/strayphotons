@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include "common/EnumTypes.hh"
 #include "ecs/Components.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
-#include <vector>
 
 namespace ecs {
     enum class TriggerGroup : uint8_t {

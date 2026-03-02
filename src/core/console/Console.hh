@@ -7,33 +7,33 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <condition_variable>
 #include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <vector>
 
 namespace sp {
     class ConsoleScript;
 
     struct ConsoleLine {
         logging::Level level;
-        string text;
+        std::string text;
     };
 
     struct ConsoleInputLine {
-        string text;
+        std::string text;
         chrono_clock::time_point wait_until;
         std::condition_variable *handled;
 
-        ConsoleInputLine(string_view text, chrono_clock::time_point wait_until, std::condition_variable *handled)
+        ConsoleInputLine(std::string_view text, chrono_clock::time_point wait_until, std::condition_variable *handled)
             : text(text), wait_until(wait_until), handled(handled) {}
 
         bool operator==(const ConsoleInputLine &other) const {
@@ -60,12 +60,12 @@ namespace sp {
         void AddCVar(CVarBase *cvar);
         void RemoveCVar(CVarBase *cvar);
 
-        CVarBase *GetCVarBase(const string &name) {
+        CVarBase *GetCVarBase(const std::string &name) {
             return cvars[all_lower(name) ? name : to_lower_copy(name)];
         }
 
         template<typename T>
-        CVar<T> &GetCVar(const string &name) {
+        CVar<T> &GetCVar(const std::string &name) {
             auto *base = GetCVarBase(name);
             Assertf(base, "CVar %s does not exist", name);
             auto *derived = dynamic_cast<CVar<T> *>(base);
@@ -73,33 +73,33 @@ namespace sp {
             return *derived;
         }
 
-        void AddLine(logging::Level lvl, string_view line);
+        void AddLine(logging::Level lvl, std::string_view line);
 
         template<typename Fn>
         void AccessLines(Fn &&callback) {
             std::lock_guard lock(linesLock);
-            callback((const vector<ConsoleLine> &)outputLines);
+            callback((const std::vector<ConsoleLine> &)outputLines);
         }
 
-        void ParseAndExecute(string_view line);
-        void QueueParseAndExecute(string_view line,
+        void ParseAndExecute(std::string_view line);
+        void QueueParseAndExecute(std::string_view line,
             chrono_clock::time_point wait_until = chrono_clock::now(),
             std::condition_variable *handled = nullptr);
 
-        void AddHistory(string_view input);
-        vector<string> AllHistory(size_t maxEntries);
+        void AddHistory(std::string_view input);
+        std::vector<std::string> AllHistory(size_t maxEntries);
 
         struct Completions {
-            vector<string> values;
+            std::vector<std::string> values;
             bool pending;
         };
-        Completions AllCompletions(string_view input, bool requestNewCompletions);
+        Completions AllCompletions(std::string_view input, bool requestNewCompletions);
 
         // Starts the command line input handler thread. Must only be called once.
         void StartInputLoop();
 
     private:
-        void Execute(string_view cmd, string_view args);
+        void Execute(std::string_view cmd, std::string_view args);
 
         bool ThreadInit() override;
         void Frame() override;
@@ -108,7 +108,7 @@ namespace sp {
         void RegisterTracyCommands();
 
         LockFreeMutex cvarReadLock, cvarExecLock;
-        std::map<string, CVarBase *> cvars;
+        std::map<std::string, CVarBase *> cvars;
         CFuncCollection funcs;
         std::thread cliInputThread;
 
@@ -120,10 +120,10 @@ namespace sp {
         std::queue<std::string> scriptCommands;
 
         std::mutex linesLock;
-        vector<ConsoleLine> outputLines;
+        std::vector<ConsoleLine> outputLines;
 
         std::mutex historyLock;
-        vector<string> history;
+        std::vector<std::string> history;
     };
 
     ConsoleManager &GetConsoleManager();

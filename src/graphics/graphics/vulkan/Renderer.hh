@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/Async.hh"
 #include "console/CFunc.hh"
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/Compositor.hh"
@@ -21,11 +20,11 @@
 #include "graphics/vulkan/render_passes/Transparency.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+#include "strayphotons/cpp/Async.hh"
 
-#include <atomic>
-#include <functional>
 #include <memory>
 #include <robin_hood.h>
+#include <string>
 
 namespace sp {
     class GuiContext;
@@ -37,7 +36,7 @@ namespace sp::xr {
 }
 
 namespace sp::vulkan {
-    extern CVar<string> CVarWindowViewTarget;
+    extern CVar<std::string> CVarWindowViewTarget;
 
     class Renderer {
     public:

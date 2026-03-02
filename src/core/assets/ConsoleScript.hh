@@ -7,21 +7,21 @@
 
 #pragma once
 
-#include "common/Common.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 namespace sp {
     class Asset;
 
     class ConsoleScript : public NonCopyable {
     public:
-        ConsoleScript(const string &path, shared_ptr<const Asset> asset);
+        ConsoleScript(const std::string &path, std::shared_ptr<const Asset> asset);
 
-        const std::vector<string> &Lines() const;
+        const std::vector<std::string> &Lines() const;
 
-        const string path;
+        const std::string path;
 
     private:
-        shared_ptr<const Asset> asset;
-        vector<string> lines;
+        std::shared_ptr<const Asset> asset;
+        std::vector<std::string> lines;
     };
 } // namespace sp

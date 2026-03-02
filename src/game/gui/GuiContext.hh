@@ -78,7 +78,7 @@ namespace sp {
             bool mouseDown = false;
         };
 
-        vector<PointingState> pointingStack;
+        std::vector<PointingState> pointingStack;
     };
 
     std::span<GuiFontDef> GetGuiFontList();

@@ -7,15 +7,13 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/EnumTypes.hh"
-#include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
-#include "gui/GuiDrawData.hh"
+#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/cpp/gui/GuiDrawData.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>

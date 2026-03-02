@@ -8,15 +8,15 @@
 #pragma once
 
 #include "assets/Gltf.hh"
-#include "common/Async.hh"
-#include "common/Hashing.hh"
 #include "common/PreservingMap.hh"
 #include "ecs/components/View.hh"
-#include "graphics/vulkan/core/Image.hh"
-#include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
+#include "strayphotons/cpp/Hashing.hh"
+
+#include <memory>
+#include <vector>
 
 namespace sp::vulkan {
     class Mesh;
@@ -90,7 +90,7 @@ namespace sp::vulkan {
         bool PreloadTextures(
             ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>> lock);
         void AddGraphTextures(rg::RenderGraph &graph);
-        shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
+        std::shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
@@ -183,9 +183,9 @@ namespace sp::vulkan {
         };
 
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
-        vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
-        vector<GPURenderableEntity> renderables;
-        vector<std::pair<rg::ResourceName, size_t>> renderableTextureOverrides;
-        vector<std::weak_ptr<Mesh>> meshes;
+        std::vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
+        std::vector<GPURenderableEntity> renderables;
+        std::vector<std::pair<rg::ResourceName, size_t>> renderableTextureOverrides;
+        std::vector<std::weak_ptr<Mesh>> meshes;
     };
 } // namespace sp::vulkan

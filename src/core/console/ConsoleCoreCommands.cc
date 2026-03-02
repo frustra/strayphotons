@@ -5,8 +5,6 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Logging.hh"
-#include "common/RegisteredThread.hh"
 #include "console/Console.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
@@ -14,11 +12,11 @@
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "ecs/components/Name.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/Utility.hh"
 
-#include <fstream>
 #include <shared_mutex>
 #include <sstream>
-#include <string_view>
 
 template<typename Callback>
 void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
@@ -54,15 +52,15 @@ void sp::ConsoleManager::RegisterCoreCommands() {
         }
     });
 
-    funcs.Register<uint64_t, string>("wait",
+    funcs.Register<uint64_t, std::string>("wait",
         "Queue command for later (wait <ms> <command>)",
-        [](uint64_t dt, string cmd) {
+        [](uint64_t dt, std::string cmd) {
             GetConsoleManager().QueueParseAndExecute(cmd, chrono_clock::now() + std::chrono::milliseconds(dt));
         });
 
-    funcs.Register<string, string>("toggle",
+    funcs.Register<std::string, std::string>("toggle",
         "Toggle a CVar between values (toggle <cvar_name> [<value_a> <value_b>])",
-        [this](string cvarName, string args) {
+        [this](std::string cvarName, std::string args) {
             std::shared_lock lock(cvarReadLock);
 
             auto cvarit = cvars.find(to_lower_copy(cvarName));
@@ -70,8 +68,8 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 auto cvar = cvarit->second;
                 if (cvar->IsValueType()) {
                     std::stringstream stream(args);
-                    vector<string> values;
-                    string value;
+                    std::vector<std::string> values;
+                    std::string value;
                     while (stream >> value) {
                         values.push_back(value);
                     }
@@ -144,9 +142,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             });
         });
 
-    funcs.Register<string, double>("setsignal",
+    funcs.Register<std::string, double>("setsignal",
         "Set a signal value (setsignal <entity>/<signal> <value>)",
-        [](string signalStr, double value) {
+        [](std::string signalStr, double value) {
             ecs::SignalRef signal(signalStr);
             if (!signal) {
                 Logf("Invalid signal string: %s", signalStr);
@@ -164,9 +162,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             signal.SetValue(lock, value);
         });
 
-    funcs.Register<string, string>("togglesignal",
+    funcs.Register<std::string, std::string>("togglesignal",
         "Toggle a signal between values (togglesignal <entity>/<signal> [<value_a> <value_b>])",
-        [](string signalStr, string args) {
+        [](std::string signalStr, std::string args) {
             ecs::SignalRef signal(signalStr);
             if (!signal) {
                 Logf("Invalid signal string: %s", signalStr);
@@ -182,8 +180,8 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             }
 
             std::stringstream stream(args);
-            vector<string> values;
-            string value;
+            std::vector<std::string> values;
+            std::string value;
             while (stream >> value) {
                 values.push_back(value);
             }
@@ -193,27 +191,29 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             signal.SetValue(lock, signalValue);
         });
 
-    funcs.Register<string>("clearsignal", "Clear a signal value (clearsignal <entity>/<signal>)", [](string signalStr) {
-        ecs::SignalRef signal(signalStr);
-        if (!signal) {
-            Logf("Invalid signal string: %s", signalStr);
-            return;
-        }
+    funcs.Register<std::string>("clearsignal",
+        "Clear a signal value (clearsignal <entity>/<signal>)",
+        [](std::string signalStr) {
+            ecs::SignalRef signal(signalStr);
+            if (!signal) {
+                Logf("Invalid signal string: %s", signalStr);
+                return;
+            }
 
-        auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>>();
-        auto &entityRef = signal.GetEntity();
-        ecs::Entity entity = entityRef.Get(lock);
-        if (!entity) {
-            Logf("Signal entity %s not found", entityRef.Name().String());
-            return;
-        }
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>>();
+            auto &entityRef = signal.GetEntity();
+            ecs::Entity entity = entityRef.Get(lock);
+            if (!entity) {
+                Logf("Signal entity %s not found", entityRef.Name().String());
+                return;
+            }
 
-        signal.ClearValue(lock);
-    });
+            signal.ClearValue(lock);
+        });
 
-    funcs.Register<string, string>("sendevent",
+    funcs.Register<std::string, std::string>("sendevent",
         "Send an entity an event (sendevent <entity>/<event> <value>)",
-        [](string eventStr, string value) {
+        [](std::string eventStr, std::string value) {
             auto [entityName, eventName] = ecs::ParseEventString(eventStr);
 
             ecs::Event event(eventName, ecs::Entity(), true);
@@ -227,7 +227,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 } else {
                     // Try splitting the value by whitespace to convert to a glm::vecN
                     std::stringstream stream(value);
-                    std::array<string, 5> values;
+                    std::array<std::string, 5> values;
                     int count = 0;
                     for (auto &field : values) {
                         if (!(stream >> field)) break;
@@ -264,9 +264,9 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             }
         });
 
-    funcs.Register<string, string>("setcomponent",
+    funcs.Register<std::string, std::string>("setcomponent",
         "Set a data field on component (setcomponent <entity>#<component>.<field> <value>)",
-        [](string componentStr, string exprStr) {
+        [](std::string componentStr, std::string exprStr) {
             ecs::SignalExpression expr(exprStr);
             if (!expr) {
                 Errorf("Invalid value expression: %s", exprStr);

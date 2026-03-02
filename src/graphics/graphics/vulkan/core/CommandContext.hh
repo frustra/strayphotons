@@ -7,16 +7,16 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <bit>
-#include <functional>
 #include <glm/glm.hpp>
+#include <memory>
 #include <robin_hood.h>
+#include <string_view>
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan::CommandContextFlags {
@@ -135,20 +135,20 @@ namespace sp::vulkan {
             const ImageBarrierInfo &options = {});
 
         // Sets the shaders for arbitrary stages. Any stages not defined in `shaders` will be unset.
-        void SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders);
+        void SetShaders(std::initializer_list<std::pair<ShaderStage, std::string_view>> shaders);
         // Sets the shaders to a standard vertex+fragment pipeline.
-        void SetShaders(string_view vertexName, string_view fragName);
+        void SetShaders(std::string_view vertexName, std::string_view fragName);
         // Sets the shaders to a standard compute pipeline.
-        void SetComputeShader(string_view name);
+        void SetComputeShader(std::string_view name);
 
-        void SetShaderConstant(ShaderStage stage, string_view name, uint32_t data);
+        void SetShaderConstant(ShaderStage stage, std::string_view name, uint32_t data);
 
         template<typename T, std::enable_if_t<sizeof(T) == sizeof(uint32_t), int> = 0>
-        void SetShaderConstant(ShaderStage stage, string_view name, T data) {
+        void SetShaderConstant(ShaderStage stage, std::string_view name, T data) {
             SetShaderConstant(stage, name, std::bit_cast<uint32_t>(data));
         }
 
-        void SetShaderConstant(ShaderStage stage, string_view name, bool data) {
+        void SetShaderConstant(ShaderStage stage, std::string_view name, bool data) {
             SetShaderConstant(stage, name, (uint32_t)data);
         }
 
@@ -380,12 +380,12 @@ namespace sp::vulkan {
 
         void SetImageView(uint32_t set, uint32_t binding, const ImageViewPtr &view);
         void SetImageView(uint32_t set, uint32_t binding, const ImageView *view);
-        void SetImageView(string_view bindingName, const ImageViewPtr &view);
-        void SetImageView(string_view bindingName, const ImageView *view);
-        void SetImageView(string_view bindingName, render_graph::ResourceID resourceID);
-        void SetImageView(string_view bindingName, string_view resourceName);
+        void SetImageView(std::string_view bindingName, const ImageViewPtr &view);
+        void SetImageView(std::string_view bindingName, const ImageView *view);
+        void SetImageView(std::string_view bindingName, render_graph::ResourceID resourceID);
+        void SetImageView(std::string_view bindingName, std::string_view resourceName);
         void SetSampler(uint32_t set, uint32_t binding, const vk::Sampler &sampler);
-        void SetSampler(string_view bindingName, const vk::Sampler &sampler);
+        void SetSampler(std::string_view bindingName, const vk::Sampler &sampler);
 
         // Binds a buffer as to a uniform descriptor. Defaults to the whole buffer.
         void SetUniformBuffer(uint32_t set,
@@ -393,16 +393,16 @@ namespace sp::vulkan {
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetUniformBuffer(string_view bindingName,
+        void SetUniformBuffer(std::string_view bindingName,
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetUniformBuffer(string_view bindingName,
+        void SetUniformBuffer(std::string_view bindingName,
             render_graph::ResourceID resourceID,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetUniformBuffer(string_view bindingName,
-            string_view resourceName,
+        void SetUniformBuffer(std::string_view bindingName,
+            std::string_view resourceName,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
 
@@ -412,22 +412,22 @@ namespace sp::vulkan {
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetStorageBuffer(string_view bindingName,
+        void SetStorageBuffer(std::string_view bindingName,
             const BufferPtr &buffer,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetStorageBuffer(string_view bindingName,
+        void SetStorageBuffer(std::string_view bindingName,
             render_graph::ResourceID resourceID,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
-        void SetStorageBuffer(string_view bindingName,
-            string_view resourceName,
+        void SetStorageBuffer(std::string_view bindingName,
+            std::string_view resourceName,
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
 
         // Buffer is stored in a pool for this frame, and reused in later frames.
         BufferPtr AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size);
-        BufferPtr AllocUniformBuffer(string_view bindingName, vk::DeviceSize size);
+        BufferPtr AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size);
 
         // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
         template<typename T>
@@ -443,7 +443,7 @@ namespace sp::vulkan {
         }
 
         template<typename T>
-        void UploadUniformData(string_view bindingName, const T *data, uint32_t count = 1) {
+        void UploadUniformData(std::string_view bindingName, const T *data, uint32_t count = 1) {
             auto buffer = AllocUniformBuffer(bindingName, sizeof(T) * count);
             buffer->CopyFrom(data, count);
         }
@@ -484,7 +484,7 @@ namespace sp::vulkan {
 
     private:
         void SetSingleShader(ShaderStage stage, ShaderHandle handle);
-        void SetSingleShader(ShaderStage stage, string_view name);
+        void SetSingleShader(ShaderStage stage, std::string_view name);
         void SetShaderConstant(ShaderStage stage, uint32_t index, uint32_t data);
 
         bool TestDirty(DirtyFlags flags) {
@@ -535,10 +535,10 @@ namespace sp::vulkan {
         } stencilState[2] = {}; // front and back
 
         PipelineCompileInput pipelineInput;
-        shared_ptr<Pipeline> currentPipeline;
+        std::shared_ptr<Pipeline> currentPipeline;
 
-        shared_ptr<RenderPass> renderPass;
-        shared_ptr<Framebuffer> framebuffer;
+        std::shared_ptr<RenderPass> renderPass;
+        std::shared_ptr<Framebuffer> framebuffer;
         bool writesToSwapchain = false;
 
         DirtyFlags dirty;

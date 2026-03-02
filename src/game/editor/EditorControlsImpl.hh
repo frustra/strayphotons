@@ -9,8 +9,6 @@
 
 #include "EditorControls.hh"
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
-#include "common/Defer.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
@@ -21,14 +19,12 @@
 #include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Transform.h"
 #include "game/SceneImpl.hh"
-#include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <magic_enum.hpp>
-#include <map>
 #include <misc/cpp/imgui_stdlib.h>
 #include <string>
 #include <type_traits>

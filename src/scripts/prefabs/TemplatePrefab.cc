@@ -7,16 +7,15 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Hashing.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
-#include "game/SceneManager.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <picojson.h>
+#include <string>
 
 namespace ecs {
     const chrono_clock::duration templateCacheTime = std::chrono::seconds(1);
@@ -57,7 +56,7 @@ namespace ecs {
             }
 
             picojson::value rootValue;
-            string err = picojson::parse(rootValue, asset->String());
+            std::string err = picojson::parse(rootValue, asset->String());
             if (!err.empty()) {
                 Errorf("Failed to parse template (%s): %s", sourceName, err);
                 return false;
@@ -92,8 +91,8 @@ namespace ecs {
 
                     auto &entSrc = entityObj.get<picojson::object>();
                     const std::string *relativeName = nullptr;
-                    if (entSrc.count("name") && entSrc["name"].is<string>()) {
-                        relativeName = &entSrc["name"].get<string>();
+                    if (entSrc.count("name") && entSrc["name"].is<std::string>()) {
+                        relativeName = &entSrc["name"].get<std::string>();
                         if (*relativeName == "scoperoot") {
                             Errorf("Entity name 'scoperoot' in template not allowed (%s), ignoring", sourceName);
                             continue;

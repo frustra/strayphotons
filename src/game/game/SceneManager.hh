@@ -7,9 +7,6 @@
 
 #pragma once
 
-#include "common/EnumTypes.hh"
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
@@ -17,13 +14,14 @@
 #include "ecs/components/SceneInfo.hh"
 #include "game/Scene.hh"
 #include "game/SceneRef.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
 #include <deque>
 #include <functional>
 #include <future>
 #include <memory>
 #include <robin_hood.h>
-#include <shared_mutex>
 
 namespace sp {
     class Game;

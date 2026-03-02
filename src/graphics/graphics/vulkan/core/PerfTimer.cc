@@ -7,10 +7,9 @@
 
 #include "PerfTimer.hh"
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 namespace sp::vulkan {
     CVar<bool> CVarProfileRender("r.Profile", false, "Display frame timing");

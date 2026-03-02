@@ -29,7 +29,7 @@ namespace ecs {
             ref = entityRefs.Load(name);
             if (ref) return ref;
 
-            ref = make_shared<EntityRef::Ref>(name);
+            ref = std::make_shared<EntityRef::Ref>(name);
             entityRefs.Register(name, ref.ptr);
         }
         return ref;

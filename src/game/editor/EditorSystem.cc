@@ -7,14 +7,12 @@
 
 #include "EditorSystem.hh"
 
-#include "common/Tracing.hh"
-#include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "editor/EntityPickerGui.hh"
 #include "editor/InspectorGui.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 namespace sp {
     static CVar<float> CVarEditorAngle("e.EditorAngle", -20.0f, "Tilt angle of the entity inspector gui");
@@ -45,7 +43,7 @@ namespace sp {
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto picker = scene->NewSystemEntity(lock, scene, pickerEntity.Name());
                 picker.Set<ecs::GuiElement>(lock,
-                    make_shared<EntityPickerGui>("entity_picker"),
+                    std::make_shared<EntityPickerGui>("entity_picker"),
                     ecs::GuiLayoutAnchor::Left,
                     glm::ivec2(-40, -100),
                     false);
@@ -53,7 +51,7 @@ namespace sp {
 
                 auto inspector = scene->NewSystemEntity(lock, scene, inspectorEntity.Name());
                 inspector.Set<ecs::GuiElement>(lock,
-                    make_shared<InspectorGui>("inspector"),
+                    std::make_shared<InspectorGui>("inspector"),
                     ecs::GuiLayoutAnchor::Right,
                     glm::ivec2(-40, -100),
                     false);

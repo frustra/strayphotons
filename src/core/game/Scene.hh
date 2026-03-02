@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Name.hh"

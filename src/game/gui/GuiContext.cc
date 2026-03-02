@@ -10,11 +10,11 @@
 #include "ecs/EcsImpl.hh"
 #include "game/SceneManager.hh"
 #include "graphics/GenericCompositor.hh"
-#include "gui/GuiDrawData.hh"
-#include "gui/ImGuiHelpers.hh"
-#include "gui/ImGuiKeyCodes.hh"
-#include "input/BindingNames.hh"
-#include "input/KeyCodes.hh"
+#include "strayphotons/cpp/gui/GuiDrawData.hh"
+#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
+#include "strayphotons/cpp/gui/ImGuiKeyCodes.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/cpp/input/KeyCodes.hh"
 
 #include <imgui.h>
 

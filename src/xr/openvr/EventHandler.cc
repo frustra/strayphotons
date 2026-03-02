@@ -7,9 +7,9 @@
 
 #include "EventHandler.hh"
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "openvr/OpenVrSystem.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <openvr.h>
 

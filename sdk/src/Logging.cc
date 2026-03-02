@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "Logging.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 namespace sp::logging {
     static Level logLevel = Level::Log;

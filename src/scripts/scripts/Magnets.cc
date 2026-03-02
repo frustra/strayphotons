@@ -5,14 +5,13 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/ScriptImpl.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/gtx/component_wise.hpp>
-#include <unordered_set>
+#include <robin_hood.h>
 
 namespace sp::scripts {
     using namespace ecs;

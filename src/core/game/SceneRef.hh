@@ -44,8 +44,8 @@ namespace sp {
 
         const ecs::SceneProperties &GetProperties(ecs::Lock<ecs::Read<ecs::SceneProperties>> lock) const;
 
-        SceneMetadata(const string &name,
-            const string &path,
+        SceneMetadata(const std::string &name,
+            const std::string &path,
             SceneType type,
             ScenePriority priority,
             const std::vector<std::string> &libraries,

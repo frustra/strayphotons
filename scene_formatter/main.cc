@@ -5,13 +5,11 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Logging.hh"
 #include "game/SceneManager.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <assets/AssetManager.hh>
 #include <cxxopts.hpp>
-#include <filesystem>
-#include <fstream>
 
 int main(int argc, char **argv) {
     cxxopts::Options options("scene_formatter", "");

@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "console/CFunc.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptDefinition.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <any>
 #include <deque>

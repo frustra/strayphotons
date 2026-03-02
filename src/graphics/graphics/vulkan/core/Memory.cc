@@ -8,7 +8,7 @@
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
 
-#include "common/Common.hh"
+#include <memory>
 
 namespace sp::vulkan {
     vk::Result UniqueMemory::MapPersistent(void **data) {
@@ -138,7 +138,7 @@ namespace sp::vulkan {
         auto offsetBytes = SubAllocateRaw(size, 1);
         DebugAssert(offsetBytes % arrayStride == 0, "suballocation was not aligned to the array");
         offsetBytes += bufferInfo.size - arrayCount * arrayStride; // align to end
-        return make_shared<SubBuffer>(this,
+        return std::make_shared<SubBuffer>(this,
             subAllocationBlock,
             offsetBytes,
             size,
@@ -150,7 +150,7 @@ namespace sp::vulkan {
         Assertf(arrayStride == 0, "buffer is an array");
 
         auto offsetBytes = SubAllocateRaw(size, alignment);
-        return make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
+        return std::make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
     }
 
     void Buffer::SetAccess(Access oldAccess, Access newAccess) {

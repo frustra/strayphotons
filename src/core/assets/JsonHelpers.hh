@@ -7,21 +7,19 @@
 
 #pragma once
 
-#include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
+#include "strayphotons/cpp/Logging.hh"
 
+#include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/glm.hpp>
 #include <picojson.h>
 #include <robin_hood.h>
 #include <string>
 #include <utility>
 #include <variant>
-#include <vector>
 
 namespace sp::json {
     namespace detail {

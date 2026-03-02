@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
-
 #include <foundation/PxQuat.h>
 #include <foundation/PxTransform.h>
 #include <foundation/PxVec3.h>

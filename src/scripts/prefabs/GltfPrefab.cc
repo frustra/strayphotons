@@ -7,11 +7,10 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 namespace ecs {
     struct GltfPrefab {

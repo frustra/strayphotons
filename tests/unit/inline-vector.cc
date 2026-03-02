@@ -5,16 +5,16 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Common.hh"
-#include "common/InlineVector.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
 #include <tests.hh>
+#include <vector>
 
 namespace InlineVectorTests {
     using namespace testing;
 
     void TestInlineVectorWorksAfterMoveInContainer() {
-        vector<sp::InlineVector<int, 4>> vec;
+        std::vector<sp::InlineVector<int, 4>> vec;
 
         for (int i = 0; i < 2; i++) {
             auto &v = vec.emplace_back();

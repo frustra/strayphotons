@@ -15,6 +15,7 @@ target_include_directories(${PROJECT_COMMON_LIB}
 )
 
 target_link_libraries(${PROJECT_COMMON_LIB} PUBLIC
+    ${PROJECT_SDK_LIB}
     glm
     magic_enum
     TracyClient

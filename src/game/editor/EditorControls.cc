@@ -6,6 +6,9 @@
  */
 
 #include "EditorControlsImpl.hh"
+#include "ecs/SignalManager.hh"
+#include "game/SceneManager.hh"
+#include "strayphotons/cpp/Defer.hh"
 
 #include <mutex>
 #include <shared_mutex>

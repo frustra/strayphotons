@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
-
 #include <glm/glm.hpp>
 #include <vector>
 

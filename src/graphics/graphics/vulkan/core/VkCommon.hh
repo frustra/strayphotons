@@ -7,12 +7,13 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "graphics/vulkan/core/UniqueID.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vulkan/vulkan.hpp>
 
@@ -25,11 +26,11 @@ namespace sp::vulkan {
     class SubBuffer;
     class Image;
     class ImageView;
-    typedef shared_ptr<CommandContext> CommandContextPtr;
-    typedef shared_ptr<Buffer> BufferPtr;
-    typedef shared_ptr<SubBuffer> SubBufferPtr;
-    typedef shared_ptr<Image> ImagePtr;
-    typedef shared_ptr<ImageView> ImageViewPtr;
+    typedef std::shared_ptr<CommandContext> CommandContextPtr;
+    typedef std::shared_ptr<Buffer> BufferPtr;
+    typedef std::shared_ptr<SubBuffer> SubBufferPtr;
+    typedef std::shared_ptr<Image> ImagePtr;
+    typedef std::shared_ptr<ImageView> ImageViewPtr;
 
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);

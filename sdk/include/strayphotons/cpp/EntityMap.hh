@@ -7,11 +7,9 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <Tecs.hh>
-#include <map>
 #include <vector>
 
 namespace sp {

@@ -7,14 +7,17 @@
 
 #pragma once
 
-#include "common/Hashing.hh"
 #include "graphics/vulkan/core/Shader.hh"
 #include "graphics/vulkan/core/VertexLayout.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
 #include <bitset>
+#include <memory>
 #include <robin_hood.h>
 #include <spirv_reflect.h>
+#include <vector>
 
 namespace sp::vulkan {
     class Model;
@@ -53,7 +56,7 @@ namespace sp::vulkan {
 
     struct PipelineCompileInput {
         PipelineStaticState state;
-        shared_ptr<RenderPass> renderPass;
+        std::shared_ptr<RenderPass> renderPass;
     };
 
     struct DescriptorSetLayoutInfo {
@@ -98,13 +101,13 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
 
-        vector<vk::DescriptorSetLayoutBinding> bindings;
-        vector<vk::DescriptorPoolSize> sizes;
+        std::vector<vk::DescriptorSetLayoutBinding> bindings;
+        std::vector<vk::DescriptorPoolSize> sizes;
         vk::UniqueDescriptorSetLayout descriptorSetLayout;
 
         robin_hood::unordered_map<Hash64, vk::DescriptorSet> filledSets;
-        vector<vk::DescriptorSet> freeSets;
-        vector<vk::UniqueDescriptorPool> usedPools;
+        std::vector<vk::DescriptorSet> freeSets;
+        std::vector<vk::UniqueDescriptorPool> usedPools;
 
         bool bindless = false;
     };
@@ -144,7 +147,7 @@ namespace sp::vulkan {
         ShaderSet shaders;
         PipelineLayoutInfo info;
         vk::UniqueDescriptorUpdateTemplate descriptorUpdateTemplates[MAX_BOUND_DESCRIPTOR_SETS];
-        shared_ptr<DescriptorPool> descriptorPools[MAX_BOUND_DESCRIPTOR_SETS];
+        std::shared_ptr<DescriptorPool> descriptorPools[MAX_BOUND_DESCRIPTOR_SETS];
     };
 
     class Pipeline : public WrappedUniqueHandle<vk::Pipeline> {
@@ -152,23 +155,23 @@ namespace sp::vulkan {
         Pipeline(DeviceContext &device,
             const ShaderSet &shaders,
             const PipelineCompileInput &compile,
-            shared_ptr<PipelineLayout> layout);
+            std::shared_ptr<PipelineLayout> layout);
 
-        shared_ptr<PipelineLayout> GetLayout() const {
+        std::shared_ptr<PipelineLayout> GetLayout() const {
             return layout;
         }
 
     private:
-        shared_ptr<PipelineLayout> layout;
+        std::shared_ptr<PipelineLayout> layout;
     };
 
     class PipelineManager : public NonCopyable {
     public:
         PipelineManager(DeviceContext &device);
 
-        shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &compile);
-        shared_ptr<PipelineLayout> GetPipelineLayout(const ShaderSet &shaders);
-        shared_ptr<DescriptorPool> GetDescriptorPool(const DescriptorSetLayoutInfo &layout);
+        std::shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &compile);
+        std::shared_ptr<PipelineLayout> GetPipelineLayout(const ShaderSet &shaders);
+        std::shared_ptr<DescriptorPool> GetDescriptorPool(const DescriptorSetLayoutInfo &layout);
 
         struct PipelineKeyData {
             ShaderHashSet shaderHashes;
@@ -191,8 +194,8 @@ namespace sp::vulkan {
         template<typename K, typename V>
         using mapType = robin_hood::unordered_flat_map<K, V, typename K::Hasher>;
 
-        mapType<PipelineKey, shared_ptr<Pipeline>> pipelines;
-        mapType<PipelineLayoutKey, shared_ptr<PipelineLayout>> pipelineLayouts;
-        mapType<DescriptorPoolKey, shared_ptr<DescriptorPool>> descriptorPools;
+        mapType<PipelineKey, std::shared_ptr<Pipeline>> pipelines;
+        mapType<PipelineLayoutKey, std::shared_ptr<PipelineLayout>> pipelineLayouts;
+        mapType<DescriptorPoolKey, std::shared_ptr<DescriptorPool>> descriptorPools;
     };
 } // namespace sp::vulkan

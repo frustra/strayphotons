@@ -7,10 +7,12 @@
 
 #include "Shader.hh"
 
-#include "common/InlineVector.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+
+#include <string>
 
 namespace sp::vulkan {
-    InlineVector<Shader::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> parseDescriptorSets(const string &name,
+    InlineVector<Shader::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> parseDescriptorSets(const std::string &name,
         spv_reflect::ShaderModule &reflection) {
         uint32_t count = 0;
         SpvReflectResult result = reflection.EnumerateDescriptorSets(&count, nullptr);
@@ -47,7 +49,7 @@ namespace sp::vulkan {
         return descriptorSets;
     }
 
-    InlineVector<Shader::SpecConstant, MAX_SPEC_CONSTANTS> parseSpecConstants(const string &name,
+    InlineVector<Shader::SpecConstant, MAX_SPEC_CONSTANTS> parseSpecConstants(const std::string &name,
         spv_reflect::ShaderModule &reflection) {
         uint32_t count = 0;
         SpvReflectResult result = reflection.EnumerateSpecializationConstants(&count, nullptr);
@@ -73,7 +75,7 @@ namespace sp::vulkan {
         return specConstants;
     }
 
-    InlineVector<Shader::PushConstant, MAX_PUSH_CONSTANT_BLOCKS> parsePushConstants(const string &name,
+    InlineVector<Shader::PushConstant, MAX_PUSH_CONSTANT_BLOCKS> parsePushConstants(const std::string &name,
         spv_reflect::ShaderModule &reflection) {
         uint32_t count = 0;
         SpvReflectResult result = reflection.EnumeratePushConstantBlocks(&count, nullptr);
@@ -99,7 +101,7 @@ namespace sp::vulkan {
         return pushConstants;
     }
 
-    Shader::Shader(const string &name,
+    Shader::Shader(const std::string &name,
         vk::UniqueShaderModule &&module,
         spv_reflect::ShaderModule &&reflection,
         Hash64 hash)

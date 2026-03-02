@@ -7,12 +7,6 @@
 
 #include "Animation.hh"
 
-#include "assets/JsonHelpers.hh"
-#include "common/Logging.hh"
-#include "ecs/EcsImpl.hh"
-
-#include <sstream>
-
 namespace ecs {
     template<>
     void EntityComponent<Animation>::Apply(Animation &dst, const Animation &src, bool liveTarget) {

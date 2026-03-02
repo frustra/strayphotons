@@ -7,8 +7,7 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/InlineString.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <cstring>
 #include <robin_hood.h>

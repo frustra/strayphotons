@@ -7,8 +7,10 @@
 
 #include "RenderPass.hh"
 
-#include "common/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "strayphotons/cpp/Logging.hh"
+
+#include <memory>
 
 namespace sp::vulkan {
     RenderPass::RenderPass(DeviceContext &device, const RenderPassInfo &info) : state(info.state) {
@@ -188,16 +190,16 @@ namespace sp::vulkan {
 
     RenderPassManager::RenderPassManager(DeviceContext &device) : device(device) {}
 
-    shared_ptr<RenderPass> RenderPassManager::GetRenderPass(const RenderPassInfo &info) {
+    std::shared_ptr<RenderPass> RenderPassManager::GetRenderPass(const RenderPassInfo &info) {
         RenderPassKey key(info.state);
         auto &pass = renderPasses[key];
-        if (!pass) pass = make_shared<RenderPass>(device, info);
+        if (!pass) pass = std::make_shared<RenderPass>(device, info);
         return pass;
     }
 
     FramebufferManager::FramebufferManager(DeviceContext &device) : device(device) {}
 
-    shared_ptr<Framebuffer> FramebufferManager::GetFramebuffer(const RenderPassInfo &info) {
+    std::shared_ptr<Framebuffer> FramebufferManager::GetFramebuffer(const RenderPassInfo &info) {
         FramebufferKey key;
         key.input.renderPass = info.state;
 
@@ -218,7 +220,7 @@ namespace sp::vulkan {
         }
 
         auto &fb = framebuffers[key];
-        if (!fb) fb = make_shared<Framebuffer>(device, info);
+        if (!fb) fb = std::make_shared<Framebuffer>(device, info);
         return fb;
     }
 } // namespace sp::vulkan

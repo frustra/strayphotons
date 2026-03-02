@@ -8,13 +8,12 @@
 #pragma once
 
 #include "Ecs.hh"
-#include "common/Common.hh"
-#include "common/DispatchQueue.hh"
-#include "common/Logging.hh"
 #include "ecs/ComponentsImpl.hh"
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/EventQueue.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 // Components
 #include "ecs/components/ActiveScene.hh"

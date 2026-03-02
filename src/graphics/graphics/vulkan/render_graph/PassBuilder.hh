@@ -10,53 +10,58 @@
 #include "graphics/vulkan/render_graph/Pass.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 
+#include <string_view>
+
 namespace sp::vulkan::render_graph {
     class PassBuilder {
     public:
         PassBuilder(Resources &resources, Pass &pass) : resources(resources), pass(pass) {}
 
-        ResourceID GetID(string_view name, bool assertExists = true) {
+        ResourceID GetID(std::string_view name, bool assertExists = true) {
             return resources.GetID(name, assertExists);
         }
         Resource GetResource(ResourceID id) {
             return resources.GetResource(id);
         }
-        Resource GetResource(string_view name) {
+        Resource GetResource(std::string_view name) {
             return resources.GetResource(GetID(name));
         }
 
         void Read(ResourceID id, Access access);
-        ResourceID Read(string_view name, Access access);
-        ResourceID ReadPreviousFrame(string_view name, Access access, uint32_t framesAgo = 1);
+        ResourceID Read(std::string_view name, Access access);
+        ResourceID ReadPreviousFrame(std::string_view name, Access access, uint32_t framesAgo = 1);
 
         void Write(ResourceID id, Access access);
-        ResourceID Write(string_view name, Access access);
+        ResourceID Write(std::string_view name, Access access);
 
         // Indicates an access to a uniform buffer from any shader, equivalent to Read with Access::AnyShaderUniformRead
-        const Resource &ReadUniform(string_view name);
+        const Resource &ReadUniform(std::string_view name);
         const Resource &ReadUniform(ResourceID id);
 
-        void SetColorAttachment(uint32_t index, string_view name, const AttachmentInfo &info);
+        void SetColorAttachment(uint32_t index, std::string_view name, const AttachmentInfo &info);
         void SetColorAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info);
-        Resource OutputColorAttachment(uint32_t index, string_view name, ImageDesc desc, const AttachmentInfo &info);
+        Resource OutputColorAttachment(uint32_t index,
+            std::string_view name,
+            ImageDesc desc,
+            const AttachmentInfo &info);
 
-        void SetDepthAttachment(string_view name, const AttachmentInfo &info);
+        void SetDepthAttachment(std::string_view name, const AttachmentInfo &info);
         void SetDepthAttachment(ResourceID id, const AttachmentInfo &info);
-        Resource OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info);
+        Resource OutputDepthAttachment(std::string_view name, ImageDesc desc, const AttachmentInfo &info);
 
         // The attachment at this index will become the LastOutput of the graph after the pass, defaults to 0
         void SetPrimaryAttachment(uint32_t index);
 
-        Resource CreateImage(string_view name, const ImageDesc &desc, Access access);
+        Resource CreateImage(std::string_view name, const ImageDesc &desc, Access access);
 
         ImageDesc DeriveImage(ResourceID id) {
             return resources.GetResourceRef(id).DeriveImage();
         }
 
         Resource CreateBuffer(BufferLayout layout, Residency residency, Access access);
-        Resource CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access);
+        Resource CreateBuffer(std::string_view name, BufferLayout layout, Residency residency, Access access);
 
-        Resource CreateUniform(string_view name, size_t size) {
+        Resource CreateUniform(std::string_view name, size_t size) {
             return CreateBuffer(name, size, Residency::CPU_TO_GPU, Access::HostWrite);
         }
 
@@ -84,7 +89,10 @@ namespace sp::vulkan::render_graph {
         }
 
     private:
-        Resource OutputAttachment(uint32_t index, string_view name, const ImageDesc &desc, const AttachmentInfo &info);
+        Resource OutputAttachment(uint32_t index,
+            std::string_view name,
+            const ImageDesc &desc,
+            const AttachmentInfo &info);
 
         void SetAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info);
 

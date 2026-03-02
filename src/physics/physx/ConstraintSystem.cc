@@ -7,17 +7,15 @@
 
 #include "ConstraintSystem.hh"
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
-#include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/BindingNames.hh"
 #include "physx/ForceConstraint.hh"
 #include "physx/NoClipConstraint.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <glm/glm.hpp>
+#include <vector>
 
 namespace sp {
     using namespace physx;
@@ -147,8 +145,8 @@ namespace sp {
             return true;
         }
 
-        vector<PxShape *> shapes0(actor0->getNbShapes());
-        vector<PxShape *> shapes1(actor1->getNbShapes());
+        std::vector<PxShape *> shapes0(actor0->getNbShapes());
+        std::vector<PxShape *> shapes1(actor1->getNbShapes());
         actor0->getShapes(shapes0.data(), shapes0.size());
         actor1->getShapes(shapes1.data(), shapes1.size());
 

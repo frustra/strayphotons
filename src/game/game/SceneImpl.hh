@@ -7,12 +7,8 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/SignalManager.hh"
-
-#include <bitset>
+#include "strayphotons/cpp/Logging.hh"
 
 namespace sp::scene_util {
     using namespace ecs;

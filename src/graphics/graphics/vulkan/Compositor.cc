@@ -9,9 +9,6 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "common/Async.hh"
-#include "common/Common.hh"
-#include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/ScriptManager.hh"
@@ -29,11 +26,14 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "gui/GuiContext.hh"
-#include "gui/ImGuiHelpers.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <cstdint>
+#include <glm/gtx/string_cast.hpp>
 #include <imgui.h>
 #include <limits>
 #include <memory>
@@ -42,12 +42,12 @@
 
 namespace sp::vulkan {
     Compositor::Compositor(DeviceContext &device, rg::RenderGraph &graph) : device(device), graph(graph) {
-        vertexLayout = make_unique<VertexLayout>(0, sizeof(GuiDrawVertex));
+        vertexLayout = std::make_unique<VertexLayout>(0, sizeof(GuiDrawVertex));
         vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, pos));
         vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, uv));
         vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(GuiDrawVertex, col));
 
-        fontAtlas = make_shared<ImFontAtlas>();
+        fontAtlas = std::make_shared<ImFontAtlas>();
 
         fontAtlas->AddFontDefault(nullptr);
 

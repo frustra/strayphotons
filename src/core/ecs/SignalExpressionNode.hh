@@ -7,14 +7,12 @@
 
 #pragma once
 
-#include "common/Hashing.hh"
 #include "ecs/Ecs.hh"
-#include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Focus.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
-#include <functional>
 #include <memory>
 #include <robin_hood.h>
 #include <string>

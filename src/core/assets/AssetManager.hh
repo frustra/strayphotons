@@ -7,21 +7,19 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/DispatchQueue.hh"
-#include "common/EnumTypes.hh"
-#include "common/Hashing.hh"
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
 #include <atomic>
 #include <filesystem>
-#include <future>
 #include <mutex>
 #include <robin_hood.h>
 #include <string>
-#include <thread>
 #include <vector>
 
 namespace sp {

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "entity.h"
 #include "export.h"
 #include "game.h"
 

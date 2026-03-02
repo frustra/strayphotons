@@ -7,12 +7,10 @@
 
 #include "game/Scene.hh"
 
-#include "common/Common.hh"
 #include "common/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/SceneImpl.hh"
-#include "game/SceneManager.hh"
 
 namespace sp {
     std::shared_ptr<Scene> Scene::New(ecs::Lock<ecs::AddRemove> stagingLock,

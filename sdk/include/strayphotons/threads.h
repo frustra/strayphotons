@@ -19,9 +19,11 @@ typedef sp::RegisteredThread sp_thread_t;
 typedef void sp_thread_t;
 #endif
 
+#include <stdint.h>
+
 // The following functions are declared in src/exports/Threads.cc
 
-SP_EXPORT void sp_thread_get_measured_fps(const char *threadName);
+SP_EXPORT uint32_t sp_thread_get_measured_fps(const char *threadName);
 
 #ifdef __cplusplus
 }

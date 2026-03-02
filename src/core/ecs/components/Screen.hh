@@ -11,7 +11,7 @@
 
 namespace ecs {
     struct Screen {
-        string textureName;
+        std::string textureName;
         glm::vec3 luminanceScale = glm::vec3(1);
     };
 

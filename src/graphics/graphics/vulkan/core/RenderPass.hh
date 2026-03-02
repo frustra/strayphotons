@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "common/Hashing.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
+#include <memory>
 #include <robin_hood.h>
 
 namespace sp::vulkan {
@@ -181,7 +182,7 @@ namespace sp::vulkan {
     public:
         Framebuffer(DeviceContext &device, const RenderPassInfo &info);
 
-        shared_ptr<RenderPass> GetRenderPass() const {
+        std::shared_ptr<RenderPass> GetRenderPass() const {
             return renderPass;
         }
 
@@ -190,7 +191,7 @@ namespace sp::vulkan {
         }
 
     private:
-        shared_ptr<RenderPass> renderPass;
+        std::shared_ptr<RenderPass> renderPass;
         vk::Extent2D extent;
     };
 
@@ -200,12 +201,12 @@ namespace sp::vulkan {
 
         using RenderPassKey = HashKey<RenderPassState>;
 
-        shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
+        std::shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
 
     private:
         DeviceContext &device;
 
-        robin_hood::unordered_map<RenderPassKey, shared_ptr<RenderPass>, RenderPassKey::Hasher> renderPasses;
+        robin_hood::unordered_map<RenderPassKey, std::shared_ptr<RenderPass>, RenderPassKey::Hasher> renderPasses;
     };
 
     class FramebufferManager : public NonCopyable {
@@ -220,11 +221,11 @@ namespace sp::vulkan {
 
         using FramebufferKey = HashKey<FramebufferKeyData>;
 
-        shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
+        std::shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
     private:
         DeviceContext &device;
 
-        robin_hood::unordered_map<FramebufferKey, shared_ptr<Framebuffer>, FramebufferKey::Hasher> framebuffers;
+        robin_hood::unordered_map<FramebufferKey, std::shared_ptr<Framebuffer>, FramebufferKey::Hasher> framebuffers;
     };
 } // namespace sp::vulkan

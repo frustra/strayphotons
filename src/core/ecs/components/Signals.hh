@@ -7,17 +7,14 @@
 
 #pragma once
 
-#include "common/FlatSet.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
+#include "strayphotons/cpp/FlatSet.hh"
 
-#include <limits>
-#include <map>
 #include <robin_hood.h>
-#include <set>
 #include <string>
 
 namespace ecs {

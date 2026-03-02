@@ -66,7 +66,7 @@ namespace ecs {
             ref = signalRefs.Load(signal);
             if (ref) return ref;
 
-            ref = make_shared<SignalRef::Ref>(signal);
+            ref = std::make_shared<SignalRef::Ref>(signal);
             signalRefs.Register(signal, ref.ptr);
         }
         return ref;

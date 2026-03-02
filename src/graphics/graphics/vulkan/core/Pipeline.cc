@@ -7,10 +7,12 @@
 
 #include "Pipeline.hh"
 
-#include "common/Logging.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <common/output_stream.h>
+#include <memory>
+#include <vector>
 
 // void StreamWriteDescriptorBinding(std::ostream &os,
 //     const SpvReflectDescriptorBinding &obj,
@@ -44,7 +46,7 @@ namespace sp::vulkan {
         return hashes;
     }
 
-    shared_ptr<PipelineLayout> PipelineManager::GetPipelineLayout(const ShaderSet &shaders) {
+    std::shared_ptr<PipelineLayout> PipelineManager::GetPipelineLayout(const ShaderSet &shaders) {
         PipelineLayoutKey key;
         key.input.shaderHashes = GetShaderHashes(shaders);
 
@@ -314,7 +316,7 @@ namespace sp::vulkan {
         return descriptorSet;
     }
 
-    shared_ptr<Pipeline> PipelineManager::GetPipeline(const PipelineCompileInput &compile) {
+    std::shared_ptr<Pipeline> PipelineManager::GetPipeline(const PipelineCompileInput &compile) {
         ShaderSet shaders = FetchShaders(device, compile.state.shaders);
 
         PipelineKey key;
@@ -347,14 +349,14 @@ namespace sp::vulkan {
     Pipeline::Pipeline(DeviceContext &device,
         const ShaderSet &shaders,
         const PipelineCompileInput &compile,
-        shared_ptr<PipelineLayout> layout)
+        std::shared_ptr<PipelineLayout> layout)
         : layout(layout) {
 
         auto &state = compile.state;
 
         sp::EnumArray<vk::SpecializationInfo, ShaderStage> shaderSpecialization;
         std::array<vk::PipelineShaderStageCreateInfo, shaderSpecialization.size()> shaderStages;
-        vector<vk::SpecializationMapEntry> specializationValues;
+        std::vector<vk::SpecializationMapEntry> specializationValues;
         size_t stageCount = 0, specCount = 0;
 
         for (auto &s : magic_enum::enum_values<ShaderStage>()) {
@@ -510,17 +512,17 @@ namespace sp::vulkan {
         uniqueHandle = std::move(pipelinesResult.value);
     }
 
-    shared_ptr<DescriptorPool> PipelineManager::GetDescriptorPool(const DescriptorSetLayoutInfo &layout) {
+    std::shared_ptr<DescriptorPool> PipelineManager::GetDescriptorPool(const DescriptorSetLayoutInfo &layout) {
         DescriptorPoolKey key(layout);
         auto &mapValue = descriptorPools[key];
         if (!mapValue) {
-            mapValue = make_shared<DescriptorPool>(device, layout);
+            mapValue = std::make_shared<DescriptorPool>(device, layout);
         }
         return mapValue;
     }
 
     DescriptorPool::DescriptorPool(DeviceContext &device, const DescriptorSetLayoutInfo &layoutInfo) : device(device) {
-        vector<vk::DescriptorBindingFlags> bindingFlags;
+        std::vector<vk::DescriptorBindingFlags> bindingFlags;
 
         for (uint32_t binding = 0; binding < layoutInfo.lastBinding + 1; binding++) {
             auto bindingBit = 1 << binding;

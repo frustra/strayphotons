@@ -12,7 +12,9 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace sp::vulkan {
     TextureSet::TextureSet(DeviceContext &device)
@@ -80,7 +82,7 @@ namespace sp::vulkan {
         return pending;
     }
 
-    TextureHandle TextureSet::LoadGltfMaterial(const shared_ptr<const Gltf> &source,
+    TextureHandle TextureSet::LoadGltfMaterial(const std::shared_ptr<const Gltf> &source,
         int materialIndex,
         TextureType type) {
 
@@ -89,7 +91,7 @@ namespace sp::vulkan {
         if (materialIndex < 0 || (size_t)materialIndex >= gltfModel.materials.size()) return {};
         auto &material = gltfModel.materials[materialIndex];
 
-        string name = source->name.str() + "_" + std::to_string(materialIndex) + "_";
+        std::string name = source->name.str() + "_" + std::to_string(materialIndex) + "_";
         int textureIndex = -1;
         std::vector<double> factor;
         bool srgb = false;
@@ -142,7 +144,7 @@ namespace sp::vulkan {
         if (textureIndex < 0 || (size_t)textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
-            auto data = make_shared<std::array<uint8_t, 4>>();
+            auto data = std::make_shared<std::array<uint8_t, 4>>();
             for (size_t i = 0; i < 4; i++) {
                 (*data)[i] = uint8_t(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
@@ -232,8 +234,8 @@ namespace sp::vulkan {
             }
         }
 
-        vector<vk::WriteDescriptorSet> descriptorWrites;
-        vector<vk::DescriptorImageInfo> descriptorImageInfos;
+        std::vector<vk::WriteDescriptorSet> descriptorWrites;
+        std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
         vk::WriteDescriptorSet descriptorWrite;
         descriptorWrite.dstSet = textureDescriptorSet;
         descriptorWrite.dstBinding = 0;

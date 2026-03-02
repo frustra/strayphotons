@@ -7,22 +7,15 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/DispatchQueue.hh"
-#include "common/Tracing.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
 
 #include <Tecs.hh>
-#include <cstring>
-#include <functional>
 #include <iostream>
-#include <list>
 #include <memory>
-#include <mutex>
 #include <optional>
-#include <sstream>
 #include <tuple>
 #include <type_traits>
-#include <typeindex>
 
 namespace picojson {
     class value;

@@ -12,8 +12,8 @@
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
-#include "input/KeyCodes.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/cpp/input/KeyCodes.hh"
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
@@ -43,7 +43,7 @@ namespace sp {
         funcs.Register(this, "bind", "Bind a key to a command", &ConsoleBindingManager::BindKey);
     }
 
-    void ConsoleBindingManager::BindKey(string keyName, string command) {
+    void ConsoleBindingManager::BindKey(std::string keyName, std::string command) {
         to_lower(keyName);
         auto it = UserBindingAliases.find(keyName);
         if (it != UserBindingAliases.end()) keyName = it->second;

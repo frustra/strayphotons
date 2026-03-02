@@ -8,13 +8,9 @@
 #include "PhysxManager.hh"
 
 #include "PhysxUtils.hh"
-#include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
-#include "assets/JsonHelpers.hh"
 #include "assets/PhysicsInfo.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
 #include "ecs/Ecs.hh"
@@ -25,13 +21,13 @@
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "physx/ForceConstraint.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <MurmurHash3.h>
 #include <PxScene.h>
 #include <chrono>
-#include <cmath>
-#include <fstream>
 #include <glm/ext/matrix_relational.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <memory>
 #include <variant>
 

@@ -5,8 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Common.hh"
 #include "game/Game.hh"
+
+#include <memory>
 
 #ifdef SP_AUDIO_SUPPORT
     #include "audio/AudioManager.hh"
@@ -33,14 +34,14 @@
 namespace sp {
     void InitAudioManager(Game &game) {
 #ifdef SP_AUDIO_SUPPORT
-        game.audio = make_shared<AudioManager>();
+        game.audio = std::make_shared<AudioManager>();
 #endif
     }
 
     void InitGraphicsManager(Game &game) {
 #ifdef SP_GRAPHICS_SUPPORT
         if (!game.options.count("headless")) {
-            game.graphics = make_shared<GraphicsManager>(game);
+            game.graphics = std::make_shared<GraphicsManager>(game);
         }
 #endif
     }
@@ -61,7 +62,7 @@ namespace sp {
 
     void InitPhysicsManager(Game &game) {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-        game.physics = make_shared<PhysxManager>(game.inputEventQueue);
+        game.physics = std::make_shared<PhysxManager>(game.inputEventQueue);
 #endif
     }
 

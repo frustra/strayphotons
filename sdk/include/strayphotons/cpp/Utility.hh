@@ -7,31 +7,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <memory>
-using std::make_shared;
-using std::make_unique;
-using std::shared_ptr;
-using std::unique_ptr;
-using std::weak_ptr;
-
-#include <vector>
-using std::vector;
-
 #include <array>
+#include <chrono>
+#include <cstdint>
 #include <string>
 #include <string_view>
-using std::string;
-using std::string_view;
-using namespace std::string_literals;
-
-#include <chrono>
+#include <vector>
 typedef std::chrono::steady_clock chrono_clock;
 
-#include <algorithm>
 #include <glm/glm.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <optional>
 #include <robin_hood.h>
 #include <variant>
 
@@ -236,8 +220,8 @@ namespace sp {
     template<glm::length_t L, typename T, glm::qualifier Q>
     struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
 
-    bool is_float(string_view str);
-    bool all_lower(const string &str);
+    bool is_float(std::string_view str);
+    bool all_lower(const std::string &str);
 
     struct float16_t {
         uint16_t value;
@@ -261,32 +245,24 @@ namespace sp {
     };
 
     namespace boost_replacements {
-        bool starts_with(const string &str, const string &prefix);
-        bool starts_with(const string_view &str, const string_view &prefix);
-        bool ends_with(const string &str, const string &suffix);
-        bool ends_with(const string_view &str, const string_view &suffix);
-        string to_lower(string &str);
-        string to_upper(string &str);
-        string to_lower_copy(const string &str);
-        string to_upper_copy(const string &str);
-        string to_lower_copy(const string_view &str);
-        string to_upper_copy(const string_view &str);
-        bool iequals(const string &str1, const string &str2);
-        void trim(string &str);
-        void trim_left(string &str);
-        void trim_right(string &str);
-        string_view trim(const string_view &str);
-        string_view trim_left(const string_view &str);
-        string_view trim_right(const string_view &str);
+        bool starts_with(const std::string &str, const std::string &prefix);
+        bool starts_with(const std::string_view &str, const std::string_view &prefix);
+        bool ends_with(const std::string &str, const std::string &suffix);
+        bool ends_with(const std::string_view &str, const std::string_view &suffix);
+        std::string to_lower(std::string &str);
+        std::string to_upper(std::string &str);
+        std::string to_lower_copy(const std::string &str);
+        std::string to_upper_copy(const std::string &str);
+        std::string to_lower_copy(const std::string_view &str);
+        std::string to_upper_copy(const std::string_view &str);
+        bool iequals(const std::string &str1, const std::string &str2);
+        void trim(std::string &str);
+        void trim_left(std::string &str);
+        void trim_right(std::string &str);
+        std::string_view trim(const std::string_view &str);
+        std::string_view trim_left(const std::string_view &str);
+        std::string_view trim_right(const std::string_view &str);
     } // namespace boost_replacements
     using namespace boost_replacements;
-
-    struct ClockTimer {
-        chrono_clock::time_point start = chrono_clock::now();
-
-        chrono_clock::duration Duration() const {
-            return chrono_clock::now() - start;
-        }
-    };
 
 } // namespace sp

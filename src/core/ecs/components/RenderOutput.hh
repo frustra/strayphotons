@@ -7,13 +7,12 @@
 
 #pragma once
 
-#include "common/InlineString.hh"
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <span>
 
 namespace sp {
     class GuiContext;

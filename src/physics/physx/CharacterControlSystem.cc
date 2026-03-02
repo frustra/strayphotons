@@ -7,8 +7,6 @@
 
 #include "CharacterControlSystem.hh"
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
@@ -16,9 +14,10 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <PxRigidActor.h>
 #include <PxScene.h>
@@ -26,7 +25,6 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>
-#include <sstream>
 
 namespace sp {
     using namespace physx;

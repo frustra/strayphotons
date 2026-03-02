@@ -7,14 +7,10 @@
 
 #pragma once
 
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <chrono>
-#include <future>
+#include <atomic>
 #include <memory>
-#include <mutex>
-#include <type_traits>
 
 namespace sp {
     template<typename T>

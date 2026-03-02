@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "input/KeyCodes.hh"
-
 #include <imgui.h>
 #include <robin_hood.h>
+#include <strayphotons/cpp/input/KeyCodes.hh>
 
 namespace sp {
     static const robin_hood::unordered_flat_map<KeyCode, ImGuiKey> ImGuiKeyMapping = {

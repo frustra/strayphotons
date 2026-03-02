@@ -15,7 +15,11 @@ file(GLOB_RECURSE unit_test_sources ${CMAKE_CURRENT_SOURCE_DIR}/unit/*.cc)
 list(REMOVE_DUPLICATES unit_test_sources)
 
 add_executable(sp-unit-tests tests.cc ${unit_test_sources})
-target_compile_definitions(sp-unit-tests PRIVATE TEST_TYPE=\"unit\")
+target_compile_definitions(sp-unit-tests PRIVATE
+    TEST_TYPE=\"unit\"
+    SP_SHARED_INTERNAL
+    TECS_SHARED_INTERNAL
+)
 target_link_libraries(sp-unit-tests ${PROJECT_COMMON_LIB} ${PROJECT_CORE_LIB})
 target_include_directories(sp-unit-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_ROOT_DIR}/include)
 

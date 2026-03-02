@@ -8,7 +8,6 @@
 #pragma once
 
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructFieldTypes.hh"
 

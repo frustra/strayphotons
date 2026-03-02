@@ -16,7 +16,7 @@ target_link_libraries(${PROJECT_SCRIPTS_LIB}
         ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
         ${PROJECT_GRAPHICS_CORE_LIB}
-        ${PROJECT_CODEGEN_LIB}
+        ${PROJECT_SDK_LIB}
         ImGui
 )
 

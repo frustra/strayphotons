@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 

@@ -11,6 +11,10 @@
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 
+#include <array>
+#include <string_view>
+#include <vector>
+
 namespace sp::vulkan {
     namespace rg = render_graph;
 } // namespace sp::vulkan
@@ -22,13 +26,13 @@ namespace sp::vulkan::render_graph {
 
         class InitialPassState;
 
-        InitialPassState AddPass(string_view name) {
+        InitialPassState AddPass(std::string_view name) {
             return {*this, name};
         }
 
         class InitialPassState {
         public:
-            InitialPassState(RenderGraph &graph, string_view name) : graph(graph), name(name) {}
+            InitialPassState(RenderGraph &graph, std::string_view name) : graph(graph), name(name) {}
 
             /**
              * Call once after AddPass to configure the pass, and
@@ -105,7 +109,7 @@ namespace sp::vulkan::render_graph {
             RenderGraph &graph;
 
         public:
-            GraphScope(RenderGraph &graph, string_view name) : graph(graph) {
+            GraphScope(RenderGraph &graph, std::string_view name) : graph(graph) {
                 graph.BeginScope(name);
             }
             ~GraphScope() {
@@ -113,16 +117,16 @@ namespace sp::vulkan::render_graph {
             }
         };
 
-        GraphScope Scope(string_view name) {
+        GraphScope Scope(std::string_view name) {
             return {*this, name};
         }
 
-        void BeginScope(string_view name);
+        void BeginScope(std::string_view name);
         void EndScope();
 
-        ResourceID AddImageView(string_view name, ImageViewPtr view);
+        ResourceID AddImageView(std::string_view name, ImageViewPtr view);
 
-        void RequireResource(string_view name) {
+        void RequireResource(std::string_view name) {
             RequireResource(resources.GetID(name));
         }
 
@@ -136,7 +140,7 @@ namespace sp::vulkan::render_graph {
             ResourceName name;
             ImageDesc desc;
         };
-        vector<PooledImageInfo> AllImages();
+        std::vector<PooledImageInfo> AllImages();
 
         ResourceID LastOutputID() const {
             return resources.lastOutputID;
@@ -148,7 +152,7 @@ namespace sp::vulkan::render_graph {
             return resources.GetName(resources.lastOutputID);
         }
 
-        bool HasResource(string_view name) const {
+        bool HasResource(std::string_view name) const {
             return resources.GetID(name, false) != InvalidResource;
         }
 
@@ -168,8 +172,8 @@ namespace sp::vulkan::render_graph {
         }
 
         DeviceContext &device;
-        vector<Pass> passes;
+        std::vector<Pass> passes;
         Resources resources;
-        std::array<vector<ResourceID>, RESOURCE_FRAME_COUNT> futureDependencies;
+        std::array<std::vector<ResourceID>, RESOURCE_FRAME_COUNT> futureDependencies;
     };
 } // namespace sp::vulkan::render_graph

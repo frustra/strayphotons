@@ -9,20 +9,18 @@
 
 #include "assets/AssetManager.hh"
 #include "assets/ConsoleScript.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
-#include "common/RegisteredThread.hh"
 #include "common/Tracing.hh"
 #include "console/Console.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
 #include "game/SceneManager.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
-#include <strayphotons.h>
+// #include <strayphotons.h>
 
 namespace sp {
 
@@ -52,7 +50,7 @@ namespace sp {
         sp::Assets().StartThread(assetsPath);
 
         if (options.count("command")) {
-            for (auto &cmdline : options["command"].as<vector<string>>()) {
+            for (auto &cmdline : options["command"].as<std::vector<std::string>>()) {
                 GetConsoleManager().ParseAndExecute(cmdline);
             }
         }
@@ -86,7 +84,7 @@ namespace sp {
         scenes.QueueAction(SceneAction::ReloadBindings);
 
         if (scriptMode) {
-            string scriptPath = options["run"].as<string>();
+            std::string scriptPath = options["run"].as<std::string>();
 
             Logf("Executing commands from file: %s", scriptPath);
             auto asset = sp::Assets().Load("scripts/" + scriptPath)->Get();
@@ -112,7 +110,7 @@ namespace sp {
             GetConsoleManager().StartThread(&startupScript);
         } else {
             if (options.count("scene")) {
-                scenes.QueueAction(SceneAction::LoadScene, options["scene"].as<string>());
+                scenes.QueueAction(SceneAction::LoadScene, options["scene"].as<std::string>());
             } else {
                 scenes.QueueAction(SceneAction::LoadScene, "menu");
             }

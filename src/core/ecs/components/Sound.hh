@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "common/Async.hh"
 #include "ecs/Components.hh"
-#include "ecs/components/Events.hh"
+#include "ecs/EventQueue.hh"
+#include "strayphotons/cpp/Async.hh"
 
 namespace sp {
     class Asset;

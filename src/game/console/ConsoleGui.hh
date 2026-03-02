@@ -7,8 +7,10 @@
 
 #pragma once
 
-#include "console/Console.hh"
 #include "ecs/components/GuiElement.hh"
+
+#include <string>
+#include <vector>
 
 struct ImGuiInputTextCallbackData;
 
@@ -41,7 +43,7 @@ namespace sp {
         CompletionMode completionMode = COMPLETION_NONE;
         bool completionPopupVisible = false, completionSelectionChanged = false, syncInputFromCompletion = false,
              completionPending = false, requestNewCompletions = false;
-        vector<string> completionEntries;
+        std::vector<std::string> completionEntries;
         int completionSelectedIndex = 0;
     };
 } // namespace sp

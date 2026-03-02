@@ -7,16 +7,17 @@
 
 #pragma once
 
-#include "common/FlatSet.hh"
-#include "common/Hashing.hh"
-#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
 #include <robin_hood.h>
+#include <string_view>
 #include <thread>
+#include <vector>
 
 namespace sp::vulkan::render_graph {
     typedef uint32_t ResourceID;
@@ -89,23 +90,23 @@ namespace sp::vulkan::render_graph {
         PooledImagePtr TemporaryImage(const ImageDesc &desc);
 
         ImageViewPtr GetImageView(ResourceID id);
-        ImageViewPtr GetImageView(string_view name);
+        ImageViewPtr GetImageView(std::string_view name);
         ImageViewPtr GetImageLayerView(ResourceID id, uint32_t layer);
-        ImageViewPtr GetImageLayerView(string_view name, uint32_t layer);
+        ImageViewPtr GetImageLayerView(std::string_view name, uint32_t layer);
         ImageViewPtr GetImageMipView(ResourceID id, uint32_t mip);
-        ImageViewPtr GetImageMipView(string_view name, uint32_t mip);
+        ImageViewPtr GetImageMipView(std::string_view name, uint32_t mip);
         ImageViewPtr GetImageDepthView(ResourceID id);
-        ImageViewPtr GetImageDepthView(string_view name);
+        ImageViewPtr GetImageDepthView(std::string_view name);
 
         BufferPtr GetBuffer(ResourceID id);
-        BufferPtr GetBuffer(string_view name);
+        BufferPtr GetBuffer(std::string_view name);
 
-        const Resource &GetResource(string_view name) const;
+        const Resource &GetResource(std::string_view name) const;
         const Resource &GetResource(ResourceID id) const;
         const ResourceName &GetName(ResourceID id) const;
-        ResourceID GetID(string_view name, bool assertExists = true, uint32_t framesAgo = 0) const;
+        ResourceID GetID(std::string_view name, bool assertExists = true, uint32_t framesAgo = 0) const;
 
-        ResourceID AddExternalImageView(string_view name, ImageViewPtr view, bool allowReplace = false);
+        ResourceID AddExternalImageView(std::string_view name, ImageViewPtr view, bool allowReplace = false);
 
         ResourceID LastOutputID() const {
             return lastOutputID;
@@ -128,10 +129,10 @@ namespace sp::vulkan::render_graph {
         void DecrementRef(ResourceID id);
         void AddUsageFromAccess(ResourceID id, Access access);
 
-        ResourceID ReserveID(string_view name);
-        bool Register(string_view name, Resource &resource);
+        ResourceID ReserveID(std::string_view name);
+        bool Register(std::string_view name, Resource &resource);
 
-        void BeginScope(string_view name);
+        void BeginScope(std::string_view name);
         void EndScope();
 
         void AdvanceFrame();
@@ -155,23 +156,23 @@ namespace sp::vulkan::render_graph {
             };
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
-            ResourceID GetID(string_view name, uint32_t frameIndex) const;
-            void SetID(string_view name, ResourceID id, uint32_t frameIndex, bool replace = false);
+            ResourceID GetID(std::string_view name, uint32_t frameIndex) const;
+            void SetID(std::string_view name, ResourceID id, uint32_t frameIndex, bool replace = false);
             void ClearID(ResourceID id);
         };
 
-        vector<Scope> nameScopes;
+        std::vector<Scope> nameScopes;
         InlineVector<uint8_t, MAX_RESOURCE_SCOPE_DEPTH> scopeStack; // refers to indexes in nameScopes
 
-        vector<Resource> resources;
-        vector<ResourceName> resourceNames;
-        vector<ResourceID> freeIDs;
-        vector<ResourceID> externalIDs;
+        std::vector<Resource> resources;
+        std::vector<ResourceName> resourceNames;
+        std::vector<ResourceID> freeIDs;
+        std::vector<ResourceID> externalIDs;
         size_t lastResourceCount = 0, consecutiveGrowthFrames = 0;
 
-        vector<int32_t> refCounts;
-        vector<PooledImagePtr> images;
-        vector<BufferPtr> buffers;
+        std::vector<int32_t> refCounts;
+        std::vector<PooledImagePtr> images;
+        std::vector<BufferPtr> buffers;
 
         ResourceID lastOutputID = InvalidResource;
 
@@ -180,6 +181,7 @@ namespace sp::vulkan::render_graph {
         void TickImagePool();
 
         using PooledImageKey = HashKey<ImageDesc>;
-        robin_hood::unordered_map<PooledImageKey, vector<PooledImagePtr>, typename PooledImageKey::Hasher> imagePool;
+        robin_hood::unordered_map<PooledImageKey, std::vector<PooledImagePtr>, typename PooledImageKey::Hasher>
+            imagePool;
     };
 } // namespace sp::vulkan::render_graph

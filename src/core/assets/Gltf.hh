@@ -8,7 +8,6 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
-#include "common/Common.hh"
 #include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>

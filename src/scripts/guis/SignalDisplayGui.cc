@@ -7,15 +7,16 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "common/Defer.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/GenericCompositor.hh"
 #include "gui/GuiContext.hh"
-#include "gui/ImGuiHelpers.hh"
+#include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 
 namespace sp::scripts {
@@ -24,13 +25,13 @@ namespace sp::scripts {
     struct SignalDisplayGui {
         std::string suffix = "mW";
         ImGuiContext *imCtx = nullptr;
-        shared_ptr<ImFontAtlas> fontAtlas;
+        std::shared_ptr<ImFontAtlas> fontAtlas;
 
         void Init(ScriptState &state) {
             Debugf("Created signal display: %llu", state.GetInstanceId());
 
             imCtx = ImGui::CreateContext();
-            fontAtlas = make_shared<ImFontAtlas>();
+            fontAtlas = std::make_shared<ImFontAtlas>();
             fontAtlas->AddFontDefault(nullptr);
 
             static const ImWchar glyphRanges[] = {

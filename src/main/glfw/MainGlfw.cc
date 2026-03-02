@@ -9,9 +9,6 @@
     #include <windows.h>
 #endif
 
-#include <iostream>
-using namespace std;
-
 #include <vulkan/vulkan_core.h>
 
 #if VK_HEADER_VERSION >= 301
@@ -22,9 +19,8 @@ using namespace std;
 #endif
 
 #include "GlfwInputHandler.hh"
-#include "common/Common.hh"
-#include "common/Defer.hh"
-#include "common/Logging.hh"
+#include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -33,22 +29,18 @@ using namespace std;
     #include <glfw/glfw3native.h>
 #endif
 
-#include <csignal>
-#include <cstdio>
-#include <cxxopts.hpp>
-#include <filesystem>
-#include <fstream>
-#include <memory>
-#include <strayphotons.h>
-#include <tracy/Tracy.hpp>
-#include <vulkan/vulkan.hpp>
-
-using cxxopts::value;
-
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
+#include <csignal>
+#include <cstdio>
+#include <cxxopts.hpp>
+#include <memory>
+#include <strayphotons.h>
 #include <strayphotons/components.h>
+#include <string_view>
+#include <tracy/Tracy.hpp>
+#include <vulkan/vulkan.hpp>
 
 TECS_IMPLEMENT_C_ABI
 
@@ -74,17 +66,17 @@ namespace sp {
         const vk::DebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pContext) {
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
-        string_view message(pCallbackData->pMessage);
+        std::string_view message(pCallbackData->pMessage);
 
         switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
     #ifdef TRACY_ENABLE_GRAPHICS
             // Ignore Tracy timer query errors
-            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != std::string_view::npos) break;
     #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
-                string_view::npos)
+                std::string_view::npos)
                 break;
             Errorf("VK %s %s", typeStr, message);
             break;
@@ -190,7 +182,7 @@ int main(int argc, char **argv) {
         auto availableExtensions = vk::enumerateInstanceExtensionProperties();
         // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
         for (auto &ext : availableExtensions) {
-            string_view name(ext.extensionName.data());
+            std::string_view name(ext.extensionName.data());
             // Debugf("\t%s", name);
 
             if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
