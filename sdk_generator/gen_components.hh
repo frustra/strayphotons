@@ -7,7 +7,12 @@
 
 template<typename S>
 void GenerateComponentsH(S &out) {
-    out << R"RAWSTR(#pragma once
+    out << R"RAWSTR(/*
+ * THIS FILE IS GENERATED -- DO NOT EDIT
+ * See sdk_generator/gen_components.hh to modify
+ */
+
+#pragma once
 
 #include <c_abi/Tecs.h>
 #include <strayphotons/entity.h>

@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/Common.hh"
-#include "common/EnumTypes.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
 
 #include <glm/glm.hpp>
 
@@ -56,13 +55,13 @@ namespace ecs {
 
             bool operator==(const Joint &other) const = default;
         };
-        vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
+        std::vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
         sp::color_alpha_t colorOverride = glm::vec4(-1);
-        string textureOverrideName;
+        std::string textureOverrideName;
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {

@@ -8,16 +8,13 @@
 #include "GlfwInputHandler.hh"
 
 #include "GlfwKeyCodes.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
-#include "input/BindingNames.hh"
-#include "input/KeyCodes.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/cpp/input/KeyCodes.hh"
 
 #include <GLFW/glfw3.h>
-#include <algorithm>
 #include <glm/glm.hpp>
-#include <stdexcept>
 #include <strayphotons.h>
 
 namespace sp {

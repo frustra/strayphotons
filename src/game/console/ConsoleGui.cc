@@ -7,6 +7,8 @@
 
 #include "ConsoleGui.hh"
 
+#include "console/Console.hh"
+
 #include <imgui.h>
 
 namespace sp {
@@ -68,7 +70,7 @@ namespace sp {
                                      ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackAlways;
 
         if (ImGui::InputText("##CommandInput", inputBuf, sizeof(inputBuf), iflags, CommandEditStub, (void *)this)) {
-            string line(inputBuf);
+            std::string line(inputBuf);
             if (!line.empty()) {
                 auto &console = GetConsoleManager();
                 console.AddHistory(line);
@@ -105,7 +107,7 @@ namespace sp {
     void ConsoleGui::PostDefine(ecs::Entity ent) {
         ZoneScoped;
         if (completionMode == COMPLETION_INPUT && completionPending) {
-            string line(inputBuf);
+            std::string line(inputBuf);
             auto result = GetConsoleManager().AllCompletions(line, requestNewCompletions);
             completionPending = result.pending;
             completionEntries = result.values;
@@ -162,7 +164,7 @@ namespace sp {
         if ((data->EventFlag == ImGuiInputTextFlags_CallbackAlways && syncInputFromCompletion) ||
             data->EventFlag == ImGuiInputTextFlags_CallbackCompletion) {
             if (completionSelectedIndex >= 0 && completionSelectedIndex < (int)completionEntries.size()) {
-                string line = completionEntries[completionSelectedIndex];
+                std::string line = completionEntries[completionSelectedIndex];
                 if (line[line.size() - 1] != ' ') line += " ";
 
                 SetInput(data, line.c_str(), completionMode == COMPLETION_HISTORY);

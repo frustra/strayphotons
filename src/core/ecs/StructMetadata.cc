@@ -8,10 +8,7 @@
 #include "StructMetadata.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
 #include "ecs/StructFieldTypes.hh"
-
-#include <cstring>
 
 namespace ecs {
     uint32_t GetFieldTypeIndex(const std::type_index &idx) {

@@ -5,12 +5,11 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Common.hh"
-#include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 
+#include <glm/gtx/string_cast.hpp>
 #include <limits>
 
 bool floatEqual(float a, float b) {

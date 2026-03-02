@@ -5,11 +5,15 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Logging.hh"
-#include "gui/GuiDrawData.hh"
-
 #include <imgui.h>
-#include <strayphotons/components.h>
+#include <strayphotons/cpp/Logging.hh>
+#include <strayphotons/cpp/gui/GuiDrawData.hh>
+
+#ifdef SP_SHARED_INTERNAL
+typedef sp::GuiDrawData sp_gui_draw_data_t;
+#else
+    #include <strayphotons/components.h>
+#endif
 
 namespace sp {
     static_assert(sizeof(ImDrawVert) == sizeof(GuiDrawVertex), "ImDrawVert size does not match");
@@ -26,6 +30,16 @@ namespace sp {
             totalIndexCount += cmdList->IdxBuffer.size();
             totalVertexCount += cmdList->VtxBuffer.size();
         }
+#ifdef SP_SHARED_INTERNAL
+        output->drawCommands.resize(totalCommandCount);
+        output->indexBuffer.resize(totalIndexCount);
+        output->vertexBuffer.resize(totalVertexCount);
+        if (totalCommandCount == 0 || totalIndexCount == 0 || totalVertexCount == 0) return;
+
+        GuiDrawVertex *vertexIter = output->vertexBuffer.data();
+        GuiDrawIndex *indexIter = output->indexBuffer.data();
+        GuiDrawCommand *cmdIter = output->drawCommands.data();
+#else
         sp_gui_draw_command_vector_resize(&output->drawCommands, totalCommandCount);
         sp_uint16_vector_resize(&output->indexBuffer, totalIndexCount);
         sp_gui_draw_vertex_vector_resize(&output->vertexBuffer, totalVertexCount);
@@ -33,6 +47,9 @@ namespace sp {
 
         auto *vertexIter = reinterpret_cast<GuiDrawVertex *>(sp_gui_draw_vertex_vector_get_data(&output->vertexBuffer));
         auto *indexIter = reinterpret_cast<GuiDrawIndex *>(sp_uint16_vector_get_data(&output->indexBuffer));
+        auto *cmdIter = reinterpret_cast<GuiDrawCommand *>(sp_gui_draw_command_vector_get_data(&output->drawCommands));
+#endif
+
         for (const auto &cmdList : drawData->CmdLists) {
             GuiDrawVertex *begin = reinterpret_cast<GuiDrawVertex *>(cmdList->VtxBuffer.Data);
             std::copy(begin, begin + cmdList->VtxBuffer.size(), vertexIter);
@@ -41,7 +58,6 @@ namespace sp {
             indexIter += cmdList->IdxBuffer.size();
         }
 
-        auto *cmdIter = reinterpret_cast<GuiDrawCommand *>(sp_gui_draw_command_vector_get_data(&output->drawCommands));
         uint32_t vertexOffset = 0;
         for (const auto &cmdList : drawData->CmdLists) {
             for (const auto &cmd : cmdList->CmdBuffer) {

@@ -7,14 +7,12 @@
 
 #include "Signals.hh"
 
-#include "common/Common.hh"
-#include "common/Hashing.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalManager.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <optional>
 #include <vector>
 
 namespace ecs {

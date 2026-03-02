@@ -9,18 +9,20 @@
 
 #include "graphics/vulkan/render_graph/Resources.hh"
 
+#include <string_view>
+
 namespace sp::vulkan::render_graph {
     void PassBuilder::Read(ResourceID id, Access access) {
         pass.AddAccess(id, access);
     }
 
-    ResourceID PassBuilder::Read(string_view name, Access access) {
+    ResourceID PassBuilder::Read(std::string_view name, Access access) {
         auto id = GetID(name);
         Read(id, access);
         return id;
     }
 
-    ResourceID PassBuilder::ReadPreviousFrame(string_view name, Access access, uint32_t framesAgo) {
+    ResourceID PassBuilder::ReadPreviousFrame(std::string_view name, Access access, uint32_t framesAgo) {
         auto thisFrameID = resources.GetID(name, false);
         if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
         if (thisFrameID == InvalidResource) return InvalidResource;
@@ -35,13 +37,13 @@ namespace sp::vulkan::render_graph {
         pass.AddAccess(id, access);
     }
 
-    ResourceID PassBuilder::Write(string_view name, Access access) {
+    ResourceID PassBuilder::Write(std::string_view name, Access access) {
         auto id = GetID(name);
         Write(id, access);
         return id;
     }
 
-    const Resource &PassBuilder::ReadUniform(string_view name) {
+    const Resource &PassBuilder::ReadUniform(std::string_view name) {
         return ReadUniform(GetID(name));
     }
 
@@ -52,7 +54,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    Resource PassBuilder::CreateImage(string_view name, const ImageDesc &desc, Access access) {
+    Resource PassBuilder::CreateImage(std::string_view name, const ImageDesc &desc, Access access) {
         DebugZoneScoped;
         Resource resource(desc);
         resources.Register(name, resource);
@@ -60,7 +62,7 @@ namespace sp::vulkan::render_graph {
         return resource;
     }
 
-    void PassBuilder::SetColorAttachment(uint32_t index, string_view name, const AttachmentInfo &info) {
+    void PassBuilder::SetColorAttachment(uint32_t index, std::string_view name, const AttachmentInfo &info) {
         SetColorAttachment(index, GetID(name), info);
     }
 
@@ -72,13 +74,13 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::OutputColorAttachment(uint32_t index,
-        string_view name,
+        std::string_view name,
         ImageDesc desc,
         const AttachmentInfo &info) {
         return OutputAttachment(index, name, desc, info);
     }
 
-    void PassBuilder::SetDepthAttachment(string_view name, const AttachmentInfo &info) {
+    void PassBuilder::SetDepthAttachment(std::string_view name, const AttachmentInfo &info) {
         SetDepthAttachment(GetID(name), info);
     }
 
@@ -91,7 +93,7 @@ namespace sp::vulkan::render_graph {
         SetAttachment(MAX_COLOR_ATTACHMENTS, id, info);
     }
 
-    Resource PassBuilder::OutputDepthAttachment(string_view name, ImageDesc desc, const AttachmentInfo &info) {
+    Resource PassBuilder::OutputDepthAttachment(std::string_view name, ImageDesc desc, const AttachmentInfo &info) {
         auto resource = CreateImage(name, desc, Access::DepthStencilAttachmentWrite);
         SetAttachment(MAX_COLOR_ATTACHMENTS, resource.id, info);
         return resource;
@@ -106,7 +108,7 @@ namespace sp::vulkan::render_graph {
         return CreateBuffer("", layout, residency, access);
     }
 
-    Resource PassBuilder::CreateBuffer(string_view name, BufferLayout layout, Residency residency, Access access) {
+    Resource PassBuilder::CreateBuffer(std::string_view name, BufferLayout layout, Residency residency, Access access) {
         DebugZoneScoped;
         Assert(layout.size > 0, "can't create a buffer of size 0");
 
@@ -120,7 +122,7 @@ namespace sp::vulkan::render_graph {
     }
 
     Resource PassBuilder::OutputAttachment(uint32_t index,
-        string_view name,
+        std::string_view name,
         const ImageDesc &desc,
         const AttachmentInfo &info) {
         auto resource = CreateImage(name, desc, Access::ColorAttachmentWrite);

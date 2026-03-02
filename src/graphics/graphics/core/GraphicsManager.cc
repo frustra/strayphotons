@@ -7,7 +7,6 @@
 
 #include "GraphicsManager.hh"
 
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
@@ -16,10 +15,12 @@
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
+#include <string>
 
 namespace sp {
     static CVar<std::string> CVarFlatviewEntity("r.FlatviewEntity",
@@ -31,7 +32,7 @@ namespace sp {
     GraphicsManager::GraphicsManager(Game &game)
         : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
         if (game.options.count("window-size")) {
-            std::istringstream ss(game.options["window-size"].as<string>());
+            std::istringstream ss(game.options["window-size"].as<std::string>());
             glm::ivec2 size = glm::ivec2(0);
             ss >> size.x >> size.y;
 
@@ -40,7 +41,7 @@ namespace sp {
             }
         }
         if (game.options.count("window-scale")) {
-            std::istringstream ss(game.options["window-scale"].as<string>());
+            std::istringstream ss(game.options["window-scale"].as<std::string>());
             glm::vec2 windowScale = glm::vec2(0);
             ss >> windowScale;
             if (windowScale.x > 0.0f) {

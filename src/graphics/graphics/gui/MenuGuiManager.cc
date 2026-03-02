@@ -8,7 +8,6 @@
 #include "MenuGuiManager.hh"
 
 #include "assets/AssetManager.hh"
-#include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
@@ -16,12 +15,14 @@
 #include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
-#include "graphics/core/Texture.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace sp {
     static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
@@ -129,12 +130,12 @@ namespace sp {
     }
 
     static const char *StringVectorGetter(void *data, int idx) {
-        auto *vec = (vector<string> *)data;
+        auto *vec = (std::vector<std::string> *)data;
         return vec->at(idx).c_str();
     }
 
-    static vector<string> MakeResolutionLabels(const vector<glm::ivec2> &modes) {
-        vector<string> labels;
+    static std::vector<std::string> MakeResolutionLabels(const std::vector<glm::ivec2> &modes) {
+        std::vector<std::string> labels;
         for (size_t i = 0; i < modes.size(); i++) {
             auto m = modes[i];
             std::stringstream str;
@@ -324,7 +325,7 @@ namespace sp {
                     modes.push_back(size);
                 }
 
-                vector<string> resLabels = MakeResolutionLabels(modes);
+                std::vector<std::string> resLabels = MakeResolutionLabels(modes);
 
                 ImGui::PushItemWidth(300.0f);
                 if (ImGui::Combo("##respicker", &resIndex, StringVectorGetter, &resLabels, (int)modes.size())) {

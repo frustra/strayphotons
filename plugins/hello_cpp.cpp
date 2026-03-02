@@ -8,9 +8,9 @@
 #include <c_abi/Tecs.hh>
 #include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
 #include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
-#include <common/Logging.hh>
 #include <glm/glm.hpp>
 #include <strayphotons/components.h>
+#include <strayphotons/cpp/Logging.hh>
 
 static uint32_t instanceCount = 0;
 

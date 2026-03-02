@@ -14,6 +14,7 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 #include <algorithm>
+#include <memory>
 
 namespace sp::vulkan::renderer {
     const size_t MAX_LIGHT_SENSORS = 64;
@@ -39,7 +40,7 @@ namespace sp::vulkan::renderer {
         ecs::Lock<ecs::Read<ecs::LightSensor, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
 
-        shared_ptr<LightSensorData> data;
+        std::shared_ptr<LightSensorData> data;
 
         for (const ecs::Entity &entity : lock.EntitiesWith<ecs::LightSensor>()) {
             if (!entity.Has<ecs::LightSensor, ecs::TransformSnapshot>(lock)) continue;
@@ -47,7 +48,7 @@ namespace sp::vulkan::renderer {
             auto &sensor = entity.Get<ecs::LightSensor>(lock);
             auto &transform = entity.Get<ecs::TransformSnapshot>(lock).globalPose;
 
-            if (!data) data = make_shared<LightSensorData>();
+            if (!data) data = std::make_shared<LightSensorData>();
 
             auto &s = data->gpu.sensors[data->gpu.sensorCount];
             s.position = transform * glm::vec4(sensor.position, 1);

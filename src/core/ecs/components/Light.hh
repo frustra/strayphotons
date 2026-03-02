@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 
@@ -19,7 +18,7 @@ namespace ecs {
         float illuminance = 0;
         sp::angle_t spotAngle = 0.0f;
         sp::color_t tint = glm::vec3(1);
-        string filterName;
+        std::string filterName;
         bool on = true;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane

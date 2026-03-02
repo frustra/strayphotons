@@ -9,11 +9,13 @@
 
 #include "export.h"
 
-#include <c_abi/Tecs.h>
+// #include <c_abi/Tecs.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void tecs_ecs_t;
 
 // The following functions are declared in src/exports/Ecs.cc
 

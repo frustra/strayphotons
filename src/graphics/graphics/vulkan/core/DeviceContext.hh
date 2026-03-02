@@ -7,10 +7,6 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/Defer.hh"
-#include "common/DispatchQueue.hh"
-#include "common/Hashing.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
@@ -19,12 +15,17 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
 #include <atomic>
-#include <future>
 #include <memory>
 #include <robin_hood.h>
+#include <string>
+#include <string_view>
 #include <variant>
+#include <vector>
 
 namespace tracy {
     class VkCtx;
@@ -177,20 +178,20 @@ namespace sp::vulkan {
         vk::Sampler GetSampler(SamplerType type);
         vk::Sampler GetSampler(const vk::SamplerCreateInfo &info);
 
-        AsyncPtr<ImageView> LoadAssetImage(string_view assetName, bool genMipmap = false, bool srgb = true);
-        AsyncPtr<ImageView> LoadImage(shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> LoadAssetImage(std::string_view assetName, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> LoadImage(std::shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
 
-        ShaderHandle LoadShader(string_view name);
-        shared_ptr<Shader> GetShader(ShaderHandle handle) const;
+        ShaderHandle LoadShader(std::string_view name);
+        std::shared_ptr<Shader> GetShader(ShaderHandle handle) const;
 
         // Returns a Pipeline from cache, keyed by `input`. Builds the pipeline if not found in cache.
-        shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &input);
+        std::shared_ptr<Pipeline> GetPipeline(const PipelineCompileInput &input);
 
         // Returns a RenderPass from cache, keyed by `info.state`. Builds the render pass if not found in cache.
-        shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
+        std::shared_ptr<RenderPass> GetRenderPass(const RenderPassInfo &info);
 
         // Returns a Framebuffer from cache, keyed by `info.state`. Builds the render pass if not found in cache.
-        shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
+        std::shared_ptr<Framebuffer> GetFramebuffer(const RenderPassInfo &info);
 
         // Returns a descriptor set, in which binding 0 is a variable sized array of sampler/image descriptors.
         // Bindless descriptor sets stay allocated until the DeviceContext shuts down.
@@ -271,7 +272,7 @@ namespace sp::vulkan {
 
         void PrepareResourcesForFrame();
 
-        shared_ptr<Shader> CreateShader(const string &name, Hash64 compareHash);
+        std::shared_ptr<Shader> CreateShader(const std::string &name, Hash64 compareHash);
 
         GraphicsManager &graphics;
 
@@ -284,11 +285,11 @@ namespace sp::vulkan {
         vk::PhysicalDeviceProperties2 physicalDeviceProperties;
         vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
         vk::UniqueDevice device;
-        unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
+        std::unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         vk::SurfaceKHR surface;
 
-        unique_ptr<PerfTimer> perfTimer;
-        shared_ptr<ProfilerGui> profilerGui;
+        std::unique_ptr<PerfTimer> perfTimer;
+        std::shared_ptr<ProfilerGui> profilerGui;
 
 #ifdef TRACY_ENABLE_GRAPHICS
         struct {
@@ -298,13 +299,13 @@ namespace sp::vulkan {
         } tracing;
 #endif
 
-        unique_ptr<HandlePool<vk::Fence>> fencePool;
-        unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
-        unique_ptr<PipelineManager> pipelinePool;
-        unique_ptr<RenderPassManager> renderPassPool;
-        unique_ptr<FramebufferManager> framebufferPool;
+        std::unique_ptr<HandlePool<vk::Fence>> fencePool;
+        std::unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
+        std::unique_ptr<PipelineManager> pipelinePool;
+        std::unique_ptr<RenderPassManager> renderPassPool;
+        std::unique_ptr<FramebufferManager> framebufferPool;
 
-        shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
+        std::shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
 
         std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
         std::array<uint32_t, QUEUE_TYPES_COUNT> queueFamilyIndex;
@@ -318,7 +319,7 @@ namespace sp::vulkan {
             ImageViewPtr imageView;
         };
 
-        vector<SwapchainImageContext> swapchainImageContexts;
+        std::vector<SwapchainImageContext> swapchainImageContexts;
         uint32_t swapchainImageIndex = 0;
 
         SwapchainImageContext &SwapchainImage() {
@@ -327,7 +328,7 @@ namespace sp::vulkan {
 
         struct CommandContextPool {
             vk::UniqueCommandPool commandPool;
-            vector<CommandContextPtr> list;
+            std::vector<CommandContextPtr> list;
             size_t nextIndex = 0;
         };
 
@@ -349,7 +350,7 @@ namespace sp::vulkan {
             // Stores all command contexts created for this frame, so they can be reused in later frames
             std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
 
-            vector<InFlightObject> inFlightObjects;
+            std::vector<InFlightObject> inFlightObjects;
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
@@ -361,16 +362,16 @@ namespace sp::vulkan {
 
         struct ThreadContext {
             std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
-            std::array<unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
-            std::array<vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+            std::array<std::unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
+            std::array<std::vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
 
-            unique_ptr<BufferPool> bufferPool;
+            std::unique_ptr<BufferPool> bufferPool;
             std::atomic_bool printBufferStats;
 
             void ReleaseAvailableResources();
         };
 
-        vector<unique_ptr<ThreadContext>> threadContexts;
+        std::vector<std::unique_ptr<ThreadContext>> threadContexts;
 
         std::atomic_uint32_t nextThreadIndex = 0;
 
@@ -380,8 +381,8 @@ namespace sp::vulkan {
             return *threadContexts[threadIndex];
         }
 
-        robin_hood::unordered_map<string, ShaderHandle, StringHash, StringEqual> shaderHandles;
-        vector<shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
+        robin_hood::unordered_map<std::string, ShaderHandle, StringHash, StringEqual> shaderHandles;
+        std::vector<std::shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
         std::atomic_bool reloadShaders;
 
         bool deviceResetRequired = false;

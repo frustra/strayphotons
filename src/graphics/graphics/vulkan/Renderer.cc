@@ -7,7 +7,7 @@
 
 #include "Renderer.hh"
 
-#include "common/Logging.hh"
+#include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Game.hh"
@@ -18,12 +18,10 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Util.hh"
-#include "graphics/vulkan/core/VkTracing.hh"
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Bloom.hh"
-#include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/LightSensors.hh"
@@ -35,22 +33,24 @@
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
+#include "strayphotons/cpp/Logging.hh"
 #include "vulkan/vulkan.hpp"
 #include "xr/XrSystem.hh"
 
-#include <assets/AssetManager.hh>
+#include <string>
+#include <vector>
 
 namespace sp::vulkan {
     static const std::string defaultWindowViewTarget = "/ent:gui:menu/LastOutput";
     static const std::string defaultXrViewTarget = "/XrView/LastOutput";
 
-    CVar<string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
+    CVar<std::string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
     static CVar<bool> CVarMirrorXR("r.MirrorXR", false, "Mirror XR in primary window");
 
     static CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
 
-    static CVar<string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
+    static CVar<std::string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
 
@@ -102,14 +102,14 @@ namespace sp::vulkan {
 
         BuildFrameGraph(elapsedTime);
 
-        CVarWindowViewTarget.UpdateCompletions([&](vector<string> &completions) {
+        CVarWindowViewTarget.UpdateCompletions([&](std::vector<std::string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
                 completions.emplace_back(info.name.data(), info.name.size());
             }
         });
 
-        CVarXrViewTarget.UpdateCompletions([&](vector<string> &completions) {
+        CVarXrViewTarget.UpdateCompletions([&](std::vector<std::string> &completions) {
             auto list = graph.AllImages();
             for (const auto &info : list) {
                 completions.emplace_back(info.name.data(), info.name.size());

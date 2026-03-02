@@ -8,8 +8,6 @@
 #include "Sound.hh"
 
 #include "assets/AssetManager.hh"
-#include "common/Logging.hh"
-#include "ecs/EcsImpl.hh"
 
 #include <picojson.h>
 

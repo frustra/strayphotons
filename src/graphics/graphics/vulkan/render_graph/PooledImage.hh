@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include "common/Hashing.hh"
-#include "common/Logging.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/Logging.hh"
+
+#include <memory>
+#include <vector>
 
 namespace sp::vulkan::render_graph {
     struct ImageDesc {
@@ -64,10 +66,10 @@ namespace sp::vulkan::render_graph {
         DeviceContext *device;
         ImageDesc desc;
         ImageViewPtr imageView;
-        vector<ImageViewPtr> layerImageViews;
-        vector<ImageViewPtr> mipImageViews;
+        std::vector<ImageViewPtr> layerImageViews;
+        std::vector<ImageViewPtr> mipImageViews;
         ImageViewPtr depthImageView;
     };
 
-    typedef shared_ptr<PooledImage> PooledImagePtr;
+    typedef std::shared_ptr<PooledImage> PooledImagePtr;
 } // namespace sp::vulkan::render_graph

@@ -7,17 +7,16 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
 #include <array>
 #include <atomic>
 #include <glm/glm.hpp>
 #include <iostream>
-#include <queue>
 #include <string>
 #include <variant>
 

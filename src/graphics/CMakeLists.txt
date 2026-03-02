@@ -12,14 +12,14 @@ target_include_directories(${PROJECT_GRAPHICS_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
-        ${PROJECT_ROOT_DIR}/include
+        ${PROJECT_ROOT_DIR}/sdk/include
 )
 
 target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
     PRIVATE
-        ${PROJECT_ROOT_DIR}/include
+        ${PROJECT_ROOT_DIR}/sdk/include
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB}
@@ -40,7 +40,6 @@ target_link_libraries(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
         ${PROJECT_GAME_LIB}
-        ${PROJECT_CODEGEN_LIB}
         SPIRV-Reflect
         fpng
         ImGui

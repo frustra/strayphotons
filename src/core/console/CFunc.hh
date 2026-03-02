@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "console/CVar.hh"
 #include "ecs/EntityRef.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <functional>
 #include <magic_enum.hpp>
@@ -21,22 +20,22 @@ namespace sp {
     public:
         typedef std::function<void(ParamTypes...)> Callback;
 
-        CFunc(const string &name, const string &description, Callback callback)
+        CFunc(const std::string &name, const std::string &description, Callback callback)
             : CVarBase(name, description), callback(callback) {
             this->Register();
         }
 
-        CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
+        CFunc(const std::string &name, Callback callback) : CFunc(name, "", callback) {}
 
         virtual ~CFunc() {
             this->UnRegister();
         };
 
-        string StringValue() {
+        std::string StringValue() {
             return "CFunc:" + GetName();
         }
 
-        void SetFromString(const string &newValue) {
+        void SetFromString(const std::string &newValue) {
             std::tuple<ParamTypes...> values = {};
             std::istringstream in(newValue);
             size_t parsedCount = 0;
@@ -79,7 +78,7 @@ namespace sp {
             value = ecs::Name(entityName, ecs::Name());
         }
 
-        void ParseArgument(string &value, std::istringstream &in, bool last) {
+        void ParseArgument(std::string &value, std::istringstream &in, bool last) {
             in >> std::ws;
             if (last) {
                 std::getline(in, value);
@@ -98,26 +97,26 @@ namespace sp {
     };
 
     template<>
-    class CFunc<string> : public CVarBase {
+    class CFunc<std::string> : public CVarBase {
     public:
-        typedef std::function<void(string)> Callback;
+        typedef std::function<void(std::string)> Callback;
 
-        CFunc(const string &name, const string &description, Callback callback)
+        CFunc(const std::string &name, const std::string &description, Callback callback)
             : CVarBase(name, description), callback(callback) {
             this->Register();
         }
 
-        CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
+        CFunc(const std::string &name, Callback callback) : CFunc(name, "", callback) {}
 
         virtual ~CFunc() {
             this->UnRegister();
         };
 
-        string StringValue() {
+        std::string StringValue() {
             return "CFunc:" + GetName();
         }
 
-        void SetFromString(const string &newValue) {
+        void SetFromString(const std::string &newValue) {
             callback(newValue);
         }
 
@@ -134,22 +133,22 @@ namespace sp {
     public:
         typedef std::function<void()> Callback;
 
-        CFunc(const string &name, const string &description, Callback callback)
+        CFunc(const std::string &name, const std::string &description, Callback callback)
             : CVarBase(name, description), callback(callback) {
             this->Register();
         }
 
-        CFunc(const string &name, Callback callback) : CFunc(name, "", callback) {}
+        CFunc(const std::string &name, Callback callback) : CFunc(name, "", callback) {}
 
         virtual ~CFunc() {
             this->UnRegister();
         };
 
-        string StringValue() {
+        std::string StringValue() {
             return "CFunc:" + GetName();
         }
 
-        void SetFromString(const string &newValue) {
+        void SetFromString(const std::string &newValue) {
             callback();
         }
 
@@ -164,18 +163,20 @@ namespace sp {
     class CFuncCollection {
     public:
         template<typename... ParamTypes>
-        void Register(const string &name, const string &description, typename CFunc<ParamTypes...>::Callback callback) {
+        void Register(const std::string &name,
+            const std::string &description,
+            typename CFunc<ParamTypes...>::Callback callback) {
             collection.push_back(make_shared<CFunc<ParamTypes...>>(name, description, callback));
         }
 
-        void Register(const string &name, const string &description, std::function<void()> callback) {
+        void Register(const std::string &name, const std::string &description, std::function<void()> callback) {
             collection.push_back(make_shared<CFunc<void>>(name, description, callback));
         }
 
         template<typename ThisType, typename... ParamTypes>
         void Register(ThisType *parent,
-            const string &name,
-            const string &description,
+            const std::string &name,
+            const std::string &description,
             void (ThisType::*callback)(ParamTypes...)) {
             auto cb = [parent, callback](ParamTypes... args) {
                 (parent->*callback)(args...);
@@ -184,12 +185,15 @@ namespace sp {
         }
 
         template<typename ThisType>
-        void Register(ThisType *parent, const string &name, const string &description, void (ThisType::*callback)()) {
+        void Register(ThisType *parent,
+            const std::string &name,
+            const std::string &description,
+            void (ThisType::*callback)()) {
             auto cb = std::bind(callback, parent);
             collection.push_back(make_shared<CFunc<void>>(name, description, cb));
         }
 
     private:
-        vector<shared_ptr<CVarBase>> collection;
+        std::vector<std::shared_ptr<CVarBase>> collection;
     };
 } // namespace sp

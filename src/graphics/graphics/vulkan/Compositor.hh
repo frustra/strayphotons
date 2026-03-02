@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/InlineString.hh"
 #include "common/PreservingMap.hh"
 #include "ecs/SignalExpression.hh"
 #include "graphics/GenericCompositor.hh"
@@ -16,6 +14,11 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/InlineString.hh"
+
+#include <memory>
+#include <vector>
 
 struct ImFontAtlas;
 struct ImDrawData;
@@ -74,7 +77,7 @@ namespace sp::vulkan {
             rg::ResourceID sourceResourceID = rg::InvalidResource;
             rg::ResourceID outputResourceID = rg::InvalidResource;
         };
-        vector<RenderOutputInfo> renderOutputs;
+        std::vector<RenderOutputInfo> renderOutputs;
         robin_hood::unordered_map<ecs::Entity, size_t> existingOutputs;
         // 3D views are rendered after this many renderOutputs, allowing later renderOutputs to reference view outputs
         size_t viewRenderPassOffset = 0;
@@ -96,9 +99,9 @@ namespace sp::vulkan {
         LockFreeMutex dynamicSourceMutex;
         robin_hood::unordered_map<ecs::Entity, DynamicImageSource> dynamicImageSources;
 
-        unique_ptr<VertexLayout> vertexLayout;
+        std::unique_ptr<VertexLayout> vertexLayout;
 
-        shared_ptr<ImFontAtlas> fontAtlas;
+        std::shared_ptr<ImFontAtlas> fontAtlas;
         AsyncPtr<ImageView> fontView;
     };
 } // namespace sp::vulkan

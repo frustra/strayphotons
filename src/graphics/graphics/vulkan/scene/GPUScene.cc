@@ -14,6 +14,8 @@
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
+#include <memory>
+
 namespace sp::vulkan {
     GPUScene::GPUScene(DeviceContext &device) : device(device), textures(device) {
         indexBuffer = device.AllocateBuffer({sizeof(uint32_t), 64 * 1024 * 1024},
@@ -227,7 +229,7 @@ namespace sp::vulkan {
             });
     }
 
-    shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
+    std::shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
         if (meshIndex >= model->meshes.size()) return nullptr;
         auto vkMesh = activeMeshes.Load(MeshKeyView{model->name, meshIndex});
         if (!vkMesh) {
@@ -247,7 +249,7 @@ namespace sp::vulkan {
             }
 
             activeMeshes.Register(MeshKey{rg::ResourceName{model->name}, meshIndex},
-                make_shared<Mesh>(model, meshIndex, *this, device));
+                std::make_shared<Mesh>(model, meshIndex, *this, device));
             meshesToLoad.pop_back();
         }
     }

@@ -7,10 +7,6 @@
 
 #include "PhysicsQuery.hh"
 
-#include "assets/AssetManager.hh"
-#include "common/Logging.hh"
-#include "ecs/EcsImpl.hh"
-
 namespace ecs {
     template<>
     void EntityComponent<PhysicsQuery>::Apply(PhysicsQuery &dst, const PhysicsQuery &src, bool liveTarget) {

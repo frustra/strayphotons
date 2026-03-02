@@ -16,19 +16,17 @@
 #endif
 
 #include "assets/ConsoleScript.hh"
-#include "common/Logging.hh"
 #include "common/RegisteredThread.hh"
 #include "common/Tracing.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <algorithm>
-#include <atomic>
 #include <chrono>
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <shared_mutex>
 #include <sstream>
-#include <tracy/Tracy.hpp>
 
 namespace sp {
     ConsoleManager &GetConsoleManager() {
@@ -41,7 +39,7 @@ namespace sp {
 #endif
 
     namespace logging {
-        void GlobalLogOutput_static(Level level, const string &message) {
+        void GlobalLogOutput_static(Level level, const std::string &message) {
             TracyMessage(message.data(), message.size());
             if (level < Level::Trace) {
                 auto outputPath = GetLogOutputFile_static();
@@ -55,7 +53,7 @@ namespace sp {
         }
     } // namespace logging
 
-    CVarBase::CVarBase(const string &name, const string &description)
+    CVarBase::CVarBase(const std::string &name, const std::string &description)
         : name(name), nameLower(to_lower_copy(name)), description(description) {}
 
     void CVarBase::Register() {
@@ -132,7 +130,7 @@ namespace sp {
         cliInputThread.detach();
     }
 
-    void ConsoleManager::AddLine(logging::Level lvl, string_view line) {
+    void ConsoleManager::AddLine(logging::Level lvl, std::string_view line) {
         std::lock_guard lock(linesLock);
         outputLines.push_back({lvl, std::string(line)});
     }
@@ -140,7 +138,7 @@ namespace sp {
     void ConsoleManager::StartThread(const ConsoleScript *startupScript) {
         if (startupScript) {
             exitOnEmptyQueue = true;
-            for (const string &line : startupScript->Lines()) {
+            for (const std::string &line : startupScript->Lines()) {
                 scriptCommands.emplace(line);
             }
         }
@@ -192,7 +190,7 @@ namespace sp {
         }
     }
 
-    void ConsoleManager::ParseAndExecute(string_view line) {
+    void ConsoleManager::ParseAndExecute(std::string_view line) {
         if (line == "") return;
 
         auto cmd = line.begin();
@@ -200,7 +198,7 @@ namespace sp {
             auto cmdEnd = std::find(cmd, line.end(), ';');
 
             std::stringstream stream(std::string(cmd, cmdEnd));
-            string varName, value;
+            std::string varName, value;
             stream >> varName;
             getline(stream, value);
             trim(value);
@@ -211,7 +209,7 @@ namespace sp {
         } while (cmd != line.end());
     }
 
-    void ConsoleManager::Execute(string_view cmd, string_view args) {
+    void ConsoleManager::Execute(std::string_view cmd, std::string_view args) {
         Debugf("Executing console command: %s%s%s", cmd, args.empty() ? "" : " ", args);
         std::lock_guard execLock(cvarExecLock);
         CVarBase *cvar = nullptr;
@@ -237,30 +235,30 @@ namespace sp {
         }
     }
 
-    void ConsoleManager::QueueParseAndExecute(string_view line,
+    void ConsoleManager::QueueParseAndExecute(std::string_view line,
         chrono_clock::time_point wait_util,
         std::condition_variable *handled) {
         std::lock_guard lock(queueLock);
         queuedCommands.emplace(line, wait_util, handled);
     }
 
-    void ConsoleManager::AddHistory(string_view input) {
+    void ConsoleManager::AddHistory(std::string_view input) {
         std::lock_guard lock(historyLock);
         if (history.size() == 0 || history[history.size() - 1] != input) {
             history.emplace_back(input);
         }
     }
 
-    vector<string> ConsoleManager::AllHistory(size_t maxEntries) {
+    std::vector<std::string> ConsoleManager::AllHistory(size_t maxEntries) {
         maxEntries = std::min(maxEntries, history.size());
         if (maxEntries == 0) return {};
 
         std::lock_guard lock(historyLock);
-        vector<string> results(history.rbegin(), history.rbegin() + maxEntries);
+        std::vector<std::string> results(history.rbegin(), history.rbegin() + maxEntries);
         return results;
     }
 
-    ConsoleManager::Completions ConsoleManager::AllCompletions(string_view rawInput, bool requestNewCompletions) {
+    ConsoleManager::Completions ConsoleManager::AllCompletions(std::string_view rawInput, bool requestNewCompletions) {
         std::shared_lock lock(cvarReadLock);
 
         Completions result;
@@ -277,8 +275,8 @@ namespace sp {
                 if (requestNewCompletions) cvar->RequestCompletion();
                 if (cvar->PendingCompletion()) result.pending = true;
 
-                auto restOfLine = string_view(input).substr(name.size() + 1);
-                cvar->EachCompletion([&](const string &completion) {
+                auto restOfLine = std::string_view(input).substr(name.size() + 1);
+                cvar->EachCompletion([&](const std::string &completion) {
                     if (starts_with(to_lower_copy(completion), restOfLine)) {
                         result.values.push_back(name + " " + completion);
                     }
@@ -301,7 +299,7 @@ namespace sp {
 
 #ifdef USE_LINENOISE_CLI
     void LinenoiseCompletionCallback(const char *buf, linenoiseCompletions *lc) {
-        auto completions = GetConsoleManager().AllCompletions(string(buf), true);
+        auto completions = GetConsoleManager().AllCompletions(std::string(buf), true);
         for (auto str : completions.values) {
             linenoiseAddCompletion(lc, str.c_str());
         }

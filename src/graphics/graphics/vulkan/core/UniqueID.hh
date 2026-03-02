@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "common/Common.hh"
+#include <cstdint>
 
 namespace sp::vulkan {
     class DeviceContext;

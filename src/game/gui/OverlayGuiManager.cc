@@ -12,7 +12,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <imgui.h>
 

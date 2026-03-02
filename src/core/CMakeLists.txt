@@ -30,6 +30,11 @@ target_link_libraries(${PROJECT_CORE_LIB}
         ImGui
 )
 
+target_compile_definitions(${PROJECT_CORE_LIB} PRIVATE
+    SP_SHARED_INTERNAL
+    TECS_SHARED_INTERNAL
+)
+
 if(WIN32)
     target_compile_definitions(${PROJECT_CORE_LIB} PUBLIC
         _CRT_SECURE_NO_WARNINGS

@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include "common/Logging.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <array>
 #include <cstring>
 #include <limits>
-#include <ostream>
 
 namespace sp {
     template<size_t MaxSize, typename CharT = char, typename ArrayT = std::array<CharT, MaxSize + 1>>

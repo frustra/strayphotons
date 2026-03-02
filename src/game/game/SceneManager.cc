@@ -10,7 +10,6 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
@@ -18,6 +17,7 @@
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <algorithm>
 #include <filesystem>
@@ -676,7 +676,7 @@ namespace sp {
         }
 
         picojson::value root;
-        string err = picojson::parse(root, asset->String());
+        std::string err = picojson::parse(root, asset->String());
         if (!err.empty()) {
             Errorf("Failed to parse scene (%s): %s", scenePath, err);
             return nullptr;
@@ -722,8 +722,8 @@ namespace sp {
                 auto &entSrc = value.get<picojson::object>();
                 auto &entDst = entities.emplace_back();
 
-                if (entSrc.count("name") && entSrc["name"].is<string>()) {
-                    ecs::Name name(entSrc["name"].get<string>(), scope);
+                if (entSrc.count("name") && entSrc["name"].is<std::string>()) {
+                    ecs::Name name(entSrc["name"].get<std::string>(), scope);
                     if (name) std::get<std::optional<ecs::Name>>(entDst) = name;
                 }
 
@@ -792,7 +792,7 @@ namespace sp {
         }
 
         picojson::value root;
-        string err = picojson::parse(root, bindingConfig->String());
+        std::string err = picojson::parse(root, bindingConfig->String());
         if (!err.empty()) Abortf("Failed to parse input binding json file: %s", err);
         if (!root.is<picojson::object>()) {
             Abortf("Failed to parse input binding json: %s", root.to_str());

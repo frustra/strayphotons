@@ -9,10 +9,9 @@
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
-#include "common/Async.hh"
-#include "common/Logging.hh"
 #include "cooking/ConvexHull.hh"
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cxxopts.hpp>
@@ -20,6 +19,7 @@
 #include <extensions/PxDefaultErrorCallback.h>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 
 int main(int argc, char **argv) {
     cxxopts::Options options("hull_compiler", "");
@@ -47,13 +47,13 @@ int main(int argc, char **argv) {
     sp::Assets().StartThread(assetsPath.string());
 
     auto modelPtr = sp::Assets().LoadGltf(modelName);
-    auto model = modelPtr->Get();
+    std::shared_ptr<sp::Gltf> model = modelPtr->Get();
     if (!model) {
         Errorf("hull_compiler could not load Gltf model: %s", modelName);
         return 1;
     }
 
-    auto physicsInfo = sp::Assets().LoadPhysicsInfo(modelName)->Get();
+    std::shared_ptr<sp::PhysicsInfo> physicsInfo = sp::Assets().LoadPhysicsInfo(modelName)->Get();
 
     physx::PxDefaultErrorCallback defaultErrorCallback;
     physx::PxDefaultAllocator defaultAllocatorCallback;

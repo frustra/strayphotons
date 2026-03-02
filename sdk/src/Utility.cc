@@ -5,12 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "Common.hh"
-
-#include "common/Logging.hh"
-
 #include <algorithm>
 #include <cctype>
+#include <strayphotons/cpp/Utility.hh>
 
 #ifdef _WIN32
     #include <intrin.h>
@@ -56,7 +53,7 @@ namespace sp {
         return glm::degrees(radians_);
     }
 
-    bool is_float(string_view str) {
+    bool is_float(std::string_view str) {
         if (str.empty()) return false;
         int state = 0;
         // States:
@@ -85,22 +82,22 @@ namespace sp {
         return state > 1;
     }
 
-    bool all_lower(const string &str) {
+    bool all_lower(const std::string &str) {
         return std::all_of(str.begin(), str.end(), [](unsigned char c) {
             return std::islower(c);
         });
     }
 
     namespace boost_replacements {
-        bool starts_with(const string &str, const string &prefix) {
+        bool starts_with(const std::string &str, const std::string &prefix) {
             return str.rfind(prefix, 0) == 0;
         }
 
-        bool starts_with(const string_view &str, const string_view &prefix) {
+        bool starts_with(const std::string_view &str, const std::string_view &prefix) {
             return str.rfind(prefix, 0) == 0;
         }
 
-        bool ends_with(const string &str, const string &suffix) {
+        bool ends_with(const std::string &str, const std::string &suffix) {
             if (str.length() >= suffix.length()) {
                 return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
             } else {
@@ -108,7 +105,7 @@ namespace sp {
             }
         }
 
-        bool ends_with(const string_view &str, const string_view &suffix) {
+        bool ends_with(const std::string_view &str, const std::string_view &suffix) {
             if (str.length() >= suffix.length()) {
                 return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
             } else {
@@ -116,89 +113,89 @@ namespace sp {
             }
         }
 
-        string to_lower(string &str) {
+        std::string to_lower(std::string &str) {
             std::transform(str.begin(), str.end(), str.begin(), [](auto &ch) {
                 return std::tolower(ch);
             });
             return str;
         }
 
-        string to_upper(string &str) {
+        std::string to_upper(std::string &str) {
             std::transform(str.begin(), str.end(), str.begin(), [](auto &ch) {
                 return std::toupper(ch);
             });
             return str;
         }
 
-        string to_lower_copy(const string &str) {
-            string out(str);
+        std::string to_lower_copy(const std::string &str) {
+            std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::tolower(ch);
             });
             return out;
         }
 
-        string to_upper_copy(const string &str) {
-            string out(str);
+        std::string to_upper_copy(const std::string &str) {
+            std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::toupper(ch);
             });
             return out;
         }
 
-        string to_lower_copy(const string_view &str) {
-            string out(str);
+        std::string to_lower_copy(const std::string_view &str) {
+            std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::tolower(ch);
             });
             return out;
         }
 
-        string to_upper_copy(const string_view &str) {
-            string out(str);
+        std::string to_upper_copy(const std::string_view &str) {
+            std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::toupper(ch);
             });
             return out;
         }
 
-        bool iequals(const string &str1, const string &str2) {
+        bool iequals(const std::string &str1, const std::string &str2) {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
             });
         }
 
-        void trim(string &str) {
+        void trim(std::string &str) {
             trim_right(str);
             trim_left(str);
         }
 
-        void trim_left(string &str) {
+        void trim_left(std::string &str) {
             auto left = std::find_if(str.begin(), str.end(), [](char ch) {
                 return !std::isspace(ch);
             });
             str.erase(str.begin(), left);
         }
 
-        void trim_right(string &str) {
+        void trim_right(std::string &str) {
             auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
                 return !std::isspace(ch);
             }).base();
             str.erase(right, str.end());
         }
 
-        string_view trim(const string_view &str) {
+        std::string_view trim(const std::string_view &str) {
             return trim_right(trim_left(str));
         }
 
-        string_view trim_left(const string_view &str) {
+        std::string_view trim_left(const std::string_view &str) {
             auto left = std::find_if(str.begin(), str.end(), [](char ch) {
                 return !std::isspace(ch);
             });
             return str.substr(left - str.begin());
         }
 
-        string_view trim_right(const string_view &str) {
+        std::string_view trim_right(const std::string_view &str) {
             auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
                 return !std::isspace(ch);
             }).base();

@@ -7,16 +7,12 @@
 
 #include "RegisteredThread.hh"
 
-#include "common/Common.hh"
-#include "common/Defer.hh"
-#include "common/Hashing.hh"
-#include "common/LockFreeMutex.hh"
 #include "common/Tracing.hh"
+#include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
-#include <array>
-#include <iostream>
 #include <mutex>
-#include <numeric>
 #include <shared_mutex>
 #include <thread>
 

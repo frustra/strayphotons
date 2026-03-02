@@ -7,12 +7,11 @@
 
 #include "ScriptManager.hh"
 
-#include "common/Common.hh"
-#include "common/Defer.hh"
 #include "console/CVar.hh"
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
+#include "strayphotons/cpp/Defer.hh"
 
 #include <shared_mutex>
 

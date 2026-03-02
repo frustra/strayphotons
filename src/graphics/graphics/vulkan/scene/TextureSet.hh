@@ -8,14 +8,16 @@
 #pragma once
 
 #include "assets/Gltf.hh"
-#include "common/Async.hh"
-#include "common/DispatchQueue.hh"
-#include "common/Hashing.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
 
+#include <memory>
+#include <string>
 #include <string_view>
+#include <vector>
 
 namespace sp::vulkan {
     typedef uint16_t TextureIndex;
@@ -36,7 +38,7 @@ namespace sp::vulkan {
         TextureSet(DeviceContext &device);
 
         TextureHandle LoadAssetImage(std::string_view name, bool genMipmap = false, bool srgb = true);
-        TextureHandle LoadGltfMaterial(const shared_ptr<const Gltf> &source, int materialIndex, TextureType type);
+        TextureHandle LoadGltfMaterial(const std::shared_ptr<const Gltf> &source, int materialIndex, TextureType type);
 
         TextureHandle Add(const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo,
@@ -67,14 +69,14 @@ namespace sp::vulkan {
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();
 
-        vector<ImageViewPtr> textures;
-        vector<ImageViewPtr> texturesPendingDelete;
+        std::vector<ImageViewPtr> textures;
+        std::vector<ImageViewPtr> texturesPendingDelete;
 
-        vector<TextureIndex> freeTextureIndexes;
-        vector<TextureIndex> texturesToFlush;
+        std::vector<TextureIndex> freeTextureIndexes;
+        std::vector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
 
-        robin_hood::unordered_map<string, TextureHandle> textureCache;
+        robin_hood::unordered_map<std::string, TextureHandle> textureCache;
         robin_hood::unordered_map<uint32_t, TextureIndex> singlePixelMap;
 
         DeviceContext &device;

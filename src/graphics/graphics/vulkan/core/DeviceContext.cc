@@ -10,8 +10,6 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
-#include "common/InlineVector.hh"
-#include "common/Logging.hh"
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
@@ -27,6 +25,8 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -35,6 +35,8 @@
 #include <memory>
 #include <new>
 #include <string>
+#include <string_view>
+#include <vector>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -53,17 +55,17 @@ namespace sp::vulkan {
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
 
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
-        string message(pCallbackData->pMessage);
+        std::string message(pCallbackData->pMessage);
 
         switch (messageSeverity) {
         case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
     #ifdef TRACY_ENABLE_GRAPHICS
             // Ignore Tracy timer query errors
-            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) break;
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != std::string_view::npos) break;
     #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
-                string_view::npos)
+                std::string_view::npos)
                 break;
             Errorf("VK %s %s", typeStr, message);
             break;
@@ -86,18 +88,18 @@ namespace sp::vulkan {
         if (messageType & deviceContext->disabledDebugMessages) return VK_FALSE;
 
         auto typeStr = vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageType));
-        string message(pCallbackData->pMessage);
+        std::string message(pCallbackData->pMessage);
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
     #ifdef TRACY_ENABLE_GRAPHICS
-            if (message.find("CoreValidation-DrawState-QueryNotReset") != string_view::npos) {
+            if (message.find("CoreValidation-DrawState-QueryNotReset") != std::string_view::npos) {
                 // Ignore Tracy timer query errors
                 return VK_FALSE;
             }
     #endif
             if (message.find("(subresource: aspectMask 0x1 array layer 0, mip level 0) to be in layout "
                              "VK_IMAGE_LAYOUT_GENERAL--instead, current layout is VK_IMAGE_LAYOUT_PREINITIALIZED.") !=
-                string_view::npos)
+                std::string_view::npos)
                 return VK_FALSE;
             Errorf("VK %s %s", typeStr, message);
         } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
@@ -165,7 +167,7 @@ namespace sp::vulkan {
             auto availableExtensions = vk::enumerateInstanceExtensionProperties();
             // Debugf("Available Vulkan extensions: %u", availableExtensions.size());
             for (auto &ext : availableExtensions) {
-                string_view name(ext.extensionName.data());
+                std::string_view name(ext.extensionName.data());
                 // Debugf("\t%s", name);
 
                 if (name == VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) {
@@ -189,8 +191,8 @@ namespace sp::vulkan {
 
             std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
-            vector<uint32_t> queuesUsedCount(queueFamilies.size());
-            vector<vector<float>> queuePriority(queueFamilies.size());
+            std::vector<uint32_t> queuesUsedCount(queueFamilies.size());
+            std::vector<std::vector<float>> queuePriority(queueFamilies.size());
 
             const auto findQueue = [&](QueueType queueType,
                                        vk::QueueFlags require,
@@ -252,7 +254,7 @@ namespace sp::vulkan {
                 queueInfos.push_back(queueInfo);
             }
 
-            vector<const char *> enabledDeviceExtensions = {
+            std::vector<const char *> enabledDeviceExtensions = {
                 VK_KHR_MULTIVIEW_EXTENSION_NAME,
                 VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
                 VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
@@ -449,11 +451,11 @@ namespace sp::vulkan {
 
             VmaAllocator alloc;
             Assert(vmaCreateAllocator(&allocatorInfo, &alloc) == VK_SUCCESS, "allocator init failed");
-            allocator = unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)>(alloc, [](VmaAllocator alloc) {
+            allocator = std::unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)>(alloc, [](VmaAllocator alloc) {
                 if (alloc) vmaDestroyAllocator(alloc);
             });
 
-            semaphorePool = make_unique<HandlePool<vk::Semaphore>>(
+            semaphorePool = std::make_unique<HandlePool<vk::Semaphore>>(
                 [&]() {
                     return device->createSemaphore({});
                 },
@@ -461,7 +463,7 @@ namespace sp::vulkan {
                     device->destroySemaphore(sem);
                 });
 
-            fencePool = make_unique<HandlePool<vk::Fence>>(
+            fencePool = std::make_unique<HandlePool<vk::Fence>>(
                 [&]() {
                     return device->createFence({});
                 },
@@ -472,15 +474,15 @@ namespace sp::vulkan {
                     device->resetFences({fence});
                 });
 
-            pipelinePool = make_unique<PipelineManager>(*this);
-            renderPassPool = make_unique<RenderPassManager>(*this);
-            framebufferPool = make_unique<FramebufferManager>(*this);
+            pipelinePool = std::make_unique<PipelineManager>(*this);
+            renderPassPool = std::make_unique<RenderPassManager>(*this);
+            framebufferPool = std::make_unique<FramebufferManager>(*this);
 
             for (auto &threadContextUnique : threadContexts) {
-                threadContextUnique = make_unique<ThreadContext>();
+                threadContextUnique = std::make_unique<ThreadContext>();
                 ThreadContext *threadContext = threadContextUnique.get();
 
-                threadContext->bufferPool = make_unique<BufferPool>(*this);
+                threadContext->bufferPool = std::make_unique<BufferPool>(*this);
 
                 for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                     vk::CommandPoolCreateInfo poolInfo;
@@ -489,7 +491,7 @@ namespace sp::vulkan {
                                      vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
                     threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
 
-                    threadContext->commandContexts[queueType] = make_unique<HandlePool<CommandContextPtr>>(
+                    threadContext->commandContexts[queueType] = std::make_unique<HandlePool<CommandContextPtr>>(
                         [this, threadContext, queueType]() {
                             vk::CommandBufferAllocateInfo allocInfo;
                             allocInfo.commandPool = *threadContext->commandPools[queueType];
@@ -497,7 +499,7 @@ namespace sp::vulkan {
                             allocInfo.commandBufferCount = 1;
                             auto buffers = device->allocateCommandBuffersUnique(allocInfo);
 
-                            return make_shared<CommandContext>(*this,
+                            return std::make_shared<CommandContext>(*this,
                                 std::move(buffers[0]),
                                 CommandContextType(queueType),
                                 CommandContextScope::Fence);
@@ -520,7 +522,7 @@ namespace sp::vulkan {
                 }
             }
 
-            funcs = make_unique<CFuncCollection>();
+            funcs = std::make_unique<CFuncCollection>();
             funcs->Register("reloadshaders", "Recompile any changed shaders", [&]() {
                 reloadShaders = true;
             });
@@ -648,7 +650,7 @@ namespace sp::vulkan {
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             ImageViewCreateInfo imageViewInfo = {};
-            imageViewInfo.image = make_shared<Image>(swapchainImages[i],
+            imageViewInfo.image = std::make_shared<Image>(swapchainImages[i],
                 swapchainInfo.imageFormat,
                 swapchainInfo.imageExtent);
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
@@ -664,7 +666,7 @@ namespace sp::vulkan {
     }
 
     void DeviceContext::InitRenderer(Game &game) {
-        vkRenderer = make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
+        vkRenderer = std::make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
     }
 
     void DeviceContext::Shutdown() {
@@ -688,7 +690,7 @@ namespace sp::vulkan {
         if (!context) return;
         auto *perfTimer = GetPerfTimer();
         if (perfTimer) {
-            if (!profilerGui) profilerGui = make_shared<ProfilerGui>(*perfTimer);
+            if (!profilerGui) profilerGui = std::make_shared<ProfilerGui>(*perfTimer);
             context->Attach(std::static_pointer_cast<ecs::GuiDefinition>(profilerGui));
         }
         if (vkRenderer) vkRenderer->AttachWindow(context);
@@ -868,7 +870,7 @@ namespace sp::vulkan {
             allocInfo.commandBufferCount = 1;
             auto buffers = device->allocateCommandBuffersUnique(allocInfo);
 
-            cmd = make_shared<CommandContext>(*this, std::move(buffers[0]), type, CommandContextScope::Frame);
+            cmd = std::make_shared<CommandContext>(*this, std::move(buffers[0]), type, CommandContextScope::Frame);
             pool.list.push_back(cmd);
             pool.nextIndex++;
         }
@@ -944,7 +946,7 @@ namespace sp::vulkan {
             queue = cmdQueue;
         }
 
-        vector<vk::CommandBuffer> cmdBufs;
+        std::vector<vk::CommandBuffer> cmdBufs;
         cmdBufs.reserve(cmds.size());
         for (auto &cmd : cmds) {
             if (cmd->recording) cmd->End();
@@ -981,11 +983,11 @@ namespace sp::vulkan {
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
+        return std::make_shared<Buffer>(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {
-        return make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+        return std::make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
     }
 
     BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {
@@ -1084,7 +1086,7 @@ namespace sp::vulkan {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         if (!declaredUsage) declaredUsage = info.usage;
-        return make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
+        return std::make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
     }
 
     void transferImageQueueType(DeviceContext &device,
@@ -1444,7 +1446,7 @@ namespace sp::vulkan {
             createInfo.pNext = &usageCreateInfo;
         }
 
-        return make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
+        return std::make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
     AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
@@ -1460,7 +1462,7 @@ namespace sp::vulkan {
         });
     }
 
-    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(string_view assetName, bool genMipmap, bool srgb) {
+    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(std::string_view assetName, bool genMipmap, bool srgb) {
         auto futImage = Assets().LoadImage(assetName);
         return allocatorQueue.Dispatch<ImageView>(futImage,
             [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
@@ -1472,7 +1474,7 @@ namespace sp::vulkan {
             });
     }
 
-    AsyncPtr<ImageView> DeviceContext::LoadImage(shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
+    AsyncPtr<ImageView> DeviceContext::LoadImage(std::shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
         ZoneScoped;
         Assertf(image, "DeviceContext::LoadImage called with null image");
         ImageCreateInfo createInfo;
@@ -1572,18 +1574,18 @@ namespace sp::vulkan {
         return *sampler;
     }
 
-    ShaderHandle DeviceContext::LoadShader(string_view name) {
+    ShaderHandle DeviceContext::LoadShader(std::string_view name) {
         auto it = shaderHandles.find(name);
         if (it != shaderHandles.end()) return it->second;
 
-        string strName(name);
+        std::string strName(name);
         auto shader = shaders.emplace_back(CreateShader(strName, {}));
         auto handle = static_cast<ShaderHandle>(shaders.size());
         shaderHandles[strName] = handle;
         return handle;
     }
 
-    shared_ptr<Shader> DeviceContext::CreateShader(const string &name, Hash64 compareHash) {
+    std::shared_ptr<Shader> DeviceContext::CreateShader(const std::string &name, Hash64 compareHash) {
         ZoneScoped;
         ZoneStr(name);
         auto asset = Assets().Load("shaders/" + name + ".spv", AssetType::Bundled, compareHash != Hash64())->Get();
@@ -1603,16 +1605,16 @@ namespace sp::vulkan {
             Abortf("could not parse shader: %s error: %d", name, reflection.GetResult());
         }
 
-        return make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);
+        return std::make_shared<Shader>(name, std::move(shaderModule), std::move(reflection), newHash);
     }
 
-    shared_ptr<Shader> DeviceContext::GetShader(ShaderHandle handle) const {
+    std::shared_ptr<Shader> DeviceContext::GetShader(ShaderHandle handle) const {
         if (handle == 0 || shaders.size() < (size_t)handle) return nullptr;
 
         return shaders[handle - 1];
     }
 
-    shared_ptr<Pipeline> DeviceContext::GetPipeline(const PipelineCompileInput &input) {
+    std::shared_ptr<Pipeline> DeviceContext::GetPipeline(const PipelineCompileInput &input) {
         return pipelinePool->GetPipeline(input);
     }
 
@@ -1620,11 +1622,11 @@ namespace sp::vulkan {
         return swapchain ? SwapchainImage().imageView : nullptr;
     }
 
-    shared_ptr<RenderPass> DeviceContext::GetRenderPass(const RenderPassInfo &info) {
+    std::shared_ptr<RenderPass> DeviceContext::GetRenderPass(const RenderPassInfo &info) {
         return renderPassPool->GetRenderPass(info);
     }
 
-    shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
+    std::shared_ptr<Framebuffer> DeviceContext::GetFramebuffer(const RenderPassInfo &info) {
         return framebufferPool->GetFramebuffer(info);
     }
 

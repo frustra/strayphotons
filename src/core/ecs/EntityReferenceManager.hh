@@ -7,16 +7,15 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/EntityMap.hh"
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "common/PreservingMap.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/Signals.hh"
+#include "strayphotons/cpp/EntityMap.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <atomic>
 #include <memory>

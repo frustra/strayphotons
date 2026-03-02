@@ -14,6 +14,8 @@
 #include <filesystem>
 #include <fstream>
 #include <strayphotons.h>
+#include <string>
+#include <vector>
 
 SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
     using cxxopts::value;
@@ -28,17 +30,17 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
         // clang-format off
         options.add_options()
             ("h,help", "Display help")
-            ("a,assets", "Override path to assets folder", value<string>())
-            ("r,run", "Load commands from a file an execute them in the console", value<string>())
-            ("s,scene", "Initial scene to load", value<string>())
-            ("window-size", "Initial window size", value<string>())
-            ("window-scale", "Initial window scaling factor", value<string>())
+            ("a,assets", "Override path to assets folder", value<std::string>())
+            ("r,run", "Load commands from a file an execute them in the console", value<std::string>())
+            ("s,scene", "Initial scene to load", value<std::string>())
+            ("window-size", "Initial window size", value<std::string>())
+            ("window-scale", "Initial window scaling factor", value<std::string>())
             ("no-vr", "Disable automatic XR/VR system loading")
             ("headless", "Disable window creation and graphics initialization")
             ("with-validation-layers", "Enable Vulkan validation layers")
-            ("c,command", "Run a console command on init", value<vector<string>>())
+            ("c,command", "Run a console command on init", value<std::vector<std::string>>())
             ("v,verbose", "Enable debug logging")
-            ("log", "Set the path to the log output file", value<string>());
+            ("log", "Set the path to the log output file", value<std::string>());
         // clang-format on
 
         auto optionsResult = options.parse(argc, argv);
@@ -50,7 +52,7 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
         }
 
         if (optionsResult.count("log")) {
-            auto outputPath = optionsResult["log"].as<string>();
+            auto outputPath = optionsResult["log"].as<std::string>();
             std::ofstream(outputPath, std::ios::out | std::ios::trunc); // Clear log file
             sp::logging::SetLogOutputFile(outputPath.c_str());
         }

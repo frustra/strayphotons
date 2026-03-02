@@ -7,9 +7,11 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructMetadata.hh"
+
+#include <string>
+using namespace std::string_literals;
 
 namespace picojson {
     class value;

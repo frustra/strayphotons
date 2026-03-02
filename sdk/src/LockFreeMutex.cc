@@ -5,11 +5,10 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "LockFreeMutex.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
-#include "common/Common.hh"
-#include "common/InlineVector.hh"
-#include "common/Logging.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <thread>
 

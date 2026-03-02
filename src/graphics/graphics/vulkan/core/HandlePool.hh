@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
-#include "graphics/vulkan/core/VkCommon.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
+#include <memory>
 #include <mutex>
+#include <vector>
 
 #ifdef SP_DEBUG
     #define HANDLE_POOL_DEBUG_UNFREED_HANDLES
@@ -23,11 +24,11 @@ namespace sp::vulkan {
     public:
         struct Data {
             struct PoolRef {
-                vector<SharedHandle<HandleType>> *freeList;
+                std::vector<SharedHandle<HandleType>> *freeList;
                 LockFreeMutex *freeMutex;
 
 #ifdef HANDLE_POOL_DEBUG_UNFREED_HANDLES
-                shared_ptr<std::atomic_flag> destroyed;
+                std::shared_ptr<std::atomic_flag> destroyed;
 #endif
             };
 
@@ -110,9 +111,9 @@ namespace sp::vulkan {
             std::function<void(HandleType)> destroyObject,
             std::function<void(HandleType)> resetObject = {})
             : createObject(createObject), destroyObject(destroyObject), resetObject(resetObject),
-              destroyed(make_shared<std::atomic_flag>()) {}
+              destroyed(std::make_shared<std::atomic_flag>()) {}
 
-        HandlePool() : destroyed(make_shared<std::atomic_flag>()) {}
+        HandlePool() : destroyed(std::make_shared<std::atomic_flag>()) {}
 
         HandlePool(HandlePool<HandleType> &&) = default;
 
@@ -168,9 +169,9 @@ namespace sp::vulkan {
         std::function<void(HandleType)> destroyObject, resetObject;
 
         LockFreeMutex freeMutex;
-        vector<SharedHandle<HandleType>> freeObjects;
+        std::vector<SharedHandle<HandleType>> freeObjects;
         size_t totalObjects = 0;
 
-        shared_ptr<std::atomic_flag> destroyed;
+        std::shared_ptr<std::atomic_flag> destroyed;
     };
 } // namespace sp::vulkan

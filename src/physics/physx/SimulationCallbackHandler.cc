@@ -7,11 +7,11 @@
 
 #include "SimulationCallbackHandler.hh"
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
-#include "input/BindingNames.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/gtx/norm.hpp>
 

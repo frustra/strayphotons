@@ -20,7 +20,7 @@ target_link_libraries(${PROJECT_GAME_LIB}
     PRIVATE
         ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
-        ${PROJECT_CODEGEN_LIB}
+        # ${PROJECT_SDK_LIB}
         ImGui
 )
 
