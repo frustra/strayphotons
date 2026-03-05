@@ -7,7 +7,6 @@
 
 #pragma once
 
-// #include "strayphotons/cpp/Common.hh"
 #include "strayphotons/cpp/StreamOverloads.hh"
 
 #include <atomic>

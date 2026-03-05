@@ -19,8 +19,7 @@ else()
 endif()
 target_link_libraries(sp-vk PRIVATE
     ${PROJECT_COMMON_EXE}
-    ${PROJECT_LIB_NAME}
-    ${PROJECT_COMMON_LIB}
+    ${PROJECT_SDK_LIB}
     glfw
     Vulkan::Vulkan
 )
@@ -48,8 +47,7 @@ else()
 endif()
 target_link_libraries(sp-test PRIVATE
     ${PROJECT_COMMON_EXE}
-    ${PROJECT_LIB_NAME}
-    ${PROJECT_COMMON_LIB}
+    ${PROJECT_SDK_LIB}
     glfw-egl
     Vulkan::Vulkan
 )

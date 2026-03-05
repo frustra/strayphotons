@@ -11,15 +11,11 @@ add_library(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} STATIC)
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${PROJECT_ROOT_DIR}/sdk/include
 )
 
 target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${PROJECT_ROOT_DIR}/sdk/include
 )
 
 target_link_libraries(${PROJECT_GRAPHICS_CORE_LIB}
@@ -56,8 +52,6 @@ target_compile_definitions(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         VULKAN_HPP_DISPATCH_LOADER_DYNAMIC
     PRIVATE
         VULKAN_HPP_STORAGE_SHARED_EXPORT
-        SP_SHARED_INTERNAL
-        TECS_SHARED_INTERNAL
 )
 
 # target_precompile_headers(${PROJECT_GRAPHICS_CORE_LIB} REUSE_FROM ${PROJECT_CORE_LIB})

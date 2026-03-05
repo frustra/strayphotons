@@ -8,6 +8,5 @@
 target_sources(${PROJECT_SDK_LIB} PRIVATE
     DispatchQueue.cc
     LockFreeMutex.cc
-    Logging.cc
     Utility.cc
 )

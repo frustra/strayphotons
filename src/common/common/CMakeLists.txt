@@ -7,6 +7,7 @@
 
 target_sources(${PROJECT_COMMON_LIB} PRIVATE
     RegisteredThread.cc
+    Logging.cc
 )
 
 if(TRACY_ENABLE)

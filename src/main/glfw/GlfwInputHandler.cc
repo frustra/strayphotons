@@ -8,7 +8,6 @@
 #include "GlfwInputHandler.hh"
 
 #include "GlfwKeyCodes.hh"
-#include "common/Tracing.hh"
 #include "strayphotons/cpp/Logging.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 #include "strayphotons/cpp/input/KeyCodes.hh"
@@ -16,6 +15,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <strayphotons.h>
+#include <tracy/Tracy.hpp>
 
 namespace sp {
     GlfwInputHandler::GlfwInputHandler(sp_game_t *ctx, GLFWwindow *window) : ctx(ctx), window(window) {

@@ -12,12 +12,10 @@
 #include "common/Async.hh"
 #include "common/DispatchQueue.hh"
 #include "common/EntityMap.hh"
-#include "common/LockFreeEventQueue.hh"
-#include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
 
-#include <atomic>
 #include <libnyquist/Decoders.h>
 
 struct SoundIo;

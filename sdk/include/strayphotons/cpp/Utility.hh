@@ -10,14 +10,14 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
-#include <string>
-#include <string_view>
-#include <vector>
-typedef std::chrono::steady_clock chrono_clock;
-
 #include <glm/glm.hpp>
 #include <robin_hood.h>
+#include <string>
+#include <string_view>
 #include <variant>
+#include <vector>
+
+typedef std::chrono::steady_clock chrono_clock;
 
 namespace sp {
     [[noreturn]] void Abort();

@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <magic_enum.hpp>
+#include <memory>
 #include <string>
 #include <type_traits>
 

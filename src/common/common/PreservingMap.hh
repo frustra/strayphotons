@@ -18,7 +18,6 @@
 #include <mutex>
 #include <robin_hood.h>
 #include <shared_mutex>
-#include <string>
 
 namespace sp {
     static_assert(sizeof(chrono_clock::rep) <= sizeof(uint64_t), "Chrono Clock time point is larger than uint64_t");
