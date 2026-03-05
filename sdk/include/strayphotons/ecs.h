@@ -9,7 +9,7 @@
 
 #include "export.h"
 
-// #include <c_abi/Tecs.h>
+#include <c_abi/Tecs.h>
 
 #ifdef __cplusplus
 extern "C" {

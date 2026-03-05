@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        std::cerr << "Usage: sdk_generator out/components.h out/components.cc" << std::endl;
+        std::cerr << "Usage: strayphotons-exports-generator out/components.h out/components.cc" << std::endl;
         return -1;
     }
     {

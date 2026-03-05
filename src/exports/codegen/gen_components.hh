@@ -15,8 +15,15 @@
 template<typename S>
 void GenerateComponentsH(S &out) {
     out << R"RAWSTR(/*
- * THIS FILE IS GENERATED -- DO NOT EDIT
- * See sdk_generator/gen_components.hh to modify
+ * THIS FILE IS AUTO-GENERATED -- DO NOT EDIT
+ * See src/exports/codegen/gen_components.hh to modify
+ */
+
+ /*
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justin Li
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
 #pragma once
