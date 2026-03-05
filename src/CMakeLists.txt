@@ -10,7 +10,7 @@ set(PROJECT_CORE_LIB ${PROJECT_BASE_NAME}-core CACHE INTERNAL "Library containin
 set(PROJECT_GAME_LIB ${PROJECT_BASE_NAME}-game CACHE INTERNAL "Library implementing game engine ECS systems")
 
 set(PROJECT_SDK_LIB ${PROJECT_BASE_NAME}-sdk CACHE INTERNAL "Shared library for interfacing with the public C API")
-set(PROJECT_SDK_EXPORTS_LIB ${PROJECT_BASE_NAME}-sdk-exports CACHE INTERNAL "Internal library implementing the public C interface")
+set(PROJECT_EXPORTS_LIB ${PROJECT_BASE_NAME}-exports CACHE INTERNAL "Internal library implementing the public C interface")
 set(PROJECT_ECS_C_ABI_LIB ${PROJECT_BASE_NAME}-ecs-c-abi CACHE INTERNAL "Shared library implementing ECS access via a C API")
 
 set(PROJECT_GRAPHICS_CORE_LIB ${PROJECT_BASE_NAME}-graphics-core CACHE INTERNAL "Library containing context-independent graphics code")
@@ -27,10 +27,6 @@ set(PROJECT_SCRIPTS_LIB ${PROJECT_BASE_NAME}-scripts CACHE INTERNAL "Library con
 
 add_library(${PROJECT_LIB_NAME} SHARED)
 
-target_include_directories(${PROJECT_LIB_NAME} PUBLIC
-    ${PROJECT_ROOT_DIR}/include
-)
-
 target_link_libraries(${PROJECT_LIB_NAME}
     PRIVATE
         ${PROJECT_COMMON_LIB}
@@ -41,10 +37,8 @@ target_link_libraries(${PROJECT_LIB_NAME}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
         ${PROJECT_SCRIPTS_LIB}
-        ${PROJECT_SDK_EXPORTS_LIB}
     PUBLIC
         ${PROJECT_ECS_C_ABI_LIB}
-        ${PROJECT_SDK_LIB}
 )
 
 target_compile_definitions(${PROJECT_LIB_NAME}

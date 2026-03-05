@@ -120,7 +120,11 @@ set(PROJECT_LIB_NAME sp)
 # Interface library that is applied to all module configurations
 set(PROJECT_COMMON_EXE ${PROJECT_BASE_NAME})
 add_library(${PROJECT_COMMON_EXE} INTERFACE)
-target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE cxxopts)
+target_link_libraries(${PROJECT_COMMON_EXE}
+    INTERFACE
+        cxxopts
+        TracyClient
+)
 target_include_directories(${PROJECT_COMMON_EXE}
     INTERFACE
         include
@@ -157,7 +161,6 @@ cmake_policy(SET CMP0076 NEW)
 
 add_subdirectory(shaders)
 add_subdirectory(src)
-add_subdirectory(sdk_generator)
 add_subdirectory(docs_generator)
 add_subdirectory(hull_compiler)
 add_subdirectory(scene_formatter)

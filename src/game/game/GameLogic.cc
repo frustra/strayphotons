@@ -7,11 +7,11 @@
 
 #include "GameLogic.hh"
 
-#include "common/LockFreeEventQueue.hh"
 #include "common/Tracing.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 #include "strayphotons/cpp/input/KeyCodes.hh"
 

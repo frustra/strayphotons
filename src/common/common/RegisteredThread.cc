@@ -11,6 +11,7 @@
 #include "strayphotons/cpp/Defer.hh"
 #include "strayphotons/cpp/Hashing.hh"
 #include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <mutex>
 #include <shared_mutex>

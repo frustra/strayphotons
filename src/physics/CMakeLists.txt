@@ -11,8 +11,9 @@ add_library(${PROJECT_PHYSICS_COOKING_LIB} STATIC)
 target_include_directories(${PROJECT_PHYSICS_PHYSX_LIB} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_include_directories(${PROJECT_PHYSICS_COOKING_LIB} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(${PROJECT_PHYSICS_COOKING_LIB}
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 target_link_libraries(${PROJECT_PHYSICS_PHYSX_LIB}

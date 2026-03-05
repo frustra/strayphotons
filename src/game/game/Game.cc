@@ -20,7 +20,6 @@
 #include <atomic>
 #include <cxxopts.hpp>
 #include <glm/glm.hpp>
-// #include <strayphotons.h>
 
 namespace sp {
 

@@ -5,6 +5,8 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
+project(sp-sdk VERSION 0.1)
+
 add_library(${PROJECT_SDK_LIB} STATIC)
 
 target_include_directories(${PROJECT_SDK_LIB}
@@ -19,6 +21,8 @@ target_link_libraries(${PROJECT_SDK_LIB} PUBLIC
     robin_hood
     # Tecs
 )
+
+target_link_libraries(${PROJECT_SDK_LIB} PUBLIC ${PROJECT_LIB_NAME})
 
 # if(SP_DEBUG)
 #     target_compile_definitions(${PROJECT_SDK_LIB} PUBLIC TRACY_ENABLE_DEBUG)

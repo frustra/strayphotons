@@ -7,14 +7,13 @@
 
 #pragma once
 
-#include "common/LockFreeEventQueue.hh"
 #include "console/CFunc.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
 
 #include <memory>
-// #include <strayphotons.h>
 
 namespace cxxopts {
     class ParseResult;

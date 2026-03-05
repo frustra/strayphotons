@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "common/LockFreeEventQueue.hh"
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
@@ -28,6 +27,7 @@
 #include "strayphotons/cpp/DispatchQueue.hh"
 #include "strayphotons/cpp/EntityMap.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
