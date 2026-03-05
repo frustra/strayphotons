@@ -1,6 +1,6 @@
 /*
  * THIS FILE IS GENERATED -- DO NOT EDIT
- * See sdk_generator/gen_components.hh to modify
+ * See src/exports/codegen/gen_components.hh to modify
  */
 
 #pragma once

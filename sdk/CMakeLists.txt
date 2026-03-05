@@ -17,15 +17,9 @@ target_include_directories(${PROJECT_SDK_LIB}
 target_link_libraries(${PROJECT_SDK_LIB} PUBLIC
     glm
     magic_enum
-    # TracyClient
     robin_hood
-    # Tecs
 )
 
 target_link_libraries(${PROJECT_SDK_LIB} PUBLIC ${PROJECT_LIB_NAME})
-
-# if(SP_DEBUG)
-#     target_compile_definitions(${PROJECT_SDK_LIB} PUBLIC TRACY_ENABLE_DEBUG)
-# endif()
 
 add_subdirectory(src)
