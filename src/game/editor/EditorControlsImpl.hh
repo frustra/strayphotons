@@ -305,7 +305,7 @@ namespace sp {
             }
             if (open) {
                 changed |= std::visit(
-                    [&](auto &shape) {
+                    [&](auto &shape) -> bool {
                         using T = std::decay_t<decltype(shape)>;
                         if constexpr (std::is_same<T, PhysicsShape::Sphere>()) {
                             std::string radiusLabel = "Sphere Radius##radius" + std::to_string(i) + fieldId;
@@ -329,7 +329,6 @@ namespace sp {
                             return changed;
                         } else {
                             Abortf("Unexpected PhysicsShape: %s", typeid(T).name());
-                            return false;
                         }
                     },
                     physicsShape.shape);

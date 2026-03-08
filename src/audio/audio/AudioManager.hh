@@ -9,6 +9,7 @@
 
 #include "assets/Asset.hh"
 #include "audio/LockFreeAudioSet.hh"
+#include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "strayphotons/cpp/Async.hh"

@@ -32,7 +32,7 @@ namespace sp {
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("ScrollingRegion",
             ImVec2(0, -footer_height_to_reserve),
-            false,
+            0,
             ImGuiWindowFlags_HorizontalScrollbar);
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
@@ -40,14 +40,33 @@ namespace sp {
         float frameHeight = ImGui::GetWindowHeight() - footer_height_to_reserve;
         float spacing = ImGui::GetTextLineHeightWithSpacing();
         float scrollY = ImGui::GetScrollY();
-        GetConsoleManager().AccessLines([&](auto &lines) {
-            ImGui::BeginChild("ConsoleLinesArea", ImVec2(0, lines.size() * spacing + 1));
-            size_t minLine = (size_t)(std::max(scrollY - spacing, 0.0f) / spacing);
-            size_t maxLine = (size_t)((scrollY + spacing * 2 + frameHeight) / spacing);
-            if (minLine > 0) ImGui::SetCursorPosY(minLine * spacing);
+        GetConsoleManager().AccessLines([&](const std::vector<ConsoleLine> &lines) {
+            size_t lineCount = lines.size();
+            for (const ConsoleLine &line : lines) {
+                lineCount += std::count(line.text.begin(), line.text.end(), '\n') - 1;
+            }
+            size_t minLine = (size_t)(std::max(scrollY - 1, 0.0f) / spacing);
+            size_t maxLine = (size_t)((scrollY + spacing + frameHeight) / spacing);
+            size_t startOffset = 0;
+            float cursorOffset = minLine * spacing;
+            for (size_t i = 0; i < minLine - startOffset && i < lines.size(); i++) {
+                auto &line = lines[i];
+                size_t delta = std::count(line.text.begin(), line.text.end(), '\n') - 1;
+                if (delta > 0) {
+                    startOffset += delta;
+                    if (i >= minLine - startOffset) {
+                        cursorOffset -= delta * spacing;
+                    }
+                }
+            }
+            float maxLineWidth = 0.0f;
+            for (size_t i = minLine - startOffset; i <= maxLine && i < lines.size(); i++) {
+                maxLineWidth = std::max(maxLineWidth, ImGui::CalcTextSize(lines[i].text.c_str()).x);
+            }
+            ImGui::BeginChild("ConsoleLinesArea", ImVec2(maxLineWidth, lineCount * spacing + 1));
+            if (minLine > 0) ImGui::SetCursorPosY(cursorOffset);
 
-            for (size_t i = minLine; i <= maxLine; i++) {
-                if (i >= lines.size()) break;
+            for (size_t i = minLine - startOffset; i <= maxLine && i < lines.size(); i++) {
                 auto &line = lines[i];
                 ImGui::PushStyleColor(ImGuiCol_Text, LogColours[(int)line.level]);
                 ImGui::TextUnformatted(line.text.c_str());
