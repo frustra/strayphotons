@@ -18,6 +18,7 @@
 #include "strayphotons/cpp/LockFreeEventQueue.hh"
 
 #include <libnyquist/Decoders.h>
+#include <vector>
 
 struct SoundIo;
 struct SoundIoDevice;
@@ -33,22 +34,29 @@ namespace sp {
         AudioManager();
         ~AudioManager();
 
+        std::vector<const char *> GetBackendNames() const;
+
     protected:
         bool ThreadInit() override;
         void Frame() override;
+        void ThreadShutdown() override;
 
     private:
         void SyncFromECS();
         void Shutdown(bool waitForExit);
+        bool attemptRestart = false;
+        int restartAttempt = 0;
+        int maxRestartAttempts = 5;
 
         size_t sampleRate;
-        size_t framesPerBuffer = 1024; // updated later depending on sample rate and desired latency
+        size_t framesPerBuffer;
 
         SoundIo *soundio = nullptr;
         int deviceIndex;
         SoundIoDevice *device = nullptr;
         SoundIoOutStream *outstream = nullptr;
         std::unique_ptr<vraudio::ResonanceAudioApi> resonance;
+        std::array<std::vector<float>, 2> outputBuffers;
 
         nqr::NyquistIO loader;
 
@@ -77,8 +85,8 @@ namespace sp {
 
         ecs::ComponentAddRemoveObserver<ecs::Audio> soundObserver;
 
-        static void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
-        static void AudioErrorCallback(SoundIoOutStream *outstream, int error);
+        void AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax);
+        void AudioErrorCallback(SoundIoOutStream *outstream, int error);
 
         PreservingMap<const Asset *, nqr::AudioData> decoderCache;
         DispatchQueue decoderQueue;

@@ -33,7 +33,21 @@ extern "C" {
     #undef _WIN32
     #define __ANDROID__
 #endif
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wstringop-overflow"
+#endif
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #include <tiny_gltf.h>
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#endif
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#endif
 #ifdef UNDEFINE_WIN22
     #define _WIN32
     #undef __ANDROID__
