@@ -303,6 +303,7 @@ namespace sp::vulkan {
                 if (sourceID != rg::InvalidResource) {
                     auto view = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(view);
+                    if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
                 } else if (logoTex->Ready()) {
                     cmd.DrawScreenCover(logoTex->Get());
                 }

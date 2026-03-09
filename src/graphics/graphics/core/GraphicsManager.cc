@@ -13,7 +13,7 @@
 #include "game/CGameContext.hh"
 #include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
-#include "graphics/gui/MenuGuiManager.hh"
+#include "gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
 #include "strayphotons/cpp/Logging.hh"
 
@@ -63,7 +63,7 @@ namespace sp {
 
         windowGuiContext = OverlayGuiManager::CreateContext(ecs::Name("gui", "overlay"));
         // TODO: GuiContext is copied into ECS and might read-after-free on shutdown
-        menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"), *this);
+        menuGui = MenuGuiManager::CreateContext(ecs::Name("gui", "menu"), game);
     }
 
     void GraphicsManager::StartThread(bool startPaused) {

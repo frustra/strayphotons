@@ -32,7 +32,6 @@ namespace sp::scripts {
 
             imCtx = ImGui::CreateContext();
             fontAtlas = std::make_shared<ImFontAtlas>();
-            fontAtlas->AddFontDefault(nullptr);
 
             static const ImWchar glyphRanges[] = {
                 0x0020,

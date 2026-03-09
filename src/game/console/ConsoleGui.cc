@@ -46,7 +46,7 @@ namespace sp {
                 lineCount += std::count(line.text.begin(), line.text.end(), '\n') - 1;
             }
             size_t minLine = (size_t)(std::max(scrollY - 1, 0.0f) / spacing);
-            size_t maxLine = (size_t)((scrollY + spacing + frameHeight) / spacing);
+            size_t maxLine = (size_t)((scrollY + spacing * 2 + frameHeight) / spacing);
             size_t startOffset = 0;
             float cursorOffset = minLine * spacing;
             for (size_t i = 0; i < minLine - startOffset && i < lines.size(); i++) {

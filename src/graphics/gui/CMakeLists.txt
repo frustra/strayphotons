@@ -1,10 +1,12 @@
 #
-# Stray Photons - Copyright (C) 2025 Jacob Wirth
+# Stray Photons - Copyright (C) 2026 Jacob Wirth
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-target_sources(${PROJECT_GRAPHICS_CORE_LIB} PRIVATE
+target_sources(${PROJECT_LIB_NAME} PRIVATE
     MenuGuiManager.cc
 )
+
+target_link_libraries(${PROJECT_LIB_NAME} PRIVATE ImGui)

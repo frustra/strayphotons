@@ -265,6 +265,8 @@ namespace sp::vulkan {
             return measuredFrameRate.load();
         }
 
+        void SetOutputExtents(uint32_t width, uint32_t height);
+
     private:
         void CreateSwapchain();
         void CreateTestPipeline();
@@ -319,6 +321,7 @@ namespace sp::vulkan {
             ImageViewPtr imageView;
         };
 
+        glm::uvec2 outputExtents;
         std::vector<SwapchainImageContext> swapchainImageContexts;
         uint32_t swapchainImageIndex = 0;
 
