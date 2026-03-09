@@ -20,6 +20,15 @@
 #include <soundio/soundio.h>
 #include <tracy/Tracy.hpp>
 
+#ifdef __clang__
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Winvalid-utf8"
+#endif
+#include <libnyquist/Decoders.h>
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#endif
+
 namespace sp {
     static CVar<float> CVarVolume("s.Volume", 1.0f, "Global volume control");
     static CVar<int> CVarAudioBackend("s.AudioBackend",
@@ -44,6 +53,7 @@ namespace sp {
         }
 
         resonance.reset(vraudio::CreateResonanceAudioApi(2, framesPerBuffer, sampleRate));
+        loader = std::make_unique<nqr::NyquistIO>();
 
         StartThread();
     }
@@ -274,7 +284,7 @@ namespace sp {
                             auto audioBuffer = decoderCache.Load(asset.get());
                             if (!audioBuffer) {
                                 audioBuffer = std::make_shared<nqr::AudioData>();
-                                loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
+                                loader->Load(audioBuffer.get(), asset->extension, asset->Buffer());
                                 decoderCache.Register(asset.get(), audioBuffer);
                             }
                             return audioBuffer;
@@ -351,8 +361,6 @@ namespace sp {
             decoderCache.Tick(interval);
         });
     }
-
-    const float Zeros[16] = {0};
 
     void AudioManager::AudioWriteCallback(SoundIoOutStream *outstream, int frameCountMin, int frameCountMax) {
         thread_local bool setThreadName = false;
@@ -459,7 +467,6 @@ namespace sp {
                 } else {
                     for (int channel = 0; channel < channelCount; channel++) {
                         auto channelPtr = reinterpret_cast<float *>(areas[channel].ptr);
-                        size_t count = std::min((size_t)batchSize, outputBuffers[channel].size());
                         std::copy_n(outputBuffers[channel].begin(), count, channelPtr);
                     }
                 }

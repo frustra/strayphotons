@@ -366,18 +366,16 @@ namespace sp::vulkan {
 #ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#ifdef __GNUC__
+#elif defined(__GNUC__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
             deviceInfo.enabledLayerCount = layers.size();
             deviceInfo.ppEnabledLayerNames = layers.data();
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#endif
 #ifdef __clang__
     #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic pop
 #endif
 
             device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);

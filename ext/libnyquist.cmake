@@ -14,7 +14,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder -Wno-unused-variable -Wno-sign-compare -Wno-range-loop-construct")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-shift-negative-value -Wno-macro-redefined -Wno-static-in-inline")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder-ctor -Wno-unused-private-field -Wno-range-loop-construct -Wno-tautological-overlap-compare")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder-ctor -Wno-unused-private-field -Wno-range-loop-construct -Wno-tautological-overlap-compare -Wno-invalid-utf8")
 endif()
 
 add_subdirectory(libnyquist)
