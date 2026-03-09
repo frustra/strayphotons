@@ -9,12 +9,15 @@
 
 #include "ecs/EventQueue.hh"
 #include "graphics/GenericCompositor.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "gui/GuiContext.hh"
 
 #include <memory>
 
 namespace sp {
+    class Game;
+    class AudioManager;
     class GraphicsManager;
     class GpuTexture;
 
@@ -25,7 +28,7 @@ namespace sp {
         MenuGuiManager(MenuGuiManager &&) = default;
         virtual ~MenuGuiManager();
 
-        static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName, GraphicsManager &graphics);
+        static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName, Game &game);
 
         bool BeforeFrame(GenericCompositor &compositor) override;
         void DefineWindows() override;
@@ -35,9 +38,11 @@ namespace sp {
         void RefreshSaveList();
 
     private:
-        MenuGuiManager(const ecs::EntityRef &guiEntity, GraphicsManager &graphics);
+        MenuGuiManager(const ecs::EntityRef &guiEntity, Game &game);
 
-        GraphicsManager &graphics;
+        Game &game;
+        std::weak_ptr<AudioManager> audioPtr;
+        std::weak_ptr<GraphicsManager> graphicsPtr;
 
         ecs::EventQueueRef events = ecs::EventQueue::New();
 

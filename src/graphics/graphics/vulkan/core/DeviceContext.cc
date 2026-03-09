@@ -15,7 +15,6 @@
 #include "ecs/components/GuiElement.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
-#include "graphics/gui/MenuGuiManager.hh"
 #include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/ProfilerGui.hh"
 #include "graphics/vulkan/Renderer.hh"
@@ -25,8 +24,10 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "gui/MenuGuiManager.hh"
 #include "strayphotons/cpp/InlineVector.hh"
 #include "strayphotons/cpp/Logging.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <glm/glm.hpp>
@@ -591,7 +592,8 @@ namespace sp::vulkan {
         }
         if (surfaceCapabilities.currentExtent.width == std::numeric_limits<uint32_t>::max() ||
             surfaceCapabilities.currentExtent.height == std::numeric_limits<uint32_t>::max()) {
-            auto windowSize = CVarWindowSize.Get();
+            auto windowSize = outputExtents;
+            if (outputExtents.x <= 1 || outputExtents.y <= 1) windowSize = CVarWindowSize.Get();
             surfaceCapabilities.currentExtent.width = windowSize.x;
             surfaceCapabilities.currentExtent.height = windowSize.y;
         }
@@ -639,6 +641,8 @@ namespace sp::vulkan {
         swapchainInfo.clipped = true;
         swapchainInfo.oldSwapchain = *swapchain;
 
+        Tracef("Creating swapchain: %u x %u", swapchainInfo.imageExtent.width, swapchainInfo.imageExtent.height);
+
         auto newSwapchain = device->createSwapchainKHRUnique(swapchainInfo);
         swapchainImageContexts.clear();
         swapchain.swap(newSwapchain);
@@ -654,6 +658,10 @@ namespace sp::vulkan {
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
+    }
+
+    void DeviceContext::SetOutputExtents(uint32_t width, uint32_t height) {
+        outputExtents = glm::uvec2(width, height);
     }
 
     void DeviceContext::RecreateSwapchain() {
@@ -799,7 +807,7 @@ namespace sp::vulkan {
         ZoneScoped;
 
         vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
-        vk::PresentInfoKHR presentInfo;
+        vk::PresentInfoKHR presentInfo = {};
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = &renderCompleteSem;
 
@@ -810,7 +818,10 @@ namespace sp::vulkan {
 
         try {
             auto presentResult = queues[QUEUE_TYPE_GRAPHICS].presentKHR(presentInfo);
-            if (presentResult == vk::Result::eSuboptimalKHR) RecreateSwapchain();
+            auto swapchainView = SwapchainImageView();
+            vk::Extent3D swapchainExtent = swapchainView ? swapchainView->Extent() : vk::Extent3D();
+            bool extentsMatch = swapchainExtent.width == outputExtents.x && swapchainExtent.height == outputExtents.y;
+            if (presentResult == vk::Result::eSuboptimalKHR || !extentsMatch) RecreateSwapchain();
         } catch (const vk::OutOfDateKHRError &) {
             RecreateSwapchain();
         }

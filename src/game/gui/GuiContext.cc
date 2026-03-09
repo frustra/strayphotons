@@ -20,8 +20,9 @@
 
 namespace sp {
     static std::array fontList = {
-        GuiFontDef{GuiFont::Primary, "DroidSans-Regular.ttf", 16.0f},
-        GuiFontDef{GuiFont::Primary, "DroidSans-Regular.ttf", 32.0f},
+        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 13.0f},
+        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 18.0f},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 16.0f},
         GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f},
         GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
     };
@@ -443,17 +444,17 @@ namespace sp {
 
     void GuiContext::PushFont(GuiFont fontType, float fontSize) {
         auto &io = ImGui::GetIO();
-        Assert(io.Fonts->Fonts.size() == fontList.size() + 1, "unexpected font list size");
+        Assert((size_t)io.Fonts->Fonts.size() == fontList.size(), "unexpected font list size");
 
         for (size_t i = 0; i < fontList.size(); i++) {
             auto &f = fontList[i];
             if (f.type == fontType && f.size == fontSize) {
-                ImGui::PushFont(io.Fonts->Fonts[i + 1]);
+                ImGui::PushFont(io.Fonts->Fonts[i]);
                 return;
             }
         }
 
-        Abortf("missing font type %d with size %f", (int)fontType, fontSize);
+        Abortf("missing font type %s with size %f", fontType, fontSize);
     }
 
     std::span<GuiFontDef> GetGuiFontList() {

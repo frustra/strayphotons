@@ -17,6 +17,7 @@ there are a number of dependencies with their own individual licenses:
 ### Fonts:
 - 3270: [Modified BSD 3-Clause License](https://github.com/frustra/strayphotons/blob/master/assets/fonts/LICENSE-3270.txt)
 - DroidSans: [Apache 2.0 License](https://github.com/frustra/strayphotons/blob/master/assets/fonts/LICENSE-DroidSans.txt)
+- ProggyClean: [MIT License](https://github.com/frustra/strayphotons/blob/master/assets/fonts/LICENSE-ProggyClean.txt)
 - VT220: Public Domain
 
 ## Submodules:

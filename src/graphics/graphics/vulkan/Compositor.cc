@@ -49,8 +49,6 @@ namespace sp::vulkan {
 
         fontAtlas = std::make_shared<ImFontAtlas>();
 
-        fontAtlas->AddFontDefault(nullptr);
-
         static const ImWchar glyphRanges[] = {
             0x0020,
             0x00FF, // Basic Latin + Latin Supplement
