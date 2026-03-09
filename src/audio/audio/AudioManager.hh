@@ -17,7 +17,6 @@
 #include "strayphotons/cpp/EntityMap.hh"
 #include "strayphotons/cpp/LockFreeEventQueue.hh"
 
-#include <libnyquist/Decoders.h>
 #include <vector>
 
 struct SoundIo;
@@ -27,6 +26,11 @@ struct SoundIoOutStream;
 namespace vraudio {
     class ResonanceAudioApi;
 }
+
+namespace nqr {
+    class NyquistIO;
+    struct AudioData;
+} // namespace nqr
 
 namespace sp {
     class AudioManager : public RegisteredThread {
@@ -56,9 +60,8 @@ namespace sp {
         SoundIoDevice *device = nullptr;
         SoundIoOutStream *outstream = nullptr;
         std::unique_ptr<vraudio::ResonanceAudioApi> resonance;
+        std::unique_ptr<nqr::NyquistIO> loader;
         std::array<std::vector<float>, 2> outputBuffers;
-
-        nqr::NyquistIO loader;
 
         struct SoundSource {
             int resonanceID = -1;
