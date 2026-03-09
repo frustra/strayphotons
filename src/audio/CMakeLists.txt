@@ -18,7 +18,6 @@ target_link_libraries(${PROJECT_AUDIO_LIB}
     PRIVATE
         ${PROJECT_COMMON_LIB}
         libsoundio_static
-        ${LIBSOUNDIO_LIBS}
         ResonanceAudioStatic
 )
 
@@ -28,6 +27,8 @@ target_compile_definitions(${PROJECT_AUDIO_LIB}
     PRIVATE
         SOUNDIO_STATIC_LIBRARY
 )
+
+# target_compile_options(${PROJECT_AUDIO_LIB} PRIVATE "-O3")
 
 # target_precompile_headers(${PROJECT_AUDIO_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 

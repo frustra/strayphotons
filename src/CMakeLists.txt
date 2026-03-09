@@ -34,7 +34,7 @@ target_link_libraries(${PROJECT_LIB_NAME}
         ${PROJECT_PHYSICS_PHYSX_LIB}
         ${PROJECT_GRAPHICS_VULKAN_CORE_LIB}
         "$<IF:$<BOOL:${WIN32}>,${PROJECT_XR_OPENVR_LIB},>"
-        "$<IF:$<BOOL:${WIN32}>,${PROJECT_AUDIO_LIB},>"
+        ${PROJECT_AUDIO_LIB}
         ${PROJECT_SCRIPTS_LIB}
     PUBLIC
         ${PROJECT_EXPORTS_LIB}
@@ -74,9 +74,7 @@ add_subdirectory(graphics)
 add_subdirectory(physics)
 add_subdirectory(scripts)
 add_subdirectory(xr)
-if(WIN32)
-    add_subdirectory(audio)
-endif()
+add_subdirectory(audio)
 
 # Statically linked executables
 add_subdirectory(main)

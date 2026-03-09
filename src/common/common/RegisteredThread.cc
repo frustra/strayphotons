@@ -55,7 +55,6 @@ namespace sp {
     RegisteredThread::~RegisteredThread() {
         StopThread();
         unregisterThread(threadName);
-        if (thread.joinable()) thread.join();
     }
 
     void RegisteredThread::StartThread(bool startPaused) {
@@ -166,6 +165,7 @@ namespace sp {
         ThreadState current = state;
         if (current == ThreadState::Stopped || !state.compare_exchange_strong(current, ThreadState::Stopping)) {
             // Thread already in a stopped state
+            if (thread.joinable()) thread.join();
             return;
         }
         state.notify_all();
@@ -175,6 +175,7 @@ namespace sp {
                 state.wait(current);
                 current = state;
             }
+            if (thread.joinable()) thread.join();
         }
     }
 
