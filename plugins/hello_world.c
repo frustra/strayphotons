@@ -6,8 +6,8 @@
  */
 
 #include <c_abi/Tecs.h>
-#include <c_abi/strayphotons_ecs_c_abi_entity_gen.h>
-#include <c_abi/strayphotons_ecs_c_abi_lock_gen.h>
+#include <c_abi/strayphotons_exports_entity_gen.h>
+#include <c_abi/strayphotons_exports_lock_gen.h>
 #include <cglm/cglm.h>
 #include <math.h>
 #include <strayphotons/components.h>
