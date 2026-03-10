@@ -20,11 +20,11 @@
 
 namespace sp {
     static std::array fontList = {
-        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 13.0f},
-        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 18.0f},
-        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 16.0f},
-        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f},
-        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f},
+        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 13.0f, {0, 1}},
+        GuiFontDef{GuiFont::Primary, "ProggyClean.ttf", 18.0f, {0, 1}},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 16.0f, {0, 0}},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 25.0f, {0, 0}},
+        GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f, {0, 0}},
     };
 
     GuiContext::GuiContext(const ecs::EntityRef &guiEntity) : guiEntity(guiEntity) {

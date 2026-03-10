@@ -13,3 +13,20 @@ screenshot delayed.png
 stepgraphics
 screenshot delayed2.png
 stepgraphics
+sendevent gui:menu/action/menu/open
+stepgraphics
+screenshot pause_menu.png
+stepgraphics
+g.MenuDebugCursor 1
+sendevent gui:menu/interact/point 690 690
+sendevent gui:menu/action/menu/primary_trigger true
+sendevent gui:menu/action/menu/primary_trigger false
+screenshot pause_menu2.png
+stepgraphics
+screenshot options_menu_click1.png
+stepgraphics
+sendevent gui:menu/interact/point false
+screenshot options_menu_click2.png
+stepgraphics
+screenshot options_menu.png
+stepgraphics
