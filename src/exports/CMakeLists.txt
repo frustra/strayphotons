@@ -18,8 +18,6 @@ target_sources(${PROJECT_LIB_NAME} PRIVATE
     Threads.cc
 )
 
-target_include_directories(${PROJECT_LIB_NAME}
-    PUBLIC
-        ${PROJECT_ROOT_DIR}/sdk/include
+target_include_directories(${PROJECT_LIB_NAME} PUBLIC
+    ${PROJECT_ROOT_DIR}/sdk/include
 )
-add_dependencies(${PROJECT_LIB_NAME} ${PROJECT_EXPORTS_LIB}-output)
