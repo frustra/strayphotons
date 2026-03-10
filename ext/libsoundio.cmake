@@ -18,7 +18,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(libsoundio_static PRIVATE -Wno-unused-variable)
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
-    target_compile_options(libsoundio_static PRIVATE -Wno-unused-private-field)
+    target_compile_options(libsoundio_static PRIVATE -Wno-unused-variable -Wno-unused-private-field)
 endif()
 
 if(UNIX)
