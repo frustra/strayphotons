@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <optional>
 #include <robin_hood.h>
 #include <string>
 #include <string_view>

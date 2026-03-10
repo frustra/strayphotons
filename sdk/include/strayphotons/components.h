@@ -218,22 +218,22 @@ SP_EXPORT sp_physics_shape_t *sp_physics_shape_vector_resize(sp_physics_shape_ve
 
 const uint32_t SP_TYPE_INDEX_PHYSICS_GROUP = 97;
 // Enum: ecs::PhysicsGroup
-const unsigned short SP_PHYSICS_GROUP_NO_CLIP = 0;
-const unsigned short SP_PHYSICS_GROUP_WORLD = 1;
-const unsigned short SP_PHYSICS_GROUP_INTERACTIVE = 2;
-const unsigned short SP_PHYSICS_GROUP_HELD_OBJECT = 3;
-const unsigned short SP_PHYSICS_GROUP_PLAYER = 4;
-const unsigned short SP_PHYSICS_GROUP_PLAYER_LEFT_HAND = 5;
-const unsigned short SP_PHYSICS_GROUP_PLAYER_RIGHT_HAND = 6;
-const unsigned short SP_PHYSICS_GROUP_USER_INTERFACE = 7;
-typedef unsigned short sp_physics_group_t;
+const uint16_t SP_PHYSICS_GROUP_NO_CLIP = 0;
+const uint16_t SP_PHYSICS_GROUP_WORLD = 1;
+const uint16_t SP_PHYSICS_GROUP_INTERACTIVE = 2;
+const uint16_t SP_PHYSICS_GROUP_HELD_OBJECT = 3;
+const uint16_t SP_PHYSICS_GROUP_PLAYER = 4;
+const uint16_t SP_PHYSICS_GROUP_PLAYER_LEFT_HAND = 5;
+const uint16_t SP_PHYSICS_GROUP_PLAYER_RIGHT_HAND = 6;
+const uint16_t SP_PHYSICS_GROUP_USER_INTERFACE = 7;
+typedef uint16_t sp_physics_group_t;
 const uint32_t SP_TYPE_INDEX_PHYSICS_ACTOR_TYPE = 98;
 // Enum: ecs::PhysicsActorType
-const unsigned char SP_PHYSICS_ACTOR_TYPE_STATIC = 0;
-const unsigned char SP_PHYSICS_ACTOR_TYPE_DYNAMIC = 1;
-const unsigned char SP_PHYSICS_ACTOR_TYPE_KINEMATIC = 2;
-const unsigned char SP_PHYSICS_ACTOR_TYPE_SUB_ACTOR = 3;
-typedef unsigned char sp_physics_actor_type_t;
+const uint8_t SP_PHYSICS_ACTOR_TYPE_STATIC = 0;
+const uint8_t SP_PHYSICS_ACTOR_TYPE_DYNAMIC = 1;
+const uint8_t SP_PHYSICS_ACTOR_TYPE_KINEMATIC = 2;
+const uint8_t SP_PHYSICS_ACTOR_TYPE_SUB_ACTOR = 3;
+typedef uint8_t sp_physics_actor_type_t;
 // Component: physics
 typedef struct sp_ecs_physics_t {
     sp_physics_shape_vector_t shapes; // 24 bytes
@@ -657,9 +657,9 @@ SP_EXPORT void sp_entity_unset_screen(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 const uint32_t SP_TYPE_INDEX_ECS_TRIGGER_AREA = 148;
 const uint32_t SP_TYPE_INDEX_TRIGGER_SHAPE = 103;
 // Enum: ecs::TriggerShape
-const unsigned char SP_TRIGGER_SHAPE_BOX = 0;
-const unsigned char SP_TRIGGER_SHAPE_SPHERE = 1;
-typedef unsigned char sp_trigger_shape_t;
+const uint8_t SP_TRIGGER_SHAPE_BOX = 0;
+const uint8_t SP_TRIGGER_SHAPE_SPHERE = 1;
+typedef uint8_t sp_trigger_shape_t;
 // Component: trigger_area
 typedef struct sp_ecs_trigger_area_t {
     sp_trigger_shape_t trigger_shape; // 1 bytes
@@ -674,10 +674,10 @@ SP_EXPORT void sp_entity_unset_trigger_area(tecs_lock_t *dynLockPtr, sp_entity_t
 
 const uint32_t SP_TYPE_INDEX_ECS_TRIGGER_GROUP = 149;
 // Component: trigger_group
-const unsigned char SP_ECS_TRIGGER_GROUP_PLAYER = 0;
-const unsigned char SP_ECS_TRIGGER_GROUP_OBJECT = 1;
-const unsigned char SP_ECS_TRIGGER_GROUP_MAGNETIC = 2;
-typedef unsigned char sp_ecs_trigger_group_t;
+const uint8_t SP_ECS_TRIGGER_GROUP_PLAYER = 0;
+const uint8_t SP_ECS_TRIGGER_GROUP_OBJECT = 1;
+const uint8_t SP_ECS_TRIGGER_GROUP_MAGNETIC = 2;
+typedef uint8_t sp_ecs_trigger_group_t;
 const uint64_t SP_TRIGGER_GROUP_INDEX = 25;
 const uint64_t SP_ACCESS_TRIGGER_GROUP = 2ull << 25;
 SP_EXPORT sp_ecs_trigger_group_t *sp_entity_set_trigger_group(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -1580,7 +1580,7 @@ SP_EXPORT const sp_signal_expression_t *sp_signal_expression_vector_get_const_da
 SP_EXPORT sp_signal_expression_t *sp_signal_expression_vector_get_data(sp_signal_expression_vector_t *v);
 SP_EXPORT sp_signal_expression_t *sp_signal_expression_vector_resize(sp_signal_expression_vector_t *v, size_t new_size);
 
-typedef robin_hood::unordered_node_map<std::string, std::vector<class ecs::SignalExpression,class std::allocator<class ecs::SignalExpression> >> sp_string_signal_expression_vector_map_t;
+typedef robin_hood::unordered_node_map<std::string, std::vector<ecs::SignalExpression>> sp_string_signal_expression_vector_map_t;
 // Component: scene_connection
 typedef ecs::SceneConnection sp_ecs_scene_connection_t;
 const uint64_t SP_SCENE_CONNECTION_INDEX = 22;
@@ -1698,7 +1698,7 @@ SP_EXPORT const sp_event_binding_t *sp_event_binding_vector_get_const_data(const
 SP_EXPORT sp_event_binding_t *sp_event_binding_vector_get_data(sp_event_binding_vector_t *v);
 SP_EXPORT sp_event_binding_t *sp_event_binding_vector_resize(sp_event_binding_vector_t *v, size_t new_size);
 
-typedef robin_hood::unordered_node_map<ecs::EventName, std::vector<struct ecs::EventBinding,class std::allocator<struct ecs::EventBinding> >> sp_event_name_event_binding_vector_map_t;
+typedef robin_hood::unordered_node_map<ecs::EventName, std::vector<ecs::EventBinding>> sp_event_name_event_binding_vector_map_t;
 // Component: event_bindings
 typedef ecs::EventBindings sp_ecs_event_bindings_t;
 const uint64_t SP_EVENT_BINDINGS_INDEX = 30;
@@ -1806,7 +1806,7 @@ SP_EXPORT const sp_gui_draw_command_t *sp_gui_draw_command_vector_get_const_data
 SP_EXPORT sp_gui_draw_command_t *sp_gui_draw_command_vector_get_data(sp_gui_draw_command_vector_t *v);
 SP_EXPORT sp_gui_draw_command_t *sp_gui_draw_command_vector_resize(sp_gui_draw_command_vector_t *v, size_t new_size);
 
-typedef std::vector<unsigned short> sp_uint16_vector_t;
+typedef std::vector<uint16_t> sp_uint16_vector_t;
 SP_EXPORT size_t sp_uint16_vector_get_size(const sp_uint16_vector_t *v);
 SP_EXPORT const uint16_t *sp_uint16_vector_get_const_data(const sp_uint16_vector_t *v);
 SP_EXPORT uint16_t *sp_uint16_vector_get_data(sp_uint16_vector_t *v);
