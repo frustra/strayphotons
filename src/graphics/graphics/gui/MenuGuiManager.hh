@@ -9,7 +9,10 @@
 
 #include "ecs/EventQueue.hh"
 #include "graphics/GenericCompositor.hh"
+#include "graphics/core/Texture.hh"
 #include "gui/GuiContext.hh"
+
+#include <memory>
 
 namespace sp {
     class GraphicsManager;
@@ -42,7 +45,7 @@ namespace sp {
         std::vector<std::pair<std::string, std::string>> sceneList;
         std::vector<std::pair<std::string, std::string>> saveList;
 
-        shared_ptr<GpuTexture> logoTex;
+        std::shared_ptr<GpuTexture> logoTex;
         GenericCompositor::ResourceID logoResourceID = GenericCompositor::InvalidResource;
     };
 

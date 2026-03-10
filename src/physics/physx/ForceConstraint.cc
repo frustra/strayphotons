@@ -7,9 +7,9 @@
 
 #include "ForceConstraint.hh"
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxUtils.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 namespace sp {
     using namespace physx;

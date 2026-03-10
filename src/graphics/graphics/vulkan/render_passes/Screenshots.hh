@@ -8,8 +8,11 @@
 #pragma once
 
 #include "Common.hh"
-#include "common/LockFreeMutex.hh"
 #include "console/CFunc.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+
+#include <string>
+#include <vector>
 
 namespace sp::vulkan::renderer {
     class Screenshots {
@@ -20,7 +23,7 @@ namespace sp::vulkan::renderer {
     private:
         CFuncCollection funcs;
         LockFreeMutex screenshotMutex;
-        vector<std::pair<string, string>> pendingScreenshots;
+        std::vector<std::pair<std::string, std::string>> pendingScreenshots;
     };
 
     void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view);

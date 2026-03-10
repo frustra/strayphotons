@@ -13,14 +13,14 @@
 #include "editor/EditorControls.hh"
 #include "editor/EditorSystem.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <imgui.h>
 
 namespace sp {
-    InspectorGui::InspectorGui(const string &name)
+    InspectorGui::InspectorGui(const std::string &name)
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
-        context = make_shared<EditorContext>();
+        context = std::make_shared<EditorContext>();
 
         GetSceneManager().QueueAction([inspectorEntity = this->inspectorEntity, events = this->events] {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();

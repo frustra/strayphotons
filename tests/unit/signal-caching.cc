@@ -10,7 +10,6 @@ namespace SignalCachingTests {
 }
 #define TEST_FRIENDS_signal_caching friend void ::SignalCachingTests::TryReadCachedSignal();
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalExpressionNode.hh"
 #include "ecs/SignalManager.hh"

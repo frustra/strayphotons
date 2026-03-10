@@ -5,7 +5,11 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "DispatchQueue.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+
+#ifdef TRACY_ENABLE
+    #include "common/Tracing.hh"
+#endif
 
 namespace sp {
     DispatchQueue::~DispatchQueue() {
@@ -14,7 +18,9 @@ namespace sp {
     }
 
     void DispatchQueue::Shutdown() {
+#ifdef TRACY_ENABLE
         ZoneScoped;
+#endif
         std::unique_lock<std::mutex> lock(mutex);
         exit = true;
         workReady.notify_all();
@@ -26,13 +32,17 @@ namespace sp {
     }
 
     void DispatchQueue::Flush(bool blockUntilReady) {
+#ifdef TRACY_ENABLE
         ZoneScoped;
+#endif
         std::unique_lock<std::mutex> lock(mutex);
         FlushInternal(lock, workQueue.size(), blockUntilReady);
     }
 
     void DispatchQueue::ThreadMain() {
+#ifdef TRACY_ENABLE
         tracy::SetThreadName(name.c_str());
+#endif
         std::unique_lock<std::mutex> lock(mutex);
 
         while (true) {
@@ -44,9 +54,13 @@ namespace sp {
             if (workQueue.empty()) continue;
 
             {
+#ifdef TRACY_ENABLE
                 ZoneScopedN("ThreadFlush");
+#endif
                 size_t flushCount = workQueue.size();
+#ifdef TRACY_ENABLE
                 ZoneValue(flushCount);
+#endif
                 if (FlushInternal(lock, flushCount, false) == 0) {
                     lock.unlock();
                     if (flushSleepInterval.count() > 0) {
@@ -69,7 +83,9 @@ namespace sp {
             lock.unlock();
             bool ready = blockUntilReady || item->Ready();
             if (ready) {
+#ifdef TRACY_ENABLE
                 ZoneScopedN("DispatchQueue::Process");
+#endif
                 item->Process();
                 std::this_thread::yield();
                 flushCount++;

@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include "common/InlineVector.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
+#include <string_view>
 #include <variant>
 
 namespace sp::vulkan::render_graph {
@@ -52,7 +53,7 @@ namespace sp::vulkan::render_graph {
 
     class Pass {
     public:
-        Pass(string_view name) : name(name) {}
+        Pass(std::string_view name) : name(name) {}
 
         void AddAccess(ResourceID id, Access access) {
             accesses.push_back({id, access});

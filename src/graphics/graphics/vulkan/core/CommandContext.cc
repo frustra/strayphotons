@@ -10,6 +10,8 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 
+#include <string_view>
+
 namespace sp::vulkan {
     CommandContext::CommandContext(DeviceContext &device,
         vk::UniqueCommandBuffer cmd,
@@ -279,20 +281,20 @@ namespace sp::vulkan {
             options);
     }
 
-    void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, string_view>> shaders) {
+    void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, std::string_view>> shaders) {
         pipelineInput.state.shaders = {};
         for (auto &s : shaders) {
             SetSingleShader(s.first, s.second);
         }
     }
 
-    void CommandContext::SetShaders(string_view vertName, string_view fragName) {
+    void CommandContext::SetShaders(std::string_view vertName, std::string_view fragName) {
         pipelineInput.state.shaders = {};
         SetSingleShader(ShaderStage::Vertex, vertName);
         SetSingleShader(ShaderStage::Fragment, fragName);
     }
 
-    void CommandContext::SetComputeShader(string_view name) {
+    void CommandContext::SetComputeShader(std::string_view name) {
         pipelineInput.state.shaders = {};
         SetSingleShader(ShaderStage::Compute, name);
     }
@@ -337,7 +339,7 @@ namespace sp::vulkan {
         // }
     }
 
-    void CommandContext::SetSingleShader(ShaderStage stage, string_view name) {
+    void CommandContext::SetSingleShader(ShaderStage stage, std::string_view name) {
         SetSingleShader(stage, device.LoadShader(name));
     }
 
@@ -349,7 +351,7 @@ namespace sp::vulkan {
         SetDirty(DirtyFlags::Pipeline);
     }
 
-    void CommandContext::SetShaderConstant(ShaderStage stage, string_view name, uint32_t data) {
+    void CommandContext::SetShaderConstant(ShaderStage stage, std::string_view name, uint32_t data) {
         Assert(pipelineInput.state.shaders[stage], "no shader bound to set constant");
         auto shader = device.GetShader(pipelineInput.state.shaders[stage]);
         Assertf(shader, "bound shader is null when setting constant");
@@ -384,7 +386,7 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
-    void CommandContext::SetSampler(string_view bindingName, const vk::Sampler &sampler) {
+    void CommandContext::SetSampler(std::string_view bindingName, const vk::Sampler &sampler) {
         std::shared_ptr<Shader> lastShader;
         for (auto stage : magic_enum::enum_values<ShaderStage>()) {
             auto &slot = pipelineInput.state.shaders[stage];
@@ -424,11 +426,11 @@ namespace sp::vulkan {
         if (defaultSampler) SetSampler(set, binding, defaultSampler);
     }
 
-    void CommandContext::SetImageView(string_view bindingName, const ImageViewPtr &view) {
+    void CommandContext::SetImageView(std::string_view bindingName, const ImageViewPtr &view) {
         SetImageView(bindingName, view.get());
     }
 
-    void CommandContext::SetImageView(string_view bindingName, const ImageView *view) {
+    void CommandContext::SetImageView(std::string_view bindingName, const ImageView *view) {
         std::shared_ptr<Shader> lastShader;
         for (auto stage : magic_enum::enum_values<ShaderStage>()) {
             auto &slot = pipelineInput.state.shaders[stage];
@@ -451,12 +453,12 @@ namespace sp::vulkan {
         Errorf("SetImageView binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
     }
 
-    void CommandContext::SetImageView(string_view bindingName, render_graph::ResourceID resourceID) {
+    void CommandContext::SetImageView(std::string_view bindingName, render_graph::ResourceID resourceID) {
         Assert(resources, "Render Graph resources not set on CommandContext");
         SetImageView(bindingName, resources->GetImageView(resourceID));
     }
 
-    void CommandContext::SetImageView(string_view bindingName, string_view resourceName) {
+    void CommandContext::SetImageView(std::string_view bindingName, std::string_view resourceName) {
         Assert(resources, "Render Graph resources not set on CommandContext");
         SetImageView(bindingName, resources->GetImageView(resourceName));
     }
@@ -496,7 +498,7 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
-    void CommandContext::SetUniformBuffer(string_view bindingName,
+    void CommandContext::SetUniformBuffer(std::string_view bindingName,
         const BufferPtr &buffer,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -520,15 +522,15 @@ namespace sp::vulkan {
         Errorf("SetUniformBuffer binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
     }
 
-    void CommandContext::SetUniformBuffer(string_view bindingName,
-        string_view resourceName,
+    void CommandContext::SetUniformBuffer(std::string_view bindingName,
+        std::string_view resourceName,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
         SetUniformBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
     }
 
-    void CommandContext::SetUniformBuffer(string_view bindingName,
+    void CommandContext::SetUniformBuffer(std::string_view bindingName,
         render_graph::ResourceID resourceID,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -563,7 +565,7 @@ namespace sp::vulkan {
         SetDescriptorDirty(set);
     }
 
-    void CommandContext::SetStorageBuffer(string_view bindingName,
+    void CommandContext::SetStorageBuffer(std::string_view bindingName,
         const BufferPtr &buffer,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -587,15 +589,15 @@ namespace sp::vulkan {
         Errorf("SetStorageBuffer binding %s not found on any bound shader: (last: %s)", bindingName, lastShader->name);
     }
 
-    void CommandContext::SetStorageBuffer(string_view bindingName,
-        string_view resourceName,
+    void CommandContext::SetStorageBuffer(std::string_view bindingName,
+        std::string_view resourceName,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
         Assert(resources, "Render Graph resources not set on CommandContext");
         SetStorageBuffer(bindingName, resources->GetBuffer(resourceName), offset, range);
     }
 
-    void CommandContext::SetStorageBuffer(string_view bindingName,
+    void CommandContext::SetStorageBuffer(std::string_view bindingName,
         render_graph::ResourceID resourceID,
         vk::DeviceSize offset,
         vk::DeviceSize range) {
@@ -613,7 +615,7 @@ namespace sp::vulkan {
         return buffer;
     }
 
-    BufferPtr CommandContext::AllocUniformBuffer(string_view bindingName, vk::DeviceSize size) {
+    BufferPtr CommandContext::AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size) {
         BufferDesc desc;
         desc.layout = size;
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;

@@ -12,7 +12,8 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 
 #include <imgui.h>
-#include <sstream>
+#include <string_view>
+#include <vector>
 
 namespace sp::vulkan {
     class ProfilerGui final : public ecs::GuiDefinition {
@@ -147,7 +148,7 @@ namespace sp::vulkan {
             } cpu, gpu;
         };
 
-        static constexpr string_view spacePadding = "               ";
+        static constexpr std::string_view spacePadding = "               ";
 
         const char *SpacePadding(size_t spaceCount) {
             size_t paddingOffset = std::max((int)spacePadding.size() - (int)spaceCount, 0);
@@ -331,6 +332,6 @@ namespace sp::vulkan {
         chrono_clock::time_point lastWindowStart;
 
         size_t resultCount;
-        vector<Scope> resultScopes;
+        std::vector<Scope> resultScopes;
     };
 } // namespace sp::vulkan

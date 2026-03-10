@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "input/KeyCodes.hh"
+#include "strayphotons/cpp/input/KeyCodes.hh"
 
 #include <imgui.h>
 #include <robin_hood.h>

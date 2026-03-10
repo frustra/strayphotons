@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include "common/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "game/SceneRef.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
 namespace sp {
     struct EditorContext {

@@ -9,8 +9,6 @@
 
 #include "EditorControls.hh"
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
-#include "common/Defer.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityReferenceManager.hh"
@@ -21,14 +19,12 @@
 #include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Transform.h"
 #include "game/SceneImpl.hh"
-#include "game/SceneManager.hh"
 #include "game/SceneRef.hh"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <magic_enum.hpp>
-#include <map>
 #include <misc/cpp/imgui_stdlib.h>
 #include <string>
 #include <type_traits>
@@ -309,7 +305,7 @@ namespace sp {
             }
             if (open) {
                 changed |= std::visit(
-                    [&](auto &shape) {
+                    [&](auto &shape) -> bool {
                         using T = std::decay_t<decltype(shape)>;
                         if constexpr (std::is_same<T, PhysicsShape::Sphere>()) {
                             std::string radiusLabel = "Sphere Radius##radius" + std::to_string(i) + fieldId;
@@ -333,7 +329,6 @@ namespace sp {
                             return changed;
                         } else {
                             Abortf("Unexpected PhysicsShape: %s", typeid(T).name());
-                            return false;
                         }
                     },
                     physicsShape.shape);

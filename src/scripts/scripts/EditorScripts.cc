@@ -5,7 +5,6 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Common.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
@@ -16,10 +15,11 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "glm/gtx/string_cast.hpp"
-#include "input/BindingNames.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <memory>
 
 namespace sp::scripts {
     using namespace ecs;
@@ -97,7 +97,7 @@ namespace sp::scripts {
 
                 auto spawnSceneProperties = scene.data->GetProperties(lock);
 
-                auto sharedEntity = make_shared<EntityRef>();
+                auto sharedEntity = std::make_shared<EntityRef>();
                 GetSceneManager().QueueAction(SceneAction::EditStagingScene,
                     scene.data->name,
                     [source = templateSource,

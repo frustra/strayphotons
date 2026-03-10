@@ -8,12 +8,10 @@
 #include "Events.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "common/Logging.hh"
-#include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <optional>
 #include <picojson.h>
-#include <sstream>
 
 namespace ecs {
     template<>

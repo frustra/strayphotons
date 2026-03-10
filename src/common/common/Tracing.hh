@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "common/Logging.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <tracy/Tracy.hpp>
 
@@ -45,7 +45,7 @@
 // void operator delete(void *ptr);
 
 namespace sp::tracing {
-    inline static void TracingZoneStr(tracy::ScopedZone &zone, const string_view &str) {
+    inline static void TracingZoneStr(tracy::ScopedZone &zone, const std::string_view &str) {
         zone.Text(str.data(), str.size());
     }
 

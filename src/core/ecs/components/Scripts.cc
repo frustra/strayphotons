@@ -8,11 +8,9 @@
 #include "Scripts.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
-
-#include <atomic>
+#include "strayphotons/cpp/Logging.hh"
 
 namespace ecs {
     template<>
@@ -159,9 +157,9 @@ namespace ecs {
         if (definition.callback.index() != other.definition.callback.index()) return false;
         if (std::holds_alternative<PrefabFunc>(definition.callback)) {
             if (definition.name == "prefab_gltf") {
-                return GetParam<string>("model") == other.GetParam<string>("model");
+                return GetParam<std::string>("model") == other.GetParam<std::string>("model");
             } else if (definition.name == "prefab_template") {
-                return GetParam<string>("source") == other.GetParam<string>("source");
+                return GetParam<std::string>("source") == other.GetParam<std::string>("source");
             }
         }
         return !definition.name.empty();

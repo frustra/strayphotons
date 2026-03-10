@@ -8,9 +8,6 @@
 #include "Renderable.hh"
 
 #include "assets/AssetManager.hh"
-#include "assets/Gltf.hh"
-#include "common/Logging.hh"
-#include "ecs/EcsImpl.hh"
 
 #include <picojson.h>
 

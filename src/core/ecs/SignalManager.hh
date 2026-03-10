@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/LockFreeMutex.hh"
 #include "common/PreservingMap.hh"
 #include "common/PreservingSet.hh"
 #include "console/CFunc.hh"
@@ -18,9 +16,9 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 #include "ecs/components/Signals.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
 #include <limits>
-#include <memory>
 #include <vector>
 
 namespace ecs {

@@ -5,14 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
-#include "game/Scene.hh"
 
-#include <cmath>
 #include <glm/glm.hpp>
 
 namespace sp::scripts {

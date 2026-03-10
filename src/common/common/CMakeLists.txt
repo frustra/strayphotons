@@ -6,11 +6,8 @@
 #
 
 target_sources(${PROJECT_COMMON_LIB} PRIVATE
-    Common.cc
-    DispatchQueue.cc
-    LockFreeMutex.cc
-    Logging.cc
     RegisteredThread.cc
+    Logging.cc
 )
 
 if(TRACY_ENABLE)

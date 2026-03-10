@@ -10,8 +10,6 @@ add_library(${PROJECT_CORE_LIB} STATIC)
 target_include_directories(${PROJECT_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${PROJECT_ROOT_DIR}/include
 )
 
 target_link_libraries(${PROJECT_CORE_LIB}

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "common/Common.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <cstring>
 #include <iomanip>
@@ -17,7 +17,7 @@
 #include <string>
 #include <type_traits>
 
-#ifdef SP_SHARED_BUILD
+#ifndef SP_SHARED_INTERNAL
     #include <strayphotons.h>
 #endif
 
@@ -58,7 +58,7 @@ namespace sp::logging {
 namespace sp::logging {
     enum class Level : uint8_t { Error, Warn, Log, Debug, Trace };
 
-#ifdef SP_SHARED_BUILD
+#ifndef SP_SHARED_INTERNAL
     // time in seconds
     inline float LogTime() {
         return sp_get_log_time();
@@ -75,7 +75,7 @@ namespace sp::logging {
     inline void SetLogOutputFile(const char *filePath) {
         sp_set_log_output_file(filePath);
     }
-    inline void GlobalLogOutput(Level level, const string &message) {
+    inline void GlobalLogOutput(Level level, const std::string &message) {
         sp_log_message(level, message.c_str());
     }
 #else
@@ -85,7 +85,7 @@ namespace sp::logging {
     void SetLogLevel_static(Level level);
     const char *GetLogOutputFile_static();
     void SetLogOutputFile_static(const char *filePath);
-    void GlobalLogOutput_static(Level level, const string &message);
+    void GlobalLogOutput_static(Level level, const std::string &message);
 
     // time in seconds
     inline float LogTime() {
@@ -103,7 +103,7 @@ namespace sp::logging {
     inline void SetLogOutputFile(const char *filePath) {
         SetLogOutputFile_static(filePath);
     }
-    inline void GlobalLogOutput(Level level, const string &message) {
+    inline void GlobalLogOutput(Level level, const std::string &message) {
         GlobalLogOutput_static(level, message);
     }
 #endif

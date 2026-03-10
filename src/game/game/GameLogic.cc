@@ -7,13 +7,13 @@
 
 #include "GameLogic.hh"
 
-#include "common/LockFreeEventQueue.hh"
 #include "common/Tracing.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
-#include "input/BindingNames.hh"
-#include "input/KeyCodes.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
+#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/cpp/input/KeyCodes.hh"
 
 namespace sp {
     static CVar<uint32_t> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");

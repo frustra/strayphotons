@@ -13,6 +13,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
 
+#include <memory>
 #include <resonance_audio/api/resonance_audio_api.h>
 #include <resonance_audio/base/constants_and_types.h>
 #include <soundio/soundio.h>
@@ -195,15 +196,15 @@ namespace sp {
                     state.volume = 0;
                     state.occlusion = 0;
                     state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
-                        [this, file = source.file](shared_ptr<Asset> asset) {
+                        [this, file = source.file](std::shared_ptr<Asset> asset) {
                             ZoneScopedN("DecodeAudioData");
                             if (!asset) {
                                 Logf("Audio file missing: %s", file->Get()->path.string());
-                                return shared_ptr<nqr::AudioData>();
+                                return std::shared_ptr<nqr::AudioData>();
                             }
                             auto audioBuffer = decoderCache.Load(asset.get());
                             if (!audioBuffer) {
-                                audioBuffer = make_shared<nqr::AudioData>();
+                                audioBuffer = std::make_shared<nqr::AudioData>();
                                 loader.Load(audioBuffer.get(), asset->extension, asset->Buffer());
                                 decoderCache.Register(asset.get(), audioBuffer);
                             }

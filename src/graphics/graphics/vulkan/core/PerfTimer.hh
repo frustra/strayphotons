@@ -7,19 +7,20 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "console/CVar.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
-#include <queue>
+#include <cstdint>
 #include <stack>
+#include <string_view>
+#include <vector>
 
 namespace sp::vulkan {
     class PerfTimer;
     extern CVar<bool> CVarProfileRender;
 
     struct TimeResult {
-        string name;
+        std::string name;
         uint32_t depth = 0;
         chrono_clock::duration cpuElapsed;
         uint64_t gpuElapsed = 0;
@@ -37,12 +38,12 @@ namespace sp::vulkan {
 
     class RenderPhase {
     public:
-        const string_view name;
+        const std::string_view name;
         PerfTimer *timer = nullptr;
         CommandContext *cmd = nullptr;
         TimeQuery query;
 
-        RenderPhase(string_view phaseName) : name(phaseName) {}
+        RenderPhase(std::string_view phaseName) : name(phaseName) {}
 
         void StartTimer(PerfTimer &timer);
         void StartTimer(CommandContext &cmd);
@@ -63,7 +64,7 @@ namespace sp::vulkan {
         void Tick();
         bool Active();
 
-        vector<TimeResult> lastCompleteFrame;
+        std::vector<TimeResult> lastCompleteFrame;
 
     private:
         DeviceContext &device;
@@ -78,8 +79,8 @@ namespace sp::vulkan {
             std::stack<TimeQuery *> stack;
             std::deque<TimeQuery> pending;
 
-            vector<uint64_t> gpuTimestamps;
-            vector<TimeResult> results;
+            std::vector<uint64_t> gpuTimestamps;
+            std::vector<TimeResult> results;
         };
 
         std::array<FrameContext, 4> frames;

@@ -7,13 +7,6 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/Common.hh"
-#include "common/DispatchQueue.hh"
-#include "common/EntityMap.hh"
-#include "common/Hashing.hh"
-#include "common/LockFreeEventQueue.hh"
-#include "common/Logging.hh"
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
@@ -30,15 +23,16 @@
 #include "physx/PhysicsQuerySystem.hh"
 #include "physx/SimulationCallbackHandler.hh"
 #include "physx/TriggerSystem.hh"
+#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/EntityMap.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/LockFreeEventQueue.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>
 #include <extensions/PxDefaultErrorCallback.h>
-#include <functional>
-#include <list>
 #include <mutex>
-#include <thread>
-#include <unordered_map>
 #include <vector>
 
 namespace ecs {
@@ -178,7 +172,7 @@ namespace sp {
         EntityMap<physx::PxRigidActor *> actors, subActors;
         EntityMap<physx::PxController *> controllers;
 
-        EntityMap<vector<JointState>> joints;
+        EntityMap<std::vector<JointState>> joints;
 
         std::mutex cacheMutex;
         PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;

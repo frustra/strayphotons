@@ -12,9 +12,9 @@
 #include "assets/Gltf.hh"
 #include "assets/GltfImpl.hh"
 #include "assets/PhysicsInfo.hh"
-#include "common/Hashing.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cstdlib>
@@ -177,7 +177,7 @@ namespace sp {
         }
         auto &mesh = *meshOption;
 
-        auto set = make_shared<ConvexHullSet>();
+        auto set = std::make_shared<ConvexHullSet>();
         for (auto &prim : mesh.primitives) {
             if (settings->hull.decompose) {
                 // Break primitive into one or more convex hulls.
@@ -257,7 +257,7 @@ namespace sp {
             return nullptr;
         }
 
-        auto hullSet = make_shared<ConvexHullSet>();
+        auto hullSet = std::make_shared<ConvexHullSet>();
         hullSet->collectionBuffer.resize(header->bufferSize + 128);
 
         // Copy the serialization data into 128-byte aligned memory for PhysX

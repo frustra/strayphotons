@@ -7,15 +7,13 @@
 
 #pragma once
 
-#include "common/Async.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
+#include "strayphotons/cpp/Async.hh"
 
 #include <glm/glm.hpp>
-#include <memory>
-#include <type_traits>
 #include <variant>
 
 namespace sp {

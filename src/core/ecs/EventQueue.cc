@@ -8,11 +8,10 @@
 #include "EventQueue.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <optional>
+#include <glm/gtx/string_cast.hpp>
 #include <picojson.h>
 #include <sstream>
 

@@ -11,6 +11,8 @@
 #include "ecs/Ecs.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
+#include <vector>
+
 namespace sp::vulkan::renderer {
     class Emissive {
     public:
@@ -30,13 +32,13 @@ namespace sp::vulkan::renderer {
                 glm::vec3 luminanceScale;
             } gpuData;
         };
-        vector<Screen> screens;
+        std::vector<Screen> screens;
 
         struct LaserLine {
             color_t color;
             float radius, mediaDensityFactor;
             glm::vec3 start, end;
         };
-        vector<LaserLine> lasers;
+        std::vector<LaserLine> lasers;
     };
 } // namespace sp::vulkan::renderer

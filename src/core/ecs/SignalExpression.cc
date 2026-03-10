@@ -8,15 +8,14 @@
 #include "SignalExpression.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "common/Common.hh"
-#include "common/Hashing.hh"
-#include "common/Logging.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalExpressionNode.hh"
 #include "ecs/SignalManager.hh"
 #include "ecs/SignalStructAccess.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 namespace ecs {
     using namespace expression;

@@ -7,15 +7,12 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/Hashing.hh"
-#include "common/LockFreeMutex.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
-#include <algorithm>
 #include <optional>
 #include <robin_hood.h>
 #include <string>

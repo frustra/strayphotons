@@ -7,14 +7,11 @@
 
 #pragma once
 
-#include "common/Async.hh"
-#include "common/Common.hh"
-#include "common/EnumTypes.hh"
-#include "common/InlineVector.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
+#include "strayphotons/cpp/EnumTypes.hh"
 
 #include <map>
 #include <robin_hood.h>

@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 
 #include <robin_hood.h>
+#include <vector>
 
 namespace sp::vulkan {
     class BufferPool {
@@ -29,9 +30,9 @@ namespace sp::vulkan {
         };
 
         struct BufferList {
-            vector<BufferEntry> free;
-            vector<BufferEntry> pendingFree;
-            vector<BufferEntry> pending;
+            std::vector<BufferEntry> free;
+            std::vector<BufferEntry> pendingFree;
+            std::vector<BufferEntry> pending;
         };
         robin_hood::unordered_map<BufferDesc, BufferList> buffers;
     };

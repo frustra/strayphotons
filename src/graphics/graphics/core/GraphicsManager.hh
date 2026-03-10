@@ -7,15 +7,13 @@
 
 #pragma once
 
-#include "common/Common.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <strayphotons.h>
-#include <vector>
+#include <strayphotons/graphics.h>
 
 struct GLFWwindow;
 struct VkInstance_T;
@@ -78,8 +76,8 @@ namespace sp {
 
         chrono_clock::time_point renderStart;
 
-        shared_ptr<GuiContext> windowGuiContext, menuGui;
-        shared_ptr<ProfilerGui> profilerGui;
+        std::shared_ptr<GuiContext> windowGuiContext, menuGui;
+        std::shared_ptr<ProfilerGui> profilerGui;
 
         bool initialized = false;
     };

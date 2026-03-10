@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include "common/InlineVector.hh"
-#include "common/LockFreeMutex.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
 
 #include <mutex>
-#include <vector>
 
 namespace sp {
     template<typename Event, size_t MaxQueueSize = 1000>

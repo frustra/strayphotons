@@ -9,19 +9,17 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "input/BindingNames.hh"
 #include "openvr/OpenVrSystem.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <openvr.h>
 #include <picojson.h>
+#include <string>
 
 namespace sp::xr {
     static CVar<int> CVarForceHandPose("vr.ForceHandePose",
@@ -39,7 +37,7 @@ namespace sp::xr {
         Assert(error == vr::EVRInputError::VRInputError_None, "Failed to initialize OpenVR input");
 
         picojson::value root;
-        string err = picojson::parse(root, actionManifest->String());
+        std::string err = picojson::parse(root, actionManifest->String());
         if (!err.empty()) {
             Errorf("Failed to parse OpenVR action manifest file: %s", err);
             return;
@@ -50,7 +48,7 @@ namespace sp::xr {
             for (auto &actionSet : actionSetList.get<picojson::array>()) {
                 for (auto &param : actionSet.get<picojson::object>()) {
                     if (param.first == "name") {
-                        auto name = param.second.get<string>();
+                        auto name = param.second.get<std::string>();
                         vr::VRActionSetHandle_t actionSetHandle;
                         error = vr::VRInput()->GetActionSetHandle(name.c_str(), &actionSetHandle);
                         Assertf(error == vr::EVRInputError::VRInputError_None,
@@ -69,13 +67,13 @@ namespace sp::xr {
                 Action action;
                 for (auto &param : actionObj.get<picojson::object>()) {
                     if (param.first == "name") {
-                        action.name = param.second.get<string>();
+                        action.name = param.second.get<std::string>();
                         error = vr::VRInput()->GetActionHandle(action.name.c_str(), &action.handle);
                         Assertf(error == vr::EVRInputError::VRInputError_None,
                             "Failed to load OpenVR input action set: %s",
                             action.name);
                     } else if (param.first == "type") {
-                        auto &typeStr = param.second.get<string>();
+                        auto &typeStr = param.second.get<std::string>();
                         if (sp::iequals(typeStr, "boolean")) {
                             action.type = Action::DataType::Bool;
                         } else if (sp::iequals(typeStr, "vector1")) {

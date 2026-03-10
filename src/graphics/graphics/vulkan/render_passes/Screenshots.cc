@@ -7,21 +7,22 @@
 
 #include "Screenshots.hh"
 
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <filesystem>
 #include <fpng.h>
+#include <string>
 
 namespace sp::vulkan::renderer {
     Screenshots::Screenshots() {
-        funcs.Register<string, string>("screenshot",
+        funcs.Register<std::string, std::string>("screenshot",
             "Save screenshot to <path>, optionally specifying an image <resource>",
-            [&](string path, string resource) {
+            [&](std::string path, std::string resource) {
                 std::lock_guard lock(screenshotMutex);
                 pendingScreenshots.push_back({path, resource});
             });

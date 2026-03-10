@@ -7,17 +7,15 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/InlineVector.hh"
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
 
 #include <deque>
 #include <mutex>
 #include <queue>
 #include <robin_hood.h>
-#include <set>
 #include <shared_mutex>
 #include <string>
 #include <unordered_set>

@@ -7,18 +7,14 @@
 
 #pragma once
 
-#include "assets/Gltf.hh"
-#include "common/Async.hh"
-#include "ecs/Ecs.hh"
-#include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+#include "strayphotons/cpp/Async.hh"
 
-#include <atomic>
-#include <functional>
-#include <future>
 #include <glm/glm.hpp>
+#include <memory>
 #include <robin_hood.h>
+#include <string>
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan {
@@ -36,7 +32,7 @@ namespace sp::vulkan {
             glm::vec3 center = glm::vec3(0);
         };
 
-        Mesh(shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
+        Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
         ~Mesh();
 
         uint32_t SceneIndex() const;
@@ -65,10 +61,10 @@ namespace sp::vulkan {
         }
 
     private:
-        string modelName;
-        shared_ptr<const sp::Gltf> asset;
+        std::string modelName;
+        std::shared_ptr<const sp::Gltf> asset;
 
-        vector<Primitive> primitives;
+        std::vector<Primitive> primitives;
 
         uint32_t vertexCount = 0, indexCount = 0, jointsCount = 0;
         struct {

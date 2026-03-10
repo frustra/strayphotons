@@ -7,14 +7,14 @@
 
 #include "Voxels.hh"
 
-#include "common/Common.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
+
+#include <vector>
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
@@ -107,7 +107,7 @@ namespace sp::vulkan::renderer {
     void Voxels::updateDescriptorSet(rg::Resources &resources, DeviceContext &device) {
         if (voxelLayerCount == 0) return;
 
-        vector<vk::DescriptorImageInfo> descriptorImageInfos;
+        std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
         descriptorImageInfos.reserve(voxelLayerCount * 6);
 
         for (size_t layer = 0; layer < voxelLayerCount; layer++) {

@@ -6,16 +6,14 @@
  */
 
 #include "assets/AssetManager.hh"
-#include "common/Common.hh"
-#include "common/Logging.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "strayphotons/cpp/Logging.hh"
 
-#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 

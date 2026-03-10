@@ -5,11 +5,11 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "common/Logging.hh"
 #include "common/RegisteredThread.hh"
 
+#include <cstdint>
 #include <strayphotons/threads.h>
 
-SP_EXPORT void sp_thread_get_measured_fps(const char *threadName) {
-    sp::GetMeasuredFps(threadName);
+SP_EXPORT uint32_t sp_thread_get_measured_fps(const char *threadName) {
+    return sp::GetMeasuredFps(threadName);
 }

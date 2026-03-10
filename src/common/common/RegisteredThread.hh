@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include "common/Common.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <atomic>
 #include <string>
+#include <string_view>
 #include <thread>
 
 namespace sp {
@@ -67,15 +68,8 @@ namespace sp {
         std::thread thread;
     };
 
-#ifdef SP_SHARED_BUILD
-    inline uint32_t GetMeasuredFps(std::string_view threadName) {
-        Assert(threadName.data()[threadName.size()] == '\0', "GetMeasuredFps string_view is not null terminated");
-        return sp_thread_get_measured_fps(threadName.c_str());
-    }
-#else
     uint32_t GetMeasuredFps_static(std::string_view threadName);
     inline uint32_t GetMeasuredFps(std::string_view threadName) {
         return GetMeasuredFps_static(threadName);
     }
-#endif
 } // namespace sp

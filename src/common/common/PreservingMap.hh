@@ -7,19 +7,17 @@
 
 #pragma once
 
-#include "common/Common.hh"
-#include "common/InlineVector.hh"
-#include "common/LockFreeMutex.hh"
-#include "common/Logging.hh"
 #include "common/Tracing.hh"
+#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <atomic>
 #include <memory>
 #include <mutex>
 #include <robin_hood.h>
 #include <shared_mutex>
-#include <string>
-#include <vector>
 
 namespace sp {
     static_assert(sizeof(chrono_clock::rep) <= sizeof(uint64_t), "Chrono Clock time point is larger than uint64_t");

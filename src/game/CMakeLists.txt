@@ -10,8 +10,6 @@ add_library(${PROJECT_GAME_LIB} STATIC)
 target_include_directories(${PROJECT_GAME_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-    PRIVATE
-        ${PROJECT_ROOT_DIR}/include
 )
 
 target_link_libraries(${PROJECT_GAME_LIB}
@@ -20,13 +18,7 @@ target_link_libraries(${PROJECT_GAME_LIB}
     PRIVATE
         ${PROJECT_COMMON_LIB}
         ${PROJECT_CORE_LIB}
-        ${PROJECT_CODEGEN_LIB}
         ImGui
-)
-
-target_compile_definitions(${PROJECT_GAME_LIB} PRIVATE
-    SP_SHARED_INTERNAL
-    TECS_SHARED_INTERNAL
 )
 
 if(WIN32)

@@ -7,8 +7,6 @@
 
 #include "SceneInfo.hh"
 
-#include "common/Common.hh"
-#include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 
 namespace ecs {

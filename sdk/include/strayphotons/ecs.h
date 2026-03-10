@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+typedef void tecs_ecs_t;
+
 // The following functions are declared in src/exports/Ecs.cc
 
 SP_EXPORT tecs_ecs_t *sp_get_live_ecs();
