@@ -46,7 +46,7 @@ add_custom_target(${PROJECT_EXPORTS_LIB}-output
 )
 
 TecsGenerateCHeaders(
-    TARGET_NAME ${PROJECT_ECS_C_ABI_LIB} OBJECT_TARGET
+    TARGET_NAME ${PROJECT_EXPORTS_LIB} OBJECT_TARGET
     ECS_INCLUDE_PATH "ecs/EcsImpl.hh"
     ECS_C_INCLUDE_PATH "strayphotons/components.h"
     ECS_NAME ecs::ECS
@@ -60,4 +60,4 @@ TecsGenerateCHeaders(
         SP_SHARED_INTERNAL
 )
 
-add_dependencies(${PROJECT_ECS_C_ABI_LIB} ${PROJECT_EXPORTS_LIB}-output)
+add_dependencies(${PROJECT_EXPORTS_LIB} ${PROJECT_EXPORTS_LIB}-output)
