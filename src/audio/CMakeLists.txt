@@ -28,8 +28,6 @@ target_compile_definitions(${PROJECT_AUDIO_LIB}
         SOUNDIO_STATIC_LIBRARY
 )
 
-# target_compile_options(${PROJECT_AUDIO_LIB} PRIVATE "-O3")
-
 # target_precompile_headers(${PROJECT_AUDIO_LIB} REUSE_FROM ${PROJECT_CORE_LIB})
 
 add_subdirectory(audio)
