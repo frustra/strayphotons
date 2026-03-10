@@ -1878,7 +1878,7 @@ SP_EXPORT event_string_t *sp_event_string_vector_get_data(sp_event_string_vector
 SP_EXPORT event_string_t *sp_event_string_vector_resize(sp_event_string_vector_t *v, size_t new_size);
 
 typedef std::pair<ecs::EntityRef, ecs::EntityRef> sp_entity_ref_pair_t;
-typedef std::vector<std::pair<class ecs::EntityRef,class ecs::EntityRef>> sp_entity_ref_pair_vector_t;
+typedef std::vector<std::pair<ecs::EntityRef, ecs::EntityRef>> sp_entity_ref_pair_vector_t;
 SP_EXPORT size_t sp_entity_ref_pair_vector_get_size(const sp_entity_ref_pair_vector_t *v);
 SP_EXPORT const sp_entity_ref_pair_t *sp_entity_ref_pair_vector_get_const_data(const sp_entity_ref_pair_vector_t *v);
 SP_EXPORT sp_entity_ref_pair_t *sp_entity_ref_pair_vector_get_data(sp_entity_ref_pair_vector_t *v);
