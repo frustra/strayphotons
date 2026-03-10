@@ -49,8 +49,6 @@ namespace sp::vulkan {
 
         fontAtlas = std::make_shared<ImFontAtlas>();
 
-        fontAtlas->AddFontDefault(nullptr);
-
         static const ImWchar glyphRanges[] = {
             0x0020,
             0x00FF, // Basic Latin + Latin Supplement
@@ -68,6 +66,7 @@ namespace sp::vulkan {
             cfg.FontDataSize = asset->BufferSize();
             cfg.FontDataOwnedByAtlas = false;
             cfg.SizePixels = def.size;
+            cfg.GlyphOffset = ImVec2(def.offset.x, def.offset.y);
             cfg.GlyphRanges = &glyphRanges[0];
             auto filename = asset->path.filename().string();
             strncpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name) - 1, filename.length()));

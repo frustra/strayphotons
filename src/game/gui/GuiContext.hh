@@ -31,6 +31,7 @@ namespace sp {
         GuiFont type;
         const char *name;
         float size;
+        glm::vec2 offset = {0, 0};
     };
 
     class GuiContext : public NonCopyable {

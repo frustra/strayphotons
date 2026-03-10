@@ -32,7 +32,6 @@ namespace sp::scripts {
 
             imCtx = ImGui::CreateContext();
             fontAtlas = std::make_shared<ImFontAtlas>();
-            fontAtlas->AddFontDefault(nullptr);
 
             static const ImWchar glyphRanges[] = {
                 0x0020,
@@ -51,20 +50,21 @@ namespace sp::scripts {
                 cfg.FontDataSize = asset->BufferSize();
                 cfg.FontDataOwnedByAtlas = false;
                 cfg.SizePixels = def.size;
+                cfg.GlyphOffset = ImVec2(def.offset.x, def.offset.y);
                 cfg.GlyphRanges = &glyphRanges[0];
                 auto filename = asset->path.filename().string();
                 strncpy(cfg.Name, filename.c_str(), std::min(sizeof(cfg.Name) - 1, filename.length()));
                 fontAtlas->AddFont(&cfg);
             }
 
-            uint8_t *fontData;
-            int fontWidth, fontHeight;
-            fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
+            fontAtlas->Build();
         }
 
         void Destroy(ScriptState &state) {
             Debugf("Destroying signal display: %llu", state.GetInstanceId());
             if (imCtx) {
+                ImGui::SetCurrentContext(imCtx);
+                fontAtlas.reset();
                 ImGui::DestroyContext(imCtx);
                 imCtx = nullptr;
             }
