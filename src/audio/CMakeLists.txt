@@ -18,7 +18,6 @@ target_link_libraries(${PROJECT_AUDIO_LIB}
     PRIVATE
         ${PROJECT_COMMON_LIB}
         libsoundio_static
-        ${LIBSOUNDIO_LIBS}
         ResonanceAudioStatic
 )
 
