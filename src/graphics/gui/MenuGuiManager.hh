@@ -40,7 +40,6 @@ namespace sp {
     private:
         MenuGuiManager(const ecs::EntityRef &guiEntity, Game &game);
 
-        Game &game;
         std::weak_ptr<AudioManager> audioPtr;
         std::weak_ptr<GraphicsManager> graphicsPtr;
 

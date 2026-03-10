@@ -32,7 +32,7 @@ namespace sp {
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
     MenuGuiManager::MenuGuiManager(const ecs::EntityRef &guiEntity, Game &game)
-        : GuiContext(guiEntity), game(game), audioPtr(game.audio), graphicsPtr(game.graphics) {
+        : GuiContext(guiEntity), audioPtr(game.audio), graphicsPtr(game.graphics) {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
                 [guiEntity = this->guiEntity, events = this->events](auto &lock) {
