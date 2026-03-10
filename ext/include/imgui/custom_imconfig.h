@@ -39,7 +39,7 @@
 // #define IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS
 // Don't implement ImFabs/ImSqrt/ImPow/ImFmod/ImCos/ImSin/ImAcos/ImAtan2 so you can implement them yourself.
 
-// #define IMGUI_DISABLE_FILE_FUNCTIONS
+#define IMGUI_DISABLE_FILE_FUNCTIONS
 // Don't implement ImFileOpen/ImFileClose/ImFileRead/ImFileWrite and ImFileHandle at all (replace them with dummies)
 
 // #define IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS
@@ -50,7 +50,7 @@
 // Don't implement default allocators calling malloc()/free() to avoid linking with them. You will need to call
 // ImGui::SetAllocatorFunctions().
 
-// #define IMGUI_DISABLE_DEFAULT_FONT
+#define IMGUI_DISABLE_DEFAULT_FONT
 // Disable default embedded font (ProggyClean.ttf), remove ~9.5 KB from output binary. AddFontDefault() will assert.
 
 // #define IMGUI_DISABLE_SSE

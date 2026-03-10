@@ -56,14 +56,14 @@ namespace sp::scripts {
                 fontAtlas->AddFont(&cfg);
             }
 
-            uint8_t *fontData;
-            int fontWidth, fontHeight;
-            fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
+            fontAtlas->Build();
         }
 
         void Destroy(ScriptState &state) {
             Debugf("Destroying signal display: %llu", state.GetInstanceId());
             if (imCtx) {
+                ImGui::SetCurrentContext(imCtx);
+                fontAtlas.reset();
                 ImGui::DestroyContext(imCtx);
                 imCtx = nullptr;
             }
