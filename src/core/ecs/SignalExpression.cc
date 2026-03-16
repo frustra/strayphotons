@@ -1042,7 +1042,7 @@ namespace ecs {
             Assertf(src.rootNode != nullptr, "Saving invalid signal expression: %s", src.expr);
             dst = picojson::value(src.rootNode->text.str());
         } else {
-            dst = picojson::value(src.expr);
+            dst = picojson::value(src.expr.str());
         }
     }
 

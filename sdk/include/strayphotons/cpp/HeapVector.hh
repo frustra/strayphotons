@@ -78,7 +78,13 @@ namespace sp {
 
         ~HeapVector() {
             clear();
-            if (storage) std::free(storage);
+            if (storage) {
+#ifdef _WIN32
+                _aligned_free(storage);
+#else
+                std::free(storage);
+#endif
+            }
             storage = nullptr;
             offset = 0;
             cap = 0;
@@ -97,7 +103,13 @@ namespace sp {
 
         HeapVector &operator=(HeapVector &&other) {
             clear();
-            if (storage) std::free(storage);
+            if (storage) {
+#ifdef _WIN32
+                _aligned_free(storage);
+#else
+                std::free(storage);
+#endif
+            }
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -203,12 +215,20 @@ namespace sp {
             if (new_cap > cap) {
                 auto *old_storage = storage;
                 cap = CeilToPowerOfTwo(new_cap);
+#ifdef _WIN32
+                storage = _aligned_malloc(cap * sizeof(T), std::alignment_of<T>());
+#else
                 storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
+#endif
                 if (old_storage) {
                     auto *old_data = reinterpret_cast<const T *>(old_storage);
                     std::uninitialized_move(old_data, old_data + offset, data());
                     std::destroy(old_data, old_data + offset);
+#ifdef _WIN32
+                    _aligned_free(old_storage);
+#else
                     std::free(old_storage);
+#endif
                 }
             }
         }
@@ -221,11 +241,19 @@ namespace sp {
             if (cap > offset * 2) {
                 auto *old_storage = storage;
                 cap = CeilToPowerOfTwo(offset);
+#ifdef _WIN32
+                storage = _aligned_malloc(cap * sizeof(T), std::alignment_of<T>());
+#else
                 storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
+#endif
                 auto *old_data = reinterpret_cast<const T *>(old_storage);
                 std::uninitialized_move(old_data, old_data + offset, data());
                 std::destroy(old_data, old_data + offset);
+#ifdef _WIN32
+                _aligned_free(old_storage);
+#else
                 std::free(old_storage);
+#endif
             }
         }
 

@@ -132,7 +132,7 @@ Signal expressions support the following operations and functions:
         void SetScope(const EntityScope &scope);
 
         EntityScope scope;
-        std::string expr;
+        sp::HeapString expr;
         std::shared_ptr<expression::Node> rootNode;
     };
 

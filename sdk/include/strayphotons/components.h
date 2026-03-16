@@ -88,8 +88,8 @@ typedef struct sp_ecs_scene_properties_t {
     sp_transform_t root_transform; // 60 bytes
     sp_transform_t gravity_transform; // 60 bytes
     vec3_t gravity; // 12 bytes
-    const uint8_t _unknown132[36];
-} sp_ecs_scene_properties_t; // 168 bytes
+    const uint8_t _unknown132[68];
+} sp_ecs_scene_properties_t; // 200 bytes
 const uint64_t SP_SCENE_PROPERTIES_INDEX = 2;
 const uint64_t SP_ACCESS_SCENE_PROPERTIES = 2ull << 2;
 SP_EXPORT sp_ecs_scene_properties_t *sp_entity_set_scene_properties(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -578,8 +578,8 @@ const uint32_t SP_TYPE_INDEX_ECS_RENDER_OUTPUT = 147;
 const uint32_t SP_TYPE_INDEX_SIGNAL_EXPRESSION = 53;
 // Type: ecs::SignalExpression
 typedef struct sp_signal_expression_t {
-    const uint8_t _unknown0[176];
-} sp_signal_expression_t; // 176 bytes
+    const uint8_t _unknown0[168];
+} sp_signal_expression_t; // 168 bytes
 
 const uint32_t SP_TYPE_INDEX_ENTITY_REF_VECTOR = 81;
 typedef struct sp_entity_ref_vector_t {
@@ -596,10 +596,10 @@ typedef struct sp_ecs_render_output_t {
     ivec2_t output_size; // 8 bytes
     vec2_t scale; // 8 bytes
     event_name_t effect; // 128 bytes
-    sp_signal_expression_t effect_if; // 176 bytes
+    sp_signal_expression_t effect_if; // 168 bytes
     sp_entity_ref_vector_t gui_elements; // 24 bytes
-    const uint8_t _unknown472[16];
-} sp_ecs_render_output_t; // 488 bytes
+    const uint8_t _unknown464[16];
+} sp_ecs_render_output_t; // 480 bytes
 const uint64_t SP_RENDER_OUTPUT_INDEX = 21;
 const uint64_t SP_ACCESS_RENDER_OUTPUT = 2ull << 21;
 SP_EXPORT sp_ecs_render_output_t *sp_entity_set_render_output(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -649,8 +649,8 @@ typedef uint8_t sp_trigger_shape_t;
 // Component: trigger_area
 typedef struct sp_ecs_trigger_area_t {
     sp_trigger_shape_t trigger_shape; // 1 bytes
-    const uint8_t _unknown1[175];
-} sp_ecs_trigger_area_t; // 176 bytes
+    const uint8_t _unknown1[199];
+} sp_ecs_trigger_area_t; // 200 bytes
 const uint64_t SP_TRIGGER_AREA_INDEX = 24;
 const uint64_t SP_ACCESS_TRIGGER_AREA = 2ull << 24;
 SP_EXPORT sp_ecs_trigger_area_t *sp_entity_set_trigger_area(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -723,8 +723,8 @@ SP_EXPORT void sp_entity_unset_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent)
 const uint32_t SP_TYPE_INDEX_ECS_EVENT_INPUT = 155;
 // Component: event_input
 typedef struct sp_ecs_event_input_t {
-    const uint8_t _unknown0[72];
-} sp_ecs_event_input_t; // 72 bytes
+    const uint8_t _unknown0[80];
+} sp_ecs_event_input_t; // 80 bytes
 const uint64_t SP_EVENT_INPUT_INDEX = 29;
 const uint64_t SP_ACCESS_EVENT_INPUT = 2ull << 29;
 SP_EXPORT sp_ecs_event_input_t *sp_entity_set_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -754,7 +754,7 @@ SP_EXPORT sp_event_dest_t *sp_event_dest_vector_resize(sp_event_dest_vector_t *v
 const uint32_t SP_TYPE_INDEX_EVENT_BINDING_ACTIONS = 44;
 const uint32_t SP_TYPE_INDEX_OPTIONAL_SIGNAL_EXPRESSION = 86;
 typedef struct sp_optional_signal_expression_t {
-    const uint8_t _unknown[184];
+    const uint8_t _unknown[176];
 } sp_optional_signal_expression_t;
 
 const uint32_t SP_TYPE_INDEX_OPTIONAL_EVENT_DATA = 85;
@@ -820,16 +820,16 @@ typedef struct sp_optional_event_data_t {
 
 // Type: ecs::EventBindingActions
 typedef struct sp_event_binding_actions_t {
-    sp_optional_signal_expression_t filter; // 184 bytes
+    sp_optional_signal_expression_t filter; // 176 bytes
     sp_signal_expression_vector_t modify; // 24 bytes
     sp_optional_event_data_t set_value; // 272 bytes
-} sp_event_binding_actions_t; // 480 bytes
+} sp_event_binding_actions_t; // 472 bytes
 
 // Type: ecs::EventBinding
 typedef struct sp_event_binding_t {
     sp_event_dest_vector_t outputs; // 24 bytes
-    sp_event_binding_actions_t event_binding_actions; // 480 bytes
-} sp_event_binding_t; // 504 bytes
+    sp_event_binding_actions_t event_binding_actions; // 472 bytes
+} sp_event_binding_t; // 496 bytes
 
 typedef struct sp_event_binding_vector_t {
     const uint8_t _unknown[24];
@@ -851,8 +851,8 @@ SP_EXPORT void sp_entity_unset_event_bindings(tecs_lock_t *dynLockPtr, sp_entity
 const uint32_t SP_TYPE_INDEX_ECS_SIGNALS = 157;
 // Component: signals
 typedef struct sp_ecs_signals_t {
-    const uint8_t _unknown0[88];
-} sp_ecs_signals_t; // 88 bytes
+    const uint8_t _unknown0[112];
+} sp_ecs_signals_t; // 112 bytes
 const uint64_t SP_SIGNALS_INDEX = 31;
 const uint64_t SP_ACCESS_SIGNALS = 2ull << 31;
 SP_EXPORT sp_ecs_signals_t *sp_ecs_set_signals(tecs_lock_t *dynLockPtr);
@@ -916,15 +916,15 @@ typedef struct sp_script_definition_t {
     const uint8_t _unknown68[4];
     sp_event_name_vector_t events; // 24 bytes
     bool filter_on_event; // 1 bytes
-    const uint8_t _unknown97[175];
-} sp_script_definition_t; // 272 bytes
+    const uint8_t _unknown97[303];
+} sp_script_definition_t; // 400 bytes
 
 // Type: ecs::ScriptState
 typedef struct sp_script_state_t {
     sp_ecs_name_t scope; // 128 bytes
-    sp_script_definition_t definition; // 272 bytes
-    const uint8_t _unknown400[456];
-} sp_script_state_t; // 856 bytes
+    sp_script_definition_t definition; // 400 bytes
+    const uint8_t _unknown528[504];
+} sp_script_state_t; // 1032 bytes
 const uint32_t SP_TYPE_INDEX_EVENT = 42;
 // Type: ecs::Event
 typedef struct sp_event_t {
