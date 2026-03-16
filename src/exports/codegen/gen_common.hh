@@ -58,8 +58,15 @@ std::string TypeToString() {
         } else {
             Abortf("Unsupported InlineString type: %s", typeid(T::value_type).name());
         }
-    } else if constexpr (sp::is_vector<T>()) {
-        return "std::vector<" + TypeToString<typename T::value_type>() + ">";
+    } else if constexpr (sp::is_heap_string<T>()) {
+        return "sp::HeapString";
+        // } else if constexpr (sp::is_vector<T>()) {
+        //     return "std::vector<" + TypeToString<typename T::value_type>() + ">";
+    } else if constexpr (sp::is_heap_vector<T>()) {
+        return "sp::HeapVector<" + TypeToString<typename T::value_type>() + ">";
+    } else if constexpr (sp::is_inline_vector<T>()) {
+        return "sp::InlineVector<" + TypeToString<typename T::value_type>() + ", " + std::to_string(T::max_size()) +
+               ">";
     } else if constexpr (sp::is_pair<T>()) {
         return "std::pair<" + TypeToString<typename T::first_type>() + ", " + TypeToString<typename T::second_type>() +
                ">";

@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
 #include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <variant>
@@ -141,14 +143,14 @@ namespace ecs {
         };
 
         struct ConvexMesh {
-            std::string modelName, meshName;
+            sp::AssetName modelName, meshName;
             sp::AsyncPtr<sp::Gltf> model;
             sp::AsyncPtr<sp::HullSettings> hullSettings;
 
             ConvexMesh() {}
-            ConvexMesh(const std::string &fullMeshName);
-            ConvexMesh(const std::string &modelName, const std::string &meshName);
-            ConvexMesh(const std::string &modelName, size_t meshIndex)
+            ConvexMesh(std::string_view fullMeshName);
+            ConvexMesh(std::string_view modelName, std::string_view meshName);
+            ConvexMesh(std::string_view modelName, size_t meshIndex)
                 : ConvexMesh(modelName, "convex" + std::to_string(meshIndex)) {}
 
             static const char *name() {
@@ -261,7 +263,7 @@ which decomposes the duck model into multiple convex hulls to more accurately re
             float mass = 1.0f)
             : shapes({shape}), group(group), type(type), mass(mass) {}
 
-        std::vector<PhysicsShape> shapes;
+        sp::HeapVector<PhysicsShape> shapes;
 
         PhysicsGroup group = PhysicsGroup::World;
         PhysicsActorType type = PhysicsActorType::Dynamic;

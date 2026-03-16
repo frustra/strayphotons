@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include "strayphotons/cpp/HeapVector.hh"
+
 #include <glm/glm.hpp>
-#include <vector>
 
 namespace sp {
     struct GuiDrawVertex {
@@ -31,8 +32,8 @@ namespace sp {
     };
 
     struct GuiDrawData {
-        std::vector<GuiDrawCommand> drawCommands;
-        std::vector<GuiDrawIndex> indexBuffer;
-        std::vector<GuiDrawVertex> vertexBuffer;
+        HeapVector<GuiDrawCommand> drawCommands;
+        HeapVector<GuiDrawIndex> indexBuffer;
+        HeapVector<GuiDrawVertex> vertexBuffer;
     };
 } // namespace sp

@@ -12,6 +12,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <optional>
 #include <robin_hood.h>
@@ -72,7 +73,7 @@ their own event queues as needed.
 
     struct EventBindingActions {
         std::optional<SignalExpression> filterExpr;
-        std::vector<SignalExpression> modifyExprs;
+        sp::HeapVector<SignalExpression> modifyExprs;
         std::optional<EventData> setValue;
 
         explicit operator bool() const {
@@ -106,7 +107,7 @@ their own event queues as needed.
             &EventBindingActions::modifyExprs));
 
     struct EventBinding {
-        std::vector<EventDest> outputs;
+        sp::HeapVector<EventDest> outputs;
 
         EventBindingActions actions;
 
@@ -150,7 +151,7 @@ their own event queues as needed.
             const AsyncEvent &event,
             uint32_t depth = 0);
 
-        using BindingList = typename std::vector<EventBinding>;
+        using BindingList = typename sp::HeapVector<EventBinding>;
         robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
     };
 

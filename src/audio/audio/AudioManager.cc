@@ -40,7 +40,7 @@ namespace sp {
           decoderQueue("AudioDecode") {
 
         framesPerBuffer = std::min(vraudio::kMaxSupportedNumFrames,
-            (size_t)CeilToPowerOfTwo(sampleRate * interval.count() / 1e9));
+            CeilToPowerOfTwo((size_t)(sampleRate * interval.count() / 1e9)));
         Assertf(framesPerBuffer >= 32, "buffer too small: %d", framesPerBuffer); // FftManager::kMinFftSize
         Logf("Audio SampleRate: %llu (%llu frames per buffer)", sampleRate, framesPerBuffer);
 

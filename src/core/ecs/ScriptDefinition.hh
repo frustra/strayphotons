@@ -11,6 +11,7 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
 #include "game/SceneRef.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/gui/GuiDrawData.hh"
 
 #include <functional>
@@ -93,7 +94,7 @@ namespace ecs {
     struct ScriptDefinition {
         ScriptName name;
         ScriptType type;
-        std::vector<EventName> events;
+        sp::HeapVector<EventName> events;
         bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;
         std::optional<ScriptInitFunc> initFunc;

@@ -10,6 +10,7 @@
 #include "assets/JsonHelpers.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <filesystem>
 #include <fstream>
@@ -45,7 +46,9 @@ private:
             return "float";
         } else if constexpr (std::is_same<T, double>()) {
             return "double";
-        } else if constexpr (std::is_same<T, std::string>()) {
+            // } else if constexpr (std::is_same<T, std::string>()) {
+            //     return "string";
+        } else if constexpr (sp::is_heap_string<T>()) {
             return "string";
         } else if constexpr (sp::is_inline_string<T>()) {
             return "string (max " + std::to_string(T::max_size()) + " chars)";
@@ -71,8 +74,13 @@ private:
             } else {
                 return typeid(T).name();
             }
-        } else if constexpr (sp::is_vector<T>()) {
+            // } else if constexpr (sp::is_vector<T>()) {
+            //     return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
+        } else if constexpr (sp::is_heap_vector<T>()) {
             return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
+        } else if constexpr (sp::is_inline_vector<T>()) {
+            return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt; (max " +
+                   std::to_string(T::max_size()) + " entries)";
         } else if constexpr (sp::is_pair<T>()) {
             return "pair&lt;" + fieldTypeName<typename T::first_type>() + ", " +
                    fieldTypeName<typename T::first_type>() + "&gt;";
@@ -114,7 +122,7 @@ public:
 
                 if (field.name.empty()) {
                     if constexpr (std::is_enum<T>()) {
-                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                        fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc.str(), typeid(T), defaultJson});
                     } else {
                         auto *metadata = ecs::StructMetadata::Get(typeid(T));
                         if (metadata) {
@@ -122,11 +130,13 @@ public:
                                 AddField(field, field.Access(&defaultValue));
                             }
                         } else {
-                            fields.emplace_back(DocField{"", fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                            fields.emplace_back(
+                                DocField{"", fieldTypeName<T>(), field.desc.str(), typeid(T), defaultJson});
                         }
                     }
                 } else {
-                    fields.emplace_back(DocField{field.name, fieldTypeName<T>(), field.desc, typeid(T), defaultJson});
+                    fields.emplace_back(
+                        DocField{field.name.str(), fieldTypeName<T>(), field.desc.str(), typeid(T), defaultJson});
                 }
             }
         });

@@ -30,20 +30,12 @@ namespace ecs {
 
     class ScriptState {
     public:
-        using ParameterType = typename std::variant<bool,
-            double,
-            std::string,
-            glm::vec3,
-            std::vector<bool>,
-            std::vector<double>,
-            std::vector<std::string>>;
-
         ScriptState();
         ScriptState(const ScriptState &other);
         ScriptState(const ScriptDefinition &definition, const EntityScope &scope = {});
 
         template<typename T>
-        void SetParam(std::string name, const T &value) {
+        void SetParam(std::string_view name, const T &value) {
             auto ctx = definition.context.lock();
             if (ctx) {
                 void *dataPtr = ctx->AccessMut(*this);
@@ -60,7 +52,7 @@ namespace ecs {
         }
 
         template<typename T>
-        T GetParam(std::string name) const {
+        T GetParam(std::string_view name) const {
             auto ctx = definition.context.lock();
             if (ctx) {
                 const void *dataPtr = ctx->Access(*this);

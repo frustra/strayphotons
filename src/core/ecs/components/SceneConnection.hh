@@ -9,19 +9,23 @@
 
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <robin_hood.h>
-#include <string>
-#include <vector>
+#include <string_view>
 
 namespace ecs {
     struct SceneConnection {
         // Load a scene if any of the signal expressions provded evaluate to true
-        robin_hood::unordered_map<std::string, std::vector<SignalExpression>> scenes;
+        robin_hood::
+            unordered_map<sp::InlineString<63>, sp::HeapVector<SignalExpression>, sp::StringHash, sp::StringEqual>
+                scenes;
 
         SceneConnection() {}
-        SceneConnection(std::string scene, const SignalExpression &expr) {
-            scenes.emplace(scene, std::vector<SignalExpression>{expr});
+        SceneConnection(std::string_view scene, const SignalExpression &expr) {
+            scenes.emplace(scene, sp::HeapVector<SignalExpression>{expr});
         }
     };
 

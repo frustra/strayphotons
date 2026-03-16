@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
+#include "strayphotons/cpp/HeapString.hh"
 
 #include <limits>
 
@@ -33,8 +34,8 @@ namespace ecs {
         return ptr ? ptr->signal.entity : empty;
     }
 
-    const std::string &SignalRef::GetSignalName() const {
-        static const std::string empty = "";
+    const sp::HeapString &SignalRef::GetSignalName() const {
+        static const sp::HeapString empty = "";
         return ptr ? ptr->signal.signalName : empty;
     }
 
@@ -42,7 +43,7 @@ namespace ecs {
         return !!ptr;
     }
 
-    std::string SignalRef::String() const {
+    sp::HeapString SignalRef::String() const {
         if (!ptr) return "";
         return ptr->signal.String();
     }
@@ -430,7 +431,7 @@ namespace ecs {
         return ptr->signal.entity == other;
     }
 
-    bool SignalRef::operator==(const std::string &other) const {
+    bool SignalRef::operator==(std::string_view other) const {
         if (!ptr || other.empty()) return false;
         return ptr->signal.signalName == other;
     }

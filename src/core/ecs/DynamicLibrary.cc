@@ -258,7 +258,7 @@ namespace ecs {
         definition.type = dynamicDefinition.type;
         definition.events = dynamicDefinition.events;
         definition.filterOnEvent = dynamicDefinition.filterOnEvent;
-        metadata.fields = dynamicDefinition.fields;
+        metadata.fields.assign(dynamicDefinition.fields.begin(), dynamicDefinition.fields.end());
         switch (definition.type) {
         case ScriptType::LogicScript:
             definition.initFunc = ScriptInitFunc(&Init);

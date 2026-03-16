@@ -7,9 +7,11 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "ecs/Components.hh"
 #include "ecs/EventQueue.hh"
 #include "strayphotons/cpp/Async.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 namespace sp {
     class Asset;
@@ -27,7 +29,7 @@ namespace ecs {
         // Set these fields before adding the Sound to the scene
         SoundType type = SoundType::Object;
 
-        std::string filePath;
+        sp::AssetName filePath;
         sp::AsyncPtr<sp::Asset> file; // TODO: should make the asset system unpack the audio file
         bool loop = false, playOnLoad = false;
 
@@ -50,7 +52,7 @@ namespace ecs {
     bool StructMetadata::Load<Sound>(Sound &dst, const picojson::value &src);
 
     struct Audio {
-        std::vector<Sound> sounds;
+        sp::HeapVector<Sound> sounds;
         EventQueueRef eventQueue;
 
         // Update these fields at any point

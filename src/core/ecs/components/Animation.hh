@@ -9,6 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -105,7 +106,7 @@ When moving from state `2.0` to state `0.0`, the animation will follow the path 
 
     class Animation {
     public:
-        std::vector<AnimationState> states;
+        sp::HeapVector<AnimationState> states;
 
         InterpolationMode interpolation = InterpolationMode::Linear;
         float tension = 0.5f;

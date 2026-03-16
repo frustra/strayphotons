@@ -40,7 +40,8 @@ namespace ecs {
             if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
                 Errorf("GetStructField invalid subfield: %s '%s'", baseType.name(), std::string(fieldName));
                 return {};
-            } else if constexpr (std::is_enum_v<T> || sp::is_vector<T>()) {
+            } else if constexpr (std::is_enum_v<T> || sp::is_vector<T>() || sp::is_heap_vector<T>() ||
+                                 sp::is_inline_vector<T>()) {
                 Errorf("GetStructField invalid subfield: %s '%s'", baseType.name(), std::string(fieldName));
                 return {};
             } else if constexpr (std::is_same_v<T, EventData>) {

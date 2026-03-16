@@ -12,6 +12,8 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
 #include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <map>
 #include <robin_hood.h>
@@ -45,8 +47,9 @@ struct magic_enum::customize::enum_range<ecs::FieldAction> {
 
 namespace ecs {
     struct ArgDesc {
-        std::string name, desc;
+        sp::HeapString name, desc;
 
+        // ArgDesc() {}
         ArgDesc(const std::string_view &name, const std::string_view &desc) : name(name), desc(desc) {}
 
         bool operator==(const ArgDesc &other) const = default;
@@ -63,6 +66,7 @@ namespace ecs {
         bool isReference;
         bool isTecsLock;
         bool isFunctionPointer;
+        bool isConsistentSize;
 
         template<typename T>
         static inline TypeInfo Lookup() {
@@ -77,6 +81,7 @@ namespace ecs {
                 .isReference = std::is_reference<T>(),
                 .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
                 .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
+                .isConsistentSize = sp::is_consistent_size<T>(),
             };
         }
 
@@ -96,41 +101,41 @@ namespace ecs {
     };
 
     struct StructFunction {
-        std::string name, desc;
+        sp::HeapString name, desc;
         bool isStatic, isConst;
         TypeInfo returnType;
-        std::vector<TypeInfo> argTypes;
-        std::vector<ArgDesc> argDescs;
+        sp::HeapVector<TypeInfo> argTypes;
+        sp::HeapVector<ArgDesc> argDescs;
         int funcIndex = -1;
 
-        StructFunction(const std::string &name,
-            const std::string &desc,
+        StructFunction(std::string_view name,
+            std::string_view desc,
             bool isStatic,
             bool isConst,
             TypeInfo returnType,
-            std::vector<TypeInfo> argTypes,
-            std::vector<ArgDesc> argDescs)
+            sp::HeapVector<TypeInfo> argTypes,
+            sp::HeapVector<ArgDesc> argDescs)
             : name(name), desc(sp::trim(desc)), isStatic(isStatic), isConst(isConst), returnType(returnType),
-              argTypes(argTypes), argDescs(argDescs) {}
+              argTypes(std::move(argTypes)), argDescs(std::move(argDescs)) {}
 
         /**
          * Registers a struct's member function as a callable scripting function. For example:
          * StructFunction::New("GetParent", &Transform::GetParent)
          */
         template<typename T, typename R, typename... Args>
-        static const StructFunction New(const std::string &name, R (T::*F)(Args...)) {
+        static const StructFunction New(std::string_view name, R (T::*F)(Args...)) {
             return StructFunction(name,
                 "No description",
                 false, // isStatic
                 false, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
                 {});
         }
 
         template<typename T, typename R, typename... Args, typename... Descs>
-        static const StructFunction New(const std::string &name,
-            const std::string &desc,
+        static const StructFunction New(std::string_view name,
+            std::string_view desc,
             R (T::*F)(Args...),
             Descs &&...argDescs) {
             return StructFunction(name,
@@ -138,24 +143,24 @@ namespace ecs {
                 false, // isStatic
                 false, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}));
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<ArgDesc>({argDescs...}));
         }
 
         template<typename T, typename R, typename... Args>
-        static const StructFunction New(const std::string &name, R (T::*F)(Args...) const) {
+        static const StructFunction New(std::string_view name, R (T::*F)(Args...) const) {
             return StructFunction(name,
                 "No description",
                 false, // isStatic
                 true, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
                 {});
         }
 
         template<typename T, typename R, typename... Args, typename... Descs>
-        static const StructFunction New(const std::string &name,
-            const std::string &desc,
+        static const StructFunction New(std::string_view name,
+            std::string_view desc,
             R (T::*F)(Args...) const,
             Descs &&...argDescs) {
             return StructFunction(name,
@@ -163,8 +168,8 @@ namespace ecs {
                 false, // isStatic
                 true, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}));
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<ArgDesc>({argDescs...}));
         }
 
         /**
@@ -172,19 +177,19 @@ namespace ecs {
          * StructFunction::New("NewScript", &Script::New)
          */
         template<typename R, typename... Args>
-        static const StructFunction New(const std::string &name, R (*F)(Args...)) {
+        static const StructFunction New(std::string_view name, R (*F)(Args...)) {
             return StructFunction(name,
                 "No description",
                 true, // isStatic
                 false, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
                 {});
         }
 
         template<typename R, typename... Args, typename... Descs>
-        static const StructFunction New(const std::string &name,
-            const std::string &desc,
+        static const StructFunction New(std::string_view name,
+            std::string_view desc,
             R (*F)(Args...),
             Descs &&...argDescs) {
             return StructFunction(name,
@@ -192,8 +197,8 @@ namespace ecs {
                 true, // isStatic
                 false, // isConst
                 TypeInfo::Lookup<R>(),
-                std::vector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
-                std::vector<ArgDesc>({argDescs...}));
+                sp::HeapVector<TypeInfo>({TypeInfo::Lookup<Args>()...}),
+                sp::HeapVector<ArgDesc>({argDescs...}));
         }
 
         bool operator==(const StructFunction &) const = default;
@@ -207,7 +212,7 @@ namespace ecs {
     };
 
     struct StructField {
-        std::string name, desc;
+        sp::HeapString name, desc;
         TypeInfo type;
         uint64_t size;
         uint64_t offset = 0;
@@ -216,8 +221,8 @@ namespace ecs {
         std::optional<StructFunction> functionPointer;
 
         StructField() = default;
-        StructField(const std::string &name,
-            const std::string &desc,
+        StructField(std::string_view name,
+            std::string_view desc,
             const TypeInfo &type,
             uint64_t size,
             uint64_t offset,
@@ -254,7 +259,7 @@ namespace ecs {
          * }
          */
         template<typename T, typename F>
-        static const StructField New(const std::string &name, const F T::*M, FieldAction actions = ~FieldAction::None) {
+        static const StructField New(std::string_view name, const F T::*M, FieldAction actions = ~FieldAction::None) {
             return StructField(name,
                 "No description",
                 TypeInfo::Lookup<std::remove_cv_t<F>>(),
@@ -265,8 +270,8 @@ namespace ecs {
         }
 
         template<typename T, typename F>
-        static const StructField New(const std::string &name,
-            const std::string &desc,
+        static const StructField New(std::string_view name,
+            std::string_view desc,
             const F T::*M,
             FieldAction actions = ~FieldAction::None) {
             return StructField(name,
@@ -279,8 +284,8 @@ namespace ecs {
         }
 
         template<typename T>
-        static const StructField New(const std::string &name,
-            const std::string &desc,
+        static const StructField New(std::string_view name,
+            std::string_view desc,
             uint64_t offset,
             FieldAction actions = FieldAction::None,
             const std::optional<StructFunction> &functionPointer = {}) {
@@ -492,6 +497,13 @@ namespace ecs {
 
         template<typename T>
         inline void SetScope(std::vector<T> &dst, const EntityScope &scope) {
+            for (auto &item : dst) {
+                SetScope(item, scope);
+            }
+        }
+
+        template<typename T>
+        inline void SetScope(sp::HeapVector<T> &dst, const EntityScope &scope) {
             for (auto &item : dst) {
                 SetScope(item, scope);
             }

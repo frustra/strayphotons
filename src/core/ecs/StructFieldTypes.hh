@@ -7,11 +7,15 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/InlineString.hh"
 #include "strayphotons/cpp/Utility.hh"
 #include "strayphotons/cpp/gui/GuiDrawData.hh"
 
@@ -34,7 +38,7 @@ namespace ecs {
         Transform,
         EventData,
         EventDataType,
-        std::string,
+        sp::HeapString,
         sp::InlineString<63>,
         // ScriptName, // Duplicate of sp::InlineString<63>
         EventName,
@@ -97,36 +101,39 @@ namespace ecs {
         sp::GuiDrawVertex,
         sp::SceneRef,
         TypeInfo,
-        std::vector<float>,
-        std::vector<glm::vec2>,
-        std::vector<std::string>,
-        std::vector<SignalExpression>,
-        std::vector<EventName>,
-        std::vector<EventString>,
-        std::vector<EventDest>,
-        std::vector<EventBinding>,
-        std::vector<sp::GuiDrawCommand>,
-        std::vector<sp::GuiDrawIndex>,
-        std::vector<sp::GuiDrawVertex>,
-        std::vector<AnimationState>,
-        std::vector<PhysicsJoint>,
-        std::vector<PhysicsShape>,
-        std::vector<ScriptInstance>,
-        std::vector<Sound>,
-        std::vector<StructField>,
-        std::vector<EntityRef>,
-        std::vector<std::pair<EntityRef, EntityRef>>,
+        sp::InlineString<2>,
+        sp::HeapVector<float>,
+        sp::HeapVector<glm::vec2>,
+        sp::HeapVector<sp::HeapString>,
+        sp::HeapVector<sp::InlineString<127>>,
+        sp::HeapVector<sp::InlineString<255>>,
+        sp::HeapVector<SignalExpression>,
+        sp::HeapVector<EventDest>,
+        sp::HeapVector<EventBinding>,
+        sp::HeapVector<sp::GuiDrawCommand>,
+        sp::HeapVector<sp::GuiDrawIndex>,
+        sp::HeapVector<sp::GuiDrawVertex>,
+        sp::HeapVector<AnimationState>,
+        sp::HeapVector<PhysicsJoint>,
+        sp::HeapVector<PhysicsShape>,
+        sp::HeapVector<ScriptInstance>,
+        sp::HeapVector<Sound>,
+        sp::HeapVector<StructField>,
+        sp::HeapVector<EntityRef>,
+        sp::HeapVector<std::pair<EntityRef, EntityRef>>,
         std::pair<EntityRef, EntityRef>,
         std::optional<double>,
         std::optional<EventData>,
         std::optional<SignalExpression>,
         std::optional<PhysicsActorType>,
-        robin_hood::unordered_map<std::string, double>,
-        robin_hood::unordered_map<EventName, std::string, sp::StringHash, sp::StringEqual>,
-        robin_hood::unordered_map<std::string, SignalExpression>,
-        robin_hood::unordered_map<std::string, PhysicsJoint>,
-        robin_hood::unordered_map<std::string, std::vector<SignalExpression>>,
-        robin_hood::unordered_map<EventName, std::vector<EventBinding>, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<sp::InlineString<127>, double, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<EventName, EventName, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<sp::InlineString<127>, SignalExpression, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<sp::HeapString, SignalExpression, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<sp::InlineString<127>, PhysicsJoint, sp::StringHash, sp::StringEqual>,
+        robin_hood::
+            unordered_map<sp::InlineString<63>, sp::HeapVector<SignalExpression>, sp::StringHash, sp::StringEqual>,
+        robin_hood::unordered_map<EventName, sp::HeapVector<EventBinding>, sp::StringHash, sp::StringEqual>,
 
         // Enums
         FieldAction,

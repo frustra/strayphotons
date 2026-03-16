@@ -12,8 +12,10 @@
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
 #include "graphics/GenericCompositor.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <memory>
+#include <vector>
 
 namespace dynalo {
     class library;
@@ -64,8 +66,8 @@ namespace ecs {
         char *desc = nullptr;
         ScriptType type;
         bool filterOnEvent = false;
-        std::vector<EventName> events;
-        std::vector<StructField> fields;
+        sp::HeapVector<EventName> events;
+        sp::HeapVector<StructField> fields;
 
         uint64_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;

@@ -156,7 +156,7 @@ namespace ecs {
                 return true;
             }
             auto &obj = src.get<picojson::object>();
-            auto it = obj.find(name);
+            auto it = obj.find(name.c_str());
             if (it == obj.end()) {
                 // Silently leave missing fields as default
                 return true;
@@ -187,7 +187,7 @@ namespace ecs {
 
             if constexpr (std::is_default_constructible<T>()) {
                 auto *defaultValue = reinterpret_cast<const T *>(defaultField);
-                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
+                sp::json::SaveIfChanged(scope, dst, std::string(name), value, defaultValue);
             } else {
                 Abortf("StructField::Save called on uninitializable type: %s", typeid(T).name());
             }

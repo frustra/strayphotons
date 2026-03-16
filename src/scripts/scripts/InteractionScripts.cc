@@ -8,6 +8,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 
@@ -28,8 +29,8 @@ namespace sp::scripts {
     struct InteractiveObject {
         bool disabled = false;
         bool highlightOnly = false;
-        std::vector<std::pair<EntityRef, EntityRef>> grabEntities;
-        std::vector<EntityRef> pointEntities;
+        HeapVector<std::pair<EntityRef, EntityRef>> grabEntities;
+        HeapVector<EntityRef> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
 

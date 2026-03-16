@@ -10,6 +10,7 @@
 #include "ecs/Components.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/Transform.h"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <optional>
@@ -115,7 +116,7 @@ namespace ecs {
             Mass(const EntityRef &targetActor) : targetActor(targetActor) {}
         };
 
-        std::vector<std::variant<std::monostate, Raycast, Sweep, Overlap, Mass>> queries;
+        sp::HeapVector<std::variant<std::monostate, Raycast, Sweep, Overlap, Mass>> queries;
 
         // Calling NewQuery() invalidates all references returned by Lookup()
         template<typename T>
