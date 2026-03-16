@@ -13,11 +13,13 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <sys/types.h>
+#include <type_traits>
 
 namespace sp {
     template<typename T>
@@ -76,7 +78,7 @@ namespace sp {
 
         ~HeapVector() {
             clear();
-            if (storage) delete[] storage;
+            if (storage) std::free(storage);
             storage = nullptr;
             offset = 0;
             cap = 0;
@@ -95,7 +97,7 @@ namespace sp {
 
         HeapVector &operator=(HeapVector &&other) {
             clear();
-            if (storage) delete[] storage;
+            if (storage) std::free(storage);
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -133,20 +135,20 @@ namespace sp {
         }
 
         reference front() {
-            Assert(offset > 0, "HeapVector::front() called on empty vector");
+            DebugAssertf(offset > 0, "HeapVector::front() called on empty vector");
             return data()[0];
         }
         const_reference front() const {
-            Assert(offset > 0, "HeapVector::front() called on empty vector");
+            DebugAssertf(offset > 0, "HeapVector::front() called on empty vector");
             return data()[0];
         }
 
         T &back() {
-            Assertf(offset > 0, "HeapVector::back() called on empty vector");
+            DebugAssertf(offset > 0, "HeapVector::back() called on empty vector");
             return data()[offset - 1];
         }
         const T &back() const {
-            Assertf(offset > 0, "HeapVector::back() called on empty vector");
+            DebugAssertf(offset > 0, "HeapVector::back() called on empty vector");
             return data()[offset - 1];
         }
 
@@ -201,12 +203,12 @@ namespace sp {
             if (new_cap > cap) {
                 auto *old_storage = storage;
                 cap = CeilToPowerOfTwo(new_cap);
-                storage = new char[cap * sizeof(T)];
+                storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
                 if (old_storage) {
                     auto *old_data = reinterpret_cast<const T *>(old_storage);
                     std::uninitialized_move(old_data, old_data + offset, data());
                     std::destroy(old_data, old_data + offset);
-                    delete[] old_storage;
+                    std::free(old_storage);
                 }
             }
         }
@@ -219,11 +221,11 @@ namespace sp {
             if (cap > offset * 2) {
                 auto *old_storage = storage;
                 cap = CeilToPowerOfTwo(offset);
-                storage = new char[cap * sizeof(T)];
+                storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
                 auto *old_data = reinterpret_cast<const T *>(old_storage);
                 std::uninitialized_move(old_data, old_data + offset, data());
                 std::destroy(old_data, old_data + offset);
-                delete[] old_storage;
+                std::free(old_storage);
             }
         }
 
@@ -333,6 +335,7 @@ namespace sp {
     private:
         size_type cap = 0;
         size_type offset = 0;
-        alignas(alignof(T)) char *storage = nullptr;
+
+        void *storage = nullptr;
     };
 } // namespace sp
