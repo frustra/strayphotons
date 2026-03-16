@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/RenderOutput.hh"
 
@@ -18,27 +19,11 @@ namespace sp {
 }
 
 namespace ecs {
-    template<typename LockType>
-    static inline ScriptDefinition CreateLogicScript(
-        std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
-        auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
-                             const LogicUpdateLock &lock,
-                             Entity ent,
-                             chrono_clock::duration interval) {
-            return callback(state, (LockType)lock, ent, interval);
-        };
-        return ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
+    static inline ScriptDefinition CreateLogicScript(LogicTickFunc &&callback) {
+        return ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, callback};
     }
-    template<typename LockType>
-    static inline ScriptDefinition CreatePhysicsScript(
-        std::function<void(ScriptState &, LockType, Entity, chrono_clock::duration)> &&callback) {
-        auto wrapperFn = [callback = std::move(callback)](ScriptState &state,
-                             const PhysicsUpdateLock &lock,
-                             Entity ent,
-                             chrono_clock::duration interval) {
-            return callback(state, (LockType)lock, ent, interval);
-        };
-        return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, std::move(wrapperFn)};
+    static inline ScriptDefinition CreatePhysicsScript(PhysicsTickFunc &&callback) {
+        return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, callback};
     }
     template<typename... Events>
     static inline ScriptDefinition CreateEventScript(OnEventFunc &&callback, Events... events) {

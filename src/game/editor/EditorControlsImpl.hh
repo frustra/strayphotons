@@ -235,7 +235,7 @@ namespace sp {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
         }
-        bool changed = ImGui::InputText(name.c_str(), &value.expr);
+        bool changed = AddImGuiElement(name, value.expr);
         if (changed) value.Compile();
         if (borderEnable) {
             ImGui::PopStyleVar();

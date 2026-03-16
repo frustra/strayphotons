@@ -329,12 +329,14 @@ namespace ecs {
         for (size_t i : scriptSet.activeScriptList) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<LogicTickFunc>(&state.definition.callback);
-            if (!callback || !*callback) continue;
+            auto *callbackPtr = std::get_if<LogicTickFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnTick");
             DebugZoneStr(ecs::ToString(lock, ent));
-            (*callback)(state, lock, ent, interval);
+            callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -347,12 +349,14 @@ namespace ecs {
         for (size_t i : scriptSet.activeScriptList) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<PhysicsTickFunc>(&state.definition.callback);
-            if (!callback || !*callback) continue;
+            auto *callbackPtr = std::get_if<PhysicsTickFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnPhysicsUpdate");
             DebugZoneStr(ecs::ToString(lock, ent));
-            (*callback)(state, lock, ent, interval);
+            callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -385,8 +389,11 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
-            auto *callback = std::get_if<PrefabFunc>(&state.definition.callback);
-            if (callback && *callback) (*callback)(state, scene, lock, ent);
+            auto *callbackPtr = std::get_if<PrefabFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
+            callback(state, scene, lock, ent);
         }
     }
 } // namespace ecs

@@ -40,7 +40,6 @@ namespace ecs {
         EventDataType,
         sp::HeapString,
         sp::InlineString<63>,
-        // ScriptName, // Duplicate of sp::InlineString<63>
         EventName,
         EventString,
         EventBytes,

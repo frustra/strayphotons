@@ -88,8 +88,8 @@ typedef struct sp_ecs_scene_properties_t {
     sp_transform_t root_transform; // 60 bytes
     sp_transform_t gravity_transform; // 60 bytes
     vec3_t gravity; // 12 bytes
-    const uint8_t _unknown132[68];
-} sp_ecs_scene_properties_t; // 200 bytes
+    const uint8_t _unknown132[12];
+} sp_ecs_scene_properties_t; // 144 bytes
 const uint64_t SP_SCENE_PROPERTIES_INDEX = 2;
 const uint64_t SP_ACCESS_SCENE_PROPERTIES = 2ull << 2;
 SP_EXPORT sp_ecs_scene_properties_t *sp_entity_set_scene_properties(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -649,8 +649,8 @@ typedef uint8_t sp_trigger_shape_t;
 // Component: trigger_area
 typedef struct sp_ecs_trigger_area_t {
     sp_trigger_shape_t trigger_shape; // 1 bytes
-    const uint8_t _unknown1[199];
-} sp_ecs_trigger_area_t; // 200 bytes
+    const uint8_t _unknown1[175];
+} sp_ecs_trigger_area_t; // 176 bytes
 const uint64_t SP_TRIGGER_AREA_INDEX = 24;
 const uint64_t SP_ACCESS_TRIGGER_AREA = 2ull << 24;
 SP_EXPORT sp_ecs_trigger_area_t *sp_entity_set_trigger_area(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -723,8 +723,8 @@ SP_EXPORT void sp_entity_unset_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent)
 const uint32_t SP_TYPE_INDEX_ECS_EVENT_INPUT = 155;
 // Component: event_input
 typedef struct sp_ecs_event_input_t {
-    const uint8_t _unknown0[80];
-} sp_ecs_event_input_t; // 80 bytes
+    const uint8_t _unknown0[72];
+} sp_ecs_event_input_t; // 72 bytes
 const uint64_t SP_EVENT_INPUT_INDEX = 29;
 const uint64_t SP_ACCESS_EVENT_INPUT = 2ull << 29;
 SP_EXPORT sp_ecs_event_input_t *sp_entity_set_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -851,8 +851,8 @@ SP_EXPORT void sp_entity_unset_event_bindings(tecs_lock_t *dynLockPtr, sp_entity
 const uint32_t SP_TYPE_INDEX_ECS_SIGNALS = 157;
 // Component: signals
 typedef struct sp_ecs_signals_t {
-    const uint8_t _unknown0[112];
-} sp_ecs_signals_t; // 112 bytes
+    const uint8_t _unknown0[88];
+} sp_ecs_signals_t; // 88 bytes
 const uint64_t SP_SIGNALS_INDEX = 31;
 const uint64_t SP_ACCESS_SIGNALS = 2ull << 31;
 SP_EXPORT sp_ecs_signals_t *sp_ecs_set_signals(tecs_lock_t *dynLockPtr);
@@ -891,6 +891,15 @@ typedef struct sp_script_instance_t {
 } sp_script_instance_t; // 16 bytes
 const uint32_t SP_TYPE_INDEX_SCRIPT_STATE = 52;
 const uint32_t SP_TYPE_INDEX_SCRIPT_DEFINITION = 49;
+const uint32_t SP_TYPE_INDEX_STRING = 7;
+typedef struct string_t { const uint8_t _unknown[24]; } string_t;
+SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
+SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
+SP_EXPORT size_t sp_string_get_size(const string_t *str);
+SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
+SP_EXPORT char *sp_string_get_data(string_t *str);
+SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
+
 const uint32_t SP_TYPE_INDEX_SCRIPT_TYPE = 103;
 // Enum: ecs::ScriptType
 typedef enum sp_script_type_t {
@@ -911,20 +920,20 @@ SP_EXPORT event_name_t *sp_event_name_vector_resize(sp_event_name_vector_t *v, s
 
 // Type: ecs::ScriptDefinition
 typedef struct sp_script_definition_t {
-    string_63_t name; // 64 bytes
+    string_t name; // 24 bytes
     sp_script_type_t type; // 4 bytes
-    const uint8_t _unknown68[4];
+    const uint8_t _unknown28[4];
     sp_event_name_vector_t events; // 24 bytes
     bool filter_on_event; // 1 bytes
-    const uint8_t _unknown97[303];
-} sp_script_definition_t; // 400 bytes
+    const uint8_t _unknown57[79];
+} sp_script_definition_t; // 136 bytes
 
 // Type: ecs::ScriptState
 typedef struct sp_script_state_t {
     sp_ecs_name_t scope; // 128 bytes
-    sp_script_definition_t definition; // 400 bytes
-    const uint8_t _unknown528[504];
-} sp_script_state_t; // 1032 bytes
+    sp_script_definition_t definition; // 136 bytes
+    const uint8_t _unknown264[456];
+} sp_script_state_t; // 720 bytes
 const uint32_t SP_TYPE_INDEX_EVENT = 42;
 // Type: ecs::Event
 typedef struct sp_event_t {
@@ -957,15 +966,6 @@ SP_EXPORT sp_ecs_scripts_t *sp_entity_set_scripts(tecs_lock_t *dynLockPtr, sp_en
 SP_EXPORT sp_ecs_scripts_t *sp_entity_get_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_scripts_t *sp_entity_get_const_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
-
-const uint32_t SP_TYPE_INDEX_STRING = 7;
-typedef struct string_t { const uint8_t _unknown[24]; } string_t;
-SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
-SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
-SP_EXPORT size_t sp_string_get_size(const string_t *str);
-SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
-SP_EXPORT char *sp_string_get_data(string_t *str);
-SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
 
 const uint32_t SP_TYPE_INDEX_UINT8 = 21;
 const uint32_t SP_TYPE_INDEX_UINT16 = 22;
@@ -1083,11 +1083,11 @@ typedef struct sp_gui_draw_data_t {
 
 // Type: ecs::DynamicScriptDefinition
 typedef struct sp_dynamic_script_definition_t {
-    string_63_t name; // 64 bytes
+    string_t name; // 24 bytes
     char * desc; // 8 bytes
     sp_script_type_t type; // 4 bytes
     bool filter_on_event; // 1 bytes
-    const uint8_t _unknown77[3];
+    const uint8_t _unknown37[3];
     sp_event_name_vector_t events; // 24 bytes
     sp_struct_field_vector_t fields; // 24 bytes
     uint64_t context_size; // 8 bytes
@@ -1100,7 +1100,7 @@ typedef struct sp_dynamic_script_definition_t {
     void(*prefab_func)(const sp_script_state_t *, tecs_lock_t *, tecs_entity_t, const sp_scene_ref_t *); // 8 bytes
     bool(*before_frame_func)(void *, sp_compositor_ctx_t *, sp_script_state_t *, tecs_entity_t); // 8 bytes
     void(*render_gui_func)(void *, sp_compositor_ctx_t *, sp_script_state_t *, tecs_entity_t, vec2_t, vec2_t, float, sp_gui_draw_data_t *); // 8 bytes
-} sp_dynamic_script_definition_t; // 208 bytes
+} sp_dynamic_script_definition_t; // 168 bytes
 
 const uint32_t SP_TYPE_INDEX_SCRIPT_DEFINITION_BASE = 50;
 // Type: ecs::ScriptDefinitionBase
@@ -1709,6 +1709,14 @@ SP_EXPORT void sp_entity_unset_signal_bindings(tecs_lock_t *dynLockPtr, sp_entit
 
 // Type: ecs::ScriptInstance
 typedef ecs::ScriptInstance sp_script_instance_t;
+typedef sp::HeapString string_t;
+SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
+SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
+SP_EXPORT size_t sp_string_get_size(const string_t *str);
+SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
+SP_EXPORT char *sp_string_get_data(string_t *str);
+SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
+
 // Enum: ecs::ScriptType
 typedef ecs::ScriptType sp_script_type_t;
 typedef sp::HeapVector<ecs::EventName> sp_event_name_vector_t;
@@ -1745,14 +1753,6 @@ SP_EXPORT sp_ecs_scripts_t *sp_entity_set_scripts(tecs_lock_t *dynLockPtr, sp_en
 SP_EXPORT sp_ecs_scripts_t *sp_entity_get_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_scripts_t *sp_entity_get_const_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
-
-typedef sp::HeapString string_t;
-SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
-SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
-SP_EXPORT size_t sp_string_get_size(const string_t *str);
-SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
-SP_EXPORT char *sp_string_get_data(string_t *str);
-SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
 
 typedef glm::dvec2 dvec2_t;
 typedef glm::dvec3 dvec3_t;

@@ -110,7 +110,7 @@ void sun_on_tick(void *context, sp_script_state_t *state, tecs_lock_t *lock, tec
 
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
-        strncpy(output[0].name, "flashlight", sizeof(output[0].name) - 1);
+        sp_string_set(&output[0].name, "flashlight");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
@@ -119,7 +119,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].context_size = sizeof(script_flashlight_t);
         output[0].on_tick_func = &flashlight_on_tick;
 
-        strncpy(output[1].name, "sun", sizeof(output[1].name) - 1);
+        sp_string_set(&output[1].name, "sun");
         output[1].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[1].on_tick_func = &sun_on_tick;
     }

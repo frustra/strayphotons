@@ -7,6 +7,7 @@
 
 #include "DynamicLibrary.hh"
 
+#include "ecs/ScriptDefinition.hh"
 #include "graphics/GenericCompositor.hh"
 
 #include <dynalo/dynalo.hpp>
@@ -171,8 +172,8 @@ namespace ecs {
         }
     }
 
-    void DynamicScript::OnTick(ScriptState &state,
-        const DynamicLock<ReadSignalsLock> &lock,
+    void DynamicScript::OnLogicTick(ScriptState &state,
+        const LogicUpdateLock &lock,
         Entity ent,
         chrono_clock::duration interval) {
         ZoneScoped;
@@ -191,7 +192,27 @@ namespace ecs {
         }
     }
 
-    void DynamicScript::OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event) {
+    void DynamicScript::OnPhysicsTick(ScriptState &state,
+        const PhysicsUpdateLock &lock,
+        Entity ent,
+        chrono_clock::duration interval) {
+        ZoneScoped;
+        auto ctx = state.definition.context.lock();
+        if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
+            ZoneStr(dynamicScript->definition.name);
+            auto &ptr = dynamicScript->MaybeAllocContext(state);
+            if (dynamicScript->dynamicDefinition.onTickFunc) {
+                DynamicLock<> dynLock = lock;
+                dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
+                    state,
+                    dynLock,
+                    ent,
+                    std::chrono::nanoseconds(interval).count());
+            }
+        }
+    }
+
+    void DynamicScript::OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
         ZoneScoped;
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
@@ -263,12 +284,12 @@ namespace ecs {
         case ScriptType::LogicScript:
             definition.initFunc = ScriptInitFunc(&Init);
             definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = LogicTickFunc(&OnTick);
+            definition.callback = LogicTickFunc(&OnLogicTick);
             break;
         case ScriptType::PhysicsScript:
             definition.initFunc = ScriptInitFunc(&Init);
             definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = PhysicsTickFunc(&OnTick);
+            definition.callback = PhysicsTickFunc(&OnPhysicsTick);
             break;
         case ScriptType::EventScript:
             definition.initFunc = ScriptInitFunc(&Init);
