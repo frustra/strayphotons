@@ -109,7 +109,7 @@ namespace sp {
                 static_assert(!sizeof(U), "AddImGuiElement unsupported vector type");
             }
         } else if constexpr (is_inline_string<T>()) {
-            bool changed = ImGui::InputText(name.c_str(), value.data(), value.capacity());
+            changed = ImGui::InputText(name.c_str(), value.data(), value.capacity());
             if (changed) value = T(value.data()); // Update size byte at end
             return changed;
         } else if constexpr (is_optional<T>()) {
