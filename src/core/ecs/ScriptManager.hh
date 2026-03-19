@@ -32,7 +32,57 @@ namespace ecs {
     public:
         ScriptState();
         ScriptState(const ScriptState &other);
+        ScriptState(ScriptState &&other);
         ScriptState(const ScriptDefinition &definition, const EntityScope &scope = {});
+        ~ScriptState();
+
+        ScriptState &operator=(const ScriptState &other);
+        ScriptState &operator=(ScriptState &&other);
+
+        template<typename T>
+        T *Get() {
+            if (!scriptData) return nullptr;
+            Assertf(typeid(T) == scriptDataType,
+                "ScriptState::get() called with wrong type: requested %s != %s",
+                typeid(T).name(),
+                scriptDataType.name());
+            return static_cast<T *>(scriptData);
+        }
+
+        template<typename T>
+        const T *Get() const {
+            if (!scriptData) return nullptr;
+            Assertf(typeid(T) == scriptDataType,
+                "ScriptState::get() called with wrong type: requested %s != %s",
+                typeid(T).name(),
+                scriptDataType.name());
+            return static_cast<const T *>(scriptData);
+        }
+
+        template<typename T, typename... Args>
+        T *Set(Args &&...args) {
+            T *ptr = nullptr;
+            if (scriptData && typeid(T) == scriptDataType) {
+                ptr = static_cast<T *>(scriptData);
+                *ptr = T(std::forward<Args>(args)...);
+            } else {
+                Reset();
+                scriptData = ptr = new T(std::forward<Args>(args)...);
+                scriptDataType = typeid(T);
+                scriptDataCopier = [](void *data) -> void * {
+                    T *ptr = static_cast<T *>(data);
+                    T *newPtr = new T(*ptr);
+                    return newPtr;
+                };
+                scriptDataDeleter = [](void *data) {
+                    T *ptr = static_cast<T *>(data);
+                    delete ptr;
+                };
+            }
+            return ptr;
+        }
+
+        void Reset();
 
         template<typename T>
         void SetParam(std::string_view name, const T &value) {
@@ -91,13 +141,16 @@ namespace ecs {
         ScriptDefinition definition;
         EventQueueRef eventQueue;
 
-        std::any scriptData;
-
     private:
         size_t instanceId;
         size_t index = std::numeric_limits<size_t>::max();
         bool initialized = false;
         Event lastEvent;
+
+        void *scriptData = nullptr;
+        std::type_index scriptDataType = typeid(void);
+        void *(*scriptDataCopier)(void *scriptData) = nullptr;
+        void (*scriptDataDeleter)(void *scriptData) = nullptr;
 
         friend class ScriptInstance;
         friend class ScriptManager;

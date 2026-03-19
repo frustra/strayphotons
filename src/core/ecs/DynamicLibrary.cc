@@ -125,10 +125,10 @@ namespace ecs {
     }
 
     DynamicScriptContext &DynamicScript::MaybeAllocContext(ScriptState &state) const {
-        auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
+        auto *ptr = state.Get<DynamicScriptContext>();
         if (!ptr) {
-            return state.scriptData.emplace<DynamicScriptContext>(
-                std::dynamic_pointer_cast<DynamicScript>(state.definition.context.lock()));
+            auto contextPtr = std::dynamic_pointer_cast<DynamicScript>(state.definition.context.lock());
+            return *state.Set<DynamicScriptContext>(contextPtr);
         }
         return *ptr;
     }
@@ -138,7 +138,7 @@ namespace ecs {
     }
 
     const void *DynamicScript::Access(const ScriptState &state) const {
-        const auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
+        const auto *ptr = state.Get<DynamicScriptContext>();
         return ptr ? ptr->context : GetDefault();
     }
 
@@ -165,7 +165,7 @@ namespace ecs {
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
-            auto *ptr = std::any_cast<DynamicScriptContext>(&state.scriptData);
+            auto *ptr = state.Get<DynamicScriptContext>();
             if (ptr && dynamicScript->dynamicDefinition.destroyFunc) {
                 dynamicScript->dynamicDefinition.destroyFunc(ptr->context, state);
             }

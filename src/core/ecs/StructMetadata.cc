@@ -75,6 +75,12 @@ namespace ecs {
         }
     }
 
+    bool StructField::operator==(const StructField &other) const {
+        return name == other.name && desc == other.desc && type == other.type && size == other.size &&
+               offset == other.offset && fieldIndex == other.fieldIndex && actions == other.actions &&
+               functionPointer == other.functionPointer;
+    }
+
     void StructField::InitUndefined(void *dstStruct, const void *defaultStruct) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;

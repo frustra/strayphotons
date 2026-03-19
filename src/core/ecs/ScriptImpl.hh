@@ -67,24 +67,24 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            void *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.scriptData);
+            const void *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
+            T *ptr = state.Get<T>();
             if (!ptr) return;
             if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
         }
@@ -93,8 +93,8 @@ namespace ecs {
             const LogicUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
             ptr->OnTick(state, (LockType)lock, ent, interval);
         }
@@ -135,24 +135,24 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            void *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.scriptData);
+            const void *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
+            T *ptr = state.Get<T>();
             if (!ptr) return;
             if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
         }
@@ -161,8 +161,8 @@ namespace ecs {
             const PhysicsUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             using LockType = script_ontick_lock_t<T>::LockType;
             ptr->OnTick(state, (LockType)lock, ent, interval);
         }
@@ -203,31 +203,31 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            void *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.scriptData);
+            const void *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy(ScriptState &state) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
+            T *ptr = state.Get<T>();
             if (!ptr) return;
             if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
         }
 
         static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
-            T *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             ptr->OnEvent(state, lock, ent, event);
         }
 
@@ -261,18 +261,18 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            void *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            void *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const void *ptr = std::any_cast<T>(&state.scriptData);
+            const void *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
-            const T *ptr = std::any_cast<T>(&state.scriptData);
+            const T *ptr = state.Get<T>();
             T data;
             if (ptr) data = *ptr;
             data.Prefab(state, scene.Lock(), lock, ent);
@@ -316,25 +316,25 @@ namespace ecs {
         }
 
         void *AccessMut(ScriptState &state) const override {
-            auto *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            auto *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const auto *ptr = std::any_cast<T>(&state.scriptData);
+            const auto *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            auto *ptr = std::any_cast<T>(&state.scriptData);
-            if (!ptr) ptr = &state.scriptData.emplace<T>();
+            auto *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy([[maybe_unused]] ScriptState &state) {
             if constexpr (script_has_destroy_func<T>()) {
-                auto *ptr = std::any_cast<T>(&state.scriptData);
+                auto *ptr = state.Get<T>();
                 if (ptr) ptr->Destroy(state);
             }
         }
@@ -343,8 +343,8 @@ namespace ecs {
             [[maybe_unused]] ScriptState &state,
             [[maybe_unused]] Entity ent) {
             if constexpr (script_has_before_frame_func<T>()) {
-                auto *ptr = std::any_cast<T>(&state.scriptData);
-                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                auto *ptr = state.Get<T>();
+                if (!ptr) ptr = state.Set<T>();
                 return ptr->BeforeFrame(compositor, state, ent);
             } else {
                 Warnf("GuiScript %s has no BeforeFrame function", state.definition.name);
@@ -360,8 +360,8 @@ namespace ecs {
             [[maybe_unused]] float deltaTime,
             [[maybe_unused]] sp::GuiDrawData &result) {
             if constexpr (script_has_render_gui_func<T>()) {
-                auto *ptr = std::any_cast<T>(&state.scriptData);
-                if (!ptr) ptr = &state.scriptData.emplace<T>();
+                auto *ptr = state.Get<T>();
+                if (!ptr) ptr = state.Set<T>();
                 ptr->RenderGui(compositor, state, ent, displaySize, scale, deltaTime, result);
             }
         }

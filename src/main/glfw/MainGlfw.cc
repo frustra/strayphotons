@@ -35,6 +35,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
+#include <fstream>
 #include <memory>
 #include <strayphotons.h>
 #include <strayphotons/components.h>
@@ -137,12 +138,12 @@ int main(int argc, char **argv) {
     GameInstance = instance.get();
     if (!GameInstance) return 1;
 
-#ifdef SP_PACKAGE_RELEASE
+    // #ifdef SP_PACKAGE_RELEASE
     if (!sp_get_log_output_file()) {
         std::ofstream("./strayphotons.log", std::ios::out | std::ios::trunc); // Clear log file
         sp_set_log_output_file("./strayphotons.log");
     }
-#endif
+    // #endif
 
     if (!sp_game_get_cli_flag(GameInstance, "headless")) {
         GameGraphics = sp_game_get_graphics_context(GameInstance);

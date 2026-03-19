@@ -111,7 +111,6 @@ namespace sp {
         } else if constexpr (is_inline_string<T>()) {
             changed = ImGui::InputText(name.c_str(), value.data(), value.capacity());
             if (changed) value = T(value.data()); // Update size byte at end
-            return changed;
         } else if constexpr (is_optional<T>()) {
             bool hasValue = value.has_value();
             if (ImGui::Checkbox(fieldId.c_str(), &hasValue)) {

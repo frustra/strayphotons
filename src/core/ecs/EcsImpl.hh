@@ -96,7 +96,8 @@ namespace ecs {
             &NamedEntity::Lookup,
             ArgDesc("name", ""),
             ArgDesc("scope", "")),
-        StructFunction::New("Clear", "Clears the entity and sets it back to empty", &NamedEntity::Clear));
+        StructFunction::New("Clear", "Clears the entity and sets it back to empty", &NamedEntity::Clear),
+        StructMetadata::KnownSize);
 
     static StructMetadata MetadataEntityRef(typeid(EntityRef),
         sizeof(EntityRef),

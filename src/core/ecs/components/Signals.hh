@@ -45,9 +45,9 @@ namespace ecs {
         };
 
         uint32_t changeCount = 0;
-        std::vector<Signal> signals;
+        sp::HeapVector<Signal> signals;
         sp::FlatSet<size_t> dirtyIndices;
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
+        std::priority_queue<size_t, sp::HeapVector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);
         size_t NewSignal(const Lock<Write<Signals>, ReadSignalsLock> &lock,

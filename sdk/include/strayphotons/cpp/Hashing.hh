@@ -59,6 +59,9 @@ namespace sp {
                 return key.Hash();
             }
         };
+
+        template<typename V>
+        using UnorderedMap = robin_hood::unordered_map<HashKey<T>, V, Hasher>;
     };
 
     struct StringHash {

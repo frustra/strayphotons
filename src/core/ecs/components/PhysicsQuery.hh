@@ -19,7 +19,7 @@ namespace ecs {
     struct PhysicsQuery {
         template<typename T>
         struct Handle {
-            size_t index = ~0u;
+            uint32_t index = ~0u;
 
             explicit operator bool() const {
                 return index != ~0u;
@@ -121,14 +121,15 @@ namespace ecs {
         // Calling NewQuery() invalidates all references returned by Lookup()
         template<typename T>
         Handle<T> NewQuery(const T &query) {
-            for (size_t i = 0; i < queries.size(); i++) {
+            for (uint32_t i = 0; i < queries.size(); i++) {
                 if (std::holds_alternative<std::monostate>(queries[i])) {
                     queries[i] = query;
                     return {i};
                 }
             }
+            Assertf(queries.size() < std::numeric_limits<uint32_t>::max(), "PhysicsQuery::Handle overflow");
             queries.emplace_back(query);
-            return {queries.size() - 1};
+            return {(uint32_t)queries.size() - 1};
         }
 
         // Calling NewQuery() invalidates all references returned by Lookup()

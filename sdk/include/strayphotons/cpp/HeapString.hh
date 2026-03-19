@@ -7,16 +7,17 @@
 
 #pragma once
 
-#include "strayphotons/cpp/HeapVector.hh"
+// #include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <cstddef>
 #include <cstring>
 #include <string_view>
+#include <vector>
 
 namespace sp {
-    class HeapString : private HeapVector<char> {
-        using StorageT = HeapVector<char>;
+    class HeapString : private std::vector<char> {
+        using StorageT = std::vector<char>;
 
     public:
         using traits_type = std::char_traits<char>;
@@ -109,11 +110,11 @@ namespace sp {
         }
 
         iterator end() {
-            return data() + size();
+            return begin() + size();
         }
 
         const_iterator end() const {
-            return data() + size();
+            return begin() + size();
         }
 
         size_type size() const {

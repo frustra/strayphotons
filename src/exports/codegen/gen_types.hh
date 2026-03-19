@@ -283,20 +283,19 @@ void GenerateStructWithFields(S &out,
     const std::string &prefixComment,
     const std::string &name,
     const ecs::StructMetadata &metadata) {
+    if (!prefixComment.empty()) {
+        out << "// " << prefixComment << std::endl;
+    }
+    if (!metadata.knownSize) {
+        out << "typedef void " << name << "; // unknown size" << std::endl;
+        return;
+    }
     std::vector<std::set<const ecs::StructField *>> byteMap(metadata.size, std::set<const ecs::StructField *>{});
     auto fieldList = GetTypeFieldList(metadata);
     for (auto &field : fieldList) {
-        if (!field.type.isConsistentSize) {
-            out << "typedef void " << name << "; // inconsistent size" << std::endl;
-            return;
-        }
-
         for (size_t i = 0; i < field.size; i++) {
             byteMap[field.offset + i].emplace(&field);
         }
-    }
-    if (!prefixComment.empty()) {
-        out << "// " << prefixComment << std::endl;
     }
     out << "typedef struct " << name << " {" << std::endl;
     std::set<const ecs::StructField *> lastFields;

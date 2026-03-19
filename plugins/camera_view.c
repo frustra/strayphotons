@@ -34,7 +34,7 @@ void camera_view_on_tick(void *context,
 
     if (!ctx->started) {
         char buffer[256] = {0};
-        snprintf(buffer, 255, "Script: %s = %d\n", state->definition.name, ctx->foobar);
+        snprintf(buffer, 255, "Script: %s = %d\n", sp_string_get_c_str(&state->definition.name), ctx->foobar);
         sp_log_message(SP_LOG_LEVEL_LOG, buffer);
         ctx->started = true;
     }

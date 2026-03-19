@@ -37,10 +37,11 @@ namespace ecs {
         uint64_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
+        robin_hood::unordered_map<EventName, sp::HeapVector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
     };
 
-    static EntityComponent<EventInput> ComponentEventInput("event_input", R"(
+    static EntityComponent<EventInput> ComponentEventInput("event_input",
+        R"(
 For an entity to receive events (not just forward them), it must have an `event_input` component.  
 This component stores a list of event queues that have been registered to receive events on a per-entity basis.
 

@@ -26,6 +26,7 @@ namespace sp {
     class HeapVector {
     public:
         using value_type = T;
+        using allocator_type = std::allocator<T>;
         using size_type = uint64_t;
         using difference_type = int64_t;
         using reference = T &;
@@ -37,13 +38,13 @@ namespace sp {
         using reverse_iterator = std::reverse_iterator<T *>;
         using const_reverse_iterator = std::reverse_iterator<const T *>;
 
-        HeapVector() : cap(0), offset(0), storage(nullptr) {}
+        HeapVector() : cap(0), offset(0), storage(nullptr), allocator(nullptr) {}
 
-        HeapVector(size_t initialSize) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(size_t initialSize) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
             resize(initialSize);
         }
 
-        HeapVector(size_t initialSize, const T &value) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(size_t initialSize, const T &value) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
             reserve(initialSize);
             if (initialSize) {
                 std::uninitialized_fill(begin(), end(), value);
@@ -51,14 +52,18 @@ namespace sp {
             }
         }
 
-        HeapVector(std::initializer_list<T> init) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(std::initializer_list<T> init) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
             reserve(init.size());
             for (auto it = init.begin(); it != init.end(); it++) {
                 push_back(*it);
             }
         }
 
-        HeapVector(const HeapVector &other) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(const HeapVector &other) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
+            if (other.allocator) {
+                allocator = std::make_unique<allocator_type>(
+                    std::allocator_traits<allocator_type>::select_on_container_copy_construction(*other.allocator));
+            }
             if (!other.empty()) {
                 size_type count = other.size();
                 reserve(count);
@@ -67,7 +72,7 @@ namespace sp {
             }
         }
 
-        HeapVector(HeapVector &&other) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(HeapVector &&other) : cap(0), offset(0), storage(nullptr), allocator(std::move(other.allocator)) {
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -77,21 +82,15 @@ namespace sp {
         }
 
         ~HeapVector() {
-            clear();
-            if (storage) {
-#ifdef _WIN32
-                _aligned_free(storage);
-#else
-                std::free(storage);
-#endif
-            }
-            storage = nullptr;
-            offset = 0;
-            cap = 0;
+            reset();
         }
 
         HeapVector &operator=(const HeapVector &other) {
-            clear();
+            reset();
+            if (other.allocator) {
+                allocator = std::make_unique<allocator_type>(
+                    std::allocator_traits<allocator_type>::select_on_container_copy_construction(*other.allocator));
+            }
             if (!other.empty()) {
                 size_type count = other.size();
                 reserve(count);
@@ -102,14 +101,8 @@ namespace sp {
         }
 
         HeapVector &operator=(HeapVector &&other) {
-            clear();
-            if (storage) {
-#ifdef _WIN32
-                _aligned_free(storage);
-#else
-                std::free(storage);
-#endif
-            }
+            reset();
+            allocator = std::move(other.allocator);
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -165,10 +158,10 @@ namespace sp {
         }
 
         T *data() {
-            return reinterpret_cast<T *>(storage);
+            return static_cast<T *>(storage);
         }
         const T *data() const {
-            return reinterpret_cast<const T *>(storage);
+            return static_cast<const T *>(storage);
         }
 
         iterator begin() {
@@ -207,28 +200,26 @@ namespace sp {
             return offset;
         }
 
-        static constexpr size_type max_size() {
-            return std::numeric_limits<difference_type>::max();
+        size_type max_size() const {
+            if (!allocator) allocator = std::make_unique<allocator_type>();
+            return allocator->max_size();
         }
 
         void reserve(size_type new_cap) {
             if (new_cap > cap) {
-                auto *old_storage = storage;
+                // TODO: Fix allocator access outside sp.dll being broken on Windows DLLs
+                if (!allocator) allocator = std::make_unique<allocator_type>();
+                void *old_storage = storage;
+                size_type old_cap = cap;
                 cap = CeilToPowerOfTwo(new_cap);
-#ifdef _WIN32
-                storage = _aligned_malloc(cap * sizeof(T), std::alignment_of<T>());
-#else
-                storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
-#endif
+                storage = allocator->allocate(cap);
+                // Logf("Allocated %s x %llu at %llx", typeid(T).name(), cap, storage);
                 if (old_storage) {
-                    auto *old_data = reinterpret_cast<const T *>(old_storage);
+                    T *old_data = static_cast<T *>(old_storage);
                     std::uninitialized_move(old_data, old_data + offset, data());
                     std::destroy(old_data, old_data + offset);
-#ifdef _WIN32
-                    _aligned_free(old_storage);
-#else
-                    std::free(old_storage);
-#endif
+                    // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), old_cap, old_storage);
+                    allocator->deallocate(static_cast<T *>(old_storage), old_cap);
                 }
             }
         }
@@ -239,22 +230,28 @@ namespace sp {
 
         void shrink_to_fit() {
             if (cap > offset * 2) {
-                auto *old_storage = storage;
+                void *old_storage = storage;
+                size_type old_cap = cap;
                 cap = CeilToPowerOfTwo(offset);
-#ifdef _WIN32
-                storage = _aligned_malloc(cap * sizeof(T), std::alignment_of<T>());
-#else
-                storage = std::aligned_alloc(std::alignment_of<T>(), cap * sizeof(T));
-#endif
-                auto *old_data = reinterpret_cast<const T *>(old_storage);
+                storage = allocator->allocate(cap);
+                // Logf("Allocated %s x %llu at %llx", typeid(T).name(), cap, storage);
+                T *old_data = static_cast<T *>(old_storage);
                 std::uninitialized_move(old_data, old_data + offset, data());
                 std::destroy(old_data, old_data + offset);
-#ifdef _WIN32
-                _aligned_free(old_storage);
-#else
-                std::free(old_storage);
-#endif
+                // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), old_cap, old_storage);
+                allocator->deallocate(static_cast<T *>(old_storage), old_cap);
             }
+        }
+
+        void reset() {
+            if (allocator && storage) {
+                clear();
+                // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), cap, storage);
+                allocator->deallocate(static_cast<T *>(storage), cap);
+            }
+            storage = nullptr;
+            offset = 0;
+            cap = 0;
         }
 
         void clear() {
@@ -271,7 +268,7 @@ namespace sp {
         template<class InputIt>
         iterator insert(const_iterator pos, InputIt first, InputIt last) {
             auto n = std::distance(first, last);
-            auto posOffset = pos == nullptr ? 0 : pos - begin();
+            size_type posOffset = pos == nullptr ? 0 : pos - begin();
             if (offset + n > cap) reserve(offset + n);
 
             Assertf(posOffset >= 0 && (size_type)posOffset <= offset, "HeapVector::insert pos out of range");
@@ -280,7 +277,13 @@ namespace sp {
 
             std::uninitialized_default_construct_n(oldEndPtr, n);
             if (posPtr < oldEndPtr) std::move(posPtr, oldEndPtr, posPtr + n);
-            std::move(first, last, posPtr);
+            if (last != first) {
+                if constexpr (std::is_constructible<T, std::add_rvalue_reference_t<decltype(*first)>>()) {
+                    std::move(first, last, posPtr);
+                } else {
+                    std::copy(first, last, posPtr);
+                }
+            }
             offset += n;
             return begin() + posOffset;
         }
@@ -290,7 +293,7 @@ namespace sp {
 
         template<class... Args>
         iterator emplace(const_iterator pos, Args &&...args) {
-            auto posOffset = pos == nullptr ? 0 : pos - begin();
+            size_type posOffset = pos == nullptr ? 0 : pos - begin();
             if (offset + 1 > cap) reserve(offset + 1);
 
             Assertf(posOffset >= 0 && posOffset <= offset, "HeapVector::emplace pos out of range");
@@ -342,7 +345,7 @@ namespace sp {
 
         void pop_back() {
             Assert(offset > 0, "HeapVector::pop_back() called on empty vector");
-            std::destroy_at(&data()[offset - 1]);
+            std::destroy_at(data() + offset - 1);
             offset--;
         }
 
@@ -365,5 +368,6 @@ namespace sp {
         size_type offset = 0;
 
         void *storage = nullptr;
+        std::unique_ptr<allocator_type> allocator;
     };
 } // namespace sp

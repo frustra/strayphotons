@@ -13,6 +13,7 @@
 #include "ecs/components/Name.hh"
 #include "strayphotons/cpp/EnumTypes.hh"
 #include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Utility.hh"
 
 #include <map>
@@ -71,6 +72,7 @@ namespace ecs {
         template<typename T>
         static inline TypeInfo Lookup() {
             using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
+            const StructMetadata *metadata = StructMetadata::Get(typeid(T));
             return TypeInfo{
                 .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
                 .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
@@ -81,7 +83,7 @@ namespace ecs {
                 .isReference = std::is_reference<T>(),
                 .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
                 .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
-                .isConsistentSize = sp::is_consistent_size<T>(),
+                .isConsistentSize = sp::is_consistent_size<T>() && (!metadata || metadata->knownSize),
             };
         }
 
@@ -362,7 +364,8 @@ namespace ecs {
             return *reinterpret_cast<const T *>(Access(structPtr));
         }
 
-        bool operator==(const StructField &) const = default;
+        // bool operator==(const StructField &) const = default;
+        bool operator==(const StructField &) const;
 
         void InitUndefined(void *dstStruct, const void *defaultStruct) const;
         void DefineSchema(picojson::value &dst, sp::json::SchemaTypeReferences *references) const;
@@ -379,10 +382,22 @@ namespace ecs {
     };
 
     class StructMetadata : public sp::NonCopyable {
+        template<typename... Fields>
+        bool checkKnownSize(Fields &&...fields) {
+            if ((std::is_same<std::decay_t<Fields>, std::decay_t<decltype(KnownSize)>>() || ...)) return true;
+            return ([&] {
+                if constexpr (std::is_same<std::decay_t<Fields>, StructField>()) {
+                    return fields.type.isConsistentSize;
+                } else {
+                    return true;
+                }
+            }() && ...);
+        }
+
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
-
-        static constexpr bool foo = std::is_trivially_copy_constructible_v<std::type_index>;
+        static inline const struct {
+        } KnownSize;
 
         template<typename... Fields>
         StructMetadata(const std::type_index &idx,
@@ -390,13 +405,16 @@ namespace ecs {
             const char *name,
             const char *desc,
             Fields &&...fields)
-            : type(idx), size(size), name(name), description(sp::trim(desc)) {
+            : type(idx), size(size), knownSize(checkKnownSize(std::forward<Fields>(fields)...)), name(name),
+              description(sp::trim(desc)) {
             (
                 [&] {
                     using FieldT = std::decay_t<Fields>;
-                    if constexpr (std::is_same_v<FieldT, EnumDescriptions>) {
+                    if constexpr (std::is_same<FieldT, std::decay_t<decltype(KnownSize)>>()) {
+                        // Ignore
+                    } else if constexpr (std::is_same<FieldT, EnumDescriptions>()) {
                         enumMap = fields;
-                    } else if constexpr (std::is_same_v<FieldT, StructFunction>) {
+                    } else if constexpr (std::is_same<FieldT, StructFunction>()) {
                         this->functions.emplace_back(fields);
                     } else {
                         this->fields.emplace_back(fields);
@@ -413,8 +431,8 @@ namespace ecs {
         }
 
         StructMetadata(const StructMetadata &&other)
-            : type(other.type), size(other.size), name(other.name), description(other.description),
-              fields(other.fields), functions(other.functions), enumMap(other.enumMap) {
+            : type(other.type), size(other.size), knownSize(other.knownSize), name(other.name),
+              description(other.description), fields(other.fields), functions(other.functions), enumMap(other.enumMap) {
             Register(type, this);
         }
 
@@ -429,6 +447,7 @@ namespace ecs {
 
         const std::type_index type;
         const uint64_t size;
+        const bool knownSize;
         const std::string name;
         const std::string description;
         std::vector<StructField> fields;

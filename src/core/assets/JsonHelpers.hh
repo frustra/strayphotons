@@ -241,7 +241,7 @@ namespace sp::json {
         }
     }
     template<typename T>
-    inline bool Load(sp::HeapVector<T> &dst, const picojson::value &src) {
+    inline bool Load(HeapVector<T> &dst, const picojson::value &src) {
         dst.clear();
         if (src.is<picojson::array>()) {
             for (auto &p : src.get<picojson::array>()) {
@@ -643,7 +643,6 @@ namespace sp::json {
             typeSchema["maxLength"] = picojson::value((double)T::max_size());
         } else if constexpr (is_heap_string<T>()) {
             typeSchema["type"] = picojson::value("string");
-            typeSchema["maxLength"] = picojson::value((double)T::max_size());
         } else if constexpr (is_glm_vec<T>()) {
             typeSchema["type"] = picojson::value("array");
             typeSchema["minItems"] = picojson::value((double)T::length());
