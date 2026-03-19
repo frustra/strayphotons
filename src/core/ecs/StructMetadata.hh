@@ -70,22 +70,7 @@ namespace ecs {
         bool isConsistentSize;
 
         template<typename T>
-        static inline TypeInfo Lookup() {
-            using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
-            const StructMetadata *metadata = StructMetadata::Get(typeid(T));
-            return TypeInfo{
-                .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
-                .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() ||
-                             std::is_reference<T>() || std::is_same<T, Entity>(),
-                .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
-                           std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
-                .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
-                .isReference = std::is_reference<T>(),
-                .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
-                .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
-                .isConsistentSize = sp::is_consistent_size<T>() && (!metadata || metadata->knownSize),
-            };
-        }
+        static inline TypeInfo Lookup();
 
         inline operator std::type_index() const {
             return GetFieldTypeIndex(typeIndex);
@@ -490,6 +475,24 @@ namespace ecs {
     private:
         static void Register(const std::type_index &idx, const StructMetadata *comp);
     };
+
+    template<typename T>
+    TypeInfo TypeInfo::Lookup() {
+        using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
+        const StructMetadata *metadata = StructMetadata::Get(typeid(T));
+        return TypeInfo{
+            .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
+            .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() || std::is_reference<T>() ||
+                         std::is_same<T, Entity>(),
+            .isConst = (std::is_pointer<T>() || std::is_reference<T>()) &&
+                       std::is_const<std::remove_reference_t<std::remove_pointer_t<T>>>(),
+            .isPointer = std::is_pointer<T>() || std::is_reference<T>(),
+            .isReference = std::is_reference<T>(),
+            .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
+            .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
+            .isConsistentSize = sp::is_consistent_size<T>() && (!metadata || metadata->knownSize),
+        };
+    }
 
     namespace scope {
         template<typename T>

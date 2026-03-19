@@ -7,17 +7,16 @@
 
 #pragma once
 
-// #include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <cstddef>
 #include <cstring>
 #include <string_view>
-#include <vector>
 
 namespace sp {
-    class HeapString : private std::vector<char> {
-        using StorageT = std::vector<char>;
+    class HeapString : private HeapVector<char> {
+        using StorageT = HeapVector<char>;
 
     public:
         using traits_type = std::char_traits<char>;

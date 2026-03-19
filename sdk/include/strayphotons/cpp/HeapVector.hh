@@ -13,8 +13,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <iterator>
 #include <limits>
 #include <memory>
@@ -26,7 +24,6 @@ namespace sp {
     class HeapVector {
     public:
         using value_type = T;
-        using allocator_type = std::allocator<T>;
         using size_type = uint64_t;
         using difference_type = int64_t;
         using reference = T &;
@@ -38,41 +35,39 @@ namespace sp {
         using reverse_iterator = std::reverse_iterator<T *>;
         using const_reverse_iterator = std::reverse_iterator<const T *>;
 
-        HeapVector() : cap(0), offset(0), storage(nullptr), allocator(nullptr) {}
+        static_assert(alignof(T) <= alignof(std::max_align_t), "HeapVector value type has unsupported alignment");
 
-        HeapVector(size_t initialSize) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
+        HeapVector() : cap(0), offset(0), storage(nullptr) {}
+
+        HeapVector(size_t initialSize) : cap(0), offset(0), storage(nullptr) {
             resize(initialSize);
         }
 
-        HeapVector(size_t initialSize, const T &value) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
+        HeapVector(size_t initialSize, const T &value) : cap(0), offset(0), storage(nullptr) {
             reserve(initialSize);
             if (initialSize) {
-                std::uninitialized_fill(begin(), end(), value);
+                std::uninitialized_fill_n(begin(), initialSize, value);
                 offset = initialSize;
             }
         }
 
-        HeapVector(std::initializer_list<T> init) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
+        HeapVector(std::initializer_list<T> init) : cap(0), offset(0), storage(nullptr) {
             reserve(init.size());
             for (auto it = init.begin(); it != init.end(); it++) {
                 push_back(*it);
             }
         }
 
-        HeapVector(const HeapVector &other) : cap(0), offset(0), storage(nullptr), allocator(nullptr) {
-            if (other.allocator) {
-                allocator = std::make_unique<allocator_type>(
-                    std::allocator_traits<allocator_type>::select_on_container_copy_construction(*other.allocator));
-            }
+        HeapVector(const HeapVector &other) : cap(0), offset(0), storage(nullptr) {
             if (!other.empty()) {
                 size_type count = other.size();
                 reserve(count);
-                std::uninitialized_copy(other.begin(), other.end(), begin());
+                std::uninitialized_copy_n(other.begin(), count, begin());
                 offset = count;
             }
         }
 
-        HeapVector(HeapVector &&other) : cap(0), offset(0), storage(nullptr), allocator(std::move(other.allocator)) {
+        HeapVector(HeapVector &&other) : cap(0), offset(0), storage(nullptr) {
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -87,14 +82,10 @@ namespace sp {
 
         HeapVector &operator=(const HeapVector &other) {
             reset();
-            if (other.allocator) {
-                allocator = std::make_unique<allocator_type>(
-                    std::allocator_traits<allocator_type>::select_on_container_copy_construction(*other.allocator));
-            }
             if (!other.empty()) {
                 size_type count = other.size();
                 reserve(count);
-                std::uninitialized_copy(other.begin(), other.end(), begin());
+                std::uninitialized_copy_n(other.begin(), count, begin());
                 offset = count;
             }
             return *this;
@@ -102,7 +93,6 @@ namespace sp {
 
         HeapVector &operator=(HeapVector &&other) {
             reset();
-            allocator = std::move(other.allocator);
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -201,25 +191,19 @@ namespace sp {
         }
 
         size_type max_size() const {
-            if (!allocator) allocator = std::make_unique<allocator_type>();
-            return allocator->max_size();
+            return std::numeric_limits<difference_type>::max();
         }
 
         void reserve(size_type new_cap) {
             if (new_cap > cap) {
-                // TODO: Fix allocator access outside sp.dll being broken on Windows DLLs
-                if (!allocator) allocator = std::make_unique<allocator_type>();
                 void *old_storage = storage;
-                size_type old_cap = cap;
                 cap = CeilToPowerOfTwo(new_cap);
-                storage = allocator->allocate(cap);
-                // Logf("Allocated %s x %llu at %llx", typeid(T).name(), cap, storage);
+                storage = ::operator new(cap * sizeof(T));
                 if (old_storage) {
                     T *old_data = static_cast<T *>(old_storage);
-                    std::uninitialized_move(old_data, old_data + offset, data());
-                    std::destroy(old_data, old_data + offset);
-                    // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), old_cap, old_storage);
-                    allocator->deallocate(static_cast<T *>(old_storage), old_cap);
+                    std::uninitialized_move_n(old_data, offset, data());
+                    std::destroy_n(old_data, offset);
+                    ::operator delete(old_storage);
                 }
             }
         }
@@ -231,23 +215,19 @@ namespace sp {
         void shrink_to_fit() {
             if (cap > offset * 2) {
                 void *old_storage = storage;
-                size_type old_cap = cap;
                 cap = CeilToPowerOfTwo(offset);
-                storage = allocator->allocate(cap);
-                // Logf("Allocated %s x %llu at %llx", typeid(T).name(), cap, storage);
+                storage = ::operator new(cap * sizeof(T));
                 T *old_data = static_cast<T *>(old_storage);
-                std::uninitialized_move(old_data, old_data + offset, data());
-                std::destroy(old_data, old_data + offset);
-                // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), old_cap, old_storage);
-                allocator->deallocate(static_cast<T *>(old_storage), old_cap);
+                std::uninitialized_move_n(old_data, offset, data());
+                std::destroy_n(old_data, offset);
+                ::operator delete(old_storage);
             }
         }
 
         void reset() {
-            if (allocator && storage) {
+            if (storage) {
                 clear();
-                // Logf("Deallocating %s x %llu at %llx", typeid(T).name(), cap, storage);
-                allocator->deallocate(static_cast<T *>(storage), cap);
+                ::operator delete(storage);
             }
             storage = nullptr;
             offset = 0;
@@ -276,7 +256,7 @@ namespace sp {
             T *oldEndPtr = data() + offset;
 
             std::uninitialized_default_construct_n(oldEndPtr, n);
-            if (posPtr < oldEndPtr) std::move(posPtr, oldEndPtr, posPtr + n);
+            if (posPtr < oldEndPtr) std::move_backward(posPtr, oldEndPtr, oldEndPtr + n);
             if (last != first) {
                 if constexpr (std::is_constructible<T, std::add_rvalue_reference_t<decltype(*first)>>()) {
                     std::move(first, last, posPtr);
@@ -301,7 +281,7 @@ namespace sp {
             T *oldEndPtr = data() + offset;
 
             std::uninitialized_default_construct_n(oldEndPtr, 1);
-            if (posPtr < oldEndPtr) std::move(posPtr, oldEndPtr, posPtr + 1);
+            if (posPtr < oldEndPtr) std::move_backward(posPtr, oldEndPtr, oldEndPtr + 1);
             *posPtr = T(std::forward<Args>(args)...);
             offset++;
             return begin() + posOffset;
@@ -354,7 +334,7 @@ namespace sp {
             if (count < offset) {
                 std::destroy(begin() + count, end());
             } else if (count > offset) {
-                std::uninitialized_default_construct_n(begin() + offset, count);
+                std::uninitialized_default_construct(begin() + offset, begin() + count);
             }
             offset = count;
         }
@@ -368,6 +348,5 @@ namespace sp {
         size_type offset = 0;
 
         void *storage = nullptr;
-        std::unique_ptr<allocator_type> allocator;
     };
 } // namespace sp
