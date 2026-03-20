@@ -57,9 +57,26 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 1
 fi
 
+if [[ $(git diff --exit-code sdk/) -ne 0 ]]; then
+    echo -e "\n^^^ +++"
+    echo -e "\033[31mError: SDK output changed\033[0m"
+    if [ -n "$BUILDKITE_BRANCH" ]; then
+        cat <(echo '```term') <(echo 'Error: SDK output changed') <(git diff sdk/) <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
+    fi
+    exit 1
+fi
+
 if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     echo -e "~~~ Updating assets.spdata"
     cmake --build ./build --config RelWithDebInfo --target assets_tar 2>&1 | tee >(grep -E "error( \w+)?:" >> ./build/build_errors.log)
+    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+        echo -e "\n^^^ +++"
+        echo -e "\033[31massets.spdata Build failed\033[0m"
+        if [ -n "$BUILDKITE_BRANCH" ]; then
+            cat <(echo '```term') ./build/build_errors.log <(echo "") <(echo '```') | buildkite-agent annotate --style error --append
+        fi
+        exit 1
+    fi
 fi
 
 cd bin
