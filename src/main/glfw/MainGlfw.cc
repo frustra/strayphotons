@@ -138,12 +138,12 @@ int main(int argc, char **argv) {
     GameInstance = instance.get();
     if (!GameInstance) return 1;
 
-    // #ifdef SP_PACKAGE_RELEASE
+#ifdef SP_PACKAGE_RELEASE
     if (!sp_get_log_output_file()) {
         std::ofstream("./strayphotons.log", std::ios::out | std::ios::trunc); // Clear log file
         sp_set_log_output_file("./strayphotons.log");
     }
-    // #endif
+#endif
 
     if (!sp_game_get_cli_flag(GameInstance, "headless")) {
         GameGraphics = sp_game_get_graphics_context(GameInstance);
@@ -209,6 +209,7 @@ int main(int argc, char **argv) {
 
         glm::vec2 monitorScale(1.0f);
     #ifndef _WIN32
+        // TODO: glfwGetMonitorContentScale doesn't return correct fractional scaling on Wayland
         glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
     #endif
         GLFWwindow *window = glfwCreateWindow(initialSize.x / monitorScale.x,
@@ -351,13 +352,14 @@ int main(int argc, char **argv) {
             }
             if (systemWindowSize != windowSize) {
                 if (sp_cvar_get_bool(cvarWindowFullscreen)) {
+                    // TODO: Try and pick the most appropriate supported monitor refresh rate
                     glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowSize.x, windowSize.y, 60);
                 } else {
-                    glm::vec2 monitorScale(1.0f);
+                    glm::vec2 windowScale(1.0f);
     #ifndef _WIN32
-                    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &monitorScale.x, &monitorScale.y);
+                    glfwGetWindowContentScale(window, &windowScale.x, &windowScale.y);
     #endif
-                    glfwSetWindowSize(window, windowSize.x / monitorScale.x, windowSize.y / monitorScale.y);
+                    glfwSetWindowSize(window, windowSize.x / windowScale.x, windowSize.y / windowScale.y);
                 }
 
                 systemWindowSize = windowSize;
