@@ -139,7 +139,8 @@ Signal expressions support the following operations and functions:
     static StructMetadata MetadataSignalExpression(typeid(SignalExpression),
         sizeof(SignalExpression),
         "SignalExpression",
-        DocsDescriptionSignalExpression);
+        DocsDescriptionSignalExpression,
+        StructMetadata::KnownSize);
     template<>
     bool StructMetadata::Load<SignalExpression>(SignalExpression &dst, const picojson::value &src);
     template<>

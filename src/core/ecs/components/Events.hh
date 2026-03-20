@@ -59,7 +59,9 @@ their own event queues as needed.
     static StructMetadata MetadataEventDest(typeid(EventDest),
         sizeof(EventDest),
         "EventDest",
-        "An event destination in the form of a string: `\"target_entity/event/input\"`");
+        "An event destination in the form of a string: `\"target_entity/event/input\"`",
+        StructField::New("target", &EventDest::target, FieldAction::None),
+        StructField::New("queue_name", &EventDest::queueName, FieldAction::None));
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>

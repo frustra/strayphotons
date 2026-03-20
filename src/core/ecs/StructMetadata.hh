@@ -367,18 +367,6 @@ namespace ecs {
     };
 
     class StructMetadata : public sp::NonCopyable {
-        template<typename... Fields>
-        bool checkKnownSize(Fields &&...fields) {
-            if ((std::is_same<std::decay_t<Fields>, std::decay_t<decltype(KnownSize)>>() || ...)) return true;
-            return ([&] {
-                if constexpr (std::is_same<std::decay_t<Fields>, StructField>()) {
-                    return fields.type.isConsistentSize;
-                } else {
-                    return true;
-                }
-            }() && ...);
-        }
-
     public:
         using EnumDescriptions = std::map<uint32_t, std::string>;
         static inline const struct {
@@ -390,7 +378,8 @@ namespace ecs {
             const char *name,
             const char *desc,
             Fields &&...fields)
-            : type(idx), size(size), knownSize(checkKnownSize(std::forward<Fields>(fields)...)), name(name),
+            : type(idx), size(size),
+              knownSize((std::is_same<std::decay_t<Fields>, std::decay_t<decltype(KnownSize)>>() || ...)), name(name),
               description(sp::trim(desc)) {
             (
                 [&] {
@@ -428,6 +417,17 @@ namespace ecs {
             auto ptr = Get(std::type_index(typeid(T)));
             Assertf(ptr != nullptr, "Couldn't lookup metadata for type: %s", typeid(T).name());
             return *dynamic_cast<const StructMetadata *>(ptr);
+        }
+
+        bool IsKnownSize() const {
+            if (knownSize || !enumMap.empty()) return true;
+            if (fields.empty()) return false;
+            for (auto &field : fields) {
+                if (!field.type.isConsistentSize) return false;
+                const StructMetadata *metadata = StructMetadata::Get(field.type);
+                if (metadata && !metadata->IsKnownSize()) return false;
+            }
+            return true;
         }
 
         const std::type_index type;
@@ -479,7 +479,6 @@ namespace ecs {
     template<typename T>
     TypeInfo TypeInfo::Lookup() {
         using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
-        const StructMetadata *metadata = StructMetadata::Get(typeid(T));
         return TypeInfo{
             .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
             .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() || std::is_reference<T>() ||
@@ -490,7 +489,7 @@ namespace ecs {
             .isReference = std::is_reference<T>(),
             .isTecsLock = Tecs::is_lock<std::decay_t<T>>() || Tecs::is_dynamic_lock<std::decay_t<T>>(),
             .isFunctionPointer = std::is_pointer<T>() && std::is_function<std::remove_pointer_t<T>>(),
-            .isConsistentSize = sp::is_consistent_size<T>() && (!metadata || metadata->knownSize),
+            .isConsistentSize = sp::is_consistent_size<T>(),
         };
     }
 

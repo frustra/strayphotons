@@ -82,5 +82,9 @@ namespace sp {
         std::weak_ptr<Scene> ptr;
     };
 
-    static ecs::StructMetadata MetadataSceneRef(typeid(SceneRef), sizeof(SceneRef), "SceneRef", "");
+    static ecs::StructMetadata MetadataSceneRef(typeid(SceneRef),
+        sizeof(SceneRef),
+        "SceneRef",
+        "",
+        ecs::StructMetadata::KnownSize);
 } // namespace sp

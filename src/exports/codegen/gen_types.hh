@@ -286,7 +286,7 @@ void GenerateStructWithFields(S &out,
     if (!prefixComment.empty()) {
         out << "// " << prefixComment << std::endl;
     }
-    if (!metadata.knownSize) {
+    if (!metadata.IsKnownSize()) {
         out << "typedef void " << name << "; // unknown size" << std::endl;
         return;
     }

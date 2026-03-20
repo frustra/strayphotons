@@ -39,9 +39,7 @@ SP_EXPORT void sp_entity_unset_name(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
 const uint32_t SP_TYPE_INDEX_ECS_SCENE_INFO = 127;
 // Component: SceneInfo
-typedef struct sp_ecs_scene_info_t {
-    const uint8_t _unknown0[208];
-} sp_ecs_scene_info_t; // 208 bytes
+typedef void sp_ecs_scene_info_t; // unknown size
 const uint64_t SP_SCENE_INFO_INDEX = 1;
 const uint64_t SP_ACCESS_SCENE_INFO = 2ull << 1;
 SP_EXPORT sp_ecs_scene_info_t *sp_entity_set_scene_info(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -365,9 +363,7 @@ SP_EXPORT void sp_entity_unset_character_controller(tecs_lock_t *dynLockPtr, sp_
 
 const uint32_t SP_TYPE_INDEX_ECS_FOCUS_LOCK = 137;
 // Component: focus_lock
-typedef struct sp_ecs_focus_lock_t {
-    const uint8_t _unknown0[4];
-} sp_ecs_focus_lock_t; // 4 bytes
+typedef void sp_ecs_focus_lock_t; // unknown size
 const uint64_t SP_FOCUS_LOCK_INDEX = 11;
 const uint64_t SP_ACCESS_FOCUS_LOCK = 2ull << 11;
 SP_EXPORT sp_ecs_focus_lock_t *sp_ecs_set_focus_lock(tecs_lock_t *dynLockPtr);
@@ -564,9 +560,7 @@ SP_EXPORT void sp_entity_unset_physics_joints(tecs_lock_t *dynLockPtr, sp_entity
 
 const uint32_t SP_TYPE_INDEX_ECS_PHYSICS_QUERY = 146;
 // Component: physics_query
-typedef struct sp_ecs_physics_query_t {
-    const uint8_t _unknown0[24];
-} sp_ecs_physics_query_t; // 24 bytes
+typedef void sp_ecs_physics_query_t; // unknown size
 const uint64_t SP_PHYSICS_QUERY_INDEX = 20;
 const uint64_t SP_ACCESS_PHYSICS_QUERY = 2ull << 20;
 SP_EXPORT sp_ecs_physics_query_t *sp_entity_set_physics_query(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -723,9 +717,7 @@ SP_EXPORT void sp_entity_unset_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent)
 
 const uint32_t SP_TYPE_INDEX_ECS_EVENT_INPUT = 155;
 // Component: event_input
-typedef struct sp_ecs_event_input_t {
-    const uint8_t _unknown0[72];
-} sp_ecs_event_input_t; // 72 bytes
+typedef void sp_ecs_event_input_t; // unknown size
 const uint64_t SP_EVENT_INPUT_INDEX = 29;
 const uint64_t SP_ACCESS_EVENT_INPUT = 2ull << 29;
 SP_EXPORT sp_ecs_event_input_t *sp_entity_set_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
@@ -741,7 +733,8 @@ const uint32_t SP_TYPE_INDEX_EVENT_DEST_VECTOR = 70;
 const uint32_t SP_TYPE_INDEX_EVENT_DEST = 45;
 // Type: ecs::EventDest
 typedef struct sp_event_dest_t {
-    const uint8_t _unknown0[144];
+    sp_entity_ref_t target; // 16 bytes
+    event_name_t queue_name; // 128 bytes
 } sp_event_dest_t; // 144 bytes
 
 typedef struct sp_event_dest_vector_t {
@@ -852,9 +845,7 @@ SP_EXPORT void sp_entity_unset_event_bindings(tecs_lock_t *dynLockPtr, sp_entity
 
 const uint32_t SP_TYPE_INDEX_ECS_SIGNALS = 157;
 // Component: signals
-typedef struct sp_ecs_signals_t {
-    const uint8_t _unknown0[88];
-} sp_ecs_signals_t; // 88 bytes
+typedef void sp_ecs_signals_t; // unknown size
 const uint64_t SP_SIGNALS_INDEX = 31;
 const uint64_t SP_ACCESS_SIGNALS = 2ull << 31;
 SP_EXPORT sp_ecs_signals_t *sp_ecs_set_signals(tecs_lock_t *dynLockPtr);
@@ -890,9 +881,7 @@ const uint32_t SP_TYPE_INDEX_ECS_SCRIPTS = 160;
 const uint32_t SP_TYPE_INDEX_SCRIPT_INSTANCE_VECTOR = 78;
 const uint32_t SP_TYPE_INDEX_SCRIPT_INSTANCE = 51;
 // Type: ecs::ScriptInstance
-typedef struct sp_script_instance_t {
-    const uint8_t _unknown0[16];
-} sp_script_instance_t; // 16 bytes
+typedef void sp_script_instance_t; // unknown size
 const uint32_t SP_TYPE_INDEX_SCRIPT_STATE = 52;
 const uint32_t SP_TYPE_INDEX_SCRIPT_DEFINITION = 49;
 const uint32_t SP_TYPE_INDEX_STRING = 7;
@@ -1108,9 +1097,7 @@ typedef struct sp_dynamic_script_definition_t {
 
 const uint32_t SP_TYPE_INDEX_SCRIPT_DEFINITION_BASE = 50;
 // Type: ecs::ScriptDefinitionBase
-typedef struct sp_script_definition_base_t {
-    const uint8_t _unknown0[16];
-} sp_script_definition_base_t; // 16 bytes
+typedef void sp_script_definition_base_t; // unknown size
 SP_EXPORT void * sp_script_definition_base_access_mut(const sp_script_definition_base_t *self, sp_script_state_t * arg0);
 SP_EXPORT const void * sp_script_definition_base_access(const sp_script_definition_base_t *self, const sp_script_state_t * arg0);
 
