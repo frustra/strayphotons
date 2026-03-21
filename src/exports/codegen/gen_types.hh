@@ -751,18 +751,12 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            // out << "typedef struct sp_" << subtype << "_flatmap_t {" << std::endl;
-            // out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
-            // out << "} sp_" << subtype << "_flatmap_t;" << std::endl;
             out << "typedef void sp_" << subtype << "_flatmap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::key_type));
             GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            // out << "typedef struct sp_" << subtype << "_map_t {" << std::endl;
-            // out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
-            // out << "} sp_" << subtype << "_map_t;" << std::endl;
             out << "typedef void sp_" << subtype << "_map_t;" << std::endl;
         } else if constexpr (std::is_same<T, sp::GenericCompositor>()) {
             // Defined in "strayphotons/graphics.h"

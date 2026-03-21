@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -18,14 +18,13 @@
 
 namespace ecs {
     struct SceneConnection {
+        using ExpressionList = sp::HeapVector<SignalExpression>;
         // Load a scene if any of the signal expressions provded evaluate to true
-        robin_hood::
-            unordered_map<sp::InlineString<63>, sp::HeapVector<SignalExpression>, sp::StringHash, sp::StringEqual>
-                scenes;
+        robin_hood::unordered_map<sp::InlineString<63>, ExpressionList, sp::StringHash, sp::StringEqual> scenes;
 
         SceneConnection() {}
         SceneConnection(std::string_view scene, const SignalExpression &expr) {
-            scenes.emplace(scene, sp::HeapVector<SignalExpression>{expr});
+            scenes.emplace(scene, ExpressionList{expr});
         }
     };
 

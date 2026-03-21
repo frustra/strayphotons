@@ -256,8 +256,8 @@ namespace sp {
     struct is_consistent_size : std::true_type {};
     template<>
     struct is_consistent_size<std::string> : std::false_type {};
-    // template<typename T>
-    // struct is_consistent_size<std::vector<T>> : std::false_type {};
+    template<typename T>
+    struct is_consistent_size<std::vector<T>> : std::false_type {};
     template<typename K, typename V, typename H, typename E>
     struct is_consistent_size<robin_hood::unordered_flat_map<K, V, H, E>> : std::false_type {};
     template<typename K, typename V, typename H, typename E>
