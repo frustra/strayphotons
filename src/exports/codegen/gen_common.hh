@@ -60,8 +60,6 @@ std::string TypeToString() {
         }
     } else if constexpr (sp::is_heap_string<T>()) {
         return "sp::HeapString";
-        // } else if constexpr (sp::is_vector<T>()) {
-        //     return "std::vector<" + TypeToString<typename T::value_type>() + ">";
     } else if constexpr (sp::is_heap_vector<T>()) {
         return "sp::HeapVector<" + TypeToString<typename T::value_type>() + ">";
     } else if constexpr (sp::is_inline_vector<T>()) {
@@ -70,8 +68,6 @@ std::string TypeToString() {
     } else if constexpr (sp::is_pair<T>()) {
         return "std::pair<" + TypeToString<typename T::first_type>() + ", " + TypeToString<typename T::second_type>() +
                ">";
-    } else if constexpr (std::is_same<T, std::string>()) {
-        return "std::string";
     } else if constexpr (std::is_same<T, ecs::Lock<>>()) {
         return "ecs::Lock<>";
     } else if constexpr (Tecs::is_lock<T>()) {

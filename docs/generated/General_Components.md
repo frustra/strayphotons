@@ -205,17 +205,12 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 <div class="type_definition">
 
 ### `EventDest` Type
-| Field Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **target** | [EntityRef](#EntityRef-type) | "" | No description |
-| **queue_name** | string (max 127 chars) | "" | No description |
 
 An event destination in the form of a string: `"target_entity/event/input"`
 
 </div>
 
 **See Also:**
-[EntityRef](#EntityRef-type)
 [SignalExpression](#SignalExpression-type)
 
 </div>

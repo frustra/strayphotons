@@ -733,8 +733,7 @@ const uint32_t SP_TYPE_INDEX_EVENT_DEST_VECTOR = 70;
 const uint32_t SP_TYPE_INDEX_EVENT_DEST = 45;
 // Type: ecs::EventDest
 typedef struct sp_event_dest_t {
-    sp_entity_ref_t target; // 16 bytes
-    event_name_t queue_name; // 128 bytes
+    const uint8_t _unknown0[144];
 } sp_event_dest_t; // 144 bytes
 
 typedef struct sp_event_dest_vector_t {

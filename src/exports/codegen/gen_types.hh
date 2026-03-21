@@ -154,9 +154,6 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (sp::is_optional<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_optional_" + subtype + "_t";
-            // } else if constexpr (sp::is_vector<T>()) {
-            //     std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
-            //     return "sp_" + subtype + "_vector_t";
         } else if constexpr (sp::is_heap_vector<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
             return "sp_" + subtype + "_vector_t";

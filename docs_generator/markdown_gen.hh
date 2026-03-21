@@ -46,8 +46,6 @@ private:
             return "float";
         } else if constexpr (std::is_same<T, double>()) {
             return "double";
-            // } else if constexpr (std::is_same<T, std::string>()) {
-            //     return "string";
         } else if constexpr (sp::is_heap_string<T>()) {
             return "string";
         } else if constexpr (sp::is_inline_string<T>()) {
@@ -74,8 +72,6 @@ private:
             } else {
                 return typeid(T).name();
             }
-            // } else if constexpr (sp::is_vector<T>()) {
-            //     return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
         } else if constexpr (sp::is_heap_vector<T>()) {
             return "vector&lt;" + fieldTypeName<typename T::value_type>() + "&gt;";
         } else if constexpr (sp::is_inline_vector<T>()) {

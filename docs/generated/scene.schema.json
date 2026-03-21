@@ -117,19 +117,6 @@
 		"EventDest": {
 			"default": "",
 			"description": "An event destintation is an entity name + event queue name, in the format: \"scene:entity/event/queue\"",
-			"properties": {
-				"queue_name": {
-					"default": "",
-					"description": "No description",
-					"maxLength": 127,
-					"type": "string"
-				},
-				"target": {
-					"default": "",
-					"description": "No description",
-					"type": "string"
-				}
-			},
 			"type": "string"
 		},
 		"InterpolationMode": {

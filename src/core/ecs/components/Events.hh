@@ -11,6 +11,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/StructMetadata.hh"
 #include "strayphotons/cpp/Hashing.hh"
 #include "strayphotons/cpp/HeapVector.hh"
 
@@ -60,8 +61,7 @@ their own event queues as needed.
         sizeof(EventDest),
         "EventDest",
         "An event destination in the form of a string: `\"target_entity/event/input\"`",
-        StructField::New("target", &EventDest::target, FieldAction::None),
-        StructField::New("queue_name", &EventDest::queueName, FieldAction::None));
+        StructMetadata::KnownSize);
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>
