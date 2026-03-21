@@ -23,7 +23,7 @@ namespace sp {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                auto eventScript = ecs::CreateLogicScript<ecs::Lock<ecs::Read<ecs::EventInput>>>(
+                auto eventScript = ecs::CreateLogicScript(
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         ecs::Event event;
                         while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {

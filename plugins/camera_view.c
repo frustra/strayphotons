@@ -34,7 +34,7 @@ void camera_view_on_tick(void *context,
 
     if (!ctx->started) {
         char buffer[256] = {0};
-        snprintf(buffer, 255, "Script: %s = %d\n", state->definition.name, ctx->foobar);
+        snprintf(buffer, 255, "Script: %s = %d\n", sp_string_get_c_str(&state->definition.name), ctx->foobar);
         sp_log_message(SP_LOG_LEVEL_LOG, buffer);
         ctx->started = true;
     }
@@ -92,7 +92,7 @@ void camera_view_on_tick(void *context,
 
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
-        strncpy(output[0].name, "camera_view2", sizeof(output[0].name) - 1);
+        sp_string_set(&output[0].name, "camera_view2");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = true;
         event_name_t *events = sp_event_name_vector_resize(&output[0].events, 1);

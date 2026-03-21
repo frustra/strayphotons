@@ -7,10 +7,12 @@
 
 #pragma once
 
+#include "strayphotons/cpp/HeapString.hh"
 #include "strayphotons/cpp/InlineString.hh"
 
 #include <cstring>
 #include <robin_hood.h>
+#include <string_view>
 
 namespace sp {
     inline Hash64 Hash128To64(Hash128 input) {
@@ -57,6 +59,9 @@ namespace sp {
                 return key.Hash();
             }
         };
+
+        template<typename V>
+        using UnorderedMap = robin_hood::unordered_map<HashKey<T>, V, Hasher>;
     };
 
     struct StringHash {
@@ -66,6 +71,9 @@ namespace sp {
             return robin_hood::hash_bytes(key.c_str(), key.size());
         }
         std::size_t operator()(std::string_view key) const {
+            return robin_hood::hash_bytes(key.data(), key.size());
+        }
+        std::size_t operator()(const sp::HeapString &key) const {
             return robin_hood::hash_bytes(key.data(), key.size());
         }
         template<size_t MaxSize>
@@ -80,43 +88,18 @@ namespace sp {
     struct StringEqual {
         using is_transparent = void;
 
-        bool operator()(const std::string_view &lhs, const std::string &rhs) const {
-            const std::string_view view = rhs;
-            return lhs == view;
+        template<typename T, typename U>
+        bool operator()(const T &lhs, const U &rhs) const {
+            return std::string_view(lhs) == std::string_view(rhs);
         }
-        bool operator()(const std::string &lhs, const std::string_view &rhs) const {
-            const std::string_view view = lhs;
-            return view == rhs;
-        }
-        template<size_t MaxSize>
-        std::size_t operator()(const std::string_view &lhs, const sp::InlineString<MaxSize> &rhs) const {
-            const std::string_view view = rhs;
-            return lhs == view;
-        }
-        template<size_t MaxSize>
-        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const std::string_view &rhs) const {
-            const std::string_view view = lhs;
-            return view == rhs;
-        }
-        template<size_t MaxSize>
-        std::size_t operator()(const std::string &lhs, const sp::InlineString<MaxSize> &rhs) const {
-            const std::string_view view = rhs;
-            return lhs == view;
-        }
-        template<size_t MaxSize>
-        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const std::string &rhs) const {
-            const std::string_view view = lhs;
-            return view == rhs;
-        }
-        template<size_t MaxSize>
-        std::size_t operator()(const sp::InlineString<MaxSize> &lhs, const sp::InlineString<MaxSize> &rhs) const {
-            return lhs == rhs;
-        }
-        bool operator()(const char *lhs, const std::string &rhs) const {
-            return std::strcmp(lhs, rhs.c_str()) == 0;
-        }
-        bool operator()(const std::string &lhs, const std::string &rhs) const {
-            return lhs == rhs;
+    };
+
+    struct StringLess {
+        using is_transparent = void;
+
+        template<typename T, typename U>
+        bool operator()(const T &lhs, const U &rhs) const {
+            return std::string_view(lhs).compare(rhs) < 0;
         }
     };
 } // namespace sp

@@ -191,11 +191,8 @@ namespace sp::vulkan {
         DeviceContext &device;
         vk::UniquePipelineCache pipelineCache;
 
-        template<typename K, typename V>
-        using mapType = robin_hood::unordered_flat_map<K, V, typename K::Hasher>;
-
-        mapType<PipelineKey, std::shared_ptr<Pipeline>> pipelines;
-        mapType<PipelineLayoutKey, std::shared_ptr<PipelineLayout>> pipelineLayouts;
-        mapType<DescriptorPoolKey, std::shared_ptr<DescriptorPool>> descriptorPools;
+        PipelineKey::UnorderedMap<std::shared_ptr<Pipeline>> pipelines;
+        PipelineLayoutKey::UnorderedMap<std::shared_ptr<PipelineLayout>> pipelineLayouts;
+        DescriptorPoolKey::UnorderedMap<std::shared_ptr<DescriptorPool>> descriptorPools;
     };
 } // namespace sp::vulkan

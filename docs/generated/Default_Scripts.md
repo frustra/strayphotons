@@ -34,7 +34,7 @@ The `camera_view` script has no configurable parameters
 
 ## `collapse_events` Script
 
-The `collapse_events` script has parameter type: map&lt;string (max 127 chars), string&gt;
+The `collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;
 
 </div>
 
@@ -86,7 +86,7 @@ The `component_from_signal` script has parameter type: map&lt;string, [SignalExp
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
-| **output_event** | string | "/script/edge_trigger" | No description |
+| **output_event** | string (max 127 chars) | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |
 | **init_value** | optional&lt;double&gt; | null | No description |
@@ -112,7 +112,7 @@ The `edit_tool` script has no configurable parameters
 
 ## `event_from_signal` Script
 
-The `event_from_signal` script has parameter type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
+The `event_from_signal` script has parameter type: map&lt;string (max 127 chars), [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)
@@ -126,8 +126,8 @@ The `event_from_signal` script has parameter type: map&lt;string, [SignalExpress
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **input_event** | string | "" | No description |
-| **output_event** | string | "" | No description |
+| **input_event** | string (max 127 chars) | "" | No description |
+| **output_event** | string (max 127 chars) | "" | No description |
 | **gate_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
 
 **See Also:**
@@ -140,7 +140,7 @@ The `event_from_signal` script has parameter type: map&lt;string, [SignalExpress
 
 ## `init_event` Script
 
-The `init_event` script has parameter type: vector&lt;string&gt;
+The `init_event` script has parameter type: vector&lt;string (max 127 chars)&gt;
 
 </div>
 
@@ -213,7 +213,7 @@ The `magnetic_socket` script has no configurable parameters
 |------------|------|---------------|-------------|
 | **relative_to** | [EntityRef](#EntityRef-type) | "" | No description |
 | **position** | vec3 | [0, 0, 0] | No description |
-| **model** | string | "" | No description |
+| **model** | string (max 255 chars) | "" | No description |
 | **templates** | vector&lt;string&gt; | "interactive" | No description |
 
 **See Also:**
@@ -226,7 +226,7 @@ The `magnetic_socket` script has no configurable parameters
 
 ## `physics_collapse_events` Script
 
-The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string&gt;
+The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;
 
 </div>
 
@@ -278,7 +278,7 @@ The `physics_component_from_signal` script has parameter type: map&lt;string, [S
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **input_expr** | [SignalExpression](#SignalExpression-type) | "" | No description |
-| **output_event** | string | "/script/edge_trigger" | No description |
+| **output_event** | string (max 127 chars) | "/script/edge_trigger" | No description |
 | **falling_edge** | bool | true | No description |
 | **rising_edge** | bool | true | No description |
 | **init_value** | optional&lt;double&gt; | null | No description |
@@ -295,7 +295,7 @@ The `physics_component_from_signal` script has parameter type: map&lt;string, [S
 
 ## `physics_event_from_signal` Script
 
-The `physics_event_from_signal` script has parameter type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
+The `physics_event_from_signal` script has parameter type: map&lt;string (max 127 chars), [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)
@@ -307,7 +307,7 @@ The `physics_event_from_signal` script has parameter type: map&lt;string, [Signa
 
 ## `physics_joint_from_event` Script
 
-The `physics_joint_from_event` script has parameter type: map&lt;string, [PhysicsJoint](#PhysicsJoint-type)&gt;
+The `physics_joint_from_event` script has parameter type: map&lt;string (max 127 chars), [PhysicsJoint](#PhysicsJoint-type)&gt;
 
 <div class="type_definition">
 
@@ -398,7 +398,7 @@ The `physics_signal_from_signal` script has parameter type: map&lt;string, [Sign
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **model** | string | "" | No description |
+| **model** | string (max 255 chars) | "" | No description |
 | **skip_nodes** | vector&lt;string&gt; | [] | No description |
 | **physics_group** | enum [PhysicsGroup](#PhysicsGroup-type) | "World" | No description |
 | **render** | bool | true | No description |
@@ -470,7 +470,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 |------------|------|---------------|-------------|
 | **count** | ivec2 | [1, 1] | No description |
 | **stride** | vec2 | [1, 1] | No description |
-| **axes** | string | "xy" | No description |
+| **axes** | string (max 2 chars) | "xy" | No description |
 | **surface** | string | "" | No description |
 | **edge** | string | "" | No description |
 | **corner** | string | "" | No description |
@@ -487,7 +487,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 | **y_offset** | float | 0 | No description |
 | **stride** | float | 1 | No description |
 | **segments** | vector&lt;vec2&gt; | [] | No description |
-| **segment_types** | vector&lt;string&gt; | [] | No description |
+| **segment_types** | vector&lt;string (max 255 chars)&gt; | [] | No description |
 
 </div>
 
@@ -540,7 +540,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **suffix** | string | "mW" | No description |
+| **suffix** | string (max 63 chars) | "mW" | No description |
 
 </div>
 
@@ -647,7 +647,7 @@ The `speed_controlled_sound` script has no configurable parameters
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
-| **hand** | string | "" | No description |
+| **hand** | string (max 63 chars) | "" | No description |
 | **teleport_distance** | float | 2 | No description |
 | **point_distance** | float | 2 | No description |
 | **force_limit** | float | 100 | No description |

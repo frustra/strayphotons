@@ -7,10 +7,13 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
 #include "strayphotons/cpp/Async.hh"
 #include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <glm/glm.hpp>
 
@@ -41,11 +44,11 @@ namespace ecs {
 
     struct Renderable {
         Renderable() {}
-        Renderable(const std::string &modelName, uint64_t meshIndex = 0);
-        Renderable(const std::string &modelName, sp::AsyncPtr<sp::Gltf> model, uint64_t meshIndex = 0)
+        Renderable(std::string_view modelName, uint64_t meshIndex = 0);
+        Renderable(std::string_view modelName, sp::AsyncPtr<sp::Gltf> model, uint64_t meshIndex = 0)
             : modelName(modelName), model(model), meshIndex(meshIndex) {}
 
-        std::string modelName;
+        sp::AssetName modelName;
         sp::AsyncPtr<sp::Gltf> model;
         uint64_t meshIndex = 0;
 
@@ -55,13 +58,13 @@ namespace ecs {
 
             bool operator==(const Joint &other) const = default;
         };
-        std::vector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
+        sp::HeapVector<Joint> joints; // list of entities corresponding to the "joints" array of the skin
 
         VisibilityMask visibility = VisibilityMask::DirectCamera | VisibilityMask::DirectEye |
                                     VisibilityMask::LightingShadow | VisibilityMask::LightingVoxel;
         float emissiveScale = 0;
         sp::color_alpha_t colorOverride = glm::vec4(-1);
-        std::string textureOverrideName;
+        sp::InlineString<127> textureOverrideName;
         glm::vec2 metallicRoughnessOverride = glm::vec2(-1);
 
         bool IsVisible(VisibilityMask viewMask) const {

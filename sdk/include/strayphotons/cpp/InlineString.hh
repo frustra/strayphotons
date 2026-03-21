@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include "strayphotons/cpp/HeapString.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <array>
 #include <cstring>
 #include <limits>
+#include <type_traits>
 
 namespace sp {
     template<size_t MaxSize, typename CharT = char, typename ArrayT = std::array<CharT, MaxSize + 1>>
@@ -63,6 +65,13 @@ namespace sp {
         }
 
         InlineString(const std::basic_string_view<CharT> &init) : ArrayT() {
+            Assert(init.size() <= MaxSize, "InlineString overflow");
+            traits_type::copy(data(), init.data(), init.size());
+            setSize(init.size());
+        }
+
+        template<std::enable_if_t<std::is_same_v<CharT, char>, int> = 0>
+        InlineString(const sp::HeapString &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
@@ -121,8 +130,11 @@ namespace sp {
 
         void resize(size_type newSize, CharT ch = CharT()) {
             Assert(newSize <= MaxSize, "InlineString overflow");
-            if (newSize < size()) {
-                std::fill(begin() + newSize, end(), ch);
+            auto oldSize = size();
+            if (newSize < oldSize) {
+                std::fill(begin() + newSize, end(), CharT());
+            } else if (newSize > oldSize) {
+                std::fill(begin() + oldSize, begin() + newSize, ch);
             }
             setSize(newSize);
         }
@@ -190,7 +202,7 @@ namespace sp {
             return rend() - size();
         }
 
-        size_type find(const std::basic_string<CharT> &str, size_type pos = 0) const {
+        size_type find(std::basic_string_view<CharT> str, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find(str, pos);
         }
 
@@ -198,7 +210,7 @@ namespace sp {
             return std::basic_string_view<CharT>(*this).find(ch, pos);
         }
 
-        size_type rfind(const std::basic_string<CharT> &str, size_type pos = npos) const {
+        size_type rfind(std::basic_string_view<CharT> str, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).rfind(str, pos);
         }
 
@@ -206,7 +218,7 @@ namespace sp {
             return std::basic_string_view<CharT>(*this).rfind(ch, pos);
         }
 
-        size_type find_first_of(const std::basic_string<CharT> &str, size_type pos = 0) const {
+        size_type find_first_of(std::basic_string_view<CharT> str, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find_first_of(str, pos);
         }
 
@@ -214,7 +226,7 @@ namespace sp {
             return std::basic_string_view<CharT>(*this).find_first_of(ch, pos);
         }
 
-        size_type find_last_of(const std::basic_string<CharT> &str, size_type pos = npos) const {
+        size_type find_last_of(std::basic_string_view<CharT> str, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).find_last_of(str, pos);
         }
 
@@ -338,4 +350,9 @@ sp::InlineString<MaxSize, CharT, ArrayT> operator+(const sp::InlineString<MaxSiz
 template<typename CharT, size_t MaxSize, typename ArrayT>
 std::basic_string<CharT> operator+(const char *lhs, const sp::InlineString<MaxSize, CharT, ArrayT> &rhs) {
     return lhs + std::basic_string<CharT>(rhs);
+}
+
+template<typename CharT, size_t MaxSize, typename ArrayT>
+std::ostream &operator<<(std::ostream &out, const sp::InlineString<MaxSize, CharT, ArrayT> &str) {
+    return out << str.c_str();
 }

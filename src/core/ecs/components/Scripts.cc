@@ -157,9 +157,9 @@ namespace ecs {
         if (definition.callback.index() != other.definition.callback.index()) return false;
         if (std::holds_alternative<PrefabFunc>(definition.callback)) {
             if (definition.name == "prefab_gltf") {
-                return GetParam<std::string>("model") == other.GetParam<std::string>("model");
+                return GetParam<sp::AssetName>("model") == other.GetParam<sp::AssetName>("model");
             } else if (definition.name == "prefab_template") {
-                return GetParam<std::string>("source") == other.GetParam<std::string>("source");
+                return GetParam<sp::HeapString>("source") == other.GetParam<sp::HeapString>("source");
             }
         }
         return !definition.name.empty();

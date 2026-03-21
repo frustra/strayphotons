@@ -12,6 +12,8 @@
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/InlineString.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <picojson.h>
@@ -240,7 +242,7 @@ namespace ecs {
     };
 
     struct TemplatePrefab {
-        std::string source;
+        sp::HeapString source;
 
         void Prefab(const ScriptState &state,
             const std::shared_ptr<sp::Scene> &scene,
@@ -272,8 +274,8 @@ namespace ecs {
     struct TilePrefab {
         glm::ivec2 count = {1, 1};
         glm::vec2 stride = {1, 1};
-        std::string axes = "xy";
-        std::string surfaceTemplate, edgeTemplate, cornerTemplate;
+        sp::InlineString<2> axes = "xy";
+        sp::HeapString surfaceTemplate, edgeTemplate, cornerTemplate;
 
         void Prefab(const ScriptState &state,
             const std::shared_ptr<sp::Scene> &scene,

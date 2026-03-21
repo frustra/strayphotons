@@ -59,7 +59,7 @@ namespace sp {
                 auto pointerEnt = scene->NewSystemEntity(lock, scene, entities::Pointer.Name());
                 auto &pointerTree = pointerEnt.Set<ecs::TransformTree>(lock);
                 pointerTree.parent = entities::FlatHead;
-                auto pointerUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                auto pointerUpdateScript = ecs::CreateLogicScript(
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &tree = ent.Get<ecs::TransformTree>(lock);
@@ -79,7 +79,7 @@ namespace sp {
                 auto headEnt = scene->NewSystemEntity(lock, scene, entities::Head.Name());
                 auto &headTree = headEnt.Set<ecs::TransformTree>(lock);
                 headTree.parent = entities::FlatHead;
-                auto headUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                auto headUpdateScript = ecs::CreateLogicScript(
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &tree = ent.Get<ecs::TransformTree>(lock);
@@ -99,7 +99,7 @@ namespace sp {
                 auto dirEnt = scene->NewSystemEntity(lock, scene, entities::Direction.Name());
                 auto &dirTree = dirEnt.Set<ecs::TransformTree>(lock);
                 dirTree.parent = entities::Player;
-                auto dirUpdateScript = ecs::CreateLogicScript<ecs::Lock<ecs::Write<ecs::TransformTree>>>(
+                auto dirUpdateScript = ecs::CreateLogicScript(
                     [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
                         if (!ent.Has<ecs::TransformTree>(lock)) return;
                         auto &dirTree = ent.Get<ecs::TransformTree>(lock);

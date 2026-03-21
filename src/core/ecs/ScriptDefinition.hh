@@ -11,6 +11,7 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
 #include "game/SceneRef.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/gui/GuiDrawData.hh"
 
 #include <functional>
@@ -47,22 +48,18 @@ namespace ecs {
 
     using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, RenderOutput, Scripts>>;
 
-    using ScriptInitFunc = std::function<void(ScriptState &)>;
-    using ScriptDestroyFunc = std::function<void(ScriptState &)>;
-    using LogicTickFunc = std::function<void(ScriptState &, const LogicUpdateLock &, Entity, chrono_clock::duration)>;
-    using PhysicsTickFunc = std::function<
-        void(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration)>;
-    using OnEventFunc = std::function<void(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event)>;
-    using PrefabFunc = std::function<void(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity)>;
-    using BeforeFrameFunc = std::function<bool(sp::GenericCompositor &, ScriptState &, Entity)>;
-    using RenderGuiFunc = std::function<
-        void(sp::GenericCompositor &, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &)>;
+    using ScriptInitFunc = void (*)(ScriptState &);
+    using ScriptDestroyFunc = void (*)(ScriptState &);
+    using LogicTickFunc = void (*)(ScriptState &, const LogicUpdateLock &, Entity, chrono_clock::duration);
+    using PhysicsTickFunc = void (*)(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration);
+    using OnEventFunc = void (*)(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event);
+    using PrefabFunc = void (*)(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity);
+    using BeforeFrameFunc = bool (*)(sp::GenericCompositor &, ScriptState &, Entity);
+    using RenderGuiFunc =
+        void (*)(sp::GenericCompositor &, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &);
     using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
-
     using ScriptCallback = std::
         variant<std::monostate, LogicTickFunc, PhysicsTickFunc, OnEventFunc, PrefabFunc, GuiRenderFuncs>;
-
-    using ScriptName = sp::InlineString<63>;
 
     enum class ScriptType {
         LogicScript,
@@ -91,9 +88,9 @@ namespace ecs {
             &ScriptDefinitionBase::Access));
 
     struct ScriptDefinition {
-        ScriptName name;
+        sp::HeapString name;
         ScriptType type;
-        std::vector<EventName> events;
+        sp::HeapVector<EventName> events;
         bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;
         std::optional<ScriptInitFunc> initFunc;
@@ -113,7 +110,7 @@ namespace ecs {
             &ScriptDefinition::filterOnEvent));
 
     struct ScriptDefinitions {
-        std::map<ScriptName, ScriptDefinition> scripts;
+        std::map<sp::HeapString, ScriptDefinition> scripts;
 
         void RegisterScript(ScriptDefinition &&definition);
     };

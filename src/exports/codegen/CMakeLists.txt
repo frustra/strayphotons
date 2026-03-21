@@ -6,24 +6,24 @@
 #
 
 ## Define code generator executable
-add_executable(${PROJECT_EXPORTS_LIB}-generator
+add_executable(${PROJECT_EXPORTS_LIB}-components-codegen
     gen_main.cc
 )
 
-target_include_directories(${PROJECT_EXPORTS_LIB}-generator PRIVATE
+target_include_directories(${PROJECT_EXPORTS_LIB}-components-codegen PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PROJECT_EXPORTS_LIB}-generator PRIVATE
+target_link_libraries(${PROJECT_EXPORTS_LIB}-components-codegen PRIVATE
     ${PROJECT_COMMON_LIB}
     ${PROJECT_CORE_LIB}
 )
 
-target_compile_definitions(${PROJECT_EXPORTS_LIB}-generator PRIVATE
+target_compile_definitions(${PROJECT_EXPORTS_LIB}-components-codegen PRIVATE
     SP_EXECUTING_CODEGEN
 )
 
-set_target_properties(${PROJECT_EXPORTS_LIB}-generator PROPERTIES
+set_target_properties(${PROJECT_EXPORTS_LIB}-components-codegen PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -33,10 +33,10 @@ add_custom_command(
         ${PROJECT_ROOT_DIR}/sdk/include/strayphotons/components.h
         ${CMAKE_CURRENT_BINARY_DIR}/components_gen.cc
     COMMAND
-        ${PROJECT_EXPORTS_LIB}-generator
+        ${PROJECT_EXPORTS_LIB}-components-codegen
             ${PROJECT_ROOT_DIR}/sdk/include/strayphotons/components.h
             ${CMAKE_CURRENT_BINARY_DIR}/components_gen.cc
-    DEPENDS ${PROJECT_EXPORTS_LIB}-generator
+    DEPENDS ${PROJECT_EXPORTS_LIB}-components-codegen
 )
 
 add_custom_target(${PROJECT_EXPORTS_LIB}-output

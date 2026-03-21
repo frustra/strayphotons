@@ -180,8 +180,6 @@ namespace sp::vulkan::render_graph {
         PooledImagePtr GetImageFromPool(const ImageDesc &desc);
         void TickImagePool();
 
-        using PooledImageKey = HashKey<ImageDesc>;
-        robin_hood::unordered_map<PooledImageKey, std::vector<PooledImagePtr>, typename PooledImageKey::Hasher>
-            imagePool;
+        HashKey<ImageDesc>::UnorderedMap<std::vector<PooledImagePtr>> imagePool;
     };
 } // namespace sp::vulkan::render_graph

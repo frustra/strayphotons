@@ -79,11 +79,12 @@ namespace ecs {
     static EntityComponent<SceneInfo> ComponentSceneInfo("SceneInfo",
         "This is an internal component storing each entity's source scene and other creation info.");
 
-    static StructMetadata MetadataEntity(typeid(Entity), sizeof(Entity), "Entity", "");
+    static StructMetadata MetadataEntity(typeid(Entity), sizeof(Entity), "Entity", "", StructMetadata::KnownSize);
     static StructMetadata MetadataNamedEntity(typeid(NamedEntity),
         sizeof(NamedEntity),
         "NamedEntity",
         "",
+        StructMetadata::KnownSize,
         StructFunction::New("Name", "Returns the name of the entity being referenced", &NamedEntity::Name),
         StructFunction::New("Get",
             "Returns the actual entity being referenced",
@@ -102,6 +103,7 @@ namespace ecs {
         sizeof(EntityRef),
         "EntityRef",
         DocsDescriptionEntityRef,
+        StructMetadata::KnownSize,
         StructFunction::New("Name", "Returns the name of the entity being referenced", &EntityRef::Name),
         StructFunction::New("Get", "Returns the actual entity being referenced", &EntityRef::Get, ArgDesc("lock", "")),
         StructFunction::New("IsValid", "Returns true if this reference is non-empty", &EntityRef::IsValid),
@@ -125,6 +127,7 @@ namespace ecs {
         sizeof(SignalRef),
         "SignalRef",
         "",
+        StructMetadata::KnownSize,
         StructFunction::New("GetEntity", "Returns the entity being being referenced", &SignalRef::GetEntity),
         StructFunction::New("GetSignalName", "Returns the signal name being referenced", &SignalRef::GetSignalName),
         StructFunction::New("String", "Returns the full signal path being referenced", &SignalRef::String),
