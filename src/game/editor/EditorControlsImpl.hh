@@ -20,6 +20,8 @@
 #include "ecs/components/Transform.h"
 #include "game/SceneImpl.hh"
 #include "game/SceneRef.hh"
+#include "imgui_internal.h"
+#include "strayphotons/cpp/Utility.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
@@ -106,6 +108,25 @@ namespace sp {
             } else {
                 static_assert(!sizeof(U), "AddImGuiElement unsupported vector type");
             }
+        } else if constexpr (is_inline_string<T>()) {
+            changed = ImGui::InputText(name.c_str(), value.data(), value.capacity());
+            if (changed) value = T(value.data()); // Update size byte at end
+        } else if constexpr (is_optional<T>()) {
+            bool hasValue = value.has_value();
+            if (ImGui::Checkbox(fieldId.c_str(), &hasValue)) {
+                // Value has already been toggled by ImGui at this point
+                if (!hasValue) {
+                    value.reset();
+                } else {
+                    value = typename T::value_type{};
+                }
+                changed = true;
+            }
+            if (hasValue) {
+                ImGui::SameLine();
+                std::string optionalName = "##optional-" + fieldName;
+                changed |= AddImGuiElement(optionalName, value.value());
+            }
         } else {
             ImGui::Indent();
             picojson::value jsonValue;
@@ -185,11 +206,26 @@ namespace sp {
     inline bool EditorContext::AddImGuiElement(const std::string &name, std::string &value) {
         return ImGui::InputText(name.c_str(), &value);
     }
+
     template<>
-    inline bool EditorContext::AddImGuiElement(const std::string &name, InlineString<127> &value) {
-        bool changed = ImGui::InputText(name.c_str(), value.data(), value.max_size());
-        if (changed) value = InlineString<127>(value.data()); // Update size byte at end
-        return changed;
+    inline bool EditorContext::AddImGuiElement(const std::string &name, HeapString &value) {
+        return ImGui::InputTextEx(
+            name.c_str(),
+            nullptr,
+            value.data(),
+            value.size() + 1,
+            ImVec2(0, 0),
+            ImGuiInputTextFlags_CallbackResize,
+            [](ImGuiInputTextCallbackData *data) {
+                if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+                    auto *str = static_cast<HeapString *>(data->UserData);
+                    Assert(str->data() == data->Buf, "Invalid ImGuiInputTextCallbackData callback");
+                    str->resize(data->BufSize);
+                    data->Buf = str->data();
+                }
+                return 0;
+            },
+            &value);
     }
     template<>
     inline bool EditorContext::AddImGuiElement(const std::string &name, SignalExpression &value) {
@@ -198,7 +234,7 @@ namespace sp {
             ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 1});
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
         }
-        bool changed = ImGui::InputText(name.c_str(), &value.expr);
+        bool changed = AddImGuiElement(name, value.expr);
         if (changed) value.Compile();
         if (borderEnable) {
             ImGui::PopStyleVar();
@@ -266,7 +302,7 @@ namespace sp {
         return changed;
     }
     template<>
-    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<AnimationState> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, HeapVector<AnimationState> &value) {
         for (auto &state : value) {
             picojson::value jsonValue;
             json::Save({}, jsonValue, state);
@@ -285,7 +321,7 @@ namespace sp {
         return changed;
     }
     template<>
-    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<PhysicsShape> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, HeapVector<PhysicsShape> &value) {
         bool changed = false;
         ImGui::Indent();
         for (size_t i = 0; i < value.size(); i++) {
@@ -324,8 +360,17 @@ namespace sp {
                         } else if constexpr (std::is_same<T, PhysicsShape::ConvexMesh>()) {
                             std::string modelLabel = "Model Name##model" + std::to_string(i) + fieldId;
                             std::string meshLabel = "Mesh Name##mesh" + std::to_string(i) + fieldId;
-                            bool changed = ImGui::InputText(modelLabel.c_str(), &shape.modelName);
-                            changed |= ImGui::InputText(meshLabel.c_str(), &shape.meshName);
+                            bool changed = ImGui::InputText(modelLabel.c_str(),
+                                shape.modelName.data(),
+                                shape.modelName.capacity());
+                            changed |= ImGui::InputText(meshLabel.c_str(),
+                                shape.meshName.data(),
+                                shape.meshName.capacity());
+                            if (changed) {
+                                // Update size byte at end
+                                shape.modelName = AssetName(shape.modelName.data());
+                                shape.meshName = AssetName(shape.meshName.data());
+                            }
                             return changed;
                         } else {
                             Abortf("Unexpected PhysicsShape: %s", typeid(T).name());
@@ -370,7 +415,7 @@ namespace sp {
         return changed;
     }
     template<>
-    inline bool EditorContext::AddImGuiElement(const std::string &name, std::vector<ScriptInstance> &value) {
+    inline bool EditorContext::AddImGuiElement(const std::string &name, HeapVector<ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
         robin_hood::unordered_map<size_t, std::string> changeList;
@@ -399,9 +444,9 @@ namespace sp {
                 break;
             case ScriptType::PrefabScript:
                 if (state.definition.name == "prefab_template") {
-                    scriptLabel = "Template: " + state.GetParam<std::string>("source");
+                    scriptLabel = "Template: " + state.GetParam<sp::HeapString>("source");
                 } else if (state.definition.name == "prefab_gltf") {
-                    scriptLabel = "Gltf: " + state.GetParam<std::string>("model");
+                    scriptLabel = "Gltf: " + state.GetParam<sp::AssetName>("model");
                 } else {
                     scriptLabel = "Prefab: " + state.definition.name;
                 }
@@ -579,7 +624,7 @@ namespace sp {
                 QueueTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
                     void *component = comp.AccessMut(lock, target);
                     field.Access<T>(component) = value;
-                    if constexpr (std::is_same<T, std::vector<ScriptInstance>>()) {
+                    if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
                         GetScriptManager().RegisterActive(lock);
                     }
                 });

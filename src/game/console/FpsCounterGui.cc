@@ -11,8 +11,6 @@
 #include "ecs/EcsImpl.hh"
 
 #include <imgui.h>
-#include <iomanip>
-#include <sstream>
 
 namespace sp {
     static CVar<bool> CVarShowFPS("r.ShowFPS", false, "Show the frame rate of each system on screen");

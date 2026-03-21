@@ -393,7 +393,7 @@ namespace sp::vulkan {
         robin_hood::unordered_map<SamplerType, vk::UniqueSampler> namedSamplers;
 
         using SamplerKey = HashKey<VkSamplerCreateInfo>;
-        robin_hood::unordered_map<SamplerKey, vk::UniqueSampler, SamplerKey::Hasher> adhocSamplers;
+        SamplerKey::UnorderedMap<vk::UniqueSampler> adhocSamplers;
 
         bool systemFullscreen = false;
         glm::ivec2 systemWindowSize = glm::ivec2(0);

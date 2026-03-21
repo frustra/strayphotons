@@ -9,6 +9,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/HeapString.hh"
 #include "strayphotons/cpp/Logging.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 
@@ -70,7 +71,7 @@ namespace sp::scripts {
 
     struct VrHandScript {
         // Input parameters
-        std::string handStr;
+        InlineString<63> handStr;
         EntityRef noclipEntity;
         float teleportDistance = 2.0f;
         float pointDistance = 2.0f;
@@ -87,7 +88,7 @@ namespace sp::scripts {
         PhysicsGroupMask collisionMask;
         EntityRef inputRootRef, physicsRootRef, controllerRef, laserPointerRef;
         Entity grabEntity, pointEntity, pressEntity;
-        std::string actionPrefix;
+        HeapString actionPrefix;
         SignalRef indexCurlRef, middleCurlRef;
 
         PhysicsQuery::Handle<PhysicsQuery::Raycast> pointQueryHandle;

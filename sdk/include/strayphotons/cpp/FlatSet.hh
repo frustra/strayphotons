@@ -61,7 +61,15 @@ namespace sp {
         }
 
         template<typename Key>
-        iterator find(const Key &key) const {
+        iterator find(const Key &key) {
+            auto it = std::lower_bound(begin(), end(), key, cmp());
+            if (it != end() && !cmp()(key, *it)) return it;
+
+            return end();
+        }
+
+        template<typename Key>
+        const_iterator find(const Key &key) const {
             auto it = std::lower_bound(begin(), end(), key, cmp());
             if (it != end() && !cmp()(key, *it)) return it;
 
@@ -71,6 +79,11 @@ namespace sp {
         template<typename Key>
         size_t count(const Key &key) const {
             return find(key) == end() ? 0 : 1;
+        }
+
+        template<typename Key>
+        bool contains(const Key &key) const {
+            return find(key) != end();
         }
 
         std::pair<iterator, bool> insert(const T &val) {

@@ -11,6 +11,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <glm/glm.hpp>
 
@@ -58,7 +59,7 @@ namespace ecs {
         StructField::New("remote_offset", &PhysicsJoint::remoteOffset));
 
     struct PhysicsJoints {
-        std::vector<PhysicsJoint> joints;
+        sp::HeapVector<PhysicsJoint> joints;
 
         void Add(const PhysicsJoint &joint) {
             if (!sp::contains(joints, joint)) joints.push_back(joint);

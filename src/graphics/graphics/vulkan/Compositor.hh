@@ -71,7 +71,7 @@ namespace sp::vulkan {
             ecs::SignalExpression effectCondition;
             std::shared_ptr<GuiContext> guiContext;
             bool enableGui, enableEffect;
-            std::vector<ecs::EntityRef> guiElements;
+            sp::HeapVector<ecs::EntityRef> guiElements;
             rg::ResourceName sourceName;
             AsyncPtr<ImageView> assetImage;
             rg::ResourceID sourceResourceID = rg::InvalidResource;

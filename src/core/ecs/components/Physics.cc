@@ -180,9 +180,9 @@ namespace ecs {
             def ? &def->material.restitution : nullptr);
     }
 
-    PhysicsShape::ConvexMesh::ConvexMesh(const std::string &fullMeshName) {
+    PhysicsShape::ConvexMesh::ConvexMesh(std::string_view fullMeshName) {
         auto sep = fullMeshName.find('.');
-        if (sep != std::string::npos) {
+        if (sep != std::string_view::npos) {
             modelName = fullMeshName.substr(0, sep);
             meshName = fullMeshName.substr(sep + 1);
         } else {
@@ -196,7 +196,7 @@ namespace ecs {
         hullSettings = sp::Assets().LoadHullSettings(modelName, meshName);
     }
 
-    PhysicsShape::ConvexMesh::ConvexMesh(const std::string &modelName, const std::string &meshName)
+    PhysicsShape::ConvexMesh::ConvexMesh(std::string_view modelName, std::string_view meshName)
         : modelName(modelName), meshName(meshName) {
         Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
         Assertf(!meshName.empty(), "ConvexMesh created with empty mesh name");

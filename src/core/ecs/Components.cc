@@ -8,14 +8,14 @@
 #include "Components.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "strayphotons/cpp/Hashing.hh"
 
 #include <glm/glm.hpp>
 #include <map>
-#include <stdexcept>
 #include <typeindex>
 
 namespace ecs {
-    typedef std::map<std::string, ComponentBase *> ComponentNameMap;
+    typedef std::map<std::string, ComponentBase *, sp::StringLess> ComponentNameMap;
     typedef std::map<std::type_index, ComponentBase *> ComponentTypeMap;
     ComponentNameMap *componentNameMap = nullptr;
     ComponentTypeMap *componentTypeMap = nullptr;
@@ -29,7 +29,7 @@ namespace ecs {
         componentTypeMap->emplace(idx, comp);
     }
 
-    const ComponentBase *LookupComponent(const std::string &name) {
+    const ComponentBase *LookupComponent(std::string_view name) {
         if (componentNameMap == nullptr) componentNameMap = new ComponentNameMap();
 
         auto it = componentNameMap->find(name);

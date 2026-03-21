@@ -37,10 +37,10 @@ namespace ecs {
         size_t &GetIndex() const;
 
         const EntityRef &GetEntity() const;
-        const std::string &GetSignalName() const;
+        const sp::HeapString &GetSignalName() const;
         bool IsValid() const;
 
-        std::string String() const;
+        sp::HeapString String() const;
 
         void SetScope(const EntityScope &scope);
         void Clear();
@@ -81,7 +81,7 @@ namespace ecs {
 
         bool operator==(const Entity &entity) const;
         bool operator==(const EntityRef &entity) const;
-        bool operator==(const std::string &signalName) const;
+        bool operator==(std::string_view signalName) const;
         bool operator<(const SignalRef &other) const;
 
         using WeakRef = std::weak_ptr<Ref>;

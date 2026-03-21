@@ -206,7 +206,7 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
 
-        robin_hood::unordered_map<RenderPassKey, std::shared_ptr<RenderPass>, RenderPassKey::Hasher> renderPasses;
+        RenderPassKey::UnorderedMap<std::shared_ptr<RenderPass>> renderPasses;
     };
 
     class FramebufferManager : public NonCopyable {
@@ -226,6 +226,6 @@ namespace sp::vulkan {
     private:
         DeviceContext &device;
 
-        robin_hood::unordered_map<FramebufferKey, std::shared_ptr<Framebuffer>, FramebufferKey::Hasher> framebuffers;
+        FramebufferKey::UnorderedMap<std::shared_ptr<Framebuffer>> framebuffers;
     };
 } // namespace sp::vulkan

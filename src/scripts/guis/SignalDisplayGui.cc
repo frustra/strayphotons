@@ -8,9 +8,11 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
 #include "graphics/GenericCompositor.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/cpp/InlineString.hh"
 #include "strayphotons/cpp/gui/ImGuiHelpers.hh"
 
 #include <imgui.h>
@@ -23,7 +25,7 @@ namespace sp::scripts {
     using namespace ecs;
 
     struct SignalDisplayGui {
-        std::string suffix = "mW";
+        sp::InlineString<63> suffix = "mW";
         ImGuiContext *imCtx = nullptr;
         std::shared_ptr<ImFontAtlas> fontAtlas;
 
@@ -94,7 +96,7 @@ namespace sp::scripts {
                 if (maxValue != 0.0) {
                     ss << std::fixed << std::setprecision(2) << (value / maxValue * 100.0) << "%";
                 } else {
-                    ss << std::fixed << std::setprecision(2) << value << suffix;
+                    ss << std::fixed << std::setprecision(2) << value << suffix.c_str();
                 }
                 text = ss.str();
             }

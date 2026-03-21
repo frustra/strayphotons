@@ -15,6 +15,7 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "strayphotons/cpp/HeapString.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 
 #include <glm/gtx/quaternion.hpp>
@@ -31,7 +32,7 @@ namespace sp::scripts {
     static CVar<float> CVarEditTranslateSnap("e.TranslateSnap", 0.001f, "Snap distance for translation in edit tool");
 
     struct TraySpawner {
-        std::string templateSource;
+        HeapString templateSource;
         bool resetScale = false;
 
         void OnTick(ScriptState &state,

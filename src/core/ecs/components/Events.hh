@@ -11,7 +11,9 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
+#include "ecs/StructMetadata.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <optional>
 #include <robin_hood.h>
@@ -36,10 +38,11 @@ namespace ecs {
         uint64_t Add(const AsyncEvent &event) const;
         static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
 
-        robin_hood::unordered_map<EventName, std::vector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
+        robin_hood::unordered_map<EventName, sp::HeapVector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
     };
 
-    static EntityComponent<EventInput> ComponentEventInput("event_input", R"(
+    static EntityComponent<EventInput> ComponentEventInput("event_input",
+        R"(
 For an entity to receive events (not just forward them), it must have an `event_input` component.  
 This component stores a list of event queues that have been registered to receive events on a per-entity basis.
 
@@ -57,7 +60,8 @@ their own event queues as needed.
     static StructMetadata MetadataEventDest(typeid(EventDest),
         sizeof(EventDest),
         "EventDest",
-        "An event destination in the form of a string: `\"target_entity/event/input\"`");
+        "An event destination in the form of a string: `\"target_entity/event/input\"`",
+        StructMetadata::KnownSize);
     template<>
     bool StructMetadata::Load<EventDest>(EventDest &dst, const picojson::value &src);
     template<>
@@ -72,7 +76,7 @@ their own event queues as needed.
 
     struct EventBindingActions {
         std::optional<SignalExpression> filterExpr;
-        std::vector<SignalExpression> modifyExprs;
+        sp::HeapVector<SignalExpression> modifyExprs;
         std::optional<EventData> setValue;
 
         explicit operator bool() const {
@@ -106,7 +110,7 @@ their own event queues as needed.
             &EventBindingActions::modifyExprs));
 
     struct EventBinding {
-        std::vector<EventDest> outputs;
+        sp::HeapVector<EventDest> outputs;
 
         EventBindingActions actions;
 
@@ -150,7 +154,7 @@ their own event queues as needed.
             const AsyncEvent &event,
             uint32_t depth = 0);
 
-        using BindingList = typename std::vector<EventBinding>;
+        using BindingList = typename sp::HeapVector<EventBinding>;
         robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;
     };
 

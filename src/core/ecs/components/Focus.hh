@@ -10,7 +10,7 @@
 #include "ecs/Components.hh"
 #include "ecs/StructMetadata.hh"
 
-#include <bitset>
+#include <cstdint>
 
 namespace ecs {
     enum class FocusLayer {
@@ -36,7 +36,7 @@ namespace ecs {
         std::string String() const;
 
     private:
-        std::bitset<static_cast<size_t>(FocusLayer::Always) - 1> layers;
+        uint32_t layers = 0;
     };
 
     std::ostream &operator<<(std::ostream &out, const FocusLock &v);

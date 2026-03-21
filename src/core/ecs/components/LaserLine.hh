@@ -9,6 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <variant>
@@ -17,7 +18,7 @@ namespace ecs {
     // TODO: Split into LaserPath and LaserProperties for Physics/Logic threads to access separately
     struct LaserLine {
         struct Line {
-            std::vector<glm::vec3> points;
+            sp::HeapVector<glm::vec3> points;
             sp::color_t color = glm::vec3(1); // HDR value
         };
         struct Segment {
@@ -25,7 +26,7 @@ namespace ecs {
             glm::vec3 end = glm::vec3(0);
             sp::color_t color = glm::vec3(1); // HDR value
         };
-        using Segments = std::vector<Segment>;
+        using Segments = sp::HeapVector<Segment>;
         std::variant<Line, Segments> line = Line();
 
         float intensity = 1.0f; // multiplier applied to color

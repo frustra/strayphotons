@@ -255,6 +255,7 @@
 				"file": {
 					"default": "",
 					"description": "No description",
+					"maxLength": 255,
 					"type": "string"
 				},
 				"loop": {
@@ -534,6 +535,7 @@
 							"filter": {
 								"default": "",
 								"description": "A lighting stencil or color filter texture to be applied to this light. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
+								"maxLength": 127,
 								"type": "string"
 							},
 							"illuminance": {
@@ -843,11 +845,13 @@
 							"model": {
 								"default": "",
 								"description": "Name of the GLTF model to display. Models are loaded from the `assets/models/` folder.",
+								"maxLength": 255,
 								"type": "string"
 							},
 							"texture_override": {
 								"default": "",
 								"description": "Override the mesh's texture to a specific texture resource. Asset textures can be referenced with the format \"asset:<asset_path>.png\", or render graph outputs can be referenced with the format \"graph:<graph_output_name>\"",
+								"maxLength": 127,
 								"type": "string"
 							},
 							"visibility": {
@@ -922,6 +926,7 @@
 							"texture": {
 								"default": "",
 								"description": "No description",
+								"maxLength": 127,
 								"type": "string"
 							}
 						},

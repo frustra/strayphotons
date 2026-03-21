@@ -75,6 +75,12 @@ namespace ecs {
         }
     }
 
+    bool StructField::operator==(const StructField &other) const {
+        return name == other.name && desc == other.desc && type == other.type && size == other.size &&
+               offset == other.offset && fieldIndex == other.fieldIndex && actions == other.actions &&
+               functionPointer == other.functionPointer;
+    }
+
     void StructField::InitUndefined(void *dstStruct, const void *defaultStruct) const {
         auto *field = static_cast<char *>(dstStruct) + offset;
         auto *defaultField = static_cast<const char *>(defaultStruct) + offset;
@@ -156,7 +162,7 @@ namespace ecs {
                 return true;
             }
             auto &obj = src.get<picojson::object>();
-            auto it = obj.find(name);
+            auto it = obj.find(name.c_str());
             if (it == obj.end()) {
                 // Silently leave missing fields as default
                 return true;
@@ -187,7 +193,7 @@ namespace ecs {
 
             if constexpr (std::is_default_constructible<T>()) {
                 auto *defaultValue = reinterpret_cast<const T *>(defaultField);
-                sp::json::SaveIfChanged(scope, dst, name, value, defaultValue);
+                sp::json::SaveIfChanged(scope, dst, std::string(name), value, defaultValue);
             } else {
                 Abortf("StructField::Save called on uninitializable type: %s", typeid(T).name());
             }

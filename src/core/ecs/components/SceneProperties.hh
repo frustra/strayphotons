@@ -11,7 +11,6 @@
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Transform.h"
 
-#include <functional>
 #include <glm/glm.hpp>
 
 namespace ecs {
@@ -19,13 +18,13 @@ namespace ecs {
         Transform rootTransform;
         Transform gravityTransform = Transform();
         glm::vec3 fixedGravity = glm::vec3(0, -9.81, 0);
-        std::function<glm::vec3(glm::vec3)> gravityFunction;
+        glm::vec3 (*gravityFunction)(glm::vec3) = nullptr;
 
         static const SceneProperties &Get(Lock<Read<SceneProperties>> lock, Entity ent);
 
         glm::vec3 GetGravity(glm::vec3 worldPosition) const;
 
-        bool operator==(const SceneProperties &other) const;
+        bool operator==(const SceneProperties &other) const = default;
     };
 
     static EntityComponent<SceneProperties> ComponentSceneProperties(

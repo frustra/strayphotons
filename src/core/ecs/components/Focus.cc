@@ -26,11 +26,8 @@ namespace ecs {
         }
 
         size_t index = static_cast<size_t>(layer) - 1;
-        layers.set(index);
-        for (size_t i = index + 1; i < layers.size(); i++) {
-            if (layers.test(i)) return false;
-        }
-        return true;
+        layers |= 1 << index;
+        return HasPrimaryFocus(layer);
     }
 
     void FocusLock::ReleaseFocus(FocusLayer layer) {
@@ -42,7 +39,8 @@ namespace ecs {
             return;
         }
 
-        layers.reset(static_cast<size_t>(layer) - 1);
+        size_t index = static_cast<size_t>(layer) - 1;
+        layers &= ~(1 << index);
     }
 
     bool FocusLock::HasPrimaryFocus(FocusLayer layer) const {
@@ -50,22 +48,23 @@ namespace ecs {
         if (layer == FocusLayer::Always) return true;
 
         size_t index = static_cast<size_t>(layer) - 1;
-        for (size_t i = index + 1; i < layers.size(); i++) {
-            if (layers.test(i)) return false;
+        for (size_t i = index + 1; i < static_cast<size_t>(FocusLayer::Always); i++) {
+            if (layers & (1 << i)) return false;
         }
-        return layers.test(index);
+        return layers & (1 << index);
     }
 
     bool FocusLock::HasFocus(FocusLayer layer) const {
         if (layer == FocusLayer::Never) return false;
         if (layer == FocusLayer::Always) return true;
 
-        return layers.test(static_cast<size_t>(layer) - 1);
+        size_t index = static_cast<size_t>(layer) - 1;
+        return layers & (1 << index);
     }
 
     FocusLayer FocusLock::PrimaryFocus() const {
-        for (size_t i = layers.size() - 1; i >= 0; i--) {
-            if (layers.test(i)) return static_cast<FocusLayer>(i + 1);
+        for (size_t i = static_cast<size_t>(FocusLayer::Always) - 1; i > 0; i--) {
+            if (layers & (1 << (i - 1))) return static_cast<FocusLayer>(i);
         }
         return FocusLayer::Never;
     }

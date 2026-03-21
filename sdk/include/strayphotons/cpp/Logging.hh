@@ -13,9 +13,9 @@
 #include <iomanip>
 #include <iostream>
 #include <magic_enum.hpp>
-#include <memory>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #ifndef SP_SHARED_INTERNAL
     #include <strayphotons.h>
@@ -123,6 +123,8 @@ namespace sp::logging {
         using BaseType = std::remove_cv_t<std::remove_reference_t<T>>;
 
         if constexpr (std::is_same<BaseType, std::string>()) {
+            return std::forward<T>(t).c_str();
+        } else if constexpr (sp::is_heap_string<BaseType>()) {
             return std::forward<T>(t).c_str();
         } else if constexpr (sp::is_inline_string<BaseType>()) {
             return std::forward<T>(t).c_str();

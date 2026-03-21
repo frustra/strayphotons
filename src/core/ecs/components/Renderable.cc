@@ -31,7 +31,7 @@ namespace ecs {
         if (dst.joints.empty()) dst.joints = src.joints;
     }
 
-    Renderable::Renderable(const std::string &modelName, uint64_t meshIndex)
+    Renderable::Renderable(std::string_view modelName, uint64_t meshIndex)
         : modelName(modelName), meshIndex(meshIndex) {
         if (modelName.empty()) {
             visibility = VisibilityMask::None;

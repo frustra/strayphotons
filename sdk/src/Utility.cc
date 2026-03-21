@@ -25,31 +25,6 @@ namespace sp {
         throw std::runtime_error("sp::Abort() called");
     }
 
-    uint32_t CeilToPowerOfTwo(uint32_t v) {
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v++;
-        return v;
-    }
-
-    uint32_t Uint32Log2(uint32_t v) {
-        uint32_t r = 0;
-        while (v >>= 1)
-            r++;
-        return r;
-    }
-
-    uint64_t Uint64Log2(uint64_t v) {
-        uint64_t r = 0;
-        while (v >>= 1)
-            r++;
-        return r;
-    }
-
     float angle_t::degrees() const {
         return glm::degrees(radians_);
     }
@@ -161,6 +136,12 @@ namespace sp {
         }
 
         bool iequals(const std::string &str1, const std::string &str2) {
+            return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
+                return std::tolower(a) == std::tolower(b);
+            });
+        }
+
+        bool iequals(const std::string_view &str1, const std::string_view &str2) {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
             });

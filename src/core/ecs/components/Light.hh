@@ -9,6 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <glm/glm.hpp>
 
@@ -18,7 +19,7 @@ namespace ecs {
         float illuminance = 0;
         sp::angle_t spotAngle = 0.0f;
         sp::color_t tint = glm::vec3(1);
-        std::string filterName;
+        sp::InlineString<127> filterName;
         bool on = true;
         uint32_t shadowMapSize = 9; // shadow map will have a width and height of 2^shadowMapSize
         glm::vec2 shadowMapClip = {0.1, 256}; // near and far plane

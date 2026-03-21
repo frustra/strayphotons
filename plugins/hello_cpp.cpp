@@ -26,7 +26,10 @@ struct ScriptHelloWorld {
 
     static void Init(void *context, sp_script_state_t *state) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
-        Logf("Script %s init %s (old frame: %u)", state->definition.name, ctx->name, ctx->frameCount);
+        Logf("Script %s init %s (old frame: %u)",
+            sp_string_get_c_str(&state->definition.name),
+            ctx->name,
+            ctx->frameCount);
         Logf("Hello: %llx, int32: %llx, state: %llx",
             &typeid(ScriptHelloWorld),
             &typeid(int32_t),
@@ -36,7 +39,10 @@ struct ScriptHelloWorld {
 
     static void Destroy(void *context, sp_script_state_t *state) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
-        Logf("Script %s destroyed %s at frame %u", state->definition.name, ctx->name, ctx->frameCount);
+        Logf("Script %s destroyed %s at frame %u",
+            sp_string_get_c_str(&state->definition.name),
+            ctx->name,
+            ctx->frameCount);
     }
 
     static void OnTickLogic(void *context,
@@ -78,7 +84,7 @@ extern "C" {
 
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
-        std::strncpy(output[0].name, "hello_world", sizeof(output[0].name) - 1);
+        sp_string_set(&output[0].name, "hello_world");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         output[0].context_size = sizeof(ScriptHelloWorld);
@@ -87,7 +93,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].destroy_func = &ScriptHelloWorld::Destroy;
         output[0].on_tick_func = &ScriptHelloWorld::OnTickLogic;
 
-        std::strncpy(output[1].name, "hello_world2", sizeof(output[1].name) - 1);
+        sp_string_set(&output[1].name, "hello_world2");
         output[1].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
         output[1].filter_on_event = false;
         output[1].context_size = sizeof(ScriptHelloWorld);

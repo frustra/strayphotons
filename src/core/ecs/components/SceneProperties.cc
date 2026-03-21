@@ -33,13 +33,6 @@ namespace ecs {
         return fixedGravity;
     }
 
-    bool SceneProperties::operator==(const SceneProperties &other) const {
-        auto *target = gravityFunction.target<glm::vec3 (*)(glm::vec3)>();
-        auto *otherTarget = other.gravityFunction.target<glm::vec3 (*)(glm::vec3)>();
-        return gravityTransform == other.gravityTransform && fixedGravity == other.fixedGravity &&
-               target == otherTarget;
-    }
-
     template<>
     bool StructMetadata::Load<SceneProperties>(SceneProperties &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) {
@@ -77,8 +70,7 @@ namespace ecs {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &obj = dst.get<picojson::object>();
 
-        auto *target = src.gravityFunction.target<glm::vec3 (*)(glm::vec3)>();
-        if (target && *target == &stationSpinFunc) {
+        if (src.gravityFunction && src.gravityFunction == &stationSpinFunc) {
             sp::json::Save(scope, obj["gravity_func"], "station_spin"s);
         } else {
             Abortf("Failed to serialize gravity function");

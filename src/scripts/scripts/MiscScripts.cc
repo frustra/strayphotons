@@ -5,13 +5,18 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <glm/glm.hpp>
@@ -23,7 +28,7 @@ namespace sp::scripts {
     struct EdgeTrigger {
         // Input parameters
         SignalExpression inputExpr;
-        std::string outputName = "/script/edge_trigger";
+        EventName outputName = "/script/edge_trigger";
 
         bool enableFalling = true;
         bool enableRising = true;
@@ -70,8 +75,8 @@ namespace sp::scripts {
     struct ModelSpawner {
         EntityRef targetEntity;
         glm::vec3 position = glm::vec3(0);
-        std::string modelName;
-        std::vector<std::string> templates = {"interactive"};
+        AssetName modelName;
+        HeapVector<HeapString> templates = {"interactive"};
 
         void OnTick(ScriptState &state,
             Lock<Read<Name, SceneInfo, EventInput, TransformSnapshot>> lock,
@@ -268,8 +273,11 @@ namespace sp::scripts {
     PhysicsScript<ChargeCell> chargeCell("charge_cell", MetadataChargeCell);
 
     struct ComponentFromSignal {
-        robin_hood::unordered_map<std::string, SignalExpression> mapping;
-        robin_hood::unordered_map<std::string, std::pair<const ComponentBase *, std::optional<StructField>>>
+        robin_hood::unordered_map<HeapString, SignalExpression, StringHash, StringEqual> mapping;
+        robin_hood::unordered_map<HeapString,
+            std::pair<const ComponentBase *, std::optional<StructField>>,
+            StringHash,
+            StringEqual>
             componentCache;
 
         void OnTick(ScriptState &state,
@@ -331,8 +339,8 @@ namespace sp::scripts {
         MetadataComponentFromSignal);
 
     struct SignalFromSignal {
-        robin_hood::unordered_map<std::string, SignalExpression> mapping;
-        std::vector<std::pair<SignalRef, const SignalExpression *>> refs;
+        robin_hood::unordered_map<HeapString, SignalExpression, StringHash, StringEqual> mapping;
+        HeapVector<std::pair<SignalRef, const SignalExpression *>> refs;
 
         void Init(ScriptState &state) {
             refs.reserve(mapping.size());
@@ -365,7 +373,7 @@ namespace sp::scripts {
         uint64_t delayFrames = 1;
         uint64_t delayMs = 0;
         SignalExpression input;
-        std::string output;
+        HeapString output;
 
         std::optional<double> lastSignal;
         uint64_t frameCount = 0;
@@ -405,7 +413,7 @@ namespace sp::scripts {
     PhysicsScript<DebounceSignal> physicsDebounceSignal("physics_debounce", MetadataDebounceSignal);
 
     struct TimerSignal {
-        std::vector<std::string> names = {"timer"};
+        HeapVector<HeapString> names = {"timer"};
 
         void Init(ScriptState &state) {
             state.definition.events.clear();

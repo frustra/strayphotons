@@ -12,8 +12,11 @@
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
 #include "graphics/GenericCompositor.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 #include <memory>
+#include <vector>
 
 namespace dynalo {
     class library;
@@ -60,12 +63,12 @@ namespace ecs {
     };
 
     struct DynamicScriptDefinition {
-        ScriptName name;
+        sp::HeapString name;
         char *desc = nullptr;
         ScriptType type;
         bool filterOnEvent = false;
-        std::vector<EventName> events;
-        std::vector<StructField> fields;
+        sp::HeapVector<EventName> events;
+        sp::HeapVector<StructField> fields;
 
         uint64_t contextSize = 0;
         void (*defaultInitFunc)(void *) = nullptr;
@@ -135,11 +138,15 @@ namespace ecs {
         static void Init(ScriptState &state);
         static void Destroy(ScriptState &state);
 
-        static void OnTick(ScriptState &state,
-            const DynamicLock<ReadSignalsLock> &lock,
+        static void OnLogicTick(ScriptState &state,
+            const LogicUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval);
-        static void OnEvent(ScriptState &state, const DynamicLock<ReadSignalsLock> &lock, Entity ent, Event event);
+        static void OnPhysicsTick(ScriptState &state,
+            const PhysicsUpdateLock &lock,
+            Entity ent,
+            chrono_clock::duration interval);
+        static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
         static bool BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent);
         static void RenderGui(sp::GenericCompositor &compositor,

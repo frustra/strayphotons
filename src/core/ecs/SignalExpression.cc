@@ -16,6 +16,7 @@
 #include "ecs/SignalStructAccess.hh"
 #include "strayphotons/cpp/Hashing.hh"
 #include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 namespace ecs {
     using namespace expression;
@@ -228,7 +229,7 @@ namespace ecs {
 
                 tokenIndex++;
                 if (token == "is_primary_focus" || token == "is_focused") {
-                    std::string &focusStr = inputNode->text;
+                    auto &focusStr = inputNode->text;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
                         auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
@@ -296,7 +297,7 @@ namespace ecs {
 
                 tokenIndex++;
                 if (token == "if_primary_focus" || token == "if_focused") {
-                    std::string &focusStr = aNode->text;
+                    auto &focusStr = aNode->text;
                     FocusLayer focus = FocusLayer::Always;
                     if (!focusStr.empty()) {
                         auto opt = magic_enum::enum_cast<FocusLayer>(focusStr);
@@ -568,7 +569,7 @@ namespace ecs {
     }
 
     CompiledFunc IdentifierNode::Compile() const {
-        if (field.name != "event" && !field.name.starts_with("event.")) {
+        if (field.name != "event" && !sp::starts_with(field.name, "event.")) {
             Errorf("SignalExpression has undefined identifier: %s", field.name);
             return nullptr;
         }
@@ -1039,9 +1040,9 @@ namespace ecs {
             //     src.scope.String(),
             //     scope.String());
             Assertf(src.rootNode != nullptr, "Saving invalid signal expression: %s", src.expr);
-            dst = picojson::value(src.rootNode->text);
+            dst = picojson::value(src.rootNode->text.str());
         } else {
-            dst = picojson::value(src.expr);
+            dst = picojson::value(src.expr.str());
         }
     }
 

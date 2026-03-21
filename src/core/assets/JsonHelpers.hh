@@ -11,6 +11,8 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <glm/ext/quaternion_trigonometric.hpp>
@@ -135,7 +137,13 @@ namespace sp::json {
         return true;
     }
     template<size_t MaxSize, typename CharT>
-    inline bool Load(sp::InlineString<MaxSize, CharT> &dst, const picojson::value &src) {
+    inline bool Load(InlineString<MaxSize, CharT> &dst, const picojson::value &src) {
+        if (!src.is<std::string>()) return false;
+        dst = src.get<std::string>();
+        return true;
+    }
+    template<>
+    inline bool Load(HeapString &dst, const picojson::value &src) {
         if (!src.is<std::string>()) return false;
         dst = src.get<std::string>();
         return true;
@@ -175,7 +183,7 @@ namespace sp::json {
     template<typename T>
     inline bool Load(std::optional<T> &dst, const picojson::value &src) {
         T entry;
-        if (!sp::json::Load(entry, src)) {
+        if (!json::Load(entry, src)) {
             dst.reset();
             return false;
         }
@@ -194,11 +202,11 @@ namespace sp::json {
             Errorf("Too many values specified for pair<%s, %s>: %d", typeid(A).name(), typeid(B).name(), arr.size());
             return false;
         }
-        if (!sp::json::Load<A>(dst.first, arr[0])) {
+        if (!json::Load<A>(dst.first, arr[0])) {
             return false;
         }
         if (arr.size() > 1) {
-            if (!sp::json::Load<B>(dst.second, arr[1])) {
+            if (!json::Load<B>(dst.second, arr[1])) {
                 return false;
             }
         } else {
@@ -213,7 +221,7 @@ namespace sp::json {
         if (src.is<picojson::array>()) {
             for (auto &p : src.get<picojson::array>()) {
                 auto &entry = dst.emplace_back();
-                if (!sp::json::Load(entry, p)) {
+                if (!json::Load(entry, p)) {
                     return false;
                 }
             }
@@ -225,7 +233,32 @@ namespace sp::json {
                 if (obj.empty()) return true;
             }
             T entry;
-            if (!sp::json::Load(entry, src)) {
+            if (!json::Load(entry, src)) {
+                return false;
+            }
+            dst.emplace_back(entry);
+            return true;
+        }
+    }
+    template<typename T>
+    inline bool Load(HeapVector<T> &dst, const picojson::value &src) {
+        dst.clear();
+        if (src.is<picojson::array>()) {
+            for (auto &p : src.get<picojson::array>()) {
+                auto &entry = dst.emplace_back();
+                if (!json::Load(entry, p)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            if (src.is<picojson::object>()) {
+                auto &obj = src.get<picojson::object>();
+                // Empty object should represent an empty array, not a single default-initialized array entry
+                if (obj.empty()) return true;
+            }
+            T entry;
+            if (!json::Load(entry, src)) {
                 return false;
             }
             dst.emplace_back(entry);
@@ -237,7 +270,7 @@ namespace sp::json {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
-            if (!sp::json::Load(dst[p.first], p.second)) {
+            if (!json::Load(dst[p.first], p.second)) {
                 return false;
             }
         }
@@ -248,7 +281,7 @@ namespace sp::json {
         if (!src.is<picojson::object>()) return false;
         dst.clear();
         for (auto &p : src.get<picojson::object>()) {
-            if (!sp::json::Load(dst[p.first], p.second)) {
+            if (!json::Load(dst[p.first], p.second)) {
                 return false;
             }
         }
@@ -311,7 +344,11 @@ namespace sp::json {
         Save(s, dst, glm::quat_cast(src));
     }
     template<size_t MaxSize, typename CharT>
-    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const sp::InlineString<MaxSize, CharT> &src) {
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const InlineString<MaxSize, CharT> &src) {
+        dst = picojson::value(src.str());
+    }
+    template<>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const HeapString &src) {
         dst = picojson::value(src.str());
     }
     template<>
@@ -377,7 +414,19 @@ namespace sp::json {
     }
     template<typename T>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const std::vector<T> &src) {
-        if (src.size() == 1 && !sp::is_pair<T>()) {
+        if (src.size() == 1 && !is_pair<T>()) {
+            Save(s, dst, src[0]);
+        } else {
+            picojson::array vec(src.size());
+            for (size_t i = 0; i < src.size(); i++) {
+                Save(s, vec[i], src[i]);
+            }
+            dst = picojson::value(vec);
+        }
+    }
+    template<typename T>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const HeapVector<T> &src) {
+        if (src.size() == 1 && !is_pair<T>()) {
             Save(s, dst, src[0]);
         } else {
             picojson::array vec(src.size());
@@ -404,6 +453,26 @@ namespace sp::json {
         picojson::object obj = {};
         for (auto &[key, value] : src) {
             Save(s, obj[key], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_flat_map<HeapString, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
+        }
+        dst = picojson::value(obj);
+    }
+    template<typename T, typename H, typename E>
+    inline void Save(const ecs::EntityScope &s,
+        picojson::value &dst,
+        const robin_hood::unordered_node_map<HeapString, T, H, E> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            Save(s, obj[key.str()], value);
         }
         dst = picojson::value(obj);
     }
@@ -499,7 +568,7 @@ namespace sp::json {
         picojson::array arrayOut;
         for (auto &val : src) {
             // Skip if the value is the same as the default
-            if (def && sp::contains(*def, val)) continue;
+            if (def && contains(*def, val)) continue;
 
             picojson::value dstVal;
             Save(s, dstVal, val);
@@ -509,7 +578,7 @@ namespace sp::json {
         if (def && arrayOut.empty()) return false;
 
         picojson::value valueOut;
-        if (arrayOut.size() == 1 && !sp::is_pair<T>()) {
+        if (arrayOut.size() == 1 && !is_pair<T>()) {
             valueOut = arrayOut.front();
         } else {
             valueOut = picojson::value(arrayOut);
@@ -569,10 +638,12 @@ namespace sp::json {
             }
         } else if constexpr (std::is_floating_point_v<T>) {
             typeSchema["type"] = picojson::value("number");
-        } else if constexpr (sp::is_inline_string<T>()) {
+        } else if constexpr (is_inline_string<T>()) {
             typeSchema["type"] = picojson::value("string");
             typeSchema["maxLength"] = picojson::value((double)T::max_size());
-        } else if constexpr (sp::is_glm_vec<T>()) {
+        } else if constexpr (is_heap_string<T>()) {
+            typeSchema["type"] = picojson::value("string");
+        } else if constexpr (is_glm_vec<T>()) {
             typeSchema["type"] = picojson::value("array");
             typeSchema["minItems"] = picojson::value((double)T::length());
             typeSchema["maxItems"] = picojson::value((double)T::length());
@@ -580,9 +651,9 @@ namespace sp::json {
         } else if constexpr (is_optional<T>()) {
             typeSchema["default"] = picojson::value();
             SaveSchema<typename T::value_type>(dst, references, false);
-        } else if constexpr (sp::is_vector<T>()) {
+        } else if constexpr (is_vector<T>() || is_heap_vector<T>() || is_inline_vector<T>()) {
             picojson::value subSchema;
-            if constexpr (sp::is_pair<typename T::value_type>()) {
+            if constexpr (is_pair<typename T::value_type>()) {
                 picojson::value subSchemaA;
                 SaveSchema<typename T::value_type::first_type>(subSchemaA, references, false);
                 picojson::value subSchemaB;
@@ -605,14 +676,17 @@ namespace sp::json {
             picojson::object arraySchema;
             arraySchema["type"] = picojson::value("array");
             arraySchema["items"] = subSchema;
+            if constexpr (is_inline_vector<T>()) {
+                typeSchema["maxItems"] = picojson::value((double)T::max_size());
+            }
             picojson::array anyOfArray(2);
             anyOfArray[0] = subSchema;
             anyOfArray[1] = picojson::value(arraySchema);
             typeSchema["anyOf"] = picojson::value(anyOfArray);
-        } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
+        } else if constexpr (is_unordered_flat_map<T>() || is_unordered_node_map<T>()) {
             typeSchema["type"] = picojson::value("object");
-            static_assert(
-                std::is_same<typename T::key_type, std::string>() || sp::is_inline_string<typename T::key_type>(),
+            static_assert(std::is_same<typename T::key_type, std::string>() || is_heap_string<typename T::key_type>() ||
+                              is_inline_string<typename T::key_type>(),
                 "Only string map keys are supported!");
             SaveSchema<typename T::mapped_type>(typeSchema["additionalProperties"], references, false);
         } else if constexpr (std::is_default_constructible<T>()) {
@@ -636,8 +710,8 @@ namespace sp::json {
                     auto &fieldObj = fieldSchema.get<picojson::object>();
                     fieldObj["default"] = field.SaveDefault(ecs::EntityScope(), &defaultStruct);
 
-                    fieldObj["description"] = picojson::value(field.desc);
-                    componentProperties[field.name] = fieldSchema;
+                    fieldObj["description"] = picojson::value(field.desc.str());
+                    componentProperties[field.name.str()] = fieldSchema;
                 }
             }
             if (!componentProperties.empty()) {
@@ -671,7 +745,7 @@ namespace sp::json {
     }
 
     template<>
-    inline void SaveSchema<sp::angle_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+    inline void SaveSchema<angle_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &typeSchema = dst.get<picojson::object>();
         typeSchema["type"] = picojson::value("number");
@@ -681,7 +755,7 @@ namespace sp::json {
     }
 
     template<>
-    inline void SaveSchema<sp::color_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+    inline void SaveSchema<color_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &typeSchema = dst.get<picojson::object>();
         typeSchema["type"] = picojson::value("array");
@@ -697,7 +771,7 @@ namespace sp::json {
     }
 
     template<>
-    inline void SaveSchema<sp::color_alpha_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
+    inline void SaveSchema<color_alpha_t>(picojson::value &dst, SchemaTypeReferences *references, bool rootType) {
         if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
         auto &typeSchema = dst.get<picojson::object>();
         typeSchema["type"] = picojson::value("array");
@@ -724,7 +798,7 @@ namespace sp::json {
             typeSchema["minItems"] = picojson::value(4.0);
             typeSchema["maxItems"] = picojson::value(4.0);
             picojson::array items(4);
-            SaveSchema<sp::angle_t>(items[0], references, false);
+            SaveSchema<angle_t>(items[0], references, false);
             SaveSchema<float>(items[1], references, false);
             SaveSchema<float>(items[2], references, false);
             SaveSchema<float>(items[3], references, false);

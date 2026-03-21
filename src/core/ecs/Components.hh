@@ -76,7 +76,7 @@ namespace ecs {
     };
 
     void RegisterComponent(const char *name, const std::type_index &idx, ComponentBase *comp);
-    const ComponentBase *LookupComponent(const std::string &name);
+    const ComponentBase *LookupComponent(std::string_view name);
     const ComponentBase *LookupComponent(const std::type_index &idx);
 
     // Calls the provided function for all components except Name and SceneInfo
@@ -190,7 +190,7 @@ namespace ecs {
     public:
         GlobalComponent(StructMetadata &&metadata, const char *name)
             : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
-            auto existing = dynamic_cast<const GlobalComponent<CompType> *>(LookupComponent(std::string(name)));
+            auto existing = dynamic_cast<const GlobalComponent<CompType> *>(LookupComponent(name));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
             } else if (*this != *existing) {

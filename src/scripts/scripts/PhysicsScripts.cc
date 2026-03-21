@@ -6,14 +6,17 @@
  */
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/InlineString.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 namespace sp::scripts {
     using namespace ecs;
 
     struct PhysicsJointFromEvent {
-        robin_hood::unordered_map<std::string, PhysicsJoint> definedJoints;
+        robin_hood::unordered_map<InlineString<127>, PhysicsJoint, StringHash, StringEqual> definedJoints;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();

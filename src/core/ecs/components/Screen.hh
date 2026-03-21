@@ -8,10 +8,11 @@
 #pragma once
 
 #include "ecs/Components.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 namespace ecs {
     struct Screen {
-        std::string textureName;
+        sp::InlineString<127> textureName;
         glm::vec3 luminanceScale = glm::vec3(1);
     };
 

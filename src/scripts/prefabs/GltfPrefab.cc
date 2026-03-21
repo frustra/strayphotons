@@ -10,12 +10,14 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 namespace ecs {
     struct GltfPrefab {
-        std::string modelName;
-        std::vector<std::string> skipNames;
+        sp::AssetName modelName;
+        sp::HeapVector<sp::HeapString> skipNames;
         PhysicsGroup physicsGroup = PhysicsGroup::World;
         bool render = true;
         std::optional<ecs::PhysicsActorType> physicsType;

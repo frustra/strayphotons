@@ -10,8 +10,7 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/ScriptManager.hh"
-
-#include <vector>
+#include "strayphotons/cpp/HeapVector.hh"
 
 namespace ecs {
     class ScriptInstance {
@@ -90,7 +89,7 @@ Here is an example of an instance definition for a "spotlight" [`template` Prefa
 
         const ScriptState *FindScript(size_t instanceId) const;
 
-        std::vector<ScriptInstance> scripts;
+        sp::HeapVector<ScriptInstance> scripts;
     };
 
     static EntityComponent<Scripts> ComponentScripts(

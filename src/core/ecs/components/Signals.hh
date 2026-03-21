@@ -13,9 +13,10 @@
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "strayphotons/cpp/FlatSet.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/InlineString.hh"
 
 #include <robin_hood.h>
-#include <string>
 
 namespace ecs {
     namespace expression {
@@ -44,9 +45,9 @@ namespace ecs {
         };
 
         uint32_t changeCount = 0;
-        std::vector<Signal> signals;
+        sp::HeapVector<Signal> signals;
         sp::FlatSet<size_t> dirtyIndices;
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeIndexes;
+        std::priority_queue<size_t, sp::HeapVector<size_t>, std::greater<size_t>> freeIndexes;
 
         size_t NewSignal(const Lock<Write<Signals>> &lock, const SignalRef &ref, double value);
         size_t NewSignal(const Lock<Write<Signals>, ReadSignalsLock> &lock,
@@ -64,7 +65,7 @@ namespace ecs {
 
     struct SignalKey {
         EntityRef entity;
-        std::string signalName;
+        sp::HeapString signalName;
 
         SignalKey() {}
         SignalKey(const EntityRef &entity, const std::string_view &signalName);
@@ -72,7 +73,7 @@ namespace ecs {
 
         bool Parse(const std::string_view &str, const EntityScope &scope);
 
-        std::string String() const {
+        sp::HeapString String() const {
             if (!entity) return signalName;
             return entity.Name().String() + "/" + signalName;
         }
@@ -104,12 +105,12 @@ namespace std {
 namespace ecs {
     // SignalOutput is used for staging entities only. See SignalManager for live signals.
     struct SignalOutput {
-        robin_hood::unordered_map<std::string, double> signals;
+        robin_hood::unordered_map<sp::InlineString<127>, double, sp::StringHash, sp::StringEqual> signals;
     };
 
     // SignalBindings is used for staging entities only. See SignalManager for live signals.
     struct SignalBindings {
-        robin_hood::unordered_map<std::string, SignalExpression> bindings;
+        robin_hood::unordered_map<sp::InlineString<127>, SignalExpression, sp::StringHash, sp::StringEqual> bindings;
     };
 
     static EntityComponent<SignalOutput> ComponentSignalOutput("signal_output",

@@ -12,6 +12,8 @@
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Focus.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/InlineVector.hh"
 
 #include <memory>
 #include <robin_hood.h>
@@ -46,7 +48,7 @@ namespace ecs {
             CompiledFunc Compile() const;
             bool operator==(const IdentifierNode &) const = default;
             size_t Hash() const {
-                return robin_hood::hash<std::string>()(field.name);
+                return robin_hood::hash<std::string_view>()(field.name.c_str());
             }
         };
         struct SignalNode {
@@ -55,7 +57,7 @@ namespace ecs {
             CompiledFunc Compile() const;
             bool operator==(const SignalNode &) const = default;
             size_t Hash() const {
-                return robin_hood::hash<std::string>()(signal.String());
+                return sp::StringHash{}(signal.String());
             }
         };
         struct ComponentNode {
@@ -117,14 +119,14 @@ namespace ecs {
             TwoInputOperation,
             DeciderOperation>;
         struct Node : public NodeVariant {
-            std::string text;
+            sp::HeapString text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
             std::vector<WeakNodePtr> references;
             bool uncacheable = false;
 
             template<typename T>
-            Node(T &&arg, std::string text, std::initializer_list<SignalNodePtr> childNodes = {})
+            Node(T &&arg, std::string_view text, std::initializer_list<SignalNodePtr> childNodes = {})
                 : NodeVariant(arg), text(text) {
                 this->childNodes.insert(this->childNodes.end(), childNodes.begin(), childNodes.end());
                 if constexpr (std::is_same<T, IdentifierNode>() || std::is_same<T, ComponentNode>() ||

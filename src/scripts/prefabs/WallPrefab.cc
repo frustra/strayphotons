@@ -8,6 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <glm/glm.hpp>
@@ -19,8 +20,8 @@ namespace sp::scripts {
     struct WallPrefab {
         float yOffset = 0.0f;
         float stride = 1.0f;
-        std::vector<glm::vec2> segmentPoints;
-        std::vector<std::string> segmentTypes;
+        HeapVector<glm::vec2> segmentPoints;
+        HeapVector<AssetName> segmentTypes;
 
         void Prefab(const ScriptState &state,
             const std::shared_ptr<sp::Scene> &scene,
@@ -59,14 +60,14 @@ namespace sp::scripts {
 
                     auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddScript(state.scope, "prefab_gltf");
-                    gltfState.SetParam<std::string>("model", "wall-4-corner");
+                    gltfState.SetParam<AssetName>("model", "wall-4-corner");
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
                     ecs::GetScriptManager().RunPrefabs(lock, newEnt);
                 }
                 lastDir = dir;
 
-                std::string model = segmentTypes[segment - 1];
+                auto &model = segmentTypes[segment - 1];
 
                 point += dir * stride * 0.5f;
                 size_t count = (size_t)std::floor(distance / stride);
@@ -84,7 +85,7 @@ namespace sp::scripts {
 
                     auto &scripts = newEnt.Set<Scripts>(lock);
                     auto &gltfState = scripts.AddScript(state.scope, "prefab_gltf");
-                    gltfState.SetParam<std::string>("model", model);
+                    gltfState.SetParam<AssetName>("model", model);
                     gltfState.SetParam<std::optional<PhysicsActorType>>("physics", PhysicsActorType::Static);
                     gltfState.SetParam<bool>("render", true);
                     ecs::GetScriptManager().RunPrefabs(lock, newEnt);

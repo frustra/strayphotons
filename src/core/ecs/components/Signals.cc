@@ -11,6 +11,7 @@
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalManager.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
 #include "strayphotons/cpp/Logging.hh"
 
 #include <vector>
@@ -48,13 +49,13 @@ namespace ecs {
     }
 
     std::ostream &operator<<(std::ostream &out, const SignalKey &v) {
-        return out << v.String();
+        return out << v.String().c_str();
     }
 } // namespace ecs
 
 namespace std {
     std::size_t hash<ecs::SignalKey>::operator()(const ecs::SignalKey &key) const {
-        auto val = hash<string>()(key.signalName);
+        auto val = sp::StringHash{}(key.signalName);
         sp::hash_combine(val, key.entity.Name());
         return val;
     }

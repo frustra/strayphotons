@@ -39,10 +39,79 @@ namespace ecs {
 
     ScriptState::ScriptState() : instanceId(++nextInstanceId) {}
     ScriptState::ScriptState(const ScriptState &other)
-        : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), scriptData(other.scriptData),
-          instanceId(other.instanceId), index(other.index) {}
+        : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue), instanceId(other.instanceId),
+          index(other.index) {
+        if (other.scriptData) {
+            scriptData = other.scriptDataCopier(other.scriptData);
+            scriptDataType = other.scriptDataType;
+            scriptDataCopier = other.scriptDataCopier;
+            scriptDataDeleter = other.scriptDataDeleter;
+        }
+    }
+    ScriptState::ScriptState(ScriptState &&other)
+        : scope(other.scope), definition(std::move(other.definition)), eventQueue(std::move(other.eventQueue)),
+          instanceId(other.instanceId), index(other.index) {
+        if (other.scriptData) {
+            scriptData = other.scriptData;
+            scriptDataType = other.scriptDataType;
+            scriptDataCopier = other.scriptDataCopier;
+            scriptDataDeleter = other.scriptDataDeleter;
+            other.scriptData = nullptr;
+            other.scriptDataType = typeid(void);
+            other.scriptDataCopier = nullptr;
+            other.scriptDataDeleter = nullptr;
+        }
+    }
     ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), instanceId(++nextInstanceId) {}
+    ScriptState::~ScriptState() {
+        Reset();
+    }
+
+    ScriptState &ScriptState::operator=(const ScriptState &other) {
+        Reset();
+        scope = other.scope;
+        definition = other.definition;
+        eventQueue = other.eventQueue;
+        instanceId = other.instanceId;
+        index = other.index;
+        scriptData = other.scriptDataCopier(other.scriptData);
+        scriptDataType = other.scriptDataType;
+        scriptDataCopier = other.scriptDataCopier;
+        scriptDataDeleter = other.scriptDataDeleter;
+        return *this;
+    }
+
+    ScriptState &ScriptState::operator=(ScriptState &&other) {
+        Reset();
+        scope = other.scope;
+        definition = std::move(other.definition);
+        eventQueue = std::move(other.eventQueue);
+        instanceId = other.instanceId;
+        index = other.index;
+        other.scope = {};
+        other.instanceId = 0;
+        other.index = std::numeric_limits<size_t>::max();
+        scriptData = other.scriptData;
+        scriptDataType = other.scriptDataType;
+        scriptDataCopier = other.scriptDataCopier;
+        scriptDataDeleter = other.scriptDataDeleter;
+        other.scriptData = nullptr;
+        other.scriptDataType = typeid(void);
+        other.scriptDataCopier = nullptr;
+        other.scriptDataDeleter = nullptr;
+        return *this;
+    }
+
+    void ScriptState::Reset() {
+        if (scriptData) {
+            scriptDataDeleter(scriptData);
+            scriptData = nullptr;
+            scriptDataType = typeid(void);
+            scriptDataCopier = nullptr;
+            scriptDataDeleter = nullptr;
+        }
+    }
 
     Event *ScriptState::PollEvent(const Lock<Read<EventInput>> &lock) {
         if (EventInput::Poll(lock, eventQueue, lastEvent)) return &lastEvent;
@@ -196,7 +265,7 @@ namespace ecs {
                     for (auto &dynamicScript : dynamicLibrary->scripts) {
                         auto &reloadingCtx = dynamicScript->definition.context;
                         if (!reloadingCtx.owner_before(scriptCtx) && !scriptCtx.owner_before(reloadingCtx)) {
-                            script.second.scriptData.reset();
+                            script.second.Reset();
                             script.second.definition = ScriptDefinition{
                                 .name = script.second.definition.name,
                                 .type = script.second.definition.type,
@@ -329,12 +398,14 @@ namespace ecs {
         for (size_t i : scriptSet.activeScriptList) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<LogicTickFunc>(&state.definition.callback);
-            if (!callback || !*callback) continue;
+            auto *callbackPtr = std::get_if<LogicTickFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnTick");
             DebugZoneStr(ecs::ToString(lock, ent));
-            (*callback)(state, lock, ent, interval);
+            callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -347,12 +418,14 @@ namespace ecs {
         for (size_t i : scriptSet.activeScriptList) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callback = std::get_if<PhysicsTickFunc>(&state.definition.callback);
-            if (!callback || !*callback) continue;
+            auto *callbackPtr = std::get_if<PhysicsTickFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
             DebugZoneScopedN("OnPhysicsUpdate");
             DebugZoneStr(ecs::ToString(lock, ent));
-            (*callback)(state, lock, ent, interval);
+            callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -385,8 +458,11 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
-            auto *callback = std::get_if<PrefabFunc>(&state.definition.callback);
-            if (callback && *callback) (*callback)(state, scene, lock, ent);
+            auto *callbackPtr = std::get_if<PrefabFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
+            callback(state, scene, lock, ent);
         }
     }
 } // namespace ecs

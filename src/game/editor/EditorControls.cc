@@ -158,7 +158,7 @@ namespace sp {
                         return 0;
                     };
 
-                    auto signalName = ref.GetSignalName();
+                    std::string signalName = ref.GetSignalName().str();
                     fieldId = "##SignalName." + ref.GetSignalName();
                     if (followFocus == fieldId) {
                         ImGui::SetKeyboardFocusHere();
@@ -204,7 +204,7 @@ namespace sp {
                     if (hasValue) {
                         ImGui::SetNextItemWidth(-FLT_MIN);
                         double signalValue = ref.GetValue(lock);
-                        if (AddImGuiElement("##SignalValue." + ref.GetSignalName(), signalValue)) {
+                        if (AddImGuiElement("##SignalValue."s + ref.GetSignalName(), signalValue)) {
                             ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, signalValue](auto &lock) {
                                 ref.SetValue(lock, signalValue);
                             });
@@ -212,7 +212,7 @@ namespace sp {
                     } else {
                         ImGui::SetNextItemWidth(-80.0f);
                         ecs::SignalExpression expression = ref.GetBinding(lock);
-                        if (AddImGuiElement("##SignalBinding." + ref.GetSignalName(), expression)) {
+                        if (AddImGuiElement("##SignalBinding."s + ref.GetSignalName(), expression)) {
                             if (expression) {
                                 ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
                                     [ref = ref, expression](auto &lock) {
@@ -369,9 +369,9 @@ namespace sp {
                                 }
                                 if (scriptInstance) {
                                     if (scriptInstance->definition.name == "prefab_gltf") {
-                                        sourceName = scriptInstance->GetParam<std::string>("model") + " - Gltf Model";
+                                        sourceName = scriptInstance->GetParam<sp::AssetName>("model") + " - Gltf Model";
                                     } else if (scriptInstance->definition.name == "prefab_template") {
-                                        sourceName = scriptInstance->GetParam<std::string>("source") + " - Template";
+                                        sourceName = scriptInstance->GetParam<sp::HeapString>("source") + " - Template";
                                     } else {
                                         sourceName = scriptInstance->definition.name + " - Prefab";
                                     }
@@ -619,7 +619,7 @@ namespace sp {
         if (ImGui::BeginListBox("##SignalRefs", ImVec2(-FLT_MIN, 10.25 * ImGui::GetTextLineHeightWithSpacing()))) {
             auto refList = ecs::GetSignalManager().GetSignals(signalSearch);
             for (auto &entry : refList) {
-                std::string text = entry.String();
+                auto text = entry.String();
                 // + " (" + std::string(magic_enum::enum_name(entry.data->type)) + ")";
                 if (ImGui::Selectable(text.c_str(), entry == this->selectedSignal)) {
                     this->selectedSignal = entry;
@@ -634,7 +634,7 @@ namespace sp {
         if (this->selectedSignal) {
             ImGui::AlignTextToFramePadding();
             auto &ref = this->selectedSignal;
-            std::string text = ref.String();
+            auto text = ref.String();
             ImGui::Text("Signal: %s", text.c_str());
             if (ref.HasValue(lock)) {
                 ImGui::Text("Value = %.4f", ref.GetValue(lock));

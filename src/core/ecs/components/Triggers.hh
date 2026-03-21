@@ -9,6 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "strayphotons/cpp/EnumTypes.hh"
+#include "strayphotons/cpp/FlatSet.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>
@@ -36,7 +37,7 @@ namespace ecs {
 
     struct TriggerArea {
         TriggerShape shape = TriggerShape::Box;
-        sp::EnumArray<robin_hood::unordered_flat_set<Entity>, TriggerGroup> containedEntities;
+        sp::EnumArray<sp::FlatSet<Entity, std::less<Entity>, sp::HeapVector<Entity>>, TriggerGroup> containedEntities;
     };
 
     static EntityComponent<TriggerGroup> ComponentTriggerGroup("trigger_group", "", StructField::New<TriggerGroup>());

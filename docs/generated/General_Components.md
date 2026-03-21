@@ -240,7 +240,7 @@ The scene connection component has 2 functions:
 - If the scene connection entity also has a [`transform` Component](#transform-component), any scene being loaded
   with a matching `scene_connection` entity will have all its entities moved so that the connection points align.
 
-The `scene_connection` component has type: map&lt;string, vector&lt;[SignalExpression](#SignalExpression-type)&gt;&gt;
+The `scene_connection` component has type: map&lt;string (max 63 chars), vector&lt;[SignalExpression](#SignalExpression-type)&gt;&gt;
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)
@@ -332,7 +332,7 @@ Extra multipliers could also be added to adjust joystick senstiivity, movement s
 
 For binding state associated with a time, [`event_bindings`](#event_bindings-component) are used instead of signals.
 
-The `signal_bindings` component has type: map&lt;string, [SignalExpression](#SignalExpression-type)&gt;
+The `signal_bindings` component has type: map&lt;string (max 127 chars), [SignalExpression](#SignalExpression-type)&gt;
 
 **See Also:**
 [SignalExpression](#SignalExpression-type)
@@ -363,7 +363,7 @@ Signal output components can have their initial values defined like this:
 ```
 In the above case, setting the "other" output signal to `0.0` will override any `signal_bindings` named "other".
 
-The `signal_output` component has type: map&lt;string, double&gt;
+The `signal_output` component has type: map&lt;string (max 127 chars), double&gt;
 
 </div>
 
@@ -380,7 +380,7 @@ The `audio` component has type: vector&lt;[Sound](#Sound-type)&gt;
 | Field Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
 | **type** | enum [SoundType](#SoundType-type) | "Object" | No description |
-| **file** | string | "" | No description |
+| **file** | string (max 255 chars) | "" | No description |
 | **loop** | bool | false | No description |
 | **play_on_load** | bool | false | No description |
 | **volume** | float | 1 | No description |

@@ -9,6 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 #include "strayphotons/cpp/InlineString.hh"
 
 #include <glm/glm.hpp>
@@ -31,7 +32,7 @@ namespace ecs {
         glm::vec2 scale = {-1, -1}; // -1 == inherit
         sp::InlineString<127> effectName;
         SignalExpression effectCondition;
-        std::vector<EntityRef> guiElements;
+        sp::HeapVector<EntityRef> guiElements;
         // - sprites? (transform tree based positioning)
 
         std::weak_ptr<sp::GuiContext> guiContext;

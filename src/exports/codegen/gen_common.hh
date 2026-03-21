@@ -24,7 +24,11 @@ auto EmbedTypeIntoSignature() {
 
 template<typename T>
 std::string TypeToString() {
-    if constexpr (sp::is_glm_vec<T>()) {
+    if constexpr (std::is_same<T, uint8_t>()) {
+        return "uint8_t";
+    } else if constexpr (std::is_same<T, uint16_t>()) {
+        return "uint16_t";
+    } else if constexpr (sp::is_glm_vec<T>()) {
         if constexpr (std::is_same<typename T::value_type, int32_t>()) {
             return "glm::ivec" + std::to_string(T::length());
         } else if constexpr (std::is_same<typename T::value_type, uint32_t>()) {
@@ -54,8 +58,16 @@ std::string TypeToString() {
         } else {
             Abortf("Unsupported InlineString type: %s", typeid(T::value_type).name());
         }
-    } else if constexpr (std::is_same<T, std::string>()) {
-        return "std::string";
+    } else if constexpr (sp::is_heap_string<T>()) {
+        return "sp::HeapString";
+    } else if constexpr (sp::is_heap_vector<T>()) {
+        return "sp::HeapVector<" + TypeToString<typename T::value_type>() + ">";
+    } else if constexpr (sp::is_inline_vector<T>()) {
+        return "sp::InlineVector<" + TypeToString<typename T::value_type>() + ", " + std::to_string(T::max_size()) +
+               ">";
+    } else if constexpr (sp::is_pair<T>()) {
+        return "std::pair<" + TypeToString<typename T::first_type>() + ", " + TypeToString<typename T::second_type>() +
+               ">";
     } else if constexpr (std::is_same<T, ecs::Lock<>>()) {
         return "ecs::Lock<>";
     } else if constexpr (Tecs::is_lock<T>()) {

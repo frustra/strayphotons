@@ -6,15 +6,19 @@
  */
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
+#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/cpp/HeapVector.hh"
 
 namespace sp::scripts {
     using namespace ecs;
 
     struct InitEvent {
-        std::vector<std::string> outputs;
+        HeapVector<EventName> outputs;
 
         void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             state.definition.events.clear();
@@ -33,7 +37,7 @@ namespace sp::scripts {
     LogicScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
-        std::string inputEvent, outputEvent;
+        EventName inputEvent, outputEvent;
         SignalExpression gateExpression;
 
         void Init(ScriptState &state) {
@@ -67,7 +71,7 @@ namespace sp::scripts {
     LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
-        robin_hood::unordered_map<EventName, std::string, StringHash, StringEqual> mapping;
+        robin_hood::unordered_map<EventName, EventName, StringHash, StringEqual> mapping;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -101,7 +105,7 @@ namespace sp::scripts {
     PhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
     struct SignalFromEvent {
-        std::vector<std::string> outputs;
+        HeapVector<HeapString> outputs;
 
         void Init(ScriptState &state) {
             state.definition.events.clear();
@@ -169,7 +173,7 @@ namespace sp::scripts {
     LogicScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
 
     struct EventFromSignal {
-        robin_hood::unordered_map<std::string, SignalExpression> outputs;
+        robin_hood::unordered_map<EventName, SignalExpression, StringHash, StringEqual> outputs;
 
         void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
@@ -191,8 +195,11 @@ namespace sp::scripts {
     PhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
     struct ComponentFromEvent {
-        std::vector<std::string> outputs;
-        robin_hood::unordered_map<std::string, std::pair<const ComponentBase *, std::optional<StructField>>>
+        HeapVector<HeapString> outputs;
+        robin_hood::unordered_map<HeapString,
+            std::pair<const ComponentBase *, std::optional<StructField>>,
+            StringHash,
+            StringEqual>
             componentCache;
 
         void Init(ScriptState &state) {
@@ -231,7 +238,7 @@ namespace sp::scripts {
 
                 const ecs::ComponentBase *comp;
                 std::optional<StructField> field;
-                auto existing = componentCache.find(std::string(fieldPath));
+                auto existing = componentCache.find(fieldPath);
                 if (existing != componentCache.end()) {
                     std::tie(comp, field) = existing->second;
                 } else {
