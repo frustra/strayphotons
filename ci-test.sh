@@ -17,10 +17,8 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
     fi
 fi
 
-mkdir -p bin
-./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER" --job-id "$BUILDKITE_JOB_ID"
-# TODO: Download binary artifacts for this job ID
-
+rm -rf bin/
+./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER"
 cd bin
 
 success=0

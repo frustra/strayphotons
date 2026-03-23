@@ -1477,7 +1477,7 @@ namespace sp::vulkan {
             [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
                 if (!image) {
                     Warnf("Missing asset image: %s", name);
-                    return std::make_shared<Async<ImageView>>();
+                    return CreateSinglePixel(glm::u8vec4(ERROR_COLOR));
                 }
                 return LoadImage(image, genMipmap, srgb);
             });
@@ -1506,6 +1506,20 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
         return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+    }
+
+    AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(glm::u8vec4 value) {
+        static_assert(sizeof(value) == sizeof(uint8_t[4]));
+
+        ImageCreateInfo imageInfo;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.extent = vk::Extent3D(1, 1, 1);
+
+        ImageViewCreateInfo viewInfo = {};
+        viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
+        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {

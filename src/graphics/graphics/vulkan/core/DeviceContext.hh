@@ -18,6 +18,7 @@
 #include "strayphotons/cpp/Async.hh"
 #include "strayphotons/cpp/DispatchQueue.hh"
 #include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <atomic>
 #include <memory>
@@ -180,6 +181,7 @@ namespace sp::vulkan {
 
         AsyncPtr<ImageView> LoadAssetImage(std::string_view assetName, bool genMipmap = false, bool srgb = true);
         AsyncPtr<ImageView> LoadImage(std::shared_ptr<const sp::Image> image, bool genMipmap = false, bool srgb = true);
+        AsyncPtr<ImageView> CreateSinglePixel(glm::u8vec4 value);
 
         ShaderHandle LoadShader(std::string_view name);
         std::shared_ptr<Shader> GetShader(ShaderHandle handle) const;

@@ -21,7 +21,10 @@ namespace sp::vulkan {
         : device(device), workQueue("TextureSet", 0, std::chrono::milliseconds(1)) {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
-        textures[0] = CreateSinglePixel(ERROR_COLOR);
+
+        auto fut = device.CreateSinglePixel(glm::u8vec4(ERROR_COLOR));
+        device.FlushMainQueue();
+        textures[0] = fut->Get();
         texturesToFlush.push_back(0);
     }
 
@@ -270,38 +273,24 @@ namespace sp::vulkan {
         texturesToFlush.clear();
     }
 
-    TextureIndex TextureSet::GetSinglePixelIndex(glm::vec4 value) {
-        glm::u8vec4 byteVec = glm::clamp(value, glm::vec4(0), glm::vec4(1)) * 255.0f;
+    TextureIndex TextureSet::GetSinglePixelIndex(color_alpha_t value) {
+        glm::u8vec4 byteVec(value);
         uint32_t byteValue = *(uint32_t *)&byteVec;
         auto it = singlePixelMap.find(byteValue);
         if (it != singlePixelMap.end()) return it->second;
 
         auto i = AllocateTextureIndex();
-        textures[i] = CreateSinglePixel(byteVec);
+        auto fut = device.CreateSinglePixel(byteVec);
+        device.FlushMainQueue();
+        textures[i] = fut->Get();
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);
         return i;
     }
 
-    ImageViewPtr TextureSet::GetSinglePixel(glm::vec4 value) {
+    ImageViewPtr TextureSet::GetSinglePixel(color_alpha_t value) {
         auto index = GetSinglePixelIndex(value);
         DebugAssertf(index < textures.size(), "GetSinglePixelIndex returned out of bounds index: %u", index);
         return textures[index];
-    }
-
-    ImageViewPtr TextureSet::CreateSinglePixel(glm::u8vec4 value) {
-        static_assert(sizeof(value) == sizeof(uint8_t[4]));
-
-        ImageCreateInfo imageInfo;
-        imageInfo.imageType = vk::ImageType::e2D;
-        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
-        imageInfo.extent = vk::Extent3D(1, 1, 1);
-
-        ImageViewCreateInfo viewInfo = {};
-        viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-        auto fut = device.CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
-        device.FlushMainQueue();
-        return fut->Get();
     }
 } // namespace sp::vulkan
