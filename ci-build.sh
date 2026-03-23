@@ -179,14 +179,14 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     fi
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
-    
+
     if [ "$OS" = "Windows_NT" ]; then
         mkdir -p sp_debug_symbols
         mv sp.pdb sp-vk.pdb sp-test.pdb sp-unit-tests.pdb sp-integration-tests.pdb sp_debug_symbols/
         zip -r sp_debug_symbols.zip sp_debug_symbols
         buildkite-agent artifact upload "sp_debug_symbols.zip"
     fi
-    
+
     if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
         echo -e "--- Uploading assets package :arrow_up:"
 

@@ -27,6 +27,7 @@
 #include "gui/MenuGuiManager.hh"
 #include "strayphotons/cpp/InlineVector.hh"
 #include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/Utility.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
@@ -1477,7 +1478,7 @@ namespace sp::vulkan {
             [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
                 if (!image) {
                     Warnf("Missing asset image: %s", name);
-                    return CreateSinglePixel(glm::u8vec4(ERROR_COLOR));
+                    return CreateSinglePixel(ERROR_COLOR);
                 }
                 return LoadImage(image, genMipmap, srgb);
             });
@@ -1508,8 +1509,8 @@ namespace sp::vulkan {
         return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
     }
 
-    AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(glm::u8vec4 value) {
-        static_assert(sizeof(value) == sizeof(uint8_t[4]));
+    AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(color_alpha_t color) {
+        glm::u8vec4 value(color);
 
         ImageCreateInfo imageInfo;
         imageInfo.imageType = vk::ImageType::e2D;
@@ -1519,7 +1520,9 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
-        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
+        auto fut = CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
+        FlushMainQueue();
+        return fut;
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {

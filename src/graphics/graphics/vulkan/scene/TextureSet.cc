@@ -12,6 +12,7 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,8 +23,7 @@ namespace sp::vulkan {
         textureDescriptorSet = device.CreateBindlessDescriptorSet();
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
 
-        auto fut = device.CreateSinglePixel(glm::u8vec4(ERROR_COLOR));
-        device.FlushMainQueue();
+        auto fut = device.CreateSinglePixel(ERROR_COLOR);
         textures[0] = fut->Get();
         texturesToFlush.push_back(0);
     }
@@ -273,15 +273,15 @@ namespace sp::vulkan {
         texturesToFlush.clear();
     }
 
-    TextureIndex TextureSet::GetSinglePixelIndex(color_alpha_t value) {
-        glm::u8vec4 byteVec(value);
-        uint32_t byteValue = *(uint32_t *)&byteVec;
+    TextureIndex TextureSet::GetSinglePixelIndex(color_alpha_t color) {
+        glm::u8vec4 value(color);
+        static_assert(sizeof(value) == sizeof(uint32_t), "glm::u8vec4 does not match uint32_t");
+        uint32_t byteValue = *reinterpret_cast<const uint32_t *>(&value);
         auto it = singlePixelMap.find(byteValue);
         if (it != singlePixelMap.end()) return it->second;
 
         auto i = AllocateTextureIndex();
-        auto fut = device.CreateSinglePixel(byteVec);
-        device.FlushMainQueue();
+        auto fut = device.CreateSinglePixel(color);
         textures[i] = fut->Get();
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);
