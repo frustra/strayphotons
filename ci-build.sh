@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+# Stray Photons - Copyright (C) 2026 Jacob Wirth & Justin Li
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -171,10 +171,10 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
 
     mkdir -p sp_bins/plugins
     if [ "$OS" = "Windows_NT" ]; then
-        mv sp.dll sp-vk.exe sp-test.exe openvr_api.dll sp_bins/
+        mv sp.dll sp-vk.exe sp-test.exe sp-unit-tests.exe sp-integration-tests.exe openvr_api.dll sp_bins/
         mv plugins/*.dll sp_bins/plugins/
     else
-        mv libsp.so sp-vk sp-test libopenvr_api.so sp_bins/
+        mv libsp.so sp-vk sp-test sp-unit-tests sp-integration-tests libopenvr_api.so sp_bins/
         mv plugins/lib*.so sp_bins/plugins/
     fi
     zip -r sp_bins.zip sp_bins
@@ -182,7 +182,7 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     
     if [ "$OS" = "Windows_NT" ]; then
         mkdir -p sp_debug_symbols
-        mv sp.pdb sp-vk.pdb sp-test.pdb sp_debug_symbols/
+        mv sp.pdb sp-vk.pdb sp-test.pdb sp-unit-tests.pdb sp-integration-tests.pdb sp_debug_symbols/
         zip -r sp_debug_symbols.zip sp_debug_symbols
         buildkite-agent artifact upload "sp_debug_symbols.zip"
     fi
