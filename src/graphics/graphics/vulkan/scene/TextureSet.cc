@@ -24,6 +24,7 @@ namespace sp::vulkan {
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
 
         auto fut = device.CreateSinglePixel(ERROR_COLOR);
+        device.FlushMainQueue();
         textures[0] = fut->Get();
         texturesToFlush.push_back(0);
     }
@@ -80,6 +81,7 @@ namespace sp::vulkan {
         if (it != textureCache.end()) return it->second;
 
         auto imageView = device.LoadAssetImage(name, genMipmap, srgb);
+        device.FlushMainQueue();
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;
@@ -282,6 +284,7 @@ namespace sp::vulkan {
 
         auto i = AllocateTextureIndex();
         auto fut = device.CreateSinglePixel(color);
+        device.FlushMainQueue();
         textures[i] = fut->Get();
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);

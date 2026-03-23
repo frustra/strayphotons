@@ -258,7 +258,7 @@ namespace ecs {
 
         template<typename T>
         AsyncEvent(std::string_view name, const Entity &source, T data)
-            : AsyncEvent(name, source, std::make_shared<sp::Async<EventData>>(std::make_shared<T>(data))) {}
+            : AsyncEvent(name, source, sp::make_async<EventData>(data)) {}
     };
 
     std::ostream &operator<<(std::ostream &out, const EventData &v);

@@ -8,21 +8,27 @@
 #include "MenuGuiManager.hh"
 
 #include "assets/AssetManager.hh"
+#include "assets/Image.hh"
 #include "audio/AudioManager.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
+#include "glm/fwd.hpp"
 #include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
+#include "graphics/core/Texture.hh"
+#include "graphics/vulkan/scene/TextureSet.hh"
 #include "strayphotons/cpp/Logging.hh"
 #include "strayphotons/cpp/input/BindingNames.hh"
 
+#include <cstdint>
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -125,7 +131,15 @@ namespace sp {
         if (!logoTex) {
             auto graphics = graphicsPtr.lock();
             if (graphics) {
-                logoTex = graphics->GetCompositor().UploadStaticImage(Assets().LoadImage("logos/sp-menu.png")->Get());
+                auto assetImage = Assets().LoadImage("logos/sp-menu.png")->Get();
+                if (!assetImage) {
+                    glm::u8vec4 value(vulkan::ERROR_COLOR);
+                    static_assert(sizeof(value) == sizeof(uint32_t));
+                    std::vector<glm::u8vec4> values(1358 * 292, value);
+                    const uint8_t *byteValue = reinterpret_cast<const uint8_t *>(values.data());
+                    assetImage = std::make_shared<sp::Image>(byteValue, values.size() * sizeof(uint32_t), 1358, 292, 4);
+                }
+                logoTex = graphics->GetCompositor().UploadStaticImage(assetImage);
             }
         }
         if (MenuOpen()) {

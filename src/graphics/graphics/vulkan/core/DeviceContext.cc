@@ -25,6 +25,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "gui/MenuGuiManager.hh"
+#include "strayphotons/cpp/Async.hh"
 #include "strayphotons/cpp/InlineVector.hh"
 #include "strayphotons/cpp/Logging.hh"
 #include "strayphotons/cpp/Utility.hh"
@@ -1494,7 +1495,7 @@ namespace sp::vulkan {
         createInfo.format = FormatFromTraits(image->GetComponents(), 8, srgb);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
-        createInfo.genMipmap = genMipmap;
+        createInfo.genMipmap = genMipmap && createInfo.extent.width > 1 && createInfo.extent.height > 1;
         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
         const uint8_t *data = image->GetImage().get();
@@ -1520,9 +1521,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
-        auto fut = CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
-        FlushMainQueue();
-        return fut;
+        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
