@@ -6,9 +6,15 @@
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
+echo -e "~~~ Downloading binary artifacts"
+rm -rf bin/
+./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER"
+./extra/download_assets.py
+cd bin
+
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Restoring assets cache"
-    ./extra/cache_assets.py --restore
+    ../extra/cache_assets.py --restore
 
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
         echo -e "~~~ Restoring physics collision cache"
@@ -16,12 +22,6 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
         cp -r "$CI_CACHE_DIRECTORY/sp-physics-cache/collision" ./assets/cache/
     fi
 fi
-
-echo -e "~~~ Downloading binary artifacts"
-rm -rf bin/
-./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER"
-./extra/download_assets.py
-cd bin
 
 success=0
 echo -e "--- Running \033[33munit tests\033[0m :clipboard:"
@@ -98,7 +98,7 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
 
     # Delete cache files older than 30 days so any removed models don't stick around forever
     find "$CI_CACHE_DIRECTORY/sp-physics-cache" -type f -mtime 30 -delete
-    cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-physics-cache/"
+    cp -r ./assets/cache/collision "$CI_CACHE_DIRECTORY/sp-physics-cache/"
 fi
 
 if [ -n "$BUILDKITE_API_TOKEN" ]; then

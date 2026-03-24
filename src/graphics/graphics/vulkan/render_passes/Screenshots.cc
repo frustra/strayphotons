@@ -11,6 +11,7 @@
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "strayphotons/cpp/Logging.hh"
 
@@ -40,9 +41,14 @@ namespace sp::vulkan::renderer {
 
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
-                    auto resource = builder.GetResource(screenshotResource);
-                    if (resource.type != rg::Resource::Type::Image) {
+                    auto resourceID = builder.GetID(screenshotResource, false);
+                    if (resourceID == InvalidResource) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
+                        return;
+                    }
+                    auto resource = builder.GetResource(resourceID);
+                    if (resource.type != rg::Resource::Type::Image) {
+                        Errorf("Can't screenshot \"%s\": invalid resource type %s", screenshotResource, resource.type);
                     } else {
                         auto format = resource.ImageFormat();
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
