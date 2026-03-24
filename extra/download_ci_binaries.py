@@ -20,6 +20,7 @@ def main():
     args = parser.parse_args()
 
     bin_root = os.path.realpath(os.path.join(os.path.dirname(__file__), "../bin"))
+    assets_root = os.path.realpath(os.path.join(os.path.dirname(__file__), "../assets"))
 
     req = urllib.request.Request(f"https://api.buildkite.com/v2/organizations/frustra/pipelines/strayphotons/builds/{args.build_num}")
     req.add_header("Authorization", "Bearer " + args.token)
@@ -73,7 +74,8 @@ def main():
         os.system('curl -s -L -H "Authorization: Bearer ' + args.token + '" "' + remote_path + '" --output "' + local_path + '"')
         os.system('unzip -o "' + local_path + '" -d "' + os.path.join(bin_root, 'download') + '"')
 
-    os.system('bash -c \'mv "' + os.path.join(bin_root, 'download') + '"/*/* "' + bin_root + '"\'')
+    os.system('bash -c \'mv "' + os.path.join(bin_root, 'download/sp_bins') + '"/* "' + bin_root + '"\'')
+    os.system('bash -c \'mv "' + os.path.join(bin_root, 'download/sp_shaders') + '"/* "' + assets_root + '"\'')
 
 if __name__ == '__main__':
     main()

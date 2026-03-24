@@ -8,7 +8,7 @@
 
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Restoring assets cache"
-    ./assets/cache-assets.py --restore
+    ./extra/cache_assets.py --restore
 
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
         echo -e "~~~ Restoring physics collision cache"
@@ -19,6 +19,7 @@ fi
 
 rm -rf bin/
 ./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER"
+./extra/download_assets.py
 cd bin
 
 success=0

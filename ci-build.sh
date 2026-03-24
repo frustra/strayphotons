@@ -17,7 +17,7 @@ fi
 mkdir -p build
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Restoring assets cache"
-    ./assets/cache-assets.py --restore
+    ./extra/cache_assets.py --restore
 
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
         echo -e "~~~ Restoring physics collision cache"
@@ -43,7 +43,7 @@ fi
 
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Saving assets cache"
-    ./assets/cache-assets.py --save
+    ./extra/cache_assets.py --save
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
@@ -179,6 +179,11 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     fi
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
+
+    mkdir -p sp_shaders
+    mv assets/shaders sp_shaders/
+    zip -r sp_shaders.zip sp_shaders
+    buildkite-agent artifact upload "sp_shaders.zip"
 
     if [ "$OS" = "Windows_NT" ]; then
         mkdir -p sp_debug_symbols
