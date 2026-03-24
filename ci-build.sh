@@ -181,7 +181,7 @@ if [ -n "$BUILDKITE_API_TOKEN" ]; then
     buildkite-agent artifact upload "sp_bins.zip"
 
     mkdir -p sp_shaders
-    mv assets/shaders sp_shaders/
+    cp -r ../assets/shaders sp_shaders/
     zip -r sp_shaders.zip sp_shaders
     buildkite-agent artifact upload "sp_shaders.zip"
 
