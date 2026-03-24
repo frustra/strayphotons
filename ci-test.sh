@@ -17,6 +17,7 @@ if [ -n "$CI_CACHE_DIRECTORY" ]; then
     fi
 fi
 
+echo -e "~~~ Downloading binary artifacts"
 rm -rf bin/
 ./extra/download_ci_binaries.py --token "$BUILDKITE_API_TOKEN" --build-num "$BUILDKITE_BUILD_NUMBER"
 ./extra/download_assets.py

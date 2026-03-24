@@ -9,7 +9,7 @@
 import os
 import shutil
 import hashlib
-import requests
+import urllib.request
 
 def md5sum(filename):
     hash = hashlib.md5()
@@ -36,9 +36,12 @@ if __name__ == '__main__':
             dirPath = os.path.dirname(asset_path)
             if not os.path.exists(dirPath):
                 os.makedirs(dirPath)
-            response = requests.get(asset_url)
+
+            req = urllib.request.Request(asset_url)
+            req.add_header('User-Agent', 'strayphotons-asset-downloader.py/1.0')
+            content = urllib.request.urlopen(req).read()
             with open(asset_path, 'wb') as f:
-                f.write(response.content)
+                f.write(content)
             hash = md5sum(asset_path)
             if hash != parts[0]:
                 print('    Asset hash mismatch: ' + asset_url)
