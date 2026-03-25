@@ -275,10 +275,10 @@ namespace sp {
                     state.volume = 0;
                     state.occlusion = 0;
                     state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
-                        [this, file = source.file](std::shared_ptr<Asset> asset) {
+                        [this, file = source.file, filePath = source.filePath](std::shared_ptr<Asset> asset) {
                             ZoneScopedN("DecodeAudioData");
                             if (!asset) {
-                                Logf("Audio file missing: %s", file->Get()->path.string());
+                                Logf("Audio file missing: %s", filePath);
                                 return std::shared_ptr<nqr::AudioData>();
                             }
                             auto audioBuffer = decoderCache.Load(asset.get());

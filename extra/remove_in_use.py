@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 #
 # Copyright (C) 2025 Jacob Wirth
 #

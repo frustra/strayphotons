@@ -13,6 +13,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/cpp/Async.hh"
 #include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/cpp/Utility.hh"
 
 #include <memory>
 #include <string>
@@ -31,7 +32,7 @@ namespace sp::vulkan {
         }
     };
 
-    const glm::vec4 ERROR_COLOR = glm::vec4(1, 0, 1, 1);
+    const color_alpha_t ERROR_COLOR = glm::vec4(1, 0, 1, 1);
 
     class TextureSet {
     public:
@@ -51,8 +52,8 @@ namespace sp::vulkan {
             return textures[i];
         }
 
-        ImageViewPtr GetSinglePixel(glm::vec4 value);
-        TextureIndex GetSinglePixelIndex(glm::vec4 value);
+        ImageViewPtr GetSinglePixel(color_alpha_t value);
+        TextureIndex GetSinglePixelIndex(color_alpha_t value);
 
         vk::DescriptorSet GetDescriptorSet() const {
             return textureDescriptorSet;
@@ -65,7 +66,6 @@ namespace sp::vulkan {
         void Flush();
 
     private:
-        ImageViewPtr CreateSinglePixel(glm::u8vec4 value);
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();
 

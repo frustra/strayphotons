@@ -326,6 +326,7 @@ namespace sp::vulkan {
                     assetImage = staticAssetImages.Load(assetName);
                     if (!assetImage) {
                         assetImage = device.LoadAssetImage(assetName, true);
+                        device.FlushMainQueue();
                         staticAssetImages.Register(assetName, assetImage, true);
                     }
                 }

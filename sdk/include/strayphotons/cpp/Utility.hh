@@ -168,6 +168,10 @@ namespace sp {
             return color;
         }
 
+        explicit operator glm::u8vec4() const {
+            return glm::clamp(color, glm::vec4(0), glm::vec4(1)) * 255.0f;
+        }
+
         const float &operator[](size_t i) const {
             return color[i];
         }

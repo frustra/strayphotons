@@ -38,7 +38,6 @@ namespace sp {
         using StorageT::begin;
         using StorageT::capacity;
         using StorageT::clear;
-        using StorageT::data;
         using StorageT::front;
         using StorageT::max_size;
         using StorageT::operator[];
@@ -147,10 +146,20 @@ namespace sp {
             return rend() - size();
         }
 
+        char *data() {
+            if (!StorageT::data()) resize(0);
+            return StorageT::data();
+        }
+
+        const char *data() const {
+            if (StorageT::size() == 0) return "";
+            return StorageT::data();
+        }
+
         const char *c_str() const {
             if (StorageT::size() == 0) return "";
             Assertf(at(size()) == '\0', "HeapString missing null termination");
-            return data();
+            return StorageT::data();
         }
 
         std::string str() const {

@@ -242,7 +242,10 @@ namespace sp::vulkan {
         auto swapchainImage = device.SwapchainImageView();
         if (!swapchainImage) return;
 
-        if (!logoTex) logoTex = device.LoadAssetImage("logos/splash.png", true);
+        if (!logoTex) {
+            logoTex = device.LoadAssetImage("logos/splash.png", true);
+            device.FlushMainQueue();
+        }
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
 

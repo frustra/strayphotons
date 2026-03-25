@@ -1,5 +1,7 @@
 screenshot empty-state.png
 stepgraphics
+screenshot empty-state-view.png view:player:flatview/LastOutput
+stepgraphics
 editinworld player:flathead
 # Hackily change the inspector size to fill the screenshot
 setcomponent editor:inspector#gui_element.preferred_size.x -100
