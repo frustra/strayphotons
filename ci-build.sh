@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+# Stray Photons - Copyright (C) 2026 Jacob Wirth & Justin Li
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -17,7 +17,7 @@ fi
 mkdir -p build
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Restoring assets cache"
-    ./assets/cache-assets.py --restore
+    ./extra/cache_assets.py --restore
 
     if [ -d "$CI_CACHE_DIRECTORY/sp-physics-cache" ]; then
         echo -e "~~~ Restoring physics collision cache"
@@ -43,7 +43,7 @@ fi
 
 if [ -n "$CI_CACHE_DIRECTORY" ]; then
     echo -e "~~~ Saving assets cache"
-    ./assets/cache-assets.py --save
+    ./extra/cache_assets.py --save
 fi
 
 echo -e "--- Running \033[33mcmake build\033[0m :rocket:"
@@ -119,7 +119,6 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
     rm -rf traces
     mkdir -p traces/tests/
 
-    core_dumped=0
     for testfile in ../assets/scripts/tests/*.txt; do
         testscript=`realpath --relative-to=../assets/scripts $testfile`
         trace_path=traces/${testscript%.txt}.tracy
@@ -145,16 +144,12 @@ if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
         [ -n "$BUILDKITE_BRANCH" ] && [[ -f "$trace_path" ]] && buildkite-agent artifact upload "$trace_path"
         if [ -n "$BUILDKITE_BRANCH" ] && [[ -f ./core ]]; then
             echo -e "\033[31mUploading core dump\033[0m"
-            core_dumped=1
             testname="${testfile##*/}"
             testname="${testname%.*}"
             mv ./core "./core-$testname"
             buildkite-agent artifact upload "./core-$testname"
         fi
     done
-    if [ $core_dumped -ne 0 ]; then
-        buildkite-agent artifact upload ./sp-test
-    fi
 fi
 
 if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
@@ -166,37 +161,46 @@ if [ $success -eq 0 ] && [ -n "$CI_CACHE_DIRECTORY" ]; then
     cp -r ../assets/cache/collision "$CI_CACHE_DIRECTORY/sp-physics-cache/"
 fi
 
-if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
-    echo -e "--- Uploading package release :arrow_up:"
+if [ -n "$BUILDKITE_API_TOKEN" ]; then
+    if ! [ "$CI_PACKAGE_RELEASE" = "1" ]; then
+        echo -e "--- Comparing screenshots :camera_with_flash:"
+        ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
+    fi
+
+    echo -e "--- Uploading binary artifacts :arrow_up:"
 
     mkdir -p sp_bins/plugins
     if [ "$OS" = "Windows_NT" ]; then
-        mv sp.dll sp-vk.exe sp-winit.exe openvr_api.dll sp_bins/
+        mv sp.dll sp-vk.exe sp-test.exe sp-unit-tests.exe sp-integration-tests.exe openvr_api.dll sp_bins/
         mv plugins/*.dll sp_bins/plugins/
     else
-        mv libsp.so sp-vk sp-winit libopenvr_api.so sp_bins/
+        mv libsp.so sp-vk sp-test sp-unit-tests sp-integration-tests libopenvr_api.so sp_bins/
         mv plugins/lib*.so sp_bins/plugins/
     fi
     zip -r sp_bins.zip sp_bins
     buildkite-agent artifact upload "sp_bins.zip"
-    
+
+    mkdir -p sp_shaders
+    cp -r ../assets/shaders sp_shaders/
+    zip -r sp_shaders.zip sp_shaders
+    buildkite-agent artifact upload "sp_shaders.zip"
+
     if [ "$OS" = "Windows_NT" ]; then
         mkdir -p sp_debug_symbols
-        mv sp.pdb sp-vk.pdb sp-winit.pdb sp_debug_symbols/
+        mv sp.pdb sp-vk.pdb sp-test.pdb sp-unit-tests.pdb sp-integration-tests.pdb sp_debug_symbols/
         zip -r sp_debug_symbols.zip sp_debug_symbols
         buildkite-agent artifact upload "sp_debug_symbols.zip"
     fi
-    
-    mkdir -p sp_assets
-    mv assets.spdata scripts actions.json sp_assets/
-    mv sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json sp_assets/
-    zip -r sp_assets.zip sp_assets
-    buildkite-agent artifact upload "sp_assets.zip"
 
+    if [ "$CI_PACKAGE_RELEASE" = "1" ]; then
+        echo -e "--- Uploading assets package :arrow_up:"
 
-elif [ -n "$BUILDKITE_API_TOKEN" ]; then
-    echo -e "--- Comparing screenshots :camera_with_flash:"
-    ../extra/screenshot_diff.py --token "$BUILDKITE_API_TOKEN"
+        mkdir -p sp_assets
+        mv assets.spdata scripts actions.json sp_assets/
+        mv sp_bindings_knuckles.json sp_bindings_oculus_touch.json sp_bindings_vive_controller.json sp_assets/
+        zip -r sp_assets.zip sp_assets
+        buildkite-agent artifact upload "sp_assets.zip"
+    fi
 fi
 
 if [ $success -ne 0 ]; then

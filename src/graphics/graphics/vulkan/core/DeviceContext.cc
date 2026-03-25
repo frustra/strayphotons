@@ -25,8 +25,10 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "gui/MenuGuiManager.hh"
+#include "strayphotons/cpp/Async.hh"
 #include "strayphotons/cpp/InlineVector.hh"
 #include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/cpp/Utility.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
@@ -1477,7 +1479,7 @@ namespace sp::vulkan {
             [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
                 if (!image) {
                     Warnf("Missing asset image: %s", name);
-                    return std::make_shared<Async<ImageView>>();
+                    return CreateSinglePixel(ERROR_COLOR);
                 }
                 return LoadImage(image, genMipmap, srgb);
             });
@@ -1493,7 +1495,7 @@ namespace sp::vulkan {
         createInfo.format = FormatFromTraits(image->GetComponents(), 8, srgb);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
-        createInfo.genMipmap = genMipmap;
+        createInfo.genMipmap = genMipmap && createInfo.extent.width > 1 && createInfo.extent.height > 1;
         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
         const uint8_t *data = image->GetImage().get();
@@ -1506,6 +1508,20 @@ namespace sp::vulkan {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
         return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+    }
+
+    AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(color_alpha_t color) {
+        glm::u8vec4 value(color);
+
+        ImageCreateInfo imageInfo;
+        imageInfo.imageType = vk::ImageType::e2D;
+        imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
+        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.extent = vk::Extent3D(1, 1, 1);
+
+        ImageViewCreateInfo viewInfo = {};
+        viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
+        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {

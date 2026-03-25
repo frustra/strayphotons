@@ -20,6 +20,9 @@ namespace sp {
         Async(const std::shared_ptr<T> &ptr) : value(ptr) {
             valid.test_and_set();
         }
+        Async(std::shared_ptr<T> &&ptr) : value(std::move(ptr)) {
+            valid.test_and_set();
+        }
 
         bool Ready() const {
             return valid.test();
@@ -45,4 +48,19 @@ namespace sp {
 
     template<typename T>
     using AsyncPtr = std::shared_ptr<Async<T>>;
+
+    template<typename T, typename... Args>
+    AsyncPtr<T> make_async(Args &&...args) {
+        return std::make_shared<Async<T>>(std::make_shared<T>(std::forward<Args>(args)...));
+    }
+
+    template<typename T>
+    AsyncPtr<T> make_async(const std::shared_ptr<T> &value) {
+        return std::make_shared<Async<T>>(value);
+    }
+
+    template<typename T>
+    AsyncPtr<T> make_async(std::shared_ptr<T> &&value) {
+        return std::make_shared<Async<T>>(std::move(value));
+    }
 } // namespace sp

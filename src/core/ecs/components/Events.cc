@@ -278,8 +278,7 @@ namespace ecs {
         Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
 
         if (binding.actions.setValue) {
-            asyncOutput = std::make_shared<sp::Async<EventData>>(
-                std::make_shared<EventData>(*binding.actions.setValue));
+            asyncOutput = sp::make_async<EventData>(*binding.actions.setValue);
         }
 
         if (binding.actions.filterExpr) {
@@ -319,7 +318,7 @@ namespace ecs {
                 auto outputPtr = asyncOutput->Get();
                 EventData output = outputPtr ? *outputPtr : *input;
                 modifyEvent(lock, output, *input, binding);
-                asyncOutput = std::make_shared<sp::Async<EventData>>(std::make_shared<EventData>(output));
+                asyncOutput = sp::make_async<EventData>(output);
             } else {
                 Abortf("Event modify expression \"%s\" references unacquired lock");
                 // Event data can be modified asyncronously, but this introduces a race condition where modifications

@@ -150,7 +150,7 @@
             "visualizerFile": "${workspaceFolder}/extra/custom_types.natvis",
         },
         {
-            "name": "StrayPhotons Scene Formatter (vsdbg)",
+            "name": "StrayPhotons Scene Formatter (lldb)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/scene_formatter",
