@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justin Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,6 +7,7 @@
 
 #include "Mipmap.hh"
 
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
@@ -16,11 +17,14 @@ namespace sp::vulkan::renderer {
         if (id == InvalidResource) id = graph.LastOutputID();
         graph.AddPass("Mipmap")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Write(id, Access::TransferWrite);
                 builder.Read(id, Access::TransferRead);
+                builder.Write(id, Access::TransferWrite);
             })
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
+
+                AccessInfo last = GetAccessInfo(image->LastAccess());
+                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
 
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
@@ -28,10 +32,10 @@ namespace sp::vulkan::renderer {
                 transferMips.mipLevelCount = 1;
 
                 cmd.ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
+                    image->LastLayout(),
                     vk::ImageLayout::eTransferSrcOptimal,
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    {},
+                    last.stageMask,
+                    last.accessMask,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferRead,
                     transferMips);
@@ -40,10 +44,10 @@ namespace sp::vulkan::renderer {
                 transferMips.mipLevelCount = image->MipLevels() - 1;
 
                 cmd.ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
+                    image->LastLayout(),
                     vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    {},
+                    last.stageMask,
+                    last.accessMask,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
                     transferMips);
@@ -74,21 +78,21 @@ namespace sp::vulkan::renderer {
                         vk::ImageLayout::eTransferDstOptimal,
                         {blit},
                         vk::Filter::eLinear);
-
-                    transferMips.baseMipLevel = i;
-                    transferMips.mipLevelCount = 1;
-                    cmd.ImageBarrier(image,
-                        vk::ImageLayout::eTransferDstOptimal,
-                        vk::ImageLayout::eTransferSrcOptimal,
-                        vk::PipelineStageFlagBits::eTransfer,
-                        vk::AccessFlagBits::eTransferWrite,
-                        vk::PipelineStageFlagBits::eTransfer,
-                        vk::AccessFlagBits::eTransferRead,
-                        transferMips);
                 }
 
-                // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                transferMips.baseMipLevel = 0;
+                transferMips.mipLevelCount = 1;
+                cmd.ImageBarrier(image,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferWrite,
+                    transferMips);
+
+                // Each mip has now been transitioned to TransferDst.
+                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
             });
     }
 } // namespace sp::vulkan::renderer
