@@ -90,6 +90,43 @@ namespace sp::vulkan::render_graph {
             if (!pass.active) continue;
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
+            const auto &lastScopeStack = frameScopeStack;
+            const auto &currScopeStack = pass.scopes;
+            for (size_t i = 0; i < lastScopeStack.size(); i++) {
+                size_t inv = lastScopeStack.size() - i - 1;
+                if (inv >= currScopeStack.size() || lastScopeStack[inv] != currScopeStack[inv]) {
+#ifdef TRACY_ENABLE_GRAPHICS
+                    if (!traceScopes.empty()) traceScopes.pop();
+#endif
+                    phaseScopes.pop();
+                }
+            }
+            for (size_t i = 0; i < currScopeStack.size(); i++) {
+                if (i >= lastScopeStack.size() || currScopeStack[i] != lastScopeStack[i]) {
+                    std::string_view name = resources.nameScopes[currScopeStack[i]].name;
+                    if (!name.empty()) {
+                        auto sep = name.rfind("/");
+                        if (sep != name.npos) name = name.substr(sep + 1);
+                    }
+                    phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
+                    if (timer) phaseScopes.top().StartTimer(*timer);
+
+#ifdef TRACY_ENABLE_GRAPHICS
+                    if (!name.empty()) {
+                        traceScopes.emplace(__LINE__,
+                            __FILE__,
+                            strlen(__FILE__),
+                            __FUNCTION__,
+                            strlen(__FUNCTION__),
+                            name.data(),
+                            name.size(),
+                            true);
+                    }
+#endif
+                }
+            }
+            frameScopeStack = pass.scopes;
+
             AddPreBarriers(cmd, pass); // creates cmd if necessary
             if (pass.flushCommands) submitPendingCmds(false);
 
@@ -121,42 +158,6 @@ namespace sp::vulkan::render_graph {
                         attachment.clearDepthStencil);
                 }
             }
-
-            for (int i = std::max(pass.scopes.size(), frameScopeStack.size()) - 1; i >= 0; i--) {
-                uint8_t passScope = i < (int)pass.scopes.size() ? pass.scopes[i] : 255;
-                uint8_t resScope = i < (int)frameScopeStack.size() ? frameScopeStack[i] : 255;
-                if (resScope != passScope) {
-                    if (resScope != 255) {
-#ifdef TRACY_ENABLE_GRAPHICS
-                        if (!traceScopes.empty()) traceScopes.pop();
-#endif
-                        phaseScopes.pop();
-                    }
-                    if (passScope != 255) {
-                        std::string_view name = resources.nameScopes[passScope].name;
-                        if (!name.empty()) {
-                            auto sep = name.rfind("/");
-                            if (sep != name.npos) name = name.substr(sep + 1);
-                        }
-                        phaseScopes.emplace(name.empty() ? "RenderGraph" : name);
-                        if (timer) phaseScopes.top().StartTimer(*timer);
-
-#ifdef TRACY_ENABLE_GRAPHICS
-                        if (!name.empty()) {
-                            traceScopes.emplace(__LINE__,
-                                __FILE__,
-                                strlen(__FILE__),
-                                __FUNCTION__,
-                                strlen(__FUNCTION__),
-                                name.data(),
-                                name.size(),
-                                true);
-                        }
-#endif
-                    }
-                }
-            }
-            frameScopeStack = pass.scopes;
 
 #ifdef TRACY_ENABLE_GRAPHICS
             tracy::ScopedZone traceZone(__LINE__,

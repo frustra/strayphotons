@@ -297,9 +297,9 @@ namespace sp::vulkan {
 
 #ifdef TRACY_ENABLE_GRAPHICS
         struct {
-            vector<vk::UniqueCommandPool> cmdPools;
-            vector<vk::UniqueCommandBuffer> cmdBuffers;
-            vector<tracy::VkCtx *> tracyContexts;
+            std::vector<vk::UniqueCommandPool> cmdPools;
+            std::vector<vk::UniqueCommandBuffer> cmdBuffers;
+            std::vector<tracy::VkCtx *> tracyContexts;
         } tracing;
 #endif
 
