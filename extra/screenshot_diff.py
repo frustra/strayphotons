@@ -100,8 +100,8 @@ def main():
 <a href="{master_img_src}"><img src="{master_img_src}" alt="Master Build" height=200></a>
 <a href="artifact://diff/{path}"><img src="artifact://diff/{path}" alt="Difference" height=200></a><br/>
 """
-            subprocess.run('buildkite-agent annotate --scope=job --style "warning" --append', text=True, shell=True, input)
-            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True, input)
+            subprocess.run('buildkite-agent annotate --scope=job --style "warning" --append', text=True, shell=True, input=input)
+            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True, input=input)
 
 if __name__ == '__main__':
     main()
