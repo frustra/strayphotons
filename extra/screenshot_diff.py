@@ -8,6 +8,7 @@
 
 import argparse
 import os
+import shutil
 import glob
 import subprocess
 import urllib.request
@@ -85,7 +86,14 @@ def main():
         master_img_src = 'https://builds.strayphotons.net/' + artifacts[path]['job']['id'] + '/' + path
 
         os.system('bash -c \'mkdir -p "' + os.path.dirname(diff_path) + '"\'')
-        difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
+        if shutil.which('magick'):
+            imagemagick_bin = 'magick compare'
+        elif shutil.which('compare'):
+            imagemagick_bin = 'compare'
+        else:
+            print('Error: ImageMagick not installed')
+            exit(1)
+        difference_str = subprocess.getoutput(f'{imagemagick_bin} -fuzz 2% -metric mae "{local_path}" "{master_path}" "{diff_path}"')
         metrics = difference_str.split(' ')
         if float(metrics[0]) <= 5.0:
             print('Pass', path, ':', float(metrics[0])),
