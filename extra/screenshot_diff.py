@@ -87,19 +87,19 @@ def main():
         os.system('bash -c \'mkdir -p "' + os.path.dirname(diff_path) + '"\'')
         difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
         metrics = difference_str.split(' ')
-        if float(metrics[0]) < 5.0:
+        if float(metrics[0]) <= 5.0:
             print('Pass', path, ':', float(metrics[0])),
         else:
             print('!! Fail', path, ':', float(metrics[0]))
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
-            input = 'Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 5<br/>' +
-                    '<a href="' + current_build_path + '">Current Build</a> -- ' +
-                    '<a href="' + master_build_path + '">Master Build</a> -- ' +
-                    '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
-                    '<a href="' + current_img_src + '"><img src="' + current_img_src + '" alt="Current Build" height=200></a>' +
-                    '<a href="' + master_img_src + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
-                    '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
+            input = f"""Screenshot <b>{path}</b> has changed: {metrics[0]} &gt; 5<br/>
+<a href="{current_build_path}">Current Build</a> -- <a href="{master_build_path}">Master Build</a>
+ -- <a href="artifact://diff/{path}">Difference</a><br/>
+<a href="{current_img_src}"><img src="{current_img_src}" alt="Current Build" height=200></a>
+<a href="{master_img_src}"><img src="{master_img_src}" alt="Master Build" height=200></a>
+<a href="artifact://diff/{path}"><img src="artifact://diff/{path}" alt="Difference" height=200></a><br/>
+"""
             subprocess.run('buildkite-agent annotate --scope=job --style "warning" --append', text=True, shell=True, input)
             subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True, input)
 
