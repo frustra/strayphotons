@@ -1,6 +1,6 @@
 #!/usr/bin/env -S python3 -u
 #
-# Copyright (C) 2025 Jacob Wirth
+# Copyright (C) 2026 Jacob Wirth
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -36,7 +36,7 @@ def main():
     artifacts = {}
 
     for job in build_info['jobs']:
-        if job['state'] != "passed":
+        if not 'state' in job or job['state'] != "passed":
             continue
 
         build_label = os.environ.get('BUILDKITE_LABEL')
@@ -53,9 +53,10 @@ def main():
             content = json.loads(response.decode('utf-8'))
 
             for artifact in content:
-                if artifact['path'].startswith('screenshots/tests/'):
-                    artifacts[artifact['path']] = artifact
-                    artifacts[artifact['path']]['job'] = job
+                path = artifact['path'].replace('\\', '/')
+                if path.startswith('screenshots/tests/'):
+                    artifacts[path] = artifact
+                    artifacts[path]['job'] = job
 
             page += 1
 
@@ -70,7 +71,7 @@ def main():
 
     glob_path = os.path.join(bin_root, 'screenshots/tests/**/*.png')
     for local_path in glob.iglob(glob_path, recursive=True):
-        path = os.path.relpath(local_path, bin_root)
+        path = os.path.relpath(local_path, bin_root).replace('\\', '/')
         master_path = os.path.join(bin_root, 'comparison/' + path)
         diff_path = os.path.join(bin_root, 'diff/' + path)
 
@@ -92,15 +93,15 @@ def main():
             print('!! Fail', path, ':', float(metrics[0]))
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
-            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True,
-                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 5<br/>' +
-                '<a href="' + current_build_path + '">Current Build</a> -- ' +
-                '<a href="' + master_build_path + '">Master Build</a> -- ' +
-                '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
-                '<a href="' + current_img_src + '"><img src="' + current_img_src + '" alt="Current Build" height=200></a>' +
-                '<a href="' + master_img_src + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
-                '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
-            )
+            input = 'Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 5<br/>' +
+                    '<a href="' + current_build_path + '">Current Build</a> -- ' +
+                    '<a href="' + master_build_path + '">Master Build</a> -- ' +
+                    '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
+                    '<a href="' + current_img_src + '"><img src="' + current_img_src + '" alt="Current Build" height=200></a>' +
+                    '<a href="' + master_img_src + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
+                    '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
+            subprocess.run('buildkite-agent annotate --scope=job --style "warning" --append', text=True, shell=True, input)
+            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True, input)
 
 if __name__ == '__main__':
     main()
