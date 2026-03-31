@@ -1007,7 +1007,7 @@ namespace sp::vulkan {
 
     AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const InitialData &data, vk::BufferUsageFlags usage) {
         if (!data.data) return nullptr;
-        return allocatorQueue.Dispatch<Buffer>([=, this] {
+        return allocatorQueue.Dispatch<Buffer>([data, usage, this] {
             vk::BufferCreateInfo bufferInfo = {};
             bufferInfo.size = data.dataSize;
             bufferInfo.usage = usage;
@@ -1343,31 +1343,37 @@ namespace sp::vulkan {
             {
                 GPUZone(this, graphicsCmd, "Mipmap");
 
+                AccessInfo last = GetAccessInfo(image->LastAccess());
+                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
+
+                transferToGeneral.trackImageLayout = false;
+                transferToGeneral.baseMipLevel = 0;
+                transferToGeneral.mipLevelCount = 1;
+
                 graphicsCmd->ImageBarrier(image,
+                    image->LastLayout(),
                     vk::ImageLayout::eTransferSrcOptimal,
+                    last.stageMask,
+                    last.accessMask,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferRead,
                     transferToGeneral);
 
-                ImageBarrierInfo transferMips = {};
-                transferMips.trackImageLayout = false;
-                transferMips.baseMipLevel = 1;
-                transferMips.mipLevelCount = image->MipLevels() - 1;
+                transferToGeneral.baseMipLevel = 1;
+                transferToGeneral.mipLevelCount = image->MipLevels() - 1;
 
                 graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
+                    image->LastLayout(),
                     vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    {},
+                    last.stageMask,
+                    last.accessMask,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
-                    transferMips);
+                    transferToGeneral);
 
                 vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
                     (int32_t)image->Extent().height,
                     (int32_t)image->Extent().depth};
-
-                transferMips.mipLevelCount = 1;
 
                 for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
@@ -1389,20 +1395,21 @@ namespace sp::vulkan {
                         vk::ImageLayout::eTransferDstOptimal,
                         {blit},
                         vk::Filter::eLinear);
-
-                    transferMips.baseMipLevel = i;
-                    graphicsCmd->ImageBarrier(image,
-                        vk::ImageLayout::eTransferDstOptimal,
-                        vk::ImageLayout::eTransferSrcOptimal,
-                        vk::PipelineStageFlagBits::eTransfer,
-                        vk::AccessFlagBits::eTransferWrite,
-                        vk::PipelineStageFlagBits::eTransfer,
-                        vk::AccessFlagBits::eTransferRead,
-                        transferMips);
                 }
 
-                // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                transferToGeneral.baseMipLevel = 0;
+                transferToGeneral.mipLevelCount = 1;
+                graphicsCmd->ImageBarrier(image,
+                    vk::ImageLayout::eTransferSrcOptimal,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferWrite,
+                    transferToGeneral);
+
+                // Each mip has now been transitioned to TransferDst.
+                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
                 graphicsCmd->ImageBarrier(image,
                     vk::ImageLayout::eShaderReadOnlyOptimal,
