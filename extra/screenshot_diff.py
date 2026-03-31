@@ -35,31 +35,41 @@ def main():
 
     build_info = content[0]
     artifacts = {}
+    build_label = os.environ.get('BUILDKITE_LABEL')
+    job = None
+    for i in range(0, 2):
+        for j in build_info['jobs']:
+            if not 'state' in j or j['state'] != "passed":
+                continue
 
-    for job in build_info['jobs']:
-        if not 'state' in job or job['state'] != "passed":
-            continue
+            if j['name'] == build_label or i > 0:
+                if i > 0:
+                    print(f'No matching artifacts, using "{j['name']}" instead.')
+                job = j
+                break
+        if job is not None:
+            break
 
-        build_label = os.environ.get('BUILDKITE_LABEL')
-        if job['name'] != build_label:
-            continue
+    if job is None:
+        print('Could not find valid job to compare against')
+        exit(1)
 
-        print("Using Job:", job['artifacts_url'])
-        page = 1
-        while len(content) > 0 or page == 1:
-            req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
-            req.add_header("Authorization", "Bearer " + args.token)
+    print("Using Job:", job['artifacts_url'])
+    page = 1
+    while len(content) > 0 or page == 1:
+        req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
+        req.add_header("Authorization", "Bearer " + args.token)
 
-            response = urllib.request.urlopen(req).read()
-            content = json.loads(response.decode('utf-8'))
+        response = urllib.request.urlopen(req).read()
+        content = json.loads(response.decode('utf-8'))
 
-            for artifact in content:
-                path = artifact['path'].replace('\\', '/')
-                if path.startswith('screenshots/tests/'):
-                    artifacts[path] = artifact
-                    artifacts[path]['job'] = job
+        for artifact in content:
+            path = artifact['path'].replace('\\', '/')
+            if path.startswith('screenshots/tests/'):
+                artifacts[path] = artifact
+                artifacts[path]['job'] = job
 
-            page += 1
+        page += 1
 
     print('Downloading', len(artifacts), 'artifacts...')
 
