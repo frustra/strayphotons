@@ -44,7 +44,7 @@ def main():
 
             if j['name'] == build_label or i > 0:
                 if i > 0:
-                    print(f'No matching artifacts, using "{j['name']}" instead.')
+                    print(f'No matching artifacts, using "{j["name"]}" instead.')
                 job = j
                 break
         if job is not None:
