@@ -7,6 +7,7 @@ steplogic
 stepphysics
 stepgraphics 2
 screenshot load-override-first1.png
+screenshot load-override-first-shadowmap1.png ShadowMap/LastOutput
 stepgraphics
 steplogic 2700
 stepphysics 2
@@ -32,6 +33,7 @@ steplogic
 stepphysics
 stepgraphics 2
 screenshot load-override-after1.png
+screenshot load-override-after-shadowmap1.png ShadowMap/LastOutput
 stepgraphics
 steplogic 2700
 stepphysics 2

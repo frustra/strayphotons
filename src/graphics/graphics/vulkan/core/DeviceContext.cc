@@ -180,17 +180,29 @@ namespace sp::vulkan {
                 }
             }
 
+            vk::PhysicalDeviceType selectedType = vk::PhysicalDeviceType::eOther;
             auto physicalDevices = instance.enumeratePhysicalDevices();
-            // TODO: Prioritize discrete GPUs and check for capabilities like Geometry/Compute shaders
-            if (physicalDevices.size() > 0) {
+            for (auto device : physicalDevices) {
                 // TODO: Check device extension support
-                physicalDeviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
-                physicalDevices.front().getProperties2(&physicalDeviceProperties);
+                // TODO: Check for capabilities like Geometry/Compute shaders
+                vk::PhysicalDeviceProperties2 deviceProperties;
+                deviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
+                device.getProperties2(&deviceProperties);
                 // auto features = device.getFeatures();
-                Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
-                physicalDevice = physicalDevices.front();
+                auto deviceType = deviceProperties.properties.deviceType;
+                if (deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+                    physicalDevice = device;
+                    physicalDeviceProperties = deviceProperties;
+                    selectedType = deviceProperties.properties.deviceType;
+                    break;
+                } else if (deviceType == vk::PhysicalDeviceType::eIntegratedGpu && deviceType != selectedType) {
+                    physicalDevice = device;
+                    physicalDeviceProperties = deviceProperties;
+                    selectedType = deviceProperties.properties.deviceType;
+                }
             }
             Assert(physicalDevice, "No suitable graphics device found!");
+            Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
 
             std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
             auto queueFamilies = physicalDevice.getQueueFamilyProperties();
