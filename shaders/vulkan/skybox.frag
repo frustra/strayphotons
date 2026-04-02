@@ -67,7 +67,7 @@ void main() {
 
     vec3 color = colorTints[int(rand2(rng) * 3)].rgb;
     float pointDist = smoothstep(1 - pointSize * viewportScale, 1, dot(starDir, rayDir));
-    float noise = rand2(rng) * rand2(rng) * rand2(rng) * rand2(rng);
+    float noise = rand2(rng); // * rand2(rng) * rand2(rng) * rand2(rng);
     float randomBrightness = brightness * noise * noise * noise * noise;
     outFragColor = vec4(color * pointDist * randomBrightness * exposure, 1.0);
     // if (index == 0) {
@@ -83,5 +83,5 @@ void main() {
     //     // outFragColor.rgb += densityNoise * noiseB * dustColors[1];
     //     // outFragColor.rgb += densityNoise * noiseC * dustColors[2];
     // }
-    // outFragColor = vec4(vec3(fract(viewPos), 0) * exposure, 1.0) - vec4(outFragColor.rgb, 0);
+    outFragColor = vec4(vec3(fract(viewPos), 0) * exposure, 1.0) - vec4(outFragColor.rgb, 0);
 }

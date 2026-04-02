@@ -2,6 +2,13 @@ screenshot empty-state.png
 stepgraphics
 screenshot empty-state-view.png view:player:flatview/LastOutput
 stepgraphics
+r.DrawSkybox1 0
+r.DrawSkybox2 0
+r.SkyboxStarBrightness 10
+r.SkyboxStarDensity 50
+r.SkyboxStarSize 0.001
+screenshot skyboxtest.png view:player:flatview/LastOutput
+stepgraphics
 editinworld player:flathead
 # Hackily change the inspector size to fill the screenshot
 setcomponent editor:inspector#gui_element.preferred_size.x -100
