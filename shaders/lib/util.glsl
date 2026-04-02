@@ -14,7 +14,19 @@
 #define M_GOLDEN_RATIO 1.618033988749
 
 #define saturate(x) clamp(x, 0.0, 1.0)
-#define hash(x) fract(sin(x) * 43758.543123)
+// hash(x) based on sin() is not identical across Nvidia/AMD
+// #define hash(x) fract(sin(x) * 43758.543123)
+
+// Hash parameters from https://nullprogram.com/blog/2018/07/31/
+uint lowbias32(uint x) {
+    x ^= x >> 16;
+    x *= 0x7feb352dU;
+    x ^= x >> 15;
+    x *= 0x846ca68bU;
+    x ^= x >> 16;
+    return x;
+}
+#define hash(x) (float(lowbias32(floatBitsToUint(x))) / float(0xffffffffU))
 
 float rand2(inout vec4 state) {
     // PRNG parameters from: http://web.archive.org/web/20101217080108/http://gpgpu.org/forums/viewtopic.php?t=2591
