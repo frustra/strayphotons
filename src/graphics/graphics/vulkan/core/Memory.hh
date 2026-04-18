@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/cpp/Hashing.hh"
 
+#include <cstdint>
 #include <memory>
 #include <thread>
 
@@ -65,7 +66,13 @@ namespace sp::vulkan {
 
         InitialData() = default;
         InitialData(const uint8_t *data, size_t dataSize, const std::shared_ptr<const void> &dataOwner = nullptr)
-            : data(data), dataSize(dataSize), dataOwner(dataOwner) {}
+            : data(data), dataSize(dataSize), dataOwner(dataOwner) {
+            if (!dataOwner) {
+                auto dataVector = std::make_shared<std::vector<uint8_t>>(data, data + dataSize);
+                this->dataOwner = dataVector;
+                this->data = dataVector->data();
+            }
+        }
     };
 
     class UniqueMemory : public NonCopyable, public HasUniqueID {
