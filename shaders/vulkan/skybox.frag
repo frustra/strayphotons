@@ -20,8 +20,6 @@ INCLUDE_LAYOUT(binding = 0)
 INCLUDE_LAYOUT(binding = 1)
 #include "lib/exposure_state.glsl"
 
-layout(binding = 2) uniform sampler2D randomTex;
-
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
