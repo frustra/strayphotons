@@ -50,8 +50,7 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (game.graphics) {
     #ifdef SP_GRAPHICS_SUPPORT_VK
-            bool withValidationLayers = game.options.count("with-validation-layers");
-            game.graphics->context = std::make_shared<vulkan::DeviceContext>(*game.graphics, withValidationLayers);
+            game.graphics->context = std::make_shared<vulkan::DeviceContext>(game);
     #endif
 
             game.graphics->Init();

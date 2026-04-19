@@ -26,7 +26,7 @@ namespace sp::vulkan::renderer {
     static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 1000.0f, "Star tile density for skybox rendering");
     static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 0.0001f, "Star size for skybox rendering");
 
-    void AddSkyboxPass(RenderGraph &graph) {
+    void Skybox::AddPass(RenderGraph &graph) {
         static const std::array<glm::vec4, 3> rotations = {
             glm::vec4(1.0, 0.0, 0.0, M_2_PI),
             glm::vec4(glm::normalize(glm::vec3(1.0, 0.0, 1.0)), M_PI_2),
@@ -51,36 +51,46 @@ namespace sp::vulkan::renderer {
                     builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                     builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
                 })
-                .Execute([i, first, brightness, density, starSize](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("screen_cover.vert", "skybox.frag");
+                .Execute(
+                    [this, i, first, brightness, density, starSize](rg::Resources &resources, CommandContext &cmd) {
+                        cmd.SetShaders("screen_cover.vert", "skybox.frag");
 
-                    cmd.SetShaderConstant(ShaderStage::Vertex, "DRAW_DEPTH", 1.0f);
+                        cmd.SetShaderConstant(ShaderStage::Vertex, "DRAW_DEPTH", 1.0f);
+                        cmd.SetImageView("randomTex", randomTex->Get());
 
-                    if (!first) cmd.SetBlending(true, vk::BlendOp::eMax);
+                        if (!first) cmd.SetBlending(true, vk::BlendOp::eMax);
 
-                    cmd.SetDepthTest(true, false);
-                    cmd.SetDepthCompareOp(vk::CompareOp::eEqual);
+                        cmd.SetDepthTest(true, false);
+                        cmd.SetDepthCompareOp(vk::CompareOp::eEqual);
 
-                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
-                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                        cmd.SetStorageBuffer("ExposureState", "ExposureState");
+                        cmd.SetUniformBuffer("ViewStates", "ViewState");
 
-                    struct {
-                        glm::mat4 rotation;
-                        uint32_t index;
-                        float brightness, density, starSize;
-                    } constants = {
-                        glm::mat4(glm::angleAxis(rotations[i].w, glm::vec3(rotations[i]))),
-                        (uint32_t)i,
-                        brightness,
-                        density,
-                        starSize,
-                    };
+                        struct {
+                            glm::mat4 rotation;
+                            uint32_t index;
+                            float brightness, density, starSize;
+                        } constants = {
+                            glm::mat4(glm::angleAxis(rotations[i].w, glm::vec3(rotations[i]))),
+                            (uint32_t)i,
+                            brightness,
+                            density,
+                            starSize,
+                        };
 
-                    cmd.PushConstants(constants);
+                        cmd.PushConstants(constants);
 
-                    cmd.Draw(3);
-                });
+                        cmd.Draw(3);
+                    });
             first = false;
         }
+    }
+
+    bool Skybox::PreloadTextures(DeviceContext &device) {
+        if (!randomTex) {
+            randomTex = device.LoadAssetImage("textures/random.png", false, false);
+            device.FlushMainQueue();
+        }
+        return randomTex->Ready();
     }
 } // namespace sp::vulkan::renderer

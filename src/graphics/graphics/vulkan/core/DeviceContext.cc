@@ -13,6 +13,7 @@
 #include "console/CFunc.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
+#include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/vulkan/Compositor.hh"
@@ -32,6 +33,7 @@
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
+#include <cxxopts.hpp>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <limits>
@@ -118,10 +120,10 @@ namespace sp::vulkan {
     }
 #endif
 
-    DeviceContext::DeviceContext(GraphicsManager &graphics, bool enableValidationLayers)
-        : graphics(graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr), threadContexts(32),
-          frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}), allocatorQueue("GPUAllocator", 1, {}),
-          graph(*this) {
+    DeviceContext::DeviceContext(Game &game)
+        : game(game), graphics(*game.graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr),
+          threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
+          allocatorQueue("GPUAllocator", 1, {}), graph(*this) {
         ZoneScoped;
 
         try {
@@ -162,7 +164,7 @@ namespace sp::vulkan {
             debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
 
             std::vector<const char *> layers;
-            if (enableValidationLayers) {
+            if (game.options.count("with-validation-layers")) {
                 layers.emplace_back("VK_LAYER_KHRONOS_validation");
             }
 
@@ -180,32 +182,83 @@ namespace sp::vulkan {
                 }
             }
 
+            Logf("Available graphics devices:");
             vk::PhysicalDeviceType selectedType = vk::PhysicalDeviceType::eOther;
             auto physicalDevices = instance.enumeratePhysicalDevices();
-            for (auto device : physicalDevices) {
-                // TODO: Check device extension support
-                // TODO: Check for capabilities like Geometry/Compute shaders
-                vk::PhysicalDeviceProperties2 deviceProperties;
-                deviceProperties.pNext = &physicalDeviceDescriptorIndexingProperties;
+            std::vector<vk::PhysicalDeviceProperties2> physicalDeviceProperties(physicalDevices.size());
+            for (uint32_t i = 0; i < physicalDevices.size(); i++) {
+                auto &device = physicalDevices[i];
+                auto &deviceProperties = physicalDeviceProperties[i];
                 device.getProperties2(&deviceProperties);
-                // auto features = device.getFeatures();
-                auto deviceType = deviceProperties.properties.deviceType;
-                if (deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
-                    physicalDevice = device;
-                    physicalDeviceProperties = deviceProperties;
-                    selectedType = deviceProperties.properties.deviceType;
-                    break;
-                } else if (deviceType == vk::PhysicalDeviceType::eIntegratedGpu && deviceType != selectedType) {
-                    physicalDevice = device;
-                    physicalDeviceProperties = deviceProperties;
-                    selectedType = deviceProperties.properties.deviceType;
+                Logf("  device %u: [%u:%u] %s",
+                    i,
+                    deviceProperties.properties.vendorID,
+                    deviceProperties.properties.deviceID,
+                    deviceProperties.properties.deviceName.data());
+            }
+            uint32_t selectedDeviceIndex = ~0u;
+            if (game.options.count("gpu")) {
+                auto gpuStr = game.options["gpu"].as<std::string>();
+                Logf("Requesting GPU %s", gpuStr);
+                std::istringstream ss(gpuStr);
+                if (sp::contains(gpuStr, ':')) {
+                    uint32_t vendorID = ~0u;
+                    char divider = 0;
+                    uint32_t deviceID = ~0u;
+                    ss >> vendorID >> divider >> deviceID;
+                    for (uint32_t i = 0; i < physicalDevices.size(); i++) {
+                        auto &deviceProperties = physicalDeviceProperties[i];
+                        if (deviceProperties.properties.vendorID == vendorID &&
+                            deviceProperties.properties.deviceID == deviceID) {
+                            selectedDeviceIndex = i;
+                            break;
+                        }
+                    }
+                    if (selectedDeviceIndex >= physicalDevices.size()) {
+                        Errorf("Requested GPU [%u:%u] not found", vendorID, deviceID);
+                    }
+                } else {
+                    ss >> selectedDeviceIndex;
+                    if (selectedDeviceIndex >= physicalDevices.size()) {
+                        Errorf("Requested GPU %u not found", selectedDeviceIndex);
+                    }
                 }
             }
-            Assert(physicalDevice, "No suitable graphics device found!");
-            Logf("Using graphics device: %s", physicalDeviceProperties.properties.deviceName.data());
+            if (selectedDeviceIndex < physicalDevices.size()) {
+                selectedDevice = physicalDevices[selectedDeviceIndex];
+                selectedDeviceProperties = physicalDeviceProperties[selectedDeviceIndex];
+                selectedType = physicalDeviceProperties[selectedDeviceIndex].properties.deviceType;
+            } else {
+                for (uint32_t i = 0; i < physicalDevices.size(); i++) {
+                    auto &device = physicalDevices[i];
+                    auto &deviceProperties = physicalDeviceProperties[i];
+                    // TODO: Check device extension support
+                    // TODO: Check for capabilities like Geometry/Compute shaders
+                    // auto features = device.getFeatures();
+                    auto deviceType = deviceProperties.properties.deviceType;
+                    if (deviceType == vk::PhysicalDeviceType::eDiscreteGpu) {
+                        selectedDevice = device;
+                        selectedDeviceProperties = deviceProperties;
+                        selectedType = deviceProperties.properties.deviceType;
+                        selectedDeviceIndex = i;
+                        break;
+                    } else if (deviceType == vk::PhysicalDeviceType::eIntegratedGpu && deviceType != selectedType) {
+                        selectedDevice = device;
+                        selectedDeviceProperties = deviceProperties;
+                        selectedType = deviceProperties.properties.deviceType;
+                        selectedDeviceIndex = i;
+                    }
+                }
+            }
+            Assert(selectedDevice, "No suitable graphics device found!");
+            Logf("Using graphics device %u: [%u:%u] %s",
+                selectedDeviceIndex,
+                selectedDeviceProperties.properties.vendorID,
+                selectedDeviceProperties.properties.deviceID,
+                selectedDeviceProperties.properties.deviceName.data());
 
             std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
-            auto queueFamilies = physicalDevice.getQueueFamilyProperties();
+            auto queueFamilies = selectedDevice.getQueueFamilyProperties();
             std::vector<uint32_t> queuesUsedCount(queueFamilies.size());
             std::vector<std::vector<float>> queuePriority(queueFamilies.size());
 
@@ -218,7 +271,7 @@ namespace sp::vulkan {
                     auto &props = queueFamilies[i];
                     if (!(props.queueFlags & require)) continue;
                     if (props.queueFlags & deny) continue;
-                    if (surfaceSupport && !physicalDevice.getSurfaceSupportKHR(i, surface)) continue;
+                    if (surfaceSupport && !selectedDevice.getSurfaceSupportKHR(i, surface)) continue;
                     if (queuesUsedCount[i] >= props.queueCount) continue;
 
                     queueFamilyIndex[queueType] = i;
@@ -285,7 +338,7 @@ namespace sp::vulkan {
                 "VK_KHR_portability_subset",
             };
 
-            auto availableDeviceExtensions = physicalDevice.enumerateDeviceExtensionProperties();
+            auto availableDeviceExtensions = selectedDevice.enumerateDeviceExtensionProperties();
 
             for (auto requiredExtension : enabledDeviceExtensions) {
                 bool found = false;
@@ -312,7 +365,7 @@ namespace sp::vulkan {
             vk::PhysicalDeviceFeatures2 deviceFeatures2;
             deviceFeatures2.pNext = &availableVulkan11Features;
 
-            physicalDevice.getFeatures2KHR(&deviceFeatures2);
+            selectedDevice.getFeatures2KHR(&deviceFeatures2);
 
             const auto &availableDeviceFeatures = deviceFeatures2.features;
             Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
@@ -393,7 +446,7 @@ namespace sp::vulkan {
     #pragma GCC diagnostic pop
 #endif
 
-            device = physicalDevice.createDeviceUnique(deviceInfo, nullptr);
+            device = selectedDevice.createDeviceUnique(deviceInfo, nullptr);
             VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
 #ifdef TRACY_ENABLE_GRAPHICS
@@ -423,7 +476,7 @@ namespace sp::vulkan {
                     std::make_move_iterator(cmdBufs.begin()),
                     std::make_move_iterator(cmdBufs.end()));
 
-                tracing.tracyContexts[queueType] = tracy::CreateVkContext(physicalDevice,
+                tracing.tracyContexts[queueType] = tracy::CreateVkContext(selectedDevice,
                     *device,
                     queue,
                     *tracing.cmdBuffers.back(),
@@ -451,7 +504,7 @@ namespace sp::vulkan {
 
             VmaAllocatorCreateInfo allocatorInfo = {};
             allocatorInfo.vulkanApiVersion = VULKAN_API_VERSION;
-            allocatorInfo.physicalDevice = physicalDevice;
+            allocatorInfo.physicalDevice = selectedDevice;
             allocatorInfo.device = *device;
             allocatorInfo.instance = instance;
             allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
@@ -599,7 +652,7 @@ namespace sp::vulkan {
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
-        auto surfaceCapabilities = physicalDevice.getSurfaceCapabilitiesKHR(surface);
+        auto surfaceCapabilities = selectedDevice.getSurfaceCapabilitiesKHR(surface);
 
         if (surfaceCapabilities.currentExtent.width == 0 || surfaceCapabilities.currentExtent.height == 0) {
             return;
@@ -612,8 +665,8 @@ namespace sp::vulkan {
             surfaceCapabilities.currentExtent.height = windowSize.y;
         }
 
-        auto surfaceFormats = physicalDevice.getSurfaceFormatsKHR(surface);
-        auto presentModes = physicalDevice.getSurfacePresentModesKHR(surface);
+        auto surfaceFormats = selectedDevice.getSurfaceFormatsKHR(surface);
+        auto presentModes = selectedDevice.getSurfacePresentModesKHR(surface);
 
         vk::PresentModeKHR presentMode = vk::PresentModeKHR::eImmediate;
         for (auto &mode : presentModes) {
@@ -1718,7 +1771,7 @@ namespace sp::vulkan {
     }
 
     vk::FormatProperties DeviceContext::FormatProperties(vk::Format format) const {
-        return physicalDevice.getFormatProperties(format);
+        return selectedDevice.getFormatProperties(format);
     }
 
     vk::Format DeviceContext::SelectSupportedFormat(vk::FormatProperties requiredProps,

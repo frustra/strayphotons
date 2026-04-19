@@ -600,7 +600,7 @@ namespace sp::vulkan {
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
         lighting.AddLightingPass(graph);
-        renderer::AddSkyboxPass(graph);
+        skybox.AddPass(graph);
         transparency.AddPass(graph, view);
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
@@ -625,6 +625,7 @@ namespace sp::vulkan {
                 if (!loadModel(lock, this->scene, ent)) complete = false;
             }
             if (!this->scene.PreloadTextures(lock)) complete = false;
+            if (!skybox.PreloadTextures(device)) complete = false;
             if (!smaa.PreloadTextures(device)) complete = false;
             return complete;
         });

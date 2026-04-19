@@ -17,6 +17,7 @@
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
+#include "graphics/vulkan/render_passes/Skybox.hh"
 #include "graphics/vulkan/render_passes/Transparency.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
@@ -80,6 +81,7 @@ namespace sp::vulkan {
 
         renderer::Voxels voxels;
         renderer::Lighting lighting;
+        renderer::Skybox skybox;
         renderer::Transparency transparency;
         renderer::Emissive emissive;
         renderer::SMAA smaa;
