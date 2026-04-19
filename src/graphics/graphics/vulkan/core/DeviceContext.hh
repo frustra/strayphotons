@@ -61,7 +61,7 @@ namespace sp::vulkan {
 
     class DeviceContext final : public sp::GraphicsContext {
     public:
-        DeviceContext(GraphicsManager &graphics, bool enableValidationLayers = false);
+        DeviceContext(Game &game);
         virtual ~DeviceContext();
 
         // Access the underlying Vulkan device via the arrow operator
@@ -74,7 +74,7 @@ namespace sp::vulkan {
         }
 
         vk::PhysicalDevice &PhysicalDevice() {
-            return physicalDevice;
+            return selectedDevice;
         }
 
         vk::Instance &Instance() {
@@ -206,11 +206,7 @@ namespace sp::vulkan {
         void PushInFlightObject(TemporaryObject object, vk::Fence fence);
 
         const vk::PhysicalDeviceLimits &Limits() const {
-            return physicalDeviceProperties.properties.limits;
-        }
-
-        const vk::PhysicalDeviceDescriptorIndexingProperties &IndexingLimits() const {
-            return physicalDeviceDescriptorIndexingProperties;
+            return selectedDeviceProperties.properties.limits;
         }
 
         vk::FormatProperties FormatProperties(vk::Format format) const;
@@ -278,6 +274,7 @@ namespace sp::vulkan {
 
         std::shared_ptr<Shader> CreateShader(const std::string &name, Hash64 compareHash);
 
+        Game &game;
         GraphicsManager &graphics;
 
         std::thread::id mainThread;
@@ -285,9 +282,8 @@ namespace sp::vulkan {
 
         vk::Instance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;
-        vk::PhysicalDevice physicalDevice;
-        vk::PhysicalDeviceProperties2 physicalDeviceProperties;
-        vk::PhysicalDeviceDescriptorIndexingProperties physicalDeviceDescriptorIndexingProperties;
+        vk::PhysicalDevice selectedDevice;
+        vk::PhysicalDeviceProperties2 selectedDeviceProperties;
         vk::UniqueDevice device;
         std::unique_ptr<VmaAllocator_T, void (*)(VmaAllocator)> allocator;
         vk::SurfaceKHR surface;
@@ -297,9 +293,9 @@ namespace sp::vulkan {
 
 #ifdef TRACY_ENABLE_GRAPHICS
         struct {
-            vector<vk::UniqueCommandPool> cmdPools;
-            vector<vk::UniqueCommandBuffer> cmdBuffers;
-            vector<tracy::VkCtx *> tracyContexts;
+            std::vector<vk::UniqueCommandPool> cmdPools;
+            std::vector<vk::UniqueCommandBuffer> cmdBuffers;
+            std::vector<tracy::VkCtx *> tracyContexts;
         } tracing;
 #endif
 

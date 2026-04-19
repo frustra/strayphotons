@@ -1,6 +1,6 @@
 #!/usr/bin/env -S python3 -u
 #
-# Copyright (C) 2025 Jacob Wirth
+# Copyright (C) 2026 Jacob Wirth
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -8,6 +8,7 @@
 
 import argparse
 import os
+import shutil
 import glob
 import subprocess
 import urllib.request
@@ -34,30 +35,41 @@ def main():
 
     build_info = content[0]
     artifacts = {}
+    build_label = os.environ.get('BUILDKITE_LABEL')
+    job = None
+    for i in range(0, 2):
+        for j in build_info['jobs']:
+            if not 'state' in j or j['state'] != "passed":
+                continue
 
-    for job in build_info['jobs']:
-        if job['state'] != "passed":
-            continue
+            if j['name'] == build_label or i > 0:
+                if i > 0:
+                    print(f'No matching artifacts, using "{j["name"]}" instead.')
+                job = j
+                break
+        if job is not None:
+            break
 
-        build_label = os.environ.get('BUILDKITE_LABEL')
-        if job['name'] != build_label:
-            continue
+    if job is None:
+        print('Could not find valid job to compare against')
+        exit(1)
 
-        print("Using Job:", job['artifacts_url'])
-        page = 1
-        while len(content) > 0 or page == 1:
-            req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
-            req.add_header("Authorization", "Bearer " + args.token)
+    print("Using Job:", job['artifacts_url'])
+    page = 1
+    while len(content) > 0 or page == 1:
+        req = urllib.request.Request(job['artifacts_url'] + '?page=' + str(page))
+        req.add_header("Authorization", "Bearer " + args.token)
 
-            response = urllib.request.urlopen(req).read()
-            content = json.loads(response.decode('utf-8'))
+        response = urllib.request.urlopen(req).read()
+        content = json.loads(response.decode('utf-8'))
 
-            for artifact in content:
-                if artifact['path'].startswith('screenshots/tests/'):
-                    artifacts[artifact['path']] = artifact
-                    artifacts[artifact['path']]['job'] = job
+        for artifact in content:
+            path = artifact['path'].replace('\\', '/')
+            if path.startswith('screenshots/tests/'):
+                artifacts[path] = artifact
+                artifacts[path]['job'] = job
 
-            page += 1
+        page += 1
 
     print('Downloading', len(artifacts), 'artifacts...')
 
@@ -70,7 +82,7 @@ def main():
 
     glob_path = os.path.join(bin_root, 'screenshots/tests/**/*.png')
     for local_path in glob.iglob(glob_path, recursive=True):
-        path = os.path.relpath(local_path, bin_root)
+        path = os.path.relpath(local_path, bin_root).replace('\\', '/')
         master_path = os.path.join(bin_root, 'comparison/' + path)
         diff_path = os.path.join(bin_root, 'diff/' + path)
 
@@ -84,23 +96,30 @@ def main():
         master_img_src = 'https://builds.strayphotons.net/' + artifacts[path]['job']['id'] + '/' + path
 
         os.system('bash -c \'mkdir -p "' + os.path.dirname(diff_path) + '"\'')
-        difference_str = subprocess.getoutput('compare -fuzz 2% -metric mae "' + local_path + '" "' + master_path + '" "' + diff_path + '"')
+        if shutil.which('magick'):
+            imagemagick_bin = 'magick compare'
+        elif shutil.which('compare'):
+            imagemagick_bin = 'compare'
+        else:
+            print('Error: ImageMagick not installed')
+            exit(1)
+        difference_str = subprocess.getoutput(f'{imagemagick_bin} -fuzz 2% -metric mae "{local_path}" "{master_path}" "{diff_path}"')
         metrics = difference_str.split(' ')
-        if float(metrics[0]) < 5.0:
+        if float(metrics[0]) <= 5.0:
             print('Pass', path, ':', float(metrics[0])),
         else:
             print('!! Fail', path, ':', float(metrics[0]))
             subprocess.call('buildkite-agent artifact upload "diff/' + path + '"', shell=True)
             print("\033]1338;url='artifact://diff/" + path + "';alt='diff/" + path + "'\a")
-            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True,
-                input='Screenshot <b>' + path + '</b> has changed: ' + metrics[0] + ' &gt; 5<br/>' +
-                '<a href="' + current_build_path + '">Current Build</a> -- ' +
-                '<a href="' + master_build_path + '">Master Build</a> -- ' +
-                '<a href="artifact://diff/' + path + '">Difference</a><br/>' +
-                '<a href="' + current_img_src + '"><img src="' + current_img_src + '" alt="Current Build" height=200></a>' +
-                '<a href="' + master_img_src + '"><img src="' + master_img_src + '" alt="Master Build" height=200></a>' +
-                '<a href="artifact://diff/' + path + '"><img src="artifact://diff/' + path + '" alt="Difference" height=200></a><br/>'
-            )
+            input = f"""Screenshot <b>{path}</b> has changed: {metrics[0]} &gt; 5<br/>
+<a href="{current_build_path}">Current Build</a> -- <a href="{master_build_path}">Master Build</a>
+ -- <a href="artifact://diff/{path}">Difference</a><br/>
+<a href="{current_img_src}"><img src="{current_img_src}" alt="Current Build" height=200></a>
+<a href="{master_img_src}"><img src="{master_img_src}" alt="Master Build" height=200></a>
+<a href="artifact://diff/{path}"><img src="artifact://diff/{path}" alt="Difference" height=200></a><br/>
+"""
+            subprocess.run('buildkite-agent annotate --scope=job --style "warning" --append', text=True, shell=True, input=input)
+            subprocess.run('buildkite-agent annotate --style "warning" --append', text=True, shell=True, input=input)
 
 if __name__ == '__main__':
     main()

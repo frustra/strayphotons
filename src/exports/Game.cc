@@ -37,6 +37,7 @@ SP_EXPORT sp_game_t *sp_game_init(int argc, char **argv) {
             ("window-scale", "Initial window scaling factor", value<std::string>())
             ("no-vr", "Disable automatic XR/VR system loading")
             ("headless", "Disable window creation and graphics initialization")
+            ("gpu", "Specify a graphics device ID to use (index or vendor:device)", value<std::string>())
             ("with-validation-layers", "Enable Vulkan validation layers")
             ("c,command", "Run a console command on init", value<std::vector<std::string>>())
             ("v,verbose", "Enable debug logging")
