@@ -27,7 +27,7 @@ layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
 layout(constant_id = 3) const float CURVE_SCALE = 2.9;
 layout(constant_id = 4) const float DARK_SATURATION = 0.7;
 layout(constant_id = 5) const float BRIGHT_SATURATION = 1.0;
-const float ditherAmount = 0.5 / 255.0;
+const float ditherAmount = 1.0 / 255.0;
 
 void main() {
     vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
@@ -36,8 +36,7 @@ void main() {
                       HableSDRTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B));
 
 #ifdef ENABLE_DITHER
-    vec4 rng = randState(inTexCoord.xyx);
-    toneMapped += (rand2(rng) - 0.5) * ditherAmount;
+    toneMapped += (InterleavedGradientNoise(gl_FragCoord.xy) - 0.5) * ditherAmount;
 #endif
 
     vec3 hsv = RGBtoHSV(toneMapped);
