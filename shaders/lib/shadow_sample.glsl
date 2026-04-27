@@ -67,24 +67,16 @@ float DirectOcclusion(ShadowInfo info, vec3 surfaceNormal, mat2 rotation0) {
 
     float values[SHADOW_MAP_SAMPLE_COUNT];
     float avgDepth = 0;
-    // float theta = M_PI / 2.0; // 45 degree start
-    // float r = 1.0;
-    // for (int i = 0; i < SHADOW_MAP_SAMPLE_COUNT; i++) {
-    //     vec2 spiralXY = vec2(sin(theta), cos(theta)) * sqrt(r);
-    //     vec2 modifiedCoord = shadowMapCoord + rotation0 * spiralXY * shadowSampleOffset * sampleScale;
-    //     values[i] = texture(TEXTURE_SAMPLER(modifiedCoord * info.mapOffset.zw + info.mapOffset.xy)).r;
-    //     avgDepth += values[i] * (1.0 - r);
-    //     theta += 2.0 * M_PI / M_GOLDEN_RATIO;
-    //     r -= 1.0 / SHADOW_MAP_SAMPLE_COUNT;
-    // }
-    // Quasirandom sequence inspired by
-    // https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    float theta = M_PI / 2.0; // 45 degree start
+    float r = 1.0;
+    vec3 texCoord = ViewPosToScreenPos(info.shadowMapPos, info.projMat);
     for (int i = 0; i < SHADOW_MAP_SAMPLE_COUNT; i++) {
-        vec2 qrandXY = vec2(fract((i + 1) / M_PLASTIC_RATIO_2D) * 2.0 - 1.0,
-            fract((i + 1) / (M_PLASTIC_RATIO_2D * M_PLASTIC_RATIO_2D)) * 2.0 - 1.0);
-        vec2 modifiedCoord = shadowMapCoord + rotation0 * qrandXY * shadowSampleOffset * sampleScale;
+        vec2 spiralXY = vec2(sin(theta), cos(theta)) * sqrt(r) * 1.41;
+        vec2 modifiedCoord = shadowMapCoord + rotation0 * spiralXY * shadowSampleOffset * sampleScale;
         values[i] = texture(TEXTURE_SAMPLER(modifiedCoord * info.mapOffset.zw + info.mapOffset.xy)).r;
-        avgDepth += values[i] * (1.0 - length(qrandXY) / sqrt(2));
+        avgDepth += values[i] * (1.0 - r);
+        theta += 2.0 * M_PI / M_GOLDEN_RATIO;
+        r -= 1.0 / (SHADOW_MAP_SAMPLE_COUNT - 0.5);
     }
     avgDepth /= (SHADOW_MAP_SAMPLE_COUNT + 1) * 0.5;
 
