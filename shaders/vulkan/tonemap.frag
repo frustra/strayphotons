@@ -40,7 +40,9 @@ void main() {
 #endif
 
     vec3 hsv = RGBtoHSV(toneMapped);
-    hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, sqrt(hsv.z)), 0, 1);
+    float brightness = clamp(hsv.z, 0, 1);
+    float darkMix = (2 - brightness) * brightness;
+    hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, darkMix), 0, 1);
     outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
 
 #ifdef DEBUG_OVEREXPOSED
