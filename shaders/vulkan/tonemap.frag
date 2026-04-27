@@ -8,7 +8,7 @@
 #version 430
 
 // #define DEBUG_OVEREXPOSED
-// #define ENABLE_DITHER
+#define ENABLE_DITHER
 
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
@@ -21,22 +21,19 @@ layout(binding = 0) uniform sampler2DArray luminanceTex;
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
-const float whitePoint = 8.0;
-const float curveScale = 2.9;
+layout(constant_id = 0) const float WHITE_POINT_R = 8.0;
+layout(constant_id = 1) const float WHITE_POINT_G = 8.0;
+layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
+layout(constant_id = 3) const float CURVE_SCALE = 2.9;
+layout(constant_id = 4) const float DARK_SATURATION = 0.7;
+layout(constant_id = 5) const float BRIGHT_SATURATION = 1.0;
 const float ditherAmount = 0.5 / 255.0;
-const vec2 saturation = vec2(0, 1);
 
 void main() {
     vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
-    vec3 toneMapped = HableSDRTonemap(max(vec3(0), luminosity.rgb) * curveScale) / HableSDRTonemap(vec3(whitePoint));
-
-#ifdef DEBUG_OVEREXPOSED
-    if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
-        // Highlight overexposed/blown out areas.
-        toneMapped = vec3(1, 0, 0);
-    }
-#endif
+    vec3 toneMapped = HableSDRTonemap(max(vec3(0), luminosity.rgb) * CURVE_SCALE) /
+                      HableSDRTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B));
 
 #ifdef ENABLE_DITHER
     vec4 rng = randState(inTexCoord.xyx);
@@ -44,6 +41,13 @@ void main() {
 #endif
 
     vec3 hsv = RGBtoHSV(toneMapped);
-    hsv.y = mix(saturation.x, saturation.y, hsv.y);
+    hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, sqrt(hsv.z)), 0, 1);
     outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
+
+#ifdef DEBUG_OVEREXPOSED
+    if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {
+        // Highlight overexposed/blown out areas.
+        outFragColor = vec4(1, 0, 0, 1);
+    }
+#endif
 }

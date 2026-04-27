@@ -16,6 +16,7 @@
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "glm/fwd.hpp"
+#include "glm/gtx/component_wise.hpp"
 #include "graphics/GenericCompositor.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
@@ -332,6 +333,8 @@ namespace sp {
                 ImGui::TextUnformatted("Full Screen");
                 ImGui::TextUnformatted("Show FPS");
                 ImGui::TextUnformatted("Field of View");
+                ImGui::TextUnformatted("Tonemap White Point");
+                ImGui::TextUnformatted("Display Gamma");
                 ImGui::TextUnformatted("UI Scaling");
                 ImGui::TextUnformatted("Mirror VR View");
                 ImGui::TextUnformatted("Voxel Lighting Mode");
@@ -403,6 +406,27 @@ namespace sp {
                     ImGui::PushItemWidth(300.0f);
                     if (ImGui::SliderFloat("##fovDegrees", &fovDegrees, 1.0f, 160.0f, "%.0f degrees")) {
                         fovCVar.Set(fovDegrees);
+                    }
+                }
+                {
+                    auto &whitePointCVar = GetConsoleManager().GetCVar<glm::vec3>("r.tonemapwhitepoint");
+                    float whitePoint = glm::compMax(whitePointCVar.Get());
+                    ImGui::PushItemWidth(300.0f);
+                    if (ImGui::SliderFloat("##whitePoint",
+                            &whitePoint,
+                            1.0f,
+                            16.0f,
+                            "%.1f",
+                            ImGuiSliderFlags_Logarithmic)) {
+                        whitePointCVar.Set(glm::vec3(whitePoint));
+                    }
+                }
+                {
+                    auto &gammaCurveCVar = GetConsoleManager().GetCVar<float>("r.tonemapgammacurve");
+                    float gammaCurve = gammaCurveCVar.Get();
+                    ImGui::PushItemWidth(300.0f);
+                    if (ImGui::SliderFloat("##gammaCurve", &gammaCurve, 1.0f, 16.0f, "%.1f")) {
+                        gammaCurveCVar.Set(gammaCurve);
                     }
                 }
                 {
