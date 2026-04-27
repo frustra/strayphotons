@@ -26,7 +26,7 @@ layout(constant_id = 1) const float WHITE_POINT_G = 8.0;
 layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
 layout(constant_id = 3) const float CURVE_SCALE = 2.9;
 layout(constant_id = 4) const float DARK_SATURATION = 0.7;
-layout(constant_id = 5) const float BRIGHT_SATURATION = 1.0;
+layout(constant_id = 5) const float BRIGHT_SATURATION = 1.2;
 const float ditherAmount = 1.0 / 255.0;
 
 void main() {

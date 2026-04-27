@@ -20,7 +20,7 @@ namespace sp::vulkan::renderer {
         0.7,
         "The HSV saturation scale for dark parts of the scene.");
     static CVar<float> CVarBrightSaturation("r.TonemapBrightSaturation",
-        1.1,
+        1.2,
         "The HSV saturation scale for bright parts of the scene.");
 
     void AddTonemap(RenderGraph &graph) {
