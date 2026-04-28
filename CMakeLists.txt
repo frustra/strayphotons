@@ -92,7 +92,12 @@ endif()
 
 set(PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-set(CMAKE_INSTALL_RPATH $ORIGIN)
+if(APPLE)
+  set(CMAKE_INSTALL_RPATH "@executable_path;/usr/local/lib")
+elseif(UNIX)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+endif()
+
 set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
 
 # Put RUNTIME and LIBRARY outputs into a folder where we can run them without installing
