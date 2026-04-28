@@ -4,6 +4,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+#define VULKAN_HPP_USE_REFLECT
 
 #include "DeviceContext.hh"
 
@@ -307,10 +308,6 @@ namespace sp::vulkan {
                 }
             }
 
-            // currently we have code that assumes the transfer queue family is different from the other queues
-            Assert(queueFamilyIndex[QUEUE_TYPE_TRANSFER] != queueFamilyIndex[QUEUE_TYPE_GRAPHICS],
-                "transfer queue family overlaps graphics queue");
-
             std::vector<vk::DeviceQueueCreateInfo> queueInfos;
             for (uint32_t i = 0; i < queueFamilies.size(); i++) {
                 if (queuesUsedCount[i] == 0) continue;
@@ -359,71 +356,51 @@ namespace sp::vulkan {
                 }
             }
 
-            vk::PhysicalDeviceVulkan12Features availableVulkan12Features;
-            vk::PhysicalDeviceVulkan11Features availableVulkan11Features;
+            vk::PhysicalDeviceVulkan12Features availableVulkan12Features = {};
+            vk::PhysicalDeviceVulkan11Features availableVulkan11Features = {};
             availableVulkan11Features.pNext = &availableVulkan12Features;
-            vk::PhysicalDeviceFeatures2 deviceFeatures2;
-            deviceFeatures2.pNext = &availableVulkan11Features;
+            vk::PhysicalDeviceFeatures2 availableDeviceFeatures2 = {};
+            availableDeviceFeatures2.pNext = &availableVulkan11Features;
+            auto &availableVulkan10Features = availableDeviceFeatures2.features;
+            selectedDevice.getFeatures2KHR(&availableDeviceFeatures2);
 
-            selectedDevice.getFeatures2KHR(&deviceFeatures2);
-
-            const auto &availableDeviceFeatures = deviceFeatures2.features;
-            Assert(availableDeviceFeatures.fillModeNonSolid, "device must support fillModeNonSolid");
-            Assert(availableDeviceFeatures.samplerAnisotropy, "device must support samplerAnisotropy");
-            Assert(availableDeviceFeatures.multiDrawIndirect, "device must support multiDrawIndirect");
-            Assert(availableDeviceFeatures.multiViewport, "device must support multiViewport");
-            Assert(availableDeviceFeatures.drawIndirectFirstInstance, "device must support drawIndirectFirstInstance");
-            Assert(availableDeviceFeatures.shaderInt16, "device must support shaderInt16");
-            Assert(availableDeviceFeatures.fragmentStoresAndAtomics, "device must support fragmentStoresAndAtomics");
-            Assert(availableDeviceFeatures.wideLines, "device must support wideLines");
-            Assert(availableVulkan11Features.multiview, "device must support multiview");
-            Assert(availableVulkan11Features.shaderDrawParameters, "device must support shaderDrawParameters");
-            Assert(availableVulkan11Features.storageBuffer16BitAccess, "device must support storageBuffer16BitAccess");
-            Assert(availableVulkan11Features.uniformAndStorageBuffer16BitAccess,
-                "device must support uniformAndStorageBuffer16BitAccess");
-            Assert(availableVulkan12Features.shaderOutputViewportIndex,
-                "device must support shaderOutputViewportIndex");
-            Assert(availableVulkan12Features.shaderOutputLayer, "device must support shaderOutputLayer");
-            Assert(availableVulkan12Features.drawIndirectCount, "device must support drawIndirectCount");
-            Assert(availableVulkan12Features.runtimeDescriptorArray, "device must support runtimeDescriptorArray");
-            Assert(availableVulkan12Features.descriptorBindingPartiallyBound,
-                "device must support descriptorBindingPartiallyBound");
-            Assert(availableVulkan12Features.descriptorBindingVariableDescriptorCount,
-                "device must support descriptorBindingVariableDescriptorCount");
-            Assert(availableVulkan12Features.shaderSampledImageArrayNonUniformIndexing,
-                "device must support shaderSampledImageArrayNonUniformIndexing");
-            Assert(availableVulkan12Features.descriptorBindingUpdateUnusedWhilePending,
-                "device must support descriptorBindingUpdateUnusedWhilePending");
-
-            vk::PhysicalDeviceVulkan12Features enabledVulkan12Features;
-            enabledVulkan12Features.shaderOutputViewportIndex = true;
-            enabledVulkan12Features.shaderOutputLayer = true;
-            enabledVulkan12Features.drawIndirectCount = true;
-            enabledVulkan12Features.runtimeDescriptorArray = true;
-            enabledVulkan12Features.descriptorBindingPartiallyBound = true;
-            enabledVulkan12Features.descriptorBindingVariableDescriptorCount = true;
-            enabledVulkan12Features.shaderSampledImageArrayNonUniformIndexing = true;
-            enabledVulkan12Features.descriptorBindingUpdateUnusedWhilePending = true;
-
-            vk::PhysicalDeviceVulkan11Features enabledVulkan11Features;
-            enabledVulkan11Features.storageBuffer16BitAccess = true;
-            enabledVulkan11Features.uniformAndStorageBuffer16BitAccess = true;
-            enabledVulkan11Features.multiview = true;
-            enabledVulkan11Features.shaderDrawParameters = true;
+            vk::PhysicalDeviceVulkan12Features enabledVulkan12Features = {};
+            vk::PhysicalDeviceVulkan11Features enabledVulkan11Features = {};
             enabledVulkan11Features.pNext = &enabledVulkan12Features;
-
-            vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2;
+            vk::PhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
             enabledDeviceFeatures2.pNext = &enabledVulkan11Features;
-            auto &enabledDeviceFeatures = enabledDeviceFeatures2.features;
-            enabledDeviceFeatures.dualSrcBlend = true;
-            enabledDeviceFeatures.fillModeNonSolid = true;
-            enabledDeviceFeatures.samplerAnisotropy = true;
-            enabledDeviceFeatures.multiDrawIndirect = true;
-            enabledDeviceFeatures.drawIndirectFirstInstance = true;
-            enabledDeviceFeatures.multiViewport = true;
-            enabledDeviceFeatures.shaderInt16 = true;
-            enabledDeviceFeatures.fragmentStoresAndAtomics = true;
-            enabledDeviceFeatures.wideLines = true;
+            auto &enabledVulkan10Features = enabledDeviceFeatures2.features;
+
+#define REQUIRE_DEVICE_FEATURE(MAJOR_VERSION, MINOR_VERSION, NAME)                                                     \
+    if (availableVulkan##MAJOR_VERSION##MINOR_VERSION##Features.NAME) {                                                \
+        enabledVulkan##MAJOR_VERSION##MINOR_VERSION##Features.NAME = true;                                             \
+    } else {                                                                                                           \
+        Errorf("Graphics Device is missing required Vulkan %s.%s feature: %s", #MAJOR_VERSION, #MINOR_VERSION, #NAME); \
+    }
+
+            REQUIRE_DEVICE_FEATURE(1, 2, shaderOutputViewportIndex);
+            REQUIRE_DEVICE_FEATURE(1, 2, shaderOutputLayer);
+            REQUIRE_DEVICE_FEATURE(1, 2, drawIndirectCount);
+            REQUIRE_DEVICE_FEATURE(1, 2, runtimeDescriptorArray);
+            REQUIRE_DEVICE_FEATURE(1, 2, descriptorBindingPartiallyBound);
+            REQUIRE_DEVICE_FEATURE(1, 2, descriptorBindingVariableDescriptorCount);
+            REQUIRE_DEVICE_FEATURE(1, 2, shaderSampledImageArrayNonUniformIndexing);
+            REQUIRE_DEVICE_FEATURE(1, 2, descriptorBindingUpdateUnusedWhilePending);
+
+            REQUIRE_DEVICE_FEATURE(1, 1, storageBuffer16BitAccess);
+            REQUIRE_DEVICE_FEATURE(1, 1, uniformAndStorageBuffer16BitAccess);
+            REQUIRE_DEVICE_FEATURE(1, 1, multiview);
+            REQUIRE_DEVICE_FEATURE(1, 1, shaderDrawParameters);
+
+            REQUIRE_DEVICE_FEATURE(1, 0, dualSrcBlend);
+            REQUIRE_DEVICE_FEATURE(1, 0, fillModeNonSolid);
+            REQUIRE_DEVICE_FEATURE(1, 0, samplerAnisotropy);
+            REQUIRE_DEVICE_FEATURE(1, 0, multiDrawIndirect);
+            REQUIRE_DEVICE_FEATURE(1, 0, drawIndirectFirstInstance);
+            REQUIRE_DEVICE_FEATURE(1, 0, multiViewport);
+            REQUIRE_DEVICE_FEATURE(1, 0, shaderInt16);
+            REQUIRE_DEVICE_FEATURE(1, 0, fragmentStoresAndAtomics);
+            REQUIRE_DEVICE_FEATURE(1, 0, wideLines);
 
             vk::DeviceCreateInfo deviceInfo;
             deviceInfo.queueCreateInfoCount = queueInfos.size();
