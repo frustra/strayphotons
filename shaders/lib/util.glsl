@@ -12,6 +12,7 @@
 
 #define M_PI 3.1415926535897932384626433832795
 #define M_GOLDEN_RATIO 1.618033988749
+#define M_PLASTIC_RATIO_2D 1.32471795724474602596
 
 #define saturate(x) clamp(x, 0.0, 1.0)
 // hash(x) based on sin() is not identical across Nvidia/AMD

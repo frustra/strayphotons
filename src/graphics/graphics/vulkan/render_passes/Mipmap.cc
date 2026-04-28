@@ -17,46 +17,29 @@ namespace sp::vulkan::renderer {
         if (id == InvalidResource) id = graph.LastOutputID();
         graph.AddPass("Mipmap")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Read(id, Access::TransferRead);
                 builder.Write(id, Access::TransferWrite);
+                builder.Read(id, Access::TransferRead);
             })
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
 
-                AccessInfo last = GetAccessInfo(image->LastAccess());
-                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
-                transferMips.baseMipLevel = 0;
+                transferMips.baseMipLevel = 1;
                 transferMips.mipLevelCount = 1;
 
                 cmd.ImageBarrier(image,
-                    image->LastLayout(),
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    last.stageMask,
-                    last.accessMask,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    transferMips);
-
-                transferMips.baseMipLevel = 1;
-                transferMips.mipLevelCount = image->MipLevels() - 1;
-
-                cmd.ImageBarrier(image,
-                    image->LastLayout(),
+                    vk::ImageLayout::eUndefined,
                     vk::ImageLayout::eTransferDstOptimal,
-                    last.stageMask,
-                    last.accessMask,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    {},
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
                     transferMips);
 
-                auto baseMipExtent = image->Extent();
-
-                vk::Offset3D currentExtent = {(int32_t)baseMipExtent.width,
-                    (int32_t)baseMipExtent.height,
-                    (int32_t)baseMipExtent.depth};
+                vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
+                    (int32_t)image->Extent().height,
+                    (int32_t)image->Extent().depth};
 
                 for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
@@ -78,21 +61,20 @@ namespace sp::vulkan::renderer {
                         vk::ImageLayout::eTransferDstOptimal,
                         {blit},
                         vk::Filter::eLinear);
+
+                    transferMips.baseMipLevel = i;
+                    cmd.ImageBarrier(image,
+                        vk::ImageLayout::eTransferDstOptimal,
+                        vk::ImageLayout::eTransferSrcOptimal,
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferWrite,
+                        vk::PipelineStageFlagBits::eTransfer,
+                        vk::AccessFlagBits::eTransferRead,
+                        transferMips);
                 }
 
-                transferMips.baseMipLevel = 0;
-                transferMips.mipLevelCount = 1;
-                cmd.ImageBarrier(image,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite,
-                    transferMips);
-
-                // Each mip has now been transitioned to TransferDst.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+                // Each mip has now been transitioned to TransferSrc.
+                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
             });
     }
 } // namespace sp::vulkan::renderer
