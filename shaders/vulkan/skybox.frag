@@ -35,14 +35,14 @@ const vec3[3] colorTints = vec3[](vec3(255, 182, 119) / 255, vec3(255, 252, 246)
 // const vec3[4] dustColors = vec3[](vec3(81, 30, 30) / 255, vec3(226, 158, 56) / 255, vec3(85, 131, 185) / 255,
 // vec3(219, 216, 220) / 255);
 
-float initRand(vec2 seed) {
-    float x = hash(seed.x);
-    return hash(seed.y + x);
+uint initRand(vec2 seed) {
+    uint x = lowbias32(floatBitsToUint(seed.x));
+    return lowbias32(floatBitsToUint(seed.y) + x);
 }
 
-float rand(inout float state) {
-    state = hash(state + 1.0);
-    return state;
+float rand(inout uint state) {
+    state = lowbias32(state + 1);
+    return uintBitsToNormalizedFloat(state);
 }
 
 void main() {
@@ -64,7 +64,7 @@ void main() {
 
     ivec2 cellNum = ivec2(viewPos);
 
-    float rng = initRand(cellNum);
+    uint rng = initRand(cellNum);
     float pointSize = max(0.00004, rand(rng) * starSize);
     vec2 offsetPos = vec2(rand(rng), rand(rng));
     float edgeScale = density * viewportScale * pointSize * 50;
@@ -78,7 +78,7 @@ void main() {
     vec3 color = colorTints[int(rand(rng) * 3)].rgb;
     float pointDist = smoothstep(1 - pointSize * viewportScale, 1, dot(starDir, rayDir));
     float noise = rand(rng) * rand(rng) * rand(rng);
-    float randomBrightness = brightness * noise * noise * noise * noise;
+    float randomBrightness = brightness * pow(noise, 12);
     outFragColor = vec4(color * pointDist * randomBrightness * exposure, 1.0);
     // outFragColor = vec4(color * pointDist * exposure, 1.0);
     // if (index == 0) {
