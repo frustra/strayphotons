@@ -21,10 +21,10 @@ namespace sp::vulkan::renderer {
     static CVar<bool> CVarDrawSkybox1("r.DrawSkybox1", true, "Enable drawing the second skybox");
     static CVar<bool> CVarDrawSkybox2("r.DrawSkybox2", true, "Enable drawing the third skybox");
     static CVar<float> CVarSkyboxStarBrightness("r.SkyboxStarBrightness",
-        5.0f,
+        1.0f,
         "Brightness scaling value for star skybox");
-    static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 1000.0f, "Star tile density for skybox rendering");
-    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 15.0f, "Star size for skybox rendering");
+    static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 800.0f, "Star tile density for skybox rendering");
+    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 20.0f, "Star size for skybox rendering");
 
     void AddSkyboxPass(RenderGraph &graph) {
         static const std::array<glm::vec4, 3> rotations = {

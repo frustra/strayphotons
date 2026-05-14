@@ -65,7 +65,7 @@ void main() {
     ivec2 cellNum = ivec2(viewPos);
 
     uint rng = initRand(cellNum);
-    float pointSize = max(1, rand(rng) * starSize);
+    float pointSize = max(1, rand(rng) * rand(rng) * starSize);
     float pointArea = pointSize * pointSize;
     vec2 offsetPos = vec2(rand(rng), rand(rng));
     float edgeScale = density * fragmentScale;
@@ -82,11 +82,17 @@ void main() {
     vec3 color = colorTints[int(rand(rng) * 3)].rgb;
     float pointDist = length((starScreenPos.xy - flippedCoord.xy) * aspectRatio);
     float distFalloff = 1 - smoothstep(0, pointSize / length(view.extents), pointDist);
-    float noise = mix(0.01, 1, rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng));
-    float randomBrightness = brightness * pow(0.7, index) * (1 - sqrt(1 - noise)) / pointArea;
-    float cloudNoise = max(0, PerlinNoise3D(rayDir * 3) * 0.3 + 0.25);
-    randomBrightness *= cloudNoise * max(0, 1 - sqrt(abs(rayDir.y)));
-    outFragColor = vec4(color * distFalloff * randomBrightness * exposure, 1.0);
+    float noise = rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) *
+                  rand(rng);
+    float minNoise = clamp(0.00025 * (PerlinNoise3D(rayDir * 4) + 0.5), 0, 1);
+    float biasNoise = mix(minNoise, 1, (1 - sqrt(1 - clamp(brightness * noise, 0, 1))));
+    float randomBrightness = pow(0.7, index) * brightness * biasNoise;
+    float cloudNoise = max(0.1, PerlinNoise3D(rayDir * 1.5) * 0.5);
+    float equatorFalloff = max(0.05, 1 - sqrt(abs(rayDir.y)));
+    randomBrightness *= cloudNoise * equatorFalloff;
+    vec3 outputColor = color * distFalloff * randomBrightness;
+    outputColor += 2 * minNoise * cloudNoise * equatorFalloff;
+    outFragColor = vec4(outputColor * exposure, 1.0);
     // outFragColor = vec4(color * distFalloff * exposure, 1.0);
 
     // if (index == 0) {

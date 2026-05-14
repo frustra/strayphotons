@@ -5,7 +5,7 @@ screenshot empty-state-view.png view:player:flatview/LastOutput
 stepgraphics
 r.DrawSkybox1 0
 r.DrawSkybox2 0
-r.SkyboxStarBrightness 1000
+r.SkyboxStarBrightness 10
 r.SkyboxStarDensity 50
 r.SkyboxStarSize 50
 screenshot skyboxtest.png view:player:flatview/LastOutput
