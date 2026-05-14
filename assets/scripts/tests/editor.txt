@@ -1,3 +1,4 @@
+r.Exposure 5
 screenshot empty-state.png
 stepgraphics
 screenshot empty-state-view.png view:player:flatview/LastOutput
