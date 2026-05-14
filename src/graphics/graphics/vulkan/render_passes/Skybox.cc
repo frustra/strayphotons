@@ -21,7 +21,7 @@ namespace sp::vulkan::renderer {
     static CVar<bool> CVarDrawSkybox1("r.DrawSkybox1", true, "Enable drawing the second skybox");
     static CVar<bool> CVarDrawSkybox2("r.DrawSkybox2", true, "Enable drawing the third skybox");
     static CVar<float> CVarSkyboxStarBrightness("r.SkyboxStarBrightness",
-        0.2f,
+        5.0f,
         "Brightness scaling value for star skybox");
     static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 1000.0f, "Star tile density for skybox rendering");
     static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 15.0f, "Star size for skybox rendering");

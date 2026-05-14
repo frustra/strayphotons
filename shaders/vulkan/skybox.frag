@@ -10,9 +10,9 @@
 #extension GL_OVR_multiview2 : enable
 layout(num_views = 2) in;
 
+#include "../lib/perlin.glsl"
 #include "../lib/types_common.glsl"
 #include "../lib/util.glsl"
-// #include "../lib/perlin.glsl"
 
 INCLUDE_LAYOUT(binding = 0)
 #include "lib/view_states_uniform.glsl"
@@ -82,8 +82,10 @@ void main() {
     vec3 color = colorTints[int(rand(rng) * 3)].rgb;
     float pointDist = length((starScreenPos.xy - flippedCoord.xy) * aspectRatio);
     float distFalloff = 1 - smoothstep(0, pointSize / length(view.extents), pointDist);
-    float noise = brightness * rand(rng) * rand(rng) * rand(rng) * rand(rng);
-    float randomBrightness = pow(0.7, index) * (1 - sqrt(1 - noise)) / pointArea;
+    float noise = mix(0.01, 1, rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng) * rand(rng));
+    float randomBrightness = brightness * pow(0.7, index) * (1 - sqrt(1 - noise)) / pointArea;
+    float cloudNoise = max(0, PerlinNoise3D(rayDir * 3) * 0.3 + 0.25);
+    randomBrightness *= cloudNoise * max(0, 1 - sqrt(abs(rayDir.y)));
     outFragColor = vec4(color * distFalloff * randomBrightness * exposure, 1.0);
     // outFragColor = vec4(color * distFalloff * exposure, 1.0);
 
