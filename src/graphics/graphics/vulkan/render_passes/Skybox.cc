@@ -17,14 +17,14 @@
 #include <glm/glm.hpp>
 
 namespace sp::vulkan::renderer {
-    static CVar<float> CVarDrawSkybox0("r.DrawSkybox0", 1.0, "Enable drawing the first skybox");
-    static CVar<float> CVarDrawSkybox1("r.DrawSkybox1", 0.5, "Enable drawing the second skybox");
-    static CVar<float> CVarDrawSkybox2("r.DrawSkybox2", 0.3, "Enable drawing the third skybox");
+    static CVar<bool> CVarDrawSkybox0("r.DrawSkybox0", true, "Enable drawing the first skybox");
+    static CVar<bool> CVarDrawSkybox1("r.DrawSkybox1", true, "Enable drawing the second skybox");
+    static CVar<bool> CVarDrawSkybox2("r.DrawSkybox2", true, "Enable drawing the third skybox");
     static CVar<float> CVarSkyboxStarBrightness("r.SkyboxStarBrightness",
-        0.1f,
+        0.2f,
         "Brightness scaling value for star skybox");
     static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 1000.0f, "Star tile density for skybox rendering");
-    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 0.0001f, "Star size for skybox rendering");
+    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 15.0f, "Star size for skybox rendering");
 
     void AddSkyboxPass(RenderGraph &graph) {
         static const std::array<glm::vec4, 3> rotations = {
@@ -32,7 +32,7 @@ namespace sp::vulkan::renderer {
             glm::vec4(glm::normalize(glm::vec3(1.0, 0.0, 1.0)), M_PI_2),
             glm::vec4(0.0, 0.0, 1.0, M_2_PI),
         };
-        std::array<float, 3> enabled = {
+        std::array<bool, 3> enabled = {
             CVarDrawSkybox0.Get(),
             CVarDrawSkybox1.Get(),
             CVarDrawSkybox2.Get(),
@@ -42,7 +42,7 @@ namespace sp::vulkan::renderer {
         float density = SkyboxStarDensity.Get();
         float starSize = CVarSkyboxStarSize.Get();
         for (size_t i = 0; i < rotations.size(); i++) {
-            if (enabled[i] <= 0.0f) continue;
+            if (!enabled[i]) continue;
             graph.AddPass("Skybox" + std::to_string(i))
                 .Build([&](rg::PassBuilder &builder) {
                     builder.Read("ExposureState", Access::FragmentShaderReadStorage);
@@ -51,8 +51,7 @@ namespace sp::vulkan::renderer {
                     builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                     builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
                 })
-                .Execute([i, first, brightness = brightness * enabled[i], density, starSize](rg::Resources &resources,
-                             CommandContext &cmd) {
+                .Execute([i, first, brightness, density, starSize](rg::Resources &resources, CommandContext &cmd) {
                     cmd.SetShaders("screen_cover.vert", "skybox.frag");
 
                     cmd.SetShaderConstant(ShaderStage::Vertex, "DRAW_DEPTH", 1.0f);

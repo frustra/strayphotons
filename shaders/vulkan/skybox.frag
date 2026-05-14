@@ -60,27 +60,33 @@ void main() {
     float distFromEquator = floor(abs(cellSize.y * 0.5 - elevation * cellSize.y)) / cellSize.y;
     float rowScale = ceil(cos(distFromEquator * M_PI) * cellSize.x);
     vec2 viewPos = vec2(azimuth * rowScale, elevation * cellSize.y);
-    float viewportScale = 1.0 / sqrt(length(view.extents));
+    float fragmentScale = length(fwidth(rayDir));
 
     ivec2 cellNum = ivec2(viewPos);
 
     uint rng = initRand(cellNum);
-    float pointSize = max(0.00004, rand(rng) * starSize);
+    float pointSize = max(1, rand(rng) * starSize);
+    float pointArea = pointSize * pointSize;
     vec2 offsetPos = vec2(rand(rng), rand(rng));
-    float edgeScale = density * viewportScale * pointSize * 50;
+    float edgeScale = density * fragmentScale;
     offsetPos = clamp(offsetPos, min(0.5, edgeScale), max(0.5, 1 - edgeScale));
     vec2 starAngle = (cellNum + offsetPos) / vec2(rowScale, cellSize.y);
     starAngle.x = (starAngle.x - 0.5) * M_PI * 2;
     starAngle.y = (starAngle.y - 0.5) * M_PI;
     vec3 starDir = vec3(cos(starAngle.x), sin(starAngle.y), sin(starAngle.x));
     starDir.xz *= cos(starAngle.y);
+    vec2 aspectRatio = vec2(1, view.extents.y / view.extents.x);
+
+    vec2 starScreenPos = ViewPosToScreenPos(mat3(view.viewMat) * inverse(mat3(rotation)) * starDir, view.projMat).xy;
 
     vec3 color = colorTints[int(rand(rng) * 3)].rgb;
-    float pointDist = smoothstep(1 - pointSize * viewportScale, 1, dot(starDir, rayDir));
-    float noise = rand(rng) * rand(rng) * rand(rng);
-    float randomBrightness = brightness * pow(noise, 12);
-    outFragColor = vec4(color * pointDist * randomBrightness * exposure, 1.0);
-    // outFragColor = vec4(color * pointDist * exposure, 1.0);
+    float pointDist = length((starScreenPos.xy - flippedCoord.xy) * aspectRatio);
+    float distFalloff = 1 - smoothstep(0, pointSize / length(view.extents), pointDist);
+    float noise = brightness * rand(rng) * rand(rng) * rand(rng) * rand(rng);
+    float randomBrightness = pow(0.7, index) * (1 - sqrt(1 - noise)) / pointArea;
+    outFragColor = vec4(color * distFalloff * randomBrightness * exposure, 1.0);
+    // outFragColor = vec4(color * distFalloff * exposure, 1.0);
+
     // if (index == 0) {
     //     float baseNoise = PerlinNoise3D(rayDir * 4.2);
     //     float densityNoise = max(0, PerlinNoise3D(rayDir) + 0.2 + baseNoise * 0.1);

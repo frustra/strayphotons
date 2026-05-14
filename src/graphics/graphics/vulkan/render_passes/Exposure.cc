@@ -14,7 +14,7 @@ namespace sp::vulkan::renderer {
     // clang-format off
     static CVar<float> CVarExposure("r.Exposure", 0.0, "Fixed exposure value in linear units (0: auto)");
     static CVar<float> CVarExposureMin("r.ExposureMin", 0.01, "Minimum linear exposure value (controls max brightness)");
-    static CVar<float> CVarExposureMax("r.ExposureMax", 10, "Maximum linear exposure value (controls min brightness)");
+    static CVar<float> CVarExposureMax("r.ExposureMax", 100, "Maximum linear exposure value (controls min brightness)");
     static CVar<float> CVarExposureComp("r.ExposureComp", 3, "Exposure bias in EV units (logarithmic) for eye adaptation");
     static CVar<float> CVarEyeAdaptationLow("r.EyeAdaptationLow", 65, "Ignore pixels with luminance below this percentage");
     static CVar<float> CVarEyeAdaptationHigh("r.EyeAdaptationHigh", 92, "Ignore pixels with luminance above this percentage");
