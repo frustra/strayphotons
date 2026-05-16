@@ -24,7 +24,7 @@ namespace sp::vulkan::renderer {
         1.0f,
         "Brightness scaling value for star skybox");
     static CVar<float> SkyboxStarDensity("r.SkyboxStarDensity", 800.0f, "Star tile density for skybox rendering");
-    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 20.0f, "Star size for skybox rendering");
+    static CVar<float> CVarSkyboxStarSize("r.SkyboxStarSize", 10.0f, "Star size for skybox rendering");
 
     void AddSkyboxPass(RenderGraph &graph) {
         static const std::array<glm::vec4, 3> rotations = {
