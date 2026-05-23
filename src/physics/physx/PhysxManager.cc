@@ -8,6 +8,7 @@
 #include "PhysxManager.hh"
 
 #include "PhysxUtils.hh"
+#include "Tecs_observer.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "assets/PhysicsInfo.hh"
@@ -15,6 +16,7 @@
 #include "console/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/Physics.hh"
 #include "game/GameLogic.hh"
@@ -228,10 +230,10 @@ namespace sp {
 
             characterControlSystem.Frame(lock);
 
-            {
+            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+            if (sceneUserData && sceneUserData->awakeDynamicActors.size() > 0) {
                 ZoneScopedN("UpdateSnapshots(Dynamic)");
-                // TODO: Loop over only the awake dynamic actors
-                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
+                for (const ecs::Entity &ent : sceneUserData->awakeDynamicActors) {
                     if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
                     auto &ph = ent.Get<ecs::Physics>(lock);
@@ -255,40 +257,62 @@ namespace sp {
                 }
             }
 
+            std::vector<ecs::Entity> modifiedTransformTrees;
+            {
+                ZoneScopedN("UpdateTransformChildList");
+                ecs::ComponentAddRemoveEvent<ecs::TransformSnapshot> transformSnapshotEvent;
+                while (transformSnapshotObserver.Poll(lock, transformSnapshotEvent)) {
+                    if (transformSnapshotEvent.type != Tecs::EventType::REMOVED) continue;
+                    const auto &parent = transformSnapshotEvent.component.firstParent;
+                    if (!parent.Has<ecs::TransformSnapshot>(lock)) continue;
+                    auto &parentSnapshot = parent.Get<ecs::TransformSnapshot>(lock);
+                    parentSnapshot.childEntities.erase(transformSnapshotEvent.entity);
+                }
+                ecs::ComponentModifiedEvent<ecs::TransformTree> transformTreeEntity;
+                while (transformTreeObserver.Poll(lock, transformTreeEntity)) {
+                    modifiedTransformTrees.emplace_back(transformTreeEntity);
+                    if (!transformTreeEntity.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
+                    auto &transformTree = transformTreeEntity.Get<const ecs::TransformTree>(lock);
+                    auto &snapshot = transformTreeEntity.Get<ecs::TransformSnapshot>(lock);
+                    ecs::Entity parent = transformTree.parent.Get(lock);
+                    const ecs::Entity &oldParent = snapshot.firstParent;
+                    if (parent == oldParent) continue;
+                    if (oldParent.Has<ecs::TransformSnapshot>(lock)) {
+                        // Remove the entity from the old child list if the parent changed
+                        auto &parentSnapshot = oldParent.Get<ecs::TransformSnapshot>(lock);
+                        parentSnapshot.childEntities.erase(transformTreeEntity);
+                    }
+                    if (!parent.Has<ecs::TransformSnapshot>(lock)) continue;
+                    // Add the entity to the new parent's child list
+                    auto &parentSnapshot = parent.Get<ecs::TransformSnapshot>(lock);
+                    parentSnapshot.childEntities.emplace(transformTreeEntity);
+                    snapshot.firstParent = parent;
+                }
+            }
+            // Deduplicate modified transform trees and enumerate all child transforms
+            FlatSet<ecs::Entity> modifiedTransformEntities;
+            while (!modifiedTransformTrees.empty()) {
+                ecs::Entity ent = modifiedTransformTrees.back();
+                modifiedTransformTrees.pop_back();
+                bool exists = !modifiedTransformEntities.emplace(ent).second;
+                if (exists) continue;
+                // Logf("Modified transform: %s", ecs::EntityRef(ent).Name().String());
+                if (ent.Has<ecs::TransformSnapshot>(lock)) {
+                    auto &snapshot = ent.Get<const ecs::TransformSnapshot>(lock);
+                    if (snapshot.childEntities.empty()) continue;
+                    modifiedTransformTrees.insert(modifiedTransformTrees.end(),
+                        snapshot.childEntities.begin(),
+                        snapshot.childEntities.end());
+                }
+            }
             {
                 ZoneScopedN("UpdateSnapshots(NonDynamic)");
-                // TODO: Somehow use transform Observers instead of looping
-                // Maybe store child list in transform snapshot?
-                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
+                // Only recalculate the transform snapshot for entities that were modified.
+                for (const ecs::Entity &ent : modifiedTransformEntities) {
                     if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
 
-                    // Only recalculate the transform snapshot for entities that moved.
-                    auto treeEnt = ent;
-                    bool dirty = false;
-                    while (treeEnt.Has<ecs::TransformTree>(lock)) {
-                        auto &tree = treeEnt.Get<const ecs::TransformTree>(lock);
-                        auto &cache = transformCache[treeEnt];
-                        treeEnt = tree.parent.Get(lock);
-
-                        if (cache.dirty < 0) {
-                            dirty = tree.pose != cache.pose || treeEnt != cache.parent;
-                            if (dirty) {
-                                cache.pose = tree.pose;
-                                cache.parent = treeEnt;
-                                cache.dirty = 1;
-                                break;
-                            } else {
-                                cache.dirty = 0;
-                            }
-                        } else if (cache.dirty > 0) {
-                            dirty = true;
-                            break;
-                        }
-                    }
-                    if (!dirty) continue;
-
                     auto transform = ent.Get<const ecs::TransformTree>(lock).GetGlobalTransform(lock);
-                    ent.Set<ecs::TransformSnapshot>(lock, transform);
+                    ent.Get<ecs::TransformSnapshot>(lock).globalPose = transform;
 
                     triggerSystem.UpdateEntityTriggers(lock, ent);
 
@@ -346,21 +370,20 @@ namespace sp {
                         }
                     }
                 }
-                ecs::ComponentModifiedEvent<ecs::TransformTree> transformTreeEntity;
-                while (transformTreeObserver.Poll(lock, transformTreeEntity)) {
-                    if (transformTreeEntity.Has<ecs::Physics, ecs::TransformTree>(lock)) {
-                        auto &ph = transformTreeEntity.Get<ecs::Physics>(lock);
+                for (auto &ent : modifiedTransformEntities) {
+                    if (ent.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                        auto &ph = ent.Get<ecs::Physics>(lock);
                         if (ph.type == ecs::PhysicsActorType::SubActor) {
-                            subActorQueue.emplace_back(transformTreeEntity);
+                            subActorQueue.emplace_back(ent);
                         } else {
-                            UpdateActor(lock, transformTreeEntity);
+                            UpdateActor(lock, ent);
                         }
-                    } else if (transformTreeEntity.Has<ecs::Physics>(lock)) {
+                    } else if (ent.Has<ecs::Physics>(lock)) {
                         // Delete actors for removed entities
-                        if (actors.count(transformTreeEntity) > 0) {
-                            RemoveActor(actors[transformTreeEntity]);
-                        } else if (subActors.count(transformTreeEntity) > 0) {
-                            RemoveActor(subActors[transformTreeEntity]);
+                        if (actors.count(ent) > 0) {
+                            RemoveActor(actors[ent]);
+                        } else if (subActors.count(ent) > 0) {
+                            RemoveActor(subActors[ent]);
                         }
                     }
                 }
@@ -374,7 +397,6 @@ namespace sp {
                 }
             }
 
-            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
             if (sceneUserData && sceneUserData->dynamicActors.size() > 0) {
                 ZoneScopedN("UpdateDynamicActors");
                 for (ecs::Entity &ent : sceneUserData->dynamicActors) {
@@ -494,6 +516,7 @@ namespace sp {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
             physicsObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Physics>>();
             transformTreeObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::TransformTree>>();
+            transformSnapshotObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TransformSnapshot>>();
         }
     }
 

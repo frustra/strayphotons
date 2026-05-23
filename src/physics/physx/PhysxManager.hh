@@ -171,6 +171,7 @@ namespace sp {
 
         ecs::ComponentModifiedObserver<ecs::Physics> physicsObserver;
         ecs::ComponentModifiedObserver<ecs::TransformTree> transformTreeObserver;
+        ecs::ComponentAddRemoveObserver<ecs::TransformSnapshot> transformSnapshotObserver;
         ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;

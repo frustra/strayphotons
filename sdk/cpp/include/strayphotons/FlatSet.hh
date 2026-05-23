@@ -43,6 +43,7 @@ namespace sp {
         using ContainerT::clear;
         using ContainerT::ContainerT;
         using ContainerT::data;
+        using ContainerT::empty;
         using ContainerT::end;
         using ContainerT::erase;
         using ContainerT::front;
@@ -103,6 +104,17 @@ namespace sp {
             }
 
             return {ContainerT::emplace(it, std::forward<T>(val)), true};
+        }
+
+        template<class InputIt>
+        void insert(InputIt first, InputIt last) {
+            for (auto it = first; it != last; it++) {
+                insert(*it);
+            }
+        }
+
+        void insert(std::initializer_list<T> ilist) {
+            insert(ilist.begin(), ilist.end());
         }
 
         template<typename... Args>

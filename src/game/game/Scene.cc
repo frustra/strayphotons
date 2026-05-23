@@ -10,7 +10,9 @@
 #include "common/Tracing.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
+#include "ecs/components/Transform.h"
 #include "game/SceneImpl.hh"
+#include "strayphotons/Utility.hh"
 
 namespace sp {
     std::shared_ptr<Scene> Scene::New(ecs::Lock<ecs::AddRemove> stagingLock,
@@ -308,8 +310,18 @@ namespace sp {
             for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {
                 if (!e.Has<ecs::TransformTree>(live)) continue;
 
-                auto transform = e.Get<ecs::TransformTree>(live).GetGlobalTransform(live);
-                e.Set<ecs::TransformSnapshot>(live, transform);
+                auto &tree = e.Get<const ecs::TransformTree>(live);
+                auto transform = tree.GetGlobalTransform(live);
+                e.Get<ecs::TransformSnapshot>(live).globalPose = transform;
+            }
+            for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {
+                if (!e.Has<ecs::TransformTree>(live)) continue;
+
+                auto &tree = e.Get<const ecs::TransformTree>(live);
+                ecs::Entity parent = tree.parent.Get(live);
+                if (!parent.Had<ecs::TransformSnapshot>(live) && parent.Has<ecs::TransformSnapshot>(live)) {
+                    parent.Get<ecs::TransformSnapshot>(live).childEntities.emplace(e);
+                }
             }
         }
         active = true;

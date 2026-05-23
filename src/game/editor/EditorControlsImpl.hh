@@ -11,6 +11,7 @@
 #include "assets/JsonHelpers.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
@@ -21,6 +22,7 @@
 #include "game/SceneImpl.hh"
 #include "game/SceneRef.hh"
 #include "imgui_internal.h"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/Utility.hh"
 #include "strayphotons/input/BindingNames.hh"
 

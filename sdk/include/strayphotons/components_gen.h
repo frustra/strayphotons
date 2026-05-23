@@ -99,7 +99,8 @@ const uint32_t SP_TYPE_INDEX_ECS_TRANSFORM_SNAPSHOT = 129;
 // Component: TransformSnapshot
 typedef struct sp_ecs_transform_snapshot_t {
     sp_transform_t transform; // 60 bytes
-} sp_ecs_transform_snapshot_t; // 60 bytes
+    const uint8_t _unknown60[36];
+} sp_ecs_transform_snapshot_t; // 96 bytes
 const uint64_t SP_TRANSFORM_SNAPSHOT_INDEX = 3;
 const uint64_t SP_ACCESS_TRANSFORM_SNAPSHOT = 2ull << 3;
 SP_EXPORT sp_ecs_transform_snapshot_t *sp_entity_set_transform_snapshot(tecs_lock_t *dynLockPtr, sp_entity_t ent);

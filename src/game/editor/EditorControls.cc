@@ -7,7 +7,9 @@
 
 #include "EditorControlsImpl.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/Transform.h"
 #include "game/SceneManager.hh"
+#include "imgui.h"
 #include "strayphotons/Defer.hh"
 
 #include <mutex>

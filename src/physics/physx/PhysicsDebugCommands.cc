@@ -36,7 +36,7 @@ void sp::PhysxManager::RegisterDebugCommands() {
             }
             auto &tree = entity.Get<ecs::TransformTree>(lock);
             tree.pose.SetPosition(position);
-            entity.Set<ecs::TransformSnapshot>(lock, tree.GetGlobalTransform(lock));
+            entity.Get<ecs::TransformSnapshot>(lock).globalPose = tree.GetGlobalTransform(lock);
         });
 
     funcs.Register<ecs::EntityRef, glm::vec3>("set_velocity",

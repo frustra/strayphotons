@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include "strayphotons/FlatSet.hh"
+#include "strayphotons/HeapVector.hh"
+
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
@@ -128,6 +131,8 @@ namespace ecs {
 
     struct TransformSnapshot {
         Transform globalPose;
+        Entity firstParent;
+        sp::FlatSet<Entity> childEntities;
 
         TransformSnapshot() {}
         TransformSnapshot(const Transform &pose) : globalPose(pose) {}
