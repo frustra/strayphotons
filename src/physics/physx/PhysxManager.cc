@@ -949,7 +949,6 @@ namespace sp {
         if (!actor->getScene() && shapeCount > 0) {
             scene->addActor(*actor);
             SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
-            auto dynamic = actor->is<PxRigidDynamic>();
             if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
                 sceneUserData->dynamicActors.emplace(actorEnt);
             }
