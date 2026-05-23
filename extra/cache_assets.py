@@ -50,6 +50,7 @@ if __name__ == '__main__':
                 lines = assetList.readlines()
                 for line in lines:
                     parts = line.split()
+                    asset_path = os.path.join(assets_root, parts[2])
                     if os.path.exists(asset_path):
                         hash = md5sum(asset_path)
                         print('    assets/' + parts[2] + '\t' + hash)
