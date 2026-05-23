@@ -13,6 +13,7 @@
 #include "strayphotons/Logging.hh"
 #include "strayphotons/input/BindingNames.hh"
 
+#include <PxActor.h>
 #include <glm/gtx/norm.hpp>
 
 namespace sp {
@@ -25,10 +26,32 @@ namespace sp {
 
     // Sleep/Wake events require an actor have the PxActorFlag::eSEND_SLEEP_NOTIFIES flag
     void SimulationCallbackHandler::onWake(PxActor **actors, PxU32 count) {
-        Logf("SimulationCallbackHandler::onWake: %u", count);
+        // Debugf("SimulationCallbackHandler::onWake: %u", count);
+        for (size_t i = 0; i < count; i++) {
+            PxActor *actor = actors[i];
+            if (!actor) continue;
+            ActorUserData *actorUserData = (ActorUserData *)actor->userData;
+            if (!actorUserData) continue;
+            PxScene *scene = actor->getScene();
+            if (!scene) continue;
+            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+            if (!sceneUserData) continue;
+            sceneUserData->awakeDynamicActors.emplace(actorUserData->entity);
+        }
     }
     void SimulationCallbackHandler::onSleep(PxActor **actors, PxU32 count) {
-        Logf("SimulationCallbackHandler::onSleep: %u", count);
+        // Debugf("SimulationCallbackHandler::onSleep: %u", count);
+        for (size_t i = 0; i < count; i++) {
+            PxActor *actor = actors[i];
+            if (!actor) continue;
+            ActorUserData *actorUserData = (ActorUserData *)actor->userData;
+            if (!actorUserData) continue;
+            PxScene *scene = actor->getScene();
+            if (!scene) continue;
+            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+            if (!sceneUserData) continue;
+            sceneUserData->awakeDynamicActors.erase(actorUserData->entity);
+        }
     }
 
     // Contact events require an actor pair to have PxPairFlag::eNOTIFY_TOUCH_FOUND, PxPairFlag::eNOTIFY_TOUCH_PERSISTS,

@@ -275,6 +275,8 @@ which decomposes the duck model into multiple convex hulls to more accurately re
         float contactReportThreshold = -1.0f;
 
         glm::vec3 constantForce = glm::vec3(0);
+
+        bool operator==(const Physics &) const = default;
     };
 
     static EntityComponent<Physics> ComponentPhysics("physics",

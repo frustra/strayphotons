@@ -37,7 +37,7 @@ namespace ecs {
 
     struct TriggerArea {
         TriggerShape shape = TriggerShape::Box;
-        sp::EnumArray<sp::FlatSet<Entity, std::less<Entity>, sp::HeapVector<Entity>>, TriggerGroup> containedEntities;
+        sp::EnumArray<sp::FlatSet<Entity>, TriggerGroup> containedEntities;
     };
 
     static EntityComponent<TriggerGroup> ComponentTriggerGroup("trigger_group", "", StructField::New<TriggerGroup>());

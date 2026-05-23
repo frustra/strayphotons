@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include "strayphotons/HeapVector.hh"
+
 #include <algorithm>
 #include <functional>
-#include <vector>
 
 namespace sp {
-    template<typename T, typename Compare = std::less<T>, typename ContainerT = std::vector<T>>
+    template<typename T, typename Compare = std::less<T>, typename ContainerT = HeapVector<T>>
     class FlatSet : private ContainerT, Compare {
         Compare &cmp() {
             return *this;

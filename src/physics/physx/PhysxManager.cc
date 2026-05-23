@@ -24,6 +24,8 @@
 #include "strayphotons/Logging.hh"
 
 #include <MurmurHash3.h>
+#include <PxActor.h>
+#include <PxRigidActor.h>
 #include <PxScene.h>
 #include <chrono>
 #include <glm/ext/matrix_relational.hpp>
@@ -228,6 +230,7 @@ namespace sp {
 
             {
                 ZoneScopedN("UpdateSnapshots(Dynamic)");
+                // TODO: Loop over only the awake dynamic actors
                 for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
                     if (!ent.Has<ecs::Physics, ecs::TransformSnapshot, ecs::TransformTree>(lock)) continue;
 
@@ -254,6 +257,8 @@ namespace sp {
 
             {
                 ZoneScopedN("UpdateSnapshots(NonDynamic)");
+                // TODO: Somehow use transform Observers instead of looping
+                // Maybe store child list in transform snapshot?
                 for (const ecs::Entity &ent : lock.EntitiesWith<ecs::TransformTree>()) {
                     if (!ent.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) continue;
 
@@ -319,37 +324,80 @@ namespace sp {
 
             animationSystem.Frame(lock);
 
-            // Delete actors for removed entities
-            ecs::ComponentAddRemoveEvent<ecs::Physics> physicsEvent;
-            while (physicsObserver.Poll(lock, physicsEvent)) {
-                if (physicsEvent.type == Tecs::EventType::REMOVED) {
-                    if (actors.count(physicsEvent.entity) > 0) {
-                        RemoveActor(actors[physicsEvent.entity]);
-                    } else if (subActors.count(physicsEvent.entity) > 0) {
-                        RemoveActor(subActors[physicsEvent.entity]);
+            std::vector<ecs::Entity> subActorQueue;
+            {
+                ZoneScopedN("UpdateActors");
+                // Update actors with latest entity data
+                ecs::ComponentModifiedEvent<ecs::Physics> physicsEntity;
+                while (physicsObserver.Poll(lock, physicsEntity)) {
+                    if (physicsEntity.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                        auto &ph = physicsEntity.Get<ecs::Physics>(lock);
+                        if (ph.type == ecs::PhysicsActorType::SubActor) {
+                            subActorQueue.emplace_back(physicsEntity);
+                        } else {
+                            UpdateActor(lock, physicsEntity);
+                        }
+                    } else {
+                        // Delete actors for removed entities
+                        if (actors.count(physicsEntity) > 0) {
+                            RemoveActor(actors[physicsEntity]);
+                        } else if (subActors.count(physicsEntity) > 0) {
+                            RemoveActor(subActors[physicsEntity]);
+                        }
+                    }
+                }
+                ecs::ComponentModifiedEvent<ecs::TransformTree> transformTreeEntity;
+                while (transformTreeObserver.Poll(lock, transformTreeEntity)) {
+                    if (transformTreeEntity.Has<ecs::Physics, ecs::TransformTree>(lock)) {
+                        auto &ph = transformTreeEntity.Get<ecs::Physics>(lock);
+                        if (ph.type == ecs::PhysicsActorType::SubActor) {
+                            subActorQueue.emplace_back(transformTreeEntity);
+                        } else {
+                            UpdateActor(lock, transformTreeEntity);
+                        }
+                    } else if (transformTreeEntity.Has<ecs::Physics>(lock)) {
+                        // Delete actors for removed entities
+                        if (actors.count(transformTreeEntity) > 0) {
+                            RemoveActor(actors[transformTreeEntity]);
+                        } else if (subActors.count(transformTreeEntity) > 0) {
+                            RemoveActor(subActors[transformTreeEntity]);
+                        }
                     }
                 }
             }
 
-            {
-                ZoneScopedN("UpdateActors");
-                // Update actors with latest entity data
-                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
-                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                    auto &ph = ent.Get<ecs::Physics>(lock);
-                    if (ph.type == ecs::PhysicsActorType::SubActor) continue;
+            if (!subActorQueue.empty()) {
+                ZoneScopedN("UpdateSubActors");
+                // Update sub actors once all parent actors are complete
+                for (const ecs::Entity &ent : subActorQueue) {
                     UpdateActor(lock, ent);
                 }
             }
 
-            {
-                ZoneScopedN("UpdateSubActors");
-                // Update sub actors once all parent actors are complete
-                for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Physics>()) {
-                    if (!ent.Has<ecs::Physics, ecs::TransformTree>(lock)) continue;
-                    auto &ph = ent.Get<ecs::Physics>(lock);
-                    if (ph.type != ecs::PhysicsActorType::SubActor) continue;
-                    UpdateActor(lock, ent);
+            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+            if (sceneUserData && sceneUserData->dynamicActors.size() > 0) {
+                ZoneScopedN("UpdateDynamicActors");
+                for (ecs::Entity &ent : sceneUserData->dynamicActors) {
+                    auto it = actors.find(ent);
+                    if (!it) continue;
+                    PxRigidActor *actor = *it;
+                    ActorUserData *actorUserData = (ActorUserData *)actor->userData;
+                    if (!actorUserData) continue;
+                    auto dynamic = actor->is<PxRigidDynamic>();
+                    if (!dynamic) continue;
+                    if (dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) continue;
+                    auto &sceneProperties = ecs::SceneProperties::Get(lock, ent);
+                    auto pose = actor->getGlobalPose();
+                    Assertf(pose.isValid(), "Dynamic actor pose invalid: %s", ecs::EntityRef(ent).Name().String());
+                    glm::vec3 gravityForce = sceneProperties.GetGravity(PxVec3ToGlmVec3(pose.p));
+                    // Force will accumulate on sleeping objects causing jitter
+                    if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
+                        dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
+                    }
+                    if (gravityForce != actorUserData->gravity) {
+                        dynamic->wakeUp();
+                        actorUserData->gravity = gravityForce;
+                    }
                 }
             }
 
@@ -423,6 +471,7 @@ namespace sp {
         sceneDesc.cpuDispatcher = dispatcher;
 
         auto pxScene = pxPhysics->createScene(sceneDesc);
+        pxScene->userData = new SceneUserData(this);
         Assert(pxScene, "Failed to create PhysX scene");
         scene = std::shared_ptr<PxScene>(pxScene, [](PxScene *s) {
             s->release();
@@ -443,7 +492,9 @@ namespace sp {
 
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            physicsObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::Physics>>();
+            physicsObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Physics>>();
+            transformTreeModifiedObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::TransformTree>>();
+            transformTreeAddRemoveObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TransformTree>>();
         }
     }
 
@@ -736,6 +787,8 @@ namespace sp {
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
                 actor->is<PxRigidBody>()->setRigidBodyFlag(PxRigidBodyFlag::eUSE_KINEMATIC_TARGET_FOR_SCENE_QUERIES,
                     true);
+            } else {
+                actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
             }
         }
         Assert(actor, "Physx did not return valid PxRigidActor");
@@ -761,6 +814,10 @@ namespace sp {
         actors[e] = actor;
         if (shapeCount == 0) return actor;
         scene->addActor(*actor);
+        SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+        if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
+            sceneUserData->dynamicActors.emplace(e);
+        }
         return actor;
     }
 
@@ -869,25 +926,10 @@ namespace sp {
 
         if (!actor->getScene() && shapeCount > 0) {
             scene->addActor(*actor);
-        }
-
-        if (actor->getScene()) {
-            Assertf(actor->getGlobalPose().isValid(),
-                "Actor pose invalid: %s",
-                ecs::EntityRef(actorEnt).Name().String());
-            if (actorEnt == e && dynamic) {
-                if (!dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
-                    auto &sceneProperties = ecs::SceneProperties::Get(lock, e);
-                    glm::vec3 gravityForce = sceneProperties.GetGravity(actorTransform.GetPosition());
-                    // Force will accumulate on sleeping objects causing jitter
-                    if (gravityForce != glm::vec3(0) && !dynamic->isSleeping()) {
-                        dynamic->addForce(GlmVec3ToPxVec3(gravityForce), PxForceMode::eACCELERATION, false);
-                    }
-                    if (gravityForce != userData->gravity) {
-                        dynamic->wakeUp();
-                        userData->gravity = gravityForce;
-                    }
-                }
+            SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+            auto dynamic = actor->is<PxRigidDynamic>();
+            if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
+                sceneUserData->dynamicActors.emplace(actorEnt);
             }
         }
     }
@@ -895,11 +937,18 @@ namespace sp {
     void PhysxManager::RemoveActor(PxRigidActor *actor) {
         ZoneScoped;
         if (actor) {
-            auto userData = (ActorUserData *)actor->userData;
-            if (userData) ZoneStr(std::to_string(userData->entity));
+            auto actorUserData = (ActorUserData *)actor->userData;
+            if (actorUserData) ZoneStr(std::to_string(actorUserData->entity));
 
             auto scene = actor->getScene();
-            if (scene) scene->removeActor(*actor);
+            if (scene) {
+                scene->removeActor(*actor);
+                SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
+                auto dynamic = actor->is<PxRigidDynamic>();
+                if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
+                    sceneUserData->dynamicActors.emplace(actorUserData->entity);
+                }
+            }
             PxU32 nShapes = actor->getNbShapes();
             InlineVector<PxShape *, 256> shapes(nShapes);
             actor->getShapes(shapes.data(), shapes.size());
@@ -915,7 +964,7 @@ namespace sp {
             }
             actor->release();
 
-            if (userData) delete userData;
+            if (actorUserData) delete actorUserData;
 
             // Remove matching actors from the lookup maps
             actors.erase(actor);

@@ -26,6 +26,7 @@
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/EntityMap.hh"
+#include "strayphotons/FlatSet.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 
@@ -45,6 +46,15 @@ namespace sp {
     class SceneManager;
     class ForceConstraint;
     class NoClipConstraint;
+
+    struct SceneUserData {
+        PhysxManager *manager = nullptr;
+        FlatSet<ecs::Entity> dynamicActors;
+        FlatSet<ecs::Entity> awakeDynamicActors;
+
+        SceneUserData() {}
+        SceneUserData(PhysxManager *manager) : manager(manager) {}
+    };
 
     struct ShapeUserData {
         ecs::Entity owner; // SubActor physics source entity
@@ -159,7 +169,8 @@ namespace sp {
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
 
-        ecs::ComponentAddRemoveObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentModifiedObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentModifiedObserver<ecs::TransformTree> transformTreeObserver;
         ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;

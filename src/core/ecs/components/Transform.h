@@ -136,6 +136,8 @@ namespace ecs {
         operator Transform() const {
             return globalPose;
         }
+
+        bool operator==(const TransformSnapshot &) const = default;
     };
 
     static EntityComponent<TransformSnapshot> ComponentTransformSnapshot(
@@ -174,6 +176,8 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
 
         // Returns a flatted Transform relative to the specified entity.
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
+
+        bool operator==(const TransformTree &) const = default;
     };
 
     static EntityComponent<TransformTree> ComponentTransformTree(
