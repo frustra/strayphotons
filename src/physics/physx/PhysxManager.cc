@@ -493,8 +493,7 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::AddRemove>();
             physicsObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Physics>>();
-            transformTreeModifiedObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::TransformTree>>();
-            transformTreeAddRemoveObserver = lock.Watch<ecs::ComponentAddRemoveEvent<ecs::TransformTree>>();
+            transformTreeObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::TransformTree>>();
         }
     }
 
