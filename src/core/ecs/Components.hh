@@ -119,7 +119,7 @@ namespace ecs {
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
             } else if (*this != *existing) {
-                throw std::runtime_error("Duplicate component type registered: "s + name);
+                Abortf("Duplicate component type registered: %s", name);
             }
         }
 
@@ -194,7 +194,7 @@ namespace ecs {
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
             } else if (*this != *existing) {
-                throw std::runtime_error("Duplicate component type registered: "s + name);
+                Abortf("Duplicate component type registered: %s", name);
             }
         }
 
