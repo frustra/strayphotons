@@ -15,8 +15,10 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/Transform.h"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
+#include "glm/gtx/string_cast.hpp"
 #include "strayphotons/Logging.hh"
 
 #include <algorithm>
@@ -907,6 +909,7 @@ namespace sp {
             Assert(!playerTree.parent, "Player entity should not have a TransformTree parent");
             playerTransform = spawnTransform;
             playerTree.pose = spawnTransform;
+            Debugf("Respawning player at %s", glm::to_string(spawnTransform.GetPosition()));
         } else {
             if (!player.Exists(lock)) {
                 Errorf("RespawnPlayer: Player entity missing: %s", entities::Player.Name().String());

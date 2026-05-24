@@ -18,6 +18,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/ScriptManager.hh"
+#include "ecs/components/CharacterController.hh"
 #include "ecs/components/Physics.hh"
 #include "game/GameLogic.hh"
 #include "game/Scene.hh"
@@ -288,6 +289,22 @@ namespace sp {
                     parentSnapshot.childEntities.emplace(transformTreeEntity);
                     snapshot.firstParent = parent;
                 }
+            }
+            // Add character transform entities possibly modified within this transaction
+            for (const ecs::Entity &entity : lock.EntitiesWith<ecs::CharacterController>()) {
+                if (entity.Has<ecs::CharacterController>(lock)) {
+                    auto &controller = entity.Get<const ecs::CharacterController>(lock);
+                    ecs::Entity headRoot = ecs::TransformTree::GetRoot(lock, controller.head.Get(lock));
+                    if (headRoot.Has<ecs::TransformTree>(lock)) {
+                        auto &oldRoot = headRoot.GetPrevious<ecs::TransformTree>(lock);
+                        auto &newRoot = headRoot.Get<const ecs::TransformTree>(lock);
+                        if (oldRoot != newRoot) modifiedTransformTrees.emplace_back(headRoot);
+                    }
+                }
+                if (!entity.Has<ecs::TransformTree>(lock)) continue;
+                auto &oldTree = entity.GetPrevious<ecs::TransformTree>(lock);
+                auto &newTree = entity.Get<const ecs::TransformTree>(lock);
+                if (oldTree != newTree) modifiedTransformTrees.emplace_back(entity);
             }
             // Deduplicate modified transform trees and enumerate all child transforms
             FlatSet<ecs::Entity> modifiedTransformEntities;
