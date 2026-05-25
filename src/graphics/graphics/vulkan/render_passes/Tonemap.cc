@@ -17,10 +17,10 @@ namespace sp::vulkan::renderer {
         "The target whitepoint for HDR to SDR tonemapping.");
     static CVar<float> CVarGammaCurve("r.TonemapGammaCurve", 2.9, "The gamma curve scale for your display.");
     static CVar<float> CVarDarkSaturation("r.TonemapDarkSaturation",
-        0.7,
+        0.75,
         "The HSV saturation scale for dark parts of the scene.");
     static CVar<float> CVarBrightSaturation("r.TonemapBrightSaturation",
-        1.2,
+        1.1,
         "The HSV saturation scale for bright parts of the scene.");
 
     void AddTonemap(RenderGraph &graph) {

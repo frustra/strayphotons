@@ -8,9 +8,9 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 

@@ -12,7 +12,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Events.hh"
-#include "strayphotons/cpp/LockFreeEventQueue.hh"
+#include "strayphotons/LockFreeEventQueue.hh"
 
 namespace sp {
 

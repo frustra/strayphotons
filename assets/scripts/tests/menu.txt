@@ -5,28 +5,28 @@ translate player:player -1 0 0
 steplogic
 stepphysics 2
 # TODO: BUG: First menu frame is missing the GUI
-screenshot menu.png
+assert_screenshot menu.png
 stepgraphics
 stepphysics 100
 stepgraphics 100
-screenshot delayed.png
+assert_screenshot delayed.png
 stepgraphics
-screenshot delayed2.png
+assert_screenshot delayed2.png
 stepgraphics
 sendevent gui:menu/action/menu/open
 stepgraphics
-screenshot pause_menu.png
+assert_screenshot pause_menu.png
 stepgraphics
 g.MenuDebugCursor 1
 sendevent gui:menu/interact/point 690 690
 sendevent gui:menu/action/menu/primary_trigger true
 sendevent gui:menu/action/menu/primary_trigger false
-screenshot pause_menu2.png
+assert_screenshot pause_menu2.png
 stepgraphics
-screenshot options_menu_click1.png
+assert_screenshot options_menu_click1.png
 stepgraphics
 sendevent gui:menu/interact/point false
-screenshot options_menu_click2.png
+assert_screenshot options_menu_click2.png
 stepgraphics
-screenshot options_menu.png
+assert_screenshot options_menu.png
 stepgraphics

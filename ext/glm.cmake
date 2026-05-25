@@ -8,7 +8,7 @@
 set(GLM_TEST_ENABLE OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(glm ${CMAKE_CURRENT_BINARY_DIR}/glm)
+add_subdirectory(glm)
 
 # since GLM is a header-only library, these can safely be defined here
 target_compile_definitions(

@@ -8,7 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "markdown_gen.hh"
 #include "schema_gen.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <cxxopts.hpp>
 #include <filesystem>

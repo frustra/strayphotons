@@ -19,6 +19,8 @@ namespace sp::vulkan::renderer {
     void Transparency::AddPass(RenderGraph &graph, const ecs::View &view) {
         glm::vec3 viewPos = view.invViewMat * glm::vec4(0, 0, 0, 1);
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, ecs::VisibilityMask::Transparent, true);
+        if (!drawIDs) return;
+
         uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Transparency")

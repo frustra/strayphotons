@@ -12,8 +12,9 @@
 #include "ecs/components/View.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <memory>
 #include <vector>
@@ -93,8 +94,12 @@ namespace sp::vulkan {
         std::shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
-            rg::ResourceID drawCommandsBuffer; // first 4 bytes are the number of draws
-            rg::ResourceID drawParamsBuffer = 0;
+            rg::ResourceID drawCommandsBuffer = rg::InvalidResource; // first 4 bytes are the number of draws
+            rg::ResourceID drawParamsBuffer = rg::InvalidResource;
+
+            operator bool() const {
+                return drawCommandsBuffer != rg::InvalidResource && drawParamsBuffer != rg::InvalidResource;
+            }
         };
 
         DrawBufferIDs GenerateDrawsForView(rg::RenderGraph &graph,
@@ -137,7 +142,7 @@ namespace sp::vulkan {
 
         uint32_t vertexCount = 0;
         uint32_t primitiveCount = 0;
-        uint32_t primitiveCountPowerOfTwo = 1; // Always at least 1. Used to size draw command buffers.
+        uint32_t primitiveCountPowerOfTwo = 0;
 
         TextureSet textures;
         robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> liveTextureCache;

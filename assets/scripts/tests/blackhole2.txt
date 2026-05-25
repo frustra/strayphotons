@@ -11,11 +11,11 @@ syncscene 2
 steplogic
 stepphysics
 stepgraphics
-screenshot blackhole2_table_1.png
+assert_screenshot blackhole2_table_1.png
 stepgraphics
 translate blackhole2:mirror1 0 -10 0
 stepphysics 2
 steplogic
 stepphysics
-screenshot blackhole2_table_2.png
+assert_screenshot blackhole2_table_2.png
 stepgraphics

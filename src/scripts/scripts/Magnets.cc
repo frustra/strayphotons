@@ -8,7 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/ScriptImpl.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <glm/gtx/component_wise.hpp>
 #include <robin_hood.h>

@@ -8,10 +8,10 @@
 #include "RegisteredThread.hh"
 
 #include "common/Tracing.hh"
-#include "strayphotons/cpp/Defer.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Defer.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Logging.hh"
 
 #include <mutex>
 #include <shared_mutex>

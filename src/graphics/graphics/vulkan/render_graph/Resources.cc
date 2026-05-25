@@ -26,6 +26,7 @@ namespace sp::vulkan::render_graph {
 
         for (auto &scope : nameScopes) {
             scope.frames[frameIndex].resourceNames.clear();
+            scope.frames[frameIndex].passCount = 0;
         }
 
         sp::erase_if(externalIDs, [&](auto &id) {
@@ -435,7 +436,9 @@ namespace sp::vulkan::render_graph {
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
         auto &scope = nameScopes[scopeStack.back()];
-        scope.SetID("LastOutput", LastOutputID(), frameIndex, true);
+        if (scope.frames[frameIndex].passCount > 0) {
+            scope.SetID("LastOutput", LastOutputID(), frameIndex, true);
+        }
         scopeStack.pop_back();
     }
 

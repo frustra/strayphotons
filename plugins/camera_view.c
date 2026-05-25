@@ -5,11 +5,9 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <c_abi/Tecs.h>
-#include <c_abi/strayphotons_exports_entity_gen.h>
-#include <c_abi/strayphotons_exports_lock_gen.h>
 #include <cglm/cglm.h>
-#include <strayphotons/components.h>
+#include <strayphotons/Tecs_abi_gen.h>
+#include <strayphotons/components_gen.h>
 #include <strayphotons/logging.h>
 #include <string.h>
 
@@ -94,26 +92,22 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
     if (output_size >= 1 && output != NULL) {
         sp_string_set(&output[0].name, "camera_view2");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
-        output[0].filter_on_event = true;
-        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 1);
-        strncpy(events[0], "/script/camera_rotate", sizeof(events[0]) - 1);
-
-        sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 2);
-        sp_string_set(&fields[0].name, "foobar");
-        fields[0].type.type_index = SP_TYPE_INDEX_INT32;
-        fields[0].type.is_trivial = true;
-        fields[0].size = sizeof(int);
-        fields[0].offset = offsetof(script_camera_view_t, foobar);
-
-        sp_string_set(&fields[1].name, "started");
-        fields[1].type.type_index = SP_TYPE_INDEX_BOOL;
-        fields[1].type.is_trivial = true;
-        fields[1].size = sizeof(bool);
-        fields[1].offset = offsetof(script_camera_view_t, started);
-
         output[0].context_size = sizeof(script_camera_view_t);
         output[0].init_func = &camera_view_init;
         output[0].on_tick_func = &camera_view_on_tick;
+        output[0].filter_on_event = true;
+        sp_dynamic_script_definition_add_event(&output[0], "/script/camera_rotate");
+
+        sp_dynamic_script_definition_add_field(&output[0],
+            "foobar",
+            SP_TYPE_INDEX_INT32,
+            sizeof(int),
+            offsetof(script_camera_view_t, foobar));
+        sp_dynamic_script_definition_add_field(&output[0],
+            "started",
+            SP_TYPE_INDEX_BOOL,
+            sizeof(bool),
+            offsetof(script_camera_view_t, started));
     }
     return 1;
 }

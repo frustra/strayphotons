@@ -55,10 +55,13 @@ namespace sp::vulkan::renderer {
             }
         }
 
+        bool drawContactPoints = graph.HasResource("GBuffer0");
         graph.AddPass("Emissive")
             .Build([&](PassBuilder &builder) {
-                builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
-                builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                if (drawContactPoints) {
+                    builder.Read("GBuffer0", Access::FragmentShaderSampleImage);
+                    builder.Read("GBuffer1", Access::FragmentShaderSampleImage);
+                }
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.ReadUniform("ViewState");
 
@@ -101,7 +104,7 @@ namespace sp::vulkan::renderer {
                     screens.push_back(std::move(screen));
                 }
             })
-            .Execute([this, elapsedTime](Resources &resources, CommandContext &cmd) {
+            .Execute([this, elapsedTime, drawContactPoints](Resources &resources, CommandContext &cmd) {
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eNotEqual);
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
@@ -113,8 +116,8 @@ namespace sp::vulkan::renderer {
                 cmd.SetBlending(true);
                 cmd.SetBlendFunc(vk::BlendFactor::eSrcAlpha,
                     vk::BlendFactor::eOne,
-                    vk::BlendFactor::eOne,
-                    vk::BlendFactor::eOneMinusSrcAlpha);
+                    vk::BlendFactor::eOneMinusDstAlpha,
+                    vk::BlendFactor::eOne);
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleStrip);
 
                 {
@@ -147,7 +150,7 @@ namespace sp::vulkan::renderer {
                     }
                 }
 
-                {
+                if (drawContactPoints) {
                     RenderPhase phase("LaserContactPoints");
                     phase.StartTimer(cmd);
                     cmd.SetShaders("laser_contact.vert", "laser_contact.frag");

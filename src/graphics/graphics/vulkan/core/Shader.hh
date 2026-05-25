@@ -8,9 +8,9 @@
 #pragma once
 
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <memory>
 #include <spirv_reflect.h>

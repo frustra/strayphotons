@@ -9,7 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxUtils.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp {
     using namespace physx;

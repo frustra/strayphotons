@@ -13,8 +13,8 @@
 #include "assets/GltfImpl.hh"
 #include "assets/PhysicsInfo.hh"
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/Logging.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cstdlib>

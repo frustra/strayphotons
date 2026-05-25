@@ -14,6 +14,7 @@
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 
+#include <string>
 #include <vector>
 
 namespace sp::vulkan::renderer {
@@ -196,6 +197,7 @@ namespace sp::vulkan::renderer {
         bool clearCounters = (CVarVoxelClear.Get() & 2) == 2;
         bool clearNormals = (CVarVoxelClear.Get() & 4) == 4 && CVarEnableSpecularTracing.Get();
         auto drawID = scene.GenerateDrawsForView(graph, ortho.visibilityMask, 3);
+        if (!drawID) return;
 
         auto voxelGridExtents = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
         auto voxelGridMips = CalculateMipmapLevels(voxelGridExtents);
@@ -517,29 +519,27 @@ namespace sp::vulkan::renderer {
         bool clearMipmap = (CVarVoxelClear.Get() & 8) == 8;
 
         if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels2.Get()) {
-            graph.AddPass("Dummy")
-                .Build([&](rg::PassBuilder &builder) {
-                    ImageDesc desc;
-                    desc.extent = vk::Extent3D(1, 1, 1);
-                    desc.primaryViewType = vk::ImageViewType::e3D;
-                    desc.imageType = vk::ImageType::e3D;
-                    desc.format = vk::Format::eR16G16B16A16Sfloat;
-                    for (auto &layerDirs : VoxelLayers) {
-                        for (auto &layerInfo : layerDirs) {
+            for (size_t i = 0; i < VoxelLayers.size(); i++) {
+                graph.AddPass("Dummy" + std::to_string(i))
+                    .Build([i](rg::PassBuilder &builder) {
+                        ImageDesc desc;
+                        desc.extent = vk::Extent3D(1, 1, 1);
+                        desc.primaryViewType = vk::ImageViewType::e3D;
+                        desc.imageType = vk::ImageType::e3D;
+                        desc.format = vk::Format::eR16G16B16A16Sfloat;
+                        for (auto &layerInfo : VoxelLayers[i]) {
                             builder.CreateImage(layerInfo.name, desc, Access::TransferWrite);
                         }
-                    }
-                })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                    vk::ClearColorValue clear;
-                    clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
-                    vk::ImageSubresourceRange range;
-                    range.layerCount = 1;
-                    range.levelCount = 1;
-                    range.aspectMask = vk::ImageAspectFlagBits::eColor;
+                    })
+                    .Execute([i](rg::Resources &resources, CommandContext &cmd) {
+                        vk::ClearColorValue clear;
+                        clear.setFloat32({0.0f, 0.0f, 0.0f, 1.0f});
+                        vk::ImageSubresourceRange range;
+                        range.layerCount = 1;
+                        range.levelCount = 1;
+                        range.aspectMask = vk::ImageAspectFlagBits::eColor;
 
-                    for (auto &layerDirs : VoxelLayers) {
-                        for (auto &layerInfo : layerDirs) {
+                        for (auto &layerInfo : VoxelLayers[i]) {
                             auto layerView = resources.GetImageView(layerInfo.name);
                             if (!layerView) continue; // If the image is never read, it may be culled entirely.
 
@@ -548,10 +548,10 @@ namespace sp::vulkan::renderer {
                                 clear,
                                 {range});
                         }
-                    }
 
-                    // updateDescriptorSet(resources, cmd.Device());
-                });
+                        // updateDescriptorSet(resources, cmd.Device());
+                    });
+            }
             return;
         }
 
@@ -606,7 +606,10 @@ namespace sp::vulkan::renderer {
     }
 
     void Voxels::AddVoxelization2(RenderGraph &graph, const Lighting &lighting) {
-        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels2.Get()) return;
+        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels.Get() ||
+            !CVarEnableVoxels2.Get()) {
+            return;
+        }
 
         ZoneScoped;
         auto scope = graph.Scope("Voxels2");

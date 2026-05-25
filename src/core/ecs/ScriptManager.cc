@@ -11,7 +11,7 @@
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
-#include "strayphotons/cpp/Defer.hh"
+#include "strayphotons/Defer.hh"
 
 #include <shared_mutex>
 

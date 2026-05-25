@@ -5,23 +5,26 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "c_abi/strayphotons_exports_entity_gen.h"
-#include "c_abi/strayphotons_exports_lock_gen.h"
-#include "strayphotons/components.h"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/InlineString.hh"
 
-#include <c_abi/Tecs.hh>
+#include <Tecs_abi.hh>
 #include <glm/glm.hpp>
+#include <strayphotons/Logging.hh>
+#include <strayphotons/Tecs_abi_gen.h>
+#include <strayphotons/components_gen.h>
+#include <string>
 
 static uint32_t instanceCount = 0;
 
+TECS_IMPLEMENT_ABI
+
 struct ScriptHelloWorld {
-    char name[16];
+    sp::InlineString<16> name;
     uint32_t frameCount;
 
     static void DefaultInit(void *context) {
         ScriptHelloWorld *ctx = static_cast<ScriptHelloWorld *>(context);
-        snprintf(ctx->name, sizeof(ctx->name) - 1, "hello%u", ++instanceCount);
+        ctx->name = "hello" + std::to_string(++instanceCount);
     }
 
     static void Init(void *context, sp_script_state_t *state) {
@@ -93,6 +96,12 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].destroy_func = &ScriptHelloWorld::Destroy;
         output[0].on_tick_func = &ScriptHelloWorld::OnTickLogic;
 
+        sp_dynamic_script_definition_add_field(&output[0],
+            "frame_count",
+            SP_TYPE_INDEX_INT32,
+            sizeof(ScriptHelloWorld::frameCount),
+            offsetof(ScriptHelloWorld, frameCount));
+
         sp_string_set(&output[1].name, "hello_world2");
         output[1].type = SP_SCRIPT_TYPE_PHYSICS_SCRIPT;
         output[1].filter_on_event = false;
@@ -102,14 +111,11 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[1].destroy_func = &ScriptHelloWorld::Destroy;
         output[1].on_tick_func = &ScriptHelloWorld::OnTickPhysics;
 
-        for (int i = 0; i < 2; i++) {
-            sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[i].fields, 1);
-            sp_string_set(&fields[0].name, "frame_count");
-            fields[0].type.type_index = SP_TYPE_INDEX_INT32;
-            fields[0].type.is_trivial = true;
-            fields[0].size = sizeof(ScriptHelloWorld::frameCount);
-            fields[0].offset = offsetof(ScriptHelloWorld, frameCount);
-        }
+        sp_dynamic_script_definition_add_field(&output[1],
+            "frame_count",
+            SP_TYPE_INDEX_INT32,
+            sizeof(ScriptHelloWorld::frameCount),
+            offsetof(ScriptHelloWorld, frameCount));
     }
     return 2;
 }

@@ -10,7 +10,7 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/ScriptManager.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/HeapVector.hh"
 
 namespace ecs {
     class ScriptInstance {

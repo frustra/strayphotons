@@ -36,9 +36,12 @@ namespace sp {
 
     class GuiContext : public NonCopyable {
     public:
-        GuiContext(const ecs::EntityRef &guiEntity);
+        GuiContext(const ecs::Name &guiName);
         GuiContext(GuiContext &&other);
         virtual ~GuiContext();
+
+        virtual void RegisterEvents(ecs::Entity guiEntity);
+        virtual void UnregisterEvents();
 
         void ClearEntities();
         void AddEntity(ecs::Entity guiElementEntity,
@@ -60,7 +63,8 @@ namespace sp {
     protected:
         ImGuiContext *imCtx = nullptr;
 
-        ecs::EntityRef guiEntity;
+        ecs::Name guiName;
+        ecs::Entity guiEntity;
         ecs::EventQueueRef events = ecs::EventQueue::New();
 
         struct GuiElementInfo {

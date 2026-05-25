@@ -13,7 +13,7 @@
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "openvr/OpenVrSystem.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>

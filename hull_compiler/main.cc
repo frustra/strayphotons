@@ -11,7 +11,7 @@
 #include "assets/PhysicsInfo.hh"
 #include "cooking/ConvexHull.hh"
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <PxPhysicsAPI.h>
 #include <cxxopts.hpp>

@@ -9,7 +9,7 @@
 
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <memory>
 #include <robin_hood.h>
@@ -175,7 +175,7 @@ namespace sp::vulkan {
 
     private:
         RenderPassState state;
-        std::array<vk::ImageLayout, MAX_COLOR_ATTACHMENTS + 1> initialLayouts, finalLayouts;
+        std::array<vk::ImageLayout, MAX_COLOR_ATTACHMENTS + 1> finalLayouts;
     };
 
     class Framebuffer : public WrappedUniqueHandle<vk::Framebuffer> {

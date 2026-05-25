@@ -10,12 +10,13 @@
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/components/RenderOutput.hh"
 #include "game/CGameContext.hh"
 #include "game/Game.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
@@ -133,16 +134,20 @@ namespace sp {
             ecs::Entity ent = flatviewEntity.Get(lock);
             glm::ivec2 outputExtents = CVarWindowSize.Get();
             if (ent.Has<ecs::RenderOutput>(lock)) {
-                auto &renderOutput = ent.Get<ecs::RenderOutput>(lock);
+                auto &readRenderOutput = ent.Get<const ecs::RenderOutput>(lock);
                 // TODO: Replace with combined window / overlay entity
+                glm::ivec2 outputSize = readRenderOutput.outputSize;
                 if (windowHandlers.update_window_view) {
-                    windowHandlers.update_window_view(this, &renderOutput.outputSize.x, &renderOutput.outputSize.y);
+                    windowHandlers.update_window_view(this, &outputSize.x, &outputSize.y);
                 }
 
-                if (renderOutput.outputSize.x <= 0.0f || renderOutput.outputSize.y <= 0.0f) {
-                    renderOutput.outputSize = CVarWindowSize.Get();
+                if (outputSize.x <= 0.0f || outputSize.y <= 0.0f) {
+                    outputSize = CVarWindowSize.Get();
                 }
-                outputExtents = renderOutput.outputSize;
+                if (outputSize != readRenderOutput.outputSize) {
+                    ent.Get<ecs::RenderOutput>(lock).outputSize = outputSize;
+                }
+                outputExtents = outputSize;
             }
             if (ent.Has<ecs::View>(lock)) {
                 auto &view = ent.Get<ecs::View>(lock);

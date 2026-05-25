@@ -5,12 +5,10 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <c_abi/Tecs.h>
-#include <c_abi/strayphotons_exports_entity_gen.h>
-#include <c_abi/strayphotons_exports_lock_gen.h>
 #include <cglm/cglm.h>
 #include <math.h>
-#include <strayphotons/components.h>
+#include <strayphotons/Tecs_abi_gen.h>
+#include <strayphotons/components_gen.h>
 #include <strayphotons/logging.h>
 #include <string.h>
 

@@ -9,7 +9,7 @@
 
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
-#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/Async.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

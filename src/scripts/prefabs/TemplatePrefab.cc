@@ -11,10 +11,10 @@
 #include "ecs/ScriptImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "game/Scene.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/InlineString.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/InlineString.hh"
+#include "strayphotons/Logging.hh"
 
 #include <picojson.h>
 #include <string>

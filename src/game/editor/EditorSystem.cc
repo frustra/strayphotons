@@ -12,7 +12,7 @@
 #include "editor/InspectorGui.hh"
 #include "game/GameEntities.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 namespace sp {
     static CVar<float> CVarEditorAngle("e.EditorAngle", -20.0f, "Tilt angle of the entity inspector gui");

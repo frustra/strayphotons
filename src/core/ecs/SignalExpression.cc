@@ -14,9 +14,9 @@
 #include "ecs/SignalExpressionNode.hh"
 #include "ecs/SignalManager.hh"
 #include "ecs/SignalStructAccess.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 namespace ecs {
     using namespace expression;

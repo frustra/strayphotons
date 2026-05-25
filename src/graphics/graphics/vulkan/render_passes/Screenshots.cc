@@ -13,7 +13,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <filesystem>
 #include <fpng.h>
@@ -25,30 +25,44 @@ namespace sp::vulkan::renderer {
             "Save screenshot to <path>, optionally specifying an image <resource>",
             [&](std::string path, std::string resource) {
                 std::lock_guard lock(screenshotMutex);
-                pendingScreenshots.push_back({path, resource});
+                pendingScreenshots.push_back(PendingScreenshot{path, resource, false});
+            });
+        funcs.Register<std::string, std::string>("assert_screenshot",
+            "Save screenshot to <path>, optionally specifying an image <resource>, crash if the resource is missing",
+            [&](std::string path, std::string resource) {
+                std::lock_guard lock(screenshotMutex);
+                pendingScreenshots.push_back(PendingScreenshot{path, resource, true});
             });
     }
 
     void Screenshots::AddPass(RenderGraph &graph) {
         std::lock_guard lock(screenshotMutex);
 
-        for (auto &pending : pendingScreenshots) {
-            auto screenshotPath = pending.first;
-            auto screenshotResource = pending.second;
+        for (PendingScreenshot &pending : pendingScreenshots) {
+            std::string screenshotPath = pending.path;
+            std::string screenshotResource = pending.resource;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
 
             rg::ResourceID sourceID = rg::InvalidResource;
 
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
-                    auto resourceID = builder.GetID(screenshotResource, false);
+                    auto resourceID = builder.GetID(screenshotResource, pending.assert);
                     if (resourceID == InvalidResource) {
                         Errorf("Can't screenshot \"%s\": invalid resource", screenshotResource);
                         return;
                     }
                     auto resource = builder.GetResource(resourceID);
                     if (resource.type != rg::Resource::Type::Image) {
-                        Errorf("Can't screenshot \"%s\": invalid resource type %s", screenshotResource, resource.type);
+                        if (pending.assert) {
+                            Abortf("Can't screenshot \"%s\": invalid resource type %s",
+                                screenshotResource,
+                                resource.type);
+                        } else {
+                            Errorf("Can't screenshot \"%s\": invalid resource type %s",
+                                screenshotResource,
+                                resource.type);
+                        }
                     } else {
                         auto format = resource.ImageFormat();
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
@@ -61,11 +75,14 @@ namespace sp::vulkan::renderer {
                         builder.FlushCommands();
                     }
                 })
-                .Execute([screenshotPath, sourceID](rg::Resources &resources, DeviceContext &device) {
+                .Execute([screenshotPath, assert = pending.assert, sourceID](rg::Resources &resources,
+                             DeviceContext &device) {
                     auto &res = resources.GetResource(sourceID);
                     if (res.type == rg::Resource::Type::Image) {
                         auto target = resources.GetImageView(res.id);
                         renderer::WriteScreenshot(device, screenshotPath, target);
+                    } else if (assert) {
+                        Abortf("Failed to save screenshot, invalid resource type: %s", res.type);
                     }
                 });
         }

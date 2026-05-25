@@ -8,8 +8,8 @@
 #pragma once
 
 #include "ecs/Components.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/FlatSet.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/FlatSet.hh"
 
 #include <glm/glm.hpp>
 #include <robin_hood.h>

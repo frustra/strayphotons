@@ -8,10 +8,10 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 namespace sp::scripts {
     using namespace ecs;

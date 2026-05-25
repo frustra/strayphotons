@@ -14,8 +14,8 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <memory>
 #include <vector>

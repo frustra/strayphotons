@@ -7,9 +7,9 @@
 
 #include "Name.hh"
 
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 namespace ecs {
     Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {

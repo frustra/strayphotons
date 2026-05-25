@@ -9,11 +9,12 @@
 
 #include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/StructMetadata.hh"
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneRef.hh"
 #include "graphics/GenericCompositor.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <memory>
 #include <vector>
@@ -87,6 +88,9 @@ namespace ecs {
             glm::vec2,
             float,
             sp::GuiDrawData &) = nullptr;
+
+        void AddEvent(const char *eventName);
+        StructField &AddField(const char *name, uint32_t typeIndex, uint64_t size, uint64_t offset);
     };
 
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
@@ -112,7 +116,18 @@ namespace ecs {
         StructField::New("on_event_func", &DynamicScriptDefinition::onEventFunc),
         StructField::New("prefab_func", &DynamicScriptDefinition::prefabFunc),
         StructField::New("before_frame_func", &DynamicScriptDefinition::beforeFrameFunc),
-        StructField::New("render_gui_func", &DynamicScriptDefinition::renderGuiFunc));
+        StructField::New("render_gui_func", &DynamicScriptDefinition::renderGuiFunc),
+        StructFunction::New("AddEvent",
+            "Register an event input queue",
+            &DynamicScriptDefinition::AddEvent,
+            ArgDesc("name", "The name of the event")),
+        StructFunction::New("AddField",
+            "Register a reflected input field",
+            &DynamicScriptDefinition::AddField,
+            ArgDesc("name", "The name of the field"),
+            ArgDesc("typeIndex", "The registered index of the field's type"),
+            ArgDesc("size", "The size of the field in bytes"),
+            ArgDesc("offset", "The byte offset of the field relative to its containing struct")));
 
     class DynamicScript final : public ScriptDefinitionBase, sp::NonMoveable {
     public:

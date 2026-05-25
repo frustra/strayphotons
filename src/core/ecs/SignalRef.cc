@@ -9,7 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
-#include "strayphotons/cpp/HeapString.hh"
+#include "strayphotons/HeapString.hh"
 
 #include <limits>
 

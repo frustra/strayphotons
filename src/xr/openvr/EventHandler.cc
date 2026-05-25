@@ -9,7 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "openvr/OpenVrSystem.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <openvr.h>
 

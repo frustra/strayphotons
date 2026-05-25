@@ -9,9 +9,9 @@
 
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <robin_hood.h>
 #include <string_view>

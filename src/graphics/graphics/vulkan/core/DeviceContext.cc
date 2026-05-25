@@ -27,10 +27,10 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "gui/MenuGuiManager.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/InlineVector.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/InlineVector.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>

@@ -5,12 +5,10 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <c_abi/Tecs.h>
-#include <c_abi/strayphotons_exports_entity_gen.h>
-#include <c_abi/strayphotons_exports_lock_gen.h>
 #include <cglm/cglm.h>
 #include <math.h>
-#include <strayphotons/components.h>
+#include <strayphotons/Tecs_abi_gen.h>
+#include <strayphotons/components_gen.h>
 #include <strayphotons/logging.h>
 #include <string.h>
 
@@ -112,12 +110,11 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
     if (output_size >= 2 && output != NULL) {
         sp_string_set(&output[0].name, "flashlight");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
-        output[0].filter_on_event = false;
-        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
-        strncpy(events[0], "/action/flashlight/toggle", sizeof(events[0]) - 1);
-        strncpy(events[1], "/action/flashlight/grab", sizeof(events[1]) - 1);
         output[0].context_size = sizeof(script_flashlight_t);
         output[0].on_tick_func = &flashlight_on_tick;
+        output[0].filter_on_event = false;
+        sp_dynamic_script_definition_add_event(&output[0], "/action/flashlight/toggle");
+        sp_dynamic_script_definition_add_event(&output[0], "/action/flashlight/grab");
 
         sp_string_set(&output[1].name, "sun");
         output[1].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;

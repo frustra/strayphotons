@@ -21,8 +21,8 @@
 #include "game/SceneImpl.hh"
 #include "game/SceneRef.hh"
 #include "imgui_internal.h"
-#include "strayphotons/cpp/Utility.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/Utility.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
 #include <imgui.h>

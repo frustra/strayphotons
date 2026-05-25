@@ -10,7 +10,7 @@
 #include "common/Tracing.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <cstdint>
 #include <memory>

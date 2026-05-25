@@ -13,7 +13,7 @@
 #include "assets/JsonHelpers.hh"
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <filesystem>
 #include <fstream>

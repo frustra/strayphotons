@@ -15,10 +15,10 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/Utility.hh"
 
 #include <atomic>
 #include <memory>

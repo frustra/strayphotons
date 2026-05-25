@@ -10,8 +10,8 @@
 #include "assets/AssetManager.hh"
 #include "ecs/Components.hh"
 #include "ecs/EventQueue.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/HeapVector.hh"
 
 namespace sp {
     class Asset;

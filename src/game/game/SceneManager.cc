@@ -17,7 +17,7 @@
 #include "ecs/SignalManager.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <algorithm>
 #include <filesystem>

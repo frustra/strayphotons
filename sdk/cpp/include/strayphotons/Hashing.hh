@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <cstring>
 #include <robin_hood.h>

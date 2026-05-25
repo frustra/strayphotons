@@ -7,13 +7,13 @@
 
 #pragma once
 
+#include "common/Tracing.hh"
 #include "console/CFunc.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptDefinition.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Logging.hh"
 
-#include <any>
 #include <deque>
 #include <limits>
 #include <memory>

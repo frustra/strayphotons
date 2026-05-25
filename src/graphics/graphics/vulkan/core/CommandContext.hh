@@ -10,7 +10,7 @@
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/Util.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 #include <bit>
 #include <glm/glm.hpp>

@@ -394,7 +394,7 @@ The `physics_signal_from_signal` script has parameter type: map&lt;string, [Sign
 
 <div class="component_definition">
 
-## `prefab_gltf` Script
+## `prefab_gltf` Prefab Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -442,7 +442,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
-## `prefab_life_cell` Script
+## `prefab_life_cell` Prefab Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -453,7 +453,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
-## `prefab_template` Script
+## `prefab_template` Prefab Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -464,7 +464,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
-## `prefab_tile` Script
+## `prefab_tile` Prefab Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -480,7 +480,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
-## `prefab_wall` Script
+## `prefab_wall` Prefab Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|
@@ -536,7 +536,7 @@ This is an **enum** type, and can be one of the following case-sensitive values:
 
 <div class="component_definition">
 
-## `signal_display` Script
+## `signal_display` GUI Script
 
 | Parameter Name | Type | Default Value | Description |
 |------------|------|---------------|-------------|

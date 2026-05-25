@@ -20,7 +20,7 @@
 #include "graphics/vulkan/render_passes/Transparency.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
-#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/Async.hh"
 
 #include <memory>
 #include <robin_hood.h>

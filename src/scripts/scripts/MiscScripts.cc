@@ -14,10 +14,10 @@
 #include "ecs/SignalStructAccess.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>

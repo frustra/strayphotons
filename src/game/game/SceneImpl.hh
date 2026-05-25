@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::scene_util {
     using namespace ecs;

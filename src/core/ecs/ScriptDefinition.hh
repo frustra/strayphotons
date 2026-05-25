@@ -11,8 +11,8 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
 #include "game/SceneRef.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/gui/GuiDrawData.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
 
 #include <functional>
 #include <map>

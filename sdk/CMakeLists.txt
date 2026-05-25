@@ -7,19 +7,25 @@
 
 project(sp-sdk VERSION 0.1)
 
-add_library(${PROJECT_SDK_LIB} STATIC)
+if(NOT DEFINED PROJECT_LIB_NAME)
+    set(PROJECT_LIB_NAME sp)
+endif()
 
-target_include_directories(${PROJECT_SDK_LIB}
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+if(NOT DEFINED PROJECT_SDK_LIB)
+    set(PROJECT_SDK_LIB strayphotons-sdk)
+endif()
 
-target_link_libraries(${PROJECT_SDK_LIB} PUBLIC
-    glm
-    magic_enum
-    robin_hood
-)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext)
+    add_subdirectory(ext/glm)
+    add_subdirectory(ext/magic_enum)
+    add_subdirectory(ext/robin-hood-hashing)
+    add_subdirectory(ext/Tecs)
+endif()
 
-target_link_libraries(${PROJECT_SDK_LIB} PUBLIC ${PROJECT_LIB_NAME})
+add_library(${PROJECT_SDK_LIB} INTERFACE)
 
-add_subdirectory(src)
+target_include_directories(${PROJECT_SDK_LIB} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(${PROJECT_SDK_LIB} INTERFACE ${PROJECT_LIB_NAME} Tecs)
+
+add_subdirectory(cpp)

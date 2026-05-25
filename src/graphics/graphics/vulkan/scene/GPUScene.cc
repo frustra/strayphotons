@@ -125,7 +125,7 @@ namespace sp::vulkan {
             renderables.size(),
             meshes.size());
 
-        primitiveCountPowerOfTwo = std::max(1u, CeilToPowerOfTwo(primitiveCount));
+        primitiveCountPowerOfTwo = CeilToPowerOfTwo(primitiveCount);
 
         textures.Flush();
 
@@ -257,6 +257,7 @@ namespace sp::vulkan {
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
         ecs::VisibilityMask viewMask,
         uint32_t instanceCount) {
+        if (primitiveCount == 0 || vertexCount == 0 || instanceCount == 0) return GPUScene::DrawBufferIDs{};
         DrawBufferIDs bufferIDs;
 
         graph.AddPass("GenerateDrawsForView")
@@ -313,6 +314,7 @@ namespace sp::vulkan {
         ecs::VisibilityMask viewMask,
         bool reverseSort,
         uint32_t instanceCount) {
+        if (primitiveCount == 0 || vertexCount == 0 || instanceCount == 0) return GPUScene::DrawBufferIDs{};
         DrawBufferIDs bufferIDs;
 
         graph.AddPass("GenerateSortedDrawsForView")
@@ -405,7 +407,7 @@ namespace sp::vulkan {
         BufferPtr vertexBuffer,
         BufferPtr drawCommandsBuffer,
         BufferPtr drawParamsBuffer) {
-        if (vertexCount == 0) return;
+        if (primitiveCount == 0 || vertexCount == 0) return;
 
         cmd.SetBindlessDescriptors(2, textures.GetDescriptorSet());
 
@@ -422,6 +424,8 @@ namespace sp::vulkan {
     }
 
     void GPUScene::AddGeometryWarp(rg::RenderGraph &graph) {
+        if (primitiveCount == 0 || vertexCount == 0) return;
+
         graph.AddPass("GeometryWarpCalls")
             .Build([&](rg::PassBuilder &builder) {
                 const auto maxDraws = primitiveCountPowerOfTwo;
@@ -447,8 +451,6 @@ namespace sp::vulkan {
                     Access::ComputeShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                if (vertexCount == 0) return;
-
                 cmd.SetComputeShader("generate_warp_geometry_draws.comp");
                 cmd.SetStorageBuffer("Renderables", "RenderableEntities");
                 cmd.SetStorageBuffer("MeshModels", models);

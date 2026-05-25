@@ -13,7 +13,7 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::vulkan {
     Mesh::Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device)

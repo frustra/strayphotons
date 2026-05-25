@@ -11,7 +11,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp {
     AnimationSystem::AnimationSystem(PhysxManager &manager) : manager(manager) {}

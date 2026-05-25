@@ -10,7 +10,7 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <string_view>
 #include <variant>

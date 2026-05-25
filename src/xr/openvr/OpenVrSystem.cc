@@ -16,7 +16,7 @@
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "openvr/OpenVrSystem.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_access.hpp>

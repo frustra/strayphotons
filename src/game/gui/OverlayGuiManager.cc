@@ -12,24 +12,31 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/GuiElement.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "gui/GuiContext.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <imgui.h>
 
 namespace sp {
-    OverlayGuiManager::OverlayGuiManager(const ecs::EntityRef &guiEntity) : GuiContext(guiEntity) {
+    OverlayGuiManager::OverlayGuiManager(const ecs::Name &guiName) : GuiContext(guiName) {
         consoleGui = std::make_shared<ConsoleGui>();
         Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-100, -40});
         fpsCounterGui = std::make_shared<FpsCounterGui>();
         Attach(fpsCounterGui);
+    }
 
+    OverlayGuiManager::~OverlayGuiManager() {
+        UnregisterEvents();
+    }
+
+    void OverlayGuiManager::RegisterEvents(ecs::Entity guiEntity) {
+        GuiContext::RegisterEvents(guiEntity);
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
+                [name = this->guiName, ent = this->guiEntity, events = this->events](auto &lock) {
                     Assertf(ent.Has<ecs::EventInput>(lock),
                         "Expected overlay gui to start with an EventInput: %s",
-                        guiEntity.Name().String());
+                        name.String());
 
                     auto &eventInput = ent.Get<ecs::EventInput>(lock);
                     eventInput.Register(lock, events, INPUT_EVENT_TOGGLE_CONSOLE);
@@ -37,17 +44,17 @@ namespace sp {
         }
     }
 
-    OverlayGuiManager::~OverlayGuiManager() {
+    void OverlayGuiManager::UnregisterEvents() {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
+                [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Unregister(events, INPUT_EVENT_TOGGLE_CONSOLE);
                     }
                 });
         }
+        GuiContext::UnregisterEvents();
     }
 
     std::shared_ptr<GuiContext> OverlayGuiManager::CreateContext(const ecs::Name &guiName) {
@@ -60,7 +67,9 @@ namespace sp {
             });
 
         ecs::EntityRef ref(guiName);
-        return std::shared_ptr<OverlayGuiManager>(new OverlayGuiManager(ref));
+        auto guiContext = std::shared_ptr<OverlayGuiManager>(new OverlayGuiManager(guiName));
+        guiContext->RegisterEvents(ref.GetLive());
+        return guiContext;
     }
 
     void OverlayGuiManager::DefineWindows() {

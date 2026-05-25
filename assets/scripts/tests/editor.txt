@@ -1,27 +1,27 @@
-screenshot empty-state.png
+assert_screenshot empty-state.png
 stepgraphics
-screenshot empty-state-view.png view:player:flatview/LastOutput
+assert_screenshot empty-state-view.png view:player:flatview/LastOutput
 stepgraphics
 r.DrawSkybox1 0
 r.DrawSkybox2 0
 r.SkyboxStarBrightness 10
 r.SkyboxStarDensity 50
 r.SkyboxStarSize 0.001
-screenshot skyboxtest.png view:player:flatview/LastOutput
+assert_screenshot skyboxtest.png view:player:flatview/LastOutput
 stepgraphics
 editinworld player:flathead
 # Hackily change the inspector size to fill the screenshot
 setcomponent editor:inspector#gui_element.preferred_size.x -100
-screenshot editor1.png /ent:editor:inspector/LastOutput
+assert_screenshot editor1.png /ent:editor:inspector/LastOutput
 stepgraphics
 # Click on "Entity View" tab and move mouse away
 sendevent editor:inspector/interact/point 125 20
 sendevent editor:inspector/interact/press true
 sendevent editor:inspector/interact/press false
 sendevent editor:inspector/interact/point -1 -1
-screenshot editor2.png /ent:editor:inspector/LastOutput
+assert_screenshot editor2.png /ent:editor:inspector/LastOutput
 stepgraphics
-screenshot editor3.png /ent:editor:inspector/LastOutput
+assert_screenshot editor3.png /ent:editor:inspector/LastOutput
 stepgraphics
-screenshot editor4.png /ent:editor:inspector/LastOutput
+assert_screenshot editor4.png /ent:editor:inspector/LastOutput
 stepgraphics

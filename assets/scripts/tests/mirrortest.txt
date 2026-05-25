@@ -2,17 +2,17 @@ loadscene mirrortest
 r.Exposure 2
 steplogic
 stepphysics
-screenshot mirrortest-frame000.png
+assert_screenshot mirrortest-frame000.png
 stepgraphics
-screenshot mirrortest-frame001.png
+assert_screenshot mirrortest-frame001.png
 stepgraphics
-screenshot mirrortest-frame002.png
+assert_screenshot mirrortest-frame002.png
 stepgraphics
-screenshot mirrortest-frame003.png
+assert_screenshot mirrortest-frame003.png
 stepgraphics
-screenshot mirrortest-frame004.png
+assert_screenshot mirrortest-frame004.png
 stepgraphics 95
-screenshot mirrortest-frame100.png
+assert_screenshot mirrortest-frame100.png
 stepgraphics
 
 sendevent player:flashlight/action/flashlight/grab
@@ -22,12 +22,12 @@ setsignal player:player/move_noclip 1
 rotate player:player -60 0 1 0
 translate player:player -1 -1 -4
 stepphysics
-screenshot mirrortest-edge-occlusion.png
+assert_screenshot mirrortest-edge-occlusion.png
 stepgraphics
 rotate player:player 70 0 1 0
 translate player:player -3 0 -2
 stepphysics
-screenshot mirrortest-bounces.png
+assert_screenshot mirrortest-bounces.png
 stepgraphics
 
 setsignal player:flashlight/on 1
@@ -37,5 +37,5 @@ translate player:player -0.14 6 6.1
 stepphysics
 steplogic
 stepgraphics 8
-screenshot mirrortest-overhead.png
+assert_screenshot mirrortest-overhead.png
 stepgraphics

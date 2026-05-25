@@ -10,10 +10,8 @@
 #include "gen_common.hh"
 #include "gen_types.hh"
 
-#include <ranges>
-
 template<typename S>
-void GenerateComponentsH(S &out) {
+void GenerateComponentsH(S &out, bool internal) {
     out << R"RAWSTR(/*
  * THIS FILE IS AUTO-GENERATED -- DO NOT EDIT
  * See src/exports/codegen/gen_components.hh to modify
@@ -27,56 +25,50 @@ void GenerateComponentsH(S &out) {
  */
 
 #pragma once
-
-#include <c_abi/Tecs.h>
-#include <strayphotons/entity.h>
-#include <strayphotons/export.h>
-#include <strayphotons/graphics.h>
-
-#if !defined(__cplusplus) || !defined(SP_SHARED_INTERNAL)
-#ifdef __cplusplus
-extern "C" {
-#endif
-#pragma pack(push, 1)
 )RAWSTR";
-    ForEachComponentType([&](auto *typePtr) {
-        using T = std::remove_pointer_t<decltype(typePtr)>;
-        auto &comp = ecs::LookupComponent<T>();
-        GenerateCTypeDefinition(out, comp.metadata.type);
-    });
-    ForEachExportedType([&](auto *typePtr) {
-        using T = std::remove_pointer_t<decltype(typePtr)>;
-        GenerateCTypeDefinition(out, typeid(T));
-    });
-    out << R"RAWSTR(
-#pragma pack(pop)
-#ifdef __cplusplus
-} // extern "C"
-#endif
-#else
-
+    if (internal) {
+        out << R"RAWSTR(
 #include "ecs/EcsImpl.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <vector>
 #include <cstdint>
 #include <robin_hood.h>
+)RAWSTR";
+    }
+    out << R"RAWSTR(
+#include <Tecs_abi.h>
+#include <strayphotons/entity.h>
+#include <strayphotons/export.h>
+#include <strayphotons/graphics.h>
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 #pragma pack(push, 1)
+
 )RAWSTR";
     ForEachComponentType([&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
         auto &comp = ecs::LookupComponent<T>();
-        GenerateCppTypeDefinition(out, comp.metadata.type);
+        if (internal) {
+            GenerateCppTypeDefinition(out, comp.metadata.type);
+        } else {
+            GenerateCTypeDefinition(out, comp.metadata.type);
+        }
     });
     ForEachExportedType([&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
-        GenerateCppTypeDefinition(out, typeid(T));
+        if (internal) {
+            GenerateCppTypeDefinition(out, typeid(T));
+        } else {
+            GenerateCTypeDefinition(out, typeid(T));
+        }
     });
     out << R"RAWSTR(
+
 #pragma pack(pop)
+#ifdef __cplusplus
 } // extern "C"
 #endif
 )RAWSTR";
@@ -84,7 +76,8 @@ extern "C" {
 
 template<typename S>
 void GenerateComponentsCC(S &out) {
-    out << R"RAWSTR(#include <strayphotons/components.h>
+    out << R"RAWSTR(#include "components_gen_internal.hh"
+
 #include <ecs/EcsImpl.hh>
 
 using DynamicLock = Tecs::DynamicLock<ecs::ECS>;

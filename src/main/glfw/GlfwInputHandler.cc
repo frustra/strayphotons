@@ -9,9 +9,9 @@
 
 #include "GlfwKeyCodes.hh"
 #include "glm/gtx/string_cast.hpp"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
-#include "strayphotons/cpp/input/KeyCodes.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
+#include "strayphotons/input/KeyCodes.hh"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>

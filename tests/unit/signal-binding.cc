@@ -8,7 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalExpressionNode.hh"
 #include "ecs/SignalManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <tests.hh>

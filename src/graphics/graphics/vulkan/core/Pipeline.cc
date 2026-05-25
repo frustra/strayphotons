@@ -8,7 +8,7 @@
 #include "Pipeline.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <common/output_stream.h>
 #include <memory>

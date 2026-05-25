@@ -33,7 +33,8 @@
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
 #include "xr/XrSystem.hh"
 
@@ -308,6 +309,7 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(view);
                     if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
                 } else if (logoTex->Ready()) {
+                    cmd.SetBlending(true);
                     cmd.DrawScreenCover(logoTex->Get());
                 }
                 if (guiResourceID != rg::InvalidResource) {
@@ -315,8 +317,8 @@ namespace sp::vulkan {
                     // GUI outputs premultiplied alpha
                     cmd.SetBlendFunc(vk::BlendFactor::eOne,
                         vk::BlendFactor::eOneMinusSrcAlpha,
-                        vk::BlendFactor::eOne,
-                        vk::BlendFactor::eOneMinusSrcAlpha);
+                        vk::BlendFactor::eOneMinusDstAlpha,
+                        vk::BlendFactor::eOne);
                     auto view = resources.GetImageView(guiResourceID);
                     if (view) cmd.DrawScreenCover(view);
                 }
@@ -336,7 +338,7 @@ namespace sp::vulkan {
             if (ent.Has<ecs::RenderOutput>(lock)) {
                 auto scope = graph.Scope(rg::ResourceName("view:") + ent.Get<ecs::Name>(lock).String());
                 auto view = AddFlatView(lock, ent);
-                if (graph.HasResource("GBuffer0") && view) {
+                if (view) {
                     AddDeferredPasses(lock, view, elapsedTime);
                     renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
                 }
@@ -367,6 +369,16 @@ namespace sp::vulkan {
         } else {
             drawIDs = scene.GenerateDrawsForView(graph, view.visibilityMask);
         }
+        graph.AddPass("UpdateView")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
+            })
+            .Execute([view](rg::Resources &resources, DeviceContext &device) {
+                GPUViewState viewState[] = {{view}, {}};
+                auto viewStateBuf = resources.GetBuffer("ViewState");
+                viewStateBuf->CopyFrom(viewState, 2);
+            });
+        if (!drawIDs) return view;
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -386,20 +398,16 @@ namespace sp::vulkan {
                 desc.format = depthStencilFormat;
                 builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
 
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
                 builder.Read("ViewState", Access::VertexShaderReadUniform);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
-            .Execute([this, view, drawIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
-                GPUViewState viewState[] = {{view}, {}};
-                auto viewStateBuf = resources.GetBuffer("ViewState");
-                viewStateBuf->CopyFrom(viewState, 2);
-                cmd.SetUniformBuffer("ViewStates", viewStateBuf);
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
@@ -498,6 +506,7 @@ namespace sp::vulkan {
 
         glm::vec3 viewPos = viewsByEye[ecs::XrEye::Left].invViewMat * glm::vec4(0, 0, 0, 1);
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[ecs::XrEye::Left].visibilityMask);
+        if (!drawIDs) return {};
 
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
@@ -599,9 +608,26 @@ namespace sp::vulkan {
         const ecs::View &view,
         chrono_clock::duration elapsedTime) {
         renderer::AddExposureState(graph);
-        lighting.AddLightingPass(graph);
+        if (graph.HasResource("GBuffer0")) {
+            lighting.AddLightingPass(graph);
+        } else {
+            // Create blank gbuffer to run postprocessing on
+            graph.AddPass("EmptyFrame")
+                .Build([&](rg::PassBuilder &builder) {
+                    rg::ImageDesc desc = {};
+                    desc.extent = vk::Extent3D(view.extents.x, view.extents.y, 1);
+                    desc.primaryViewType = vk::ImageViewType::e2DArray;
+                    desc.format = vk::Format::eR16G16B16A16Sfloat;
+                    builder.OutputColorAttachment(0, "LinearLuminance", desc, {LoadOp::Clear, StoreOp::Store});
+                    desc.format = depthStencilFormat;
+                    builder.OutputDepthAttachment("GBufferDepthStencil", desc, {LoadOp::Clear, StoreOp::Store});
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {});
+        }
         renderer::AddSkyboxPass(graph);
-        transparency.AddPass(graph, view);
+        if (graph.HasResource("GBuffer0")) {
+            transparency.AddPass(graph, view);
+        }
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);

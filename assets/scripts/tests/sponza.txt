@@ -1,15 +1,15 @@
 x.PhysicsFPS 120
 loadscene sponza
-screenshot sponza-render-init.png
+assert_screenshot sponza-render-init.png
 stepgraphics
 stepphysics
-screenshot sponza-physics-init.png
+assert_screenshot sponza-physics-init.png
 stepgraphics
 stepphysics 120
-screenshot sponza-test-frame.png
+assert_screenshot sponza-test-frame.png
 stepgraphics 120
-screenshot sponza-test-frame2.png
+assert_screenshot sponza-test-frame2.png
 stepgraphics
 r.VoxelDebug 1
-screenshot sponza-test-voxels.png
+assert_screenshot sponza-test-voxels.png
 stepgraphics

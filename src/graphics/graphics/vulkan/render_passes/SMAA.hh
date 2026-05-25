@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Common.hh"
-#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/Async.hh"
 
 namespace sp::vulkan::renderer {
     class SMAA {

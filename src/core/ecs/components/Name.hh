@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <functional>
 #include <iostream>

@@ -12,8 +12,8 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/StructMetadata.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <optional>
 #include <robin_hood.h>

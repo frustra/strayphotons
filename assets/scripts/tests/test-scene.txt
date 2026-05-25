@@ -5,12 +5,12 @@ setsignal player:flashlight/on 1
 steplogic
 stepphysics
 stepgraphics 2
-screenshot test-scene1.png
+assert_screenshot test-scene1.png
 stepgraphics
 steplogic 2700
 stepphysics 2
 stepgraphics 120
-screenshot test-scene2.png
+assert_screenshot test-scene2.png
 stepgraphics
 assert_position test1:animbox 0 1.5 -4.875
 stepphysics 120
@@ -20,8 +20,8 @@ assert_position test1:animbox 0 5 -4.875
 assert_position test1:door1 0 -1 0
 assert_scale test1:door1 0.1 0.1 0.1
 stepgraphics 120
-screenshot test-scene3.png
+assert_screenshot test-scene3.png
 stepgraphics
 r.VoxelDebug 1
-screenshot test-scene-voxels.png
+assert_screenshot test-scene-voxels.png
 stepgraphics

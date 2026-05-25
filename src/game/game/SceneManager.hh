@@ -14,8 +14,8 @@
 #include "ecs/components/SceneInfo.hh"
 #include "game/Scene.hh"
 #include "game/SceneRef.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/LockFreeMutex.hh"
 
 #include <deque>
 #include <functional>

@@ -12,8 +12,8 @@
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
-#include "strayphotons/cpp/input/KeyCodes.hh"
+#include "strayphotons/input/BindingNames.hh"
+#include "strayphotons/input/KeyCodes.hh"
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {

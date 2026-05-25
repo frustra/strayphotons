@@ -6,8 +6,8 @@
  */
 
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <tests.hh>
 

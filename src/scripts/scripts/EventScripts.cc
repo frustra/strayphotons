@@ -10,9 +10,9 @@
 #include "ecs/ScriptImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
 
 namespace sp::scripts {
     using namespace ecs;

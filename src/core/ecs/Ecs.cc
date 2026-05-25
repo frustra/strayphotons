@@ -8,8 +8,8 @@
 #include "Ecs.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Logging.hh"
 
 #include <typeindex>
 

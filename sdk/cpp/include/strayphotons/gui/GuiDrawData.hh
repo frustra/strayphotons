@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <glm/glm.hpp>
 

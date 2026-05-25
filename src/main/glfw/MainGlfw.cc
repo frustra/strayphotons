@@ -19,8 +19,8 @@
 #endif
 
 #include "GlfwInputHandler.hh"
-#include "strayphotons/cpp/Defer.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Defer.hh"
+#include "strayphotons/Logging.hh"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -29,21 +29,20 @@
     #include <glfw/glfw3native.h>
 #endif
 
-#include <c_abi/Tecs.hh>
-#include <c_abi/strayphotons_exports_entity_gen.h>
-#include <c_abi/strayphotons_exports_lock_gen.h>
+#include <atomic>
 #include <csignal>
 #include <cstdio>
 #include <cxxopts.hpp>
-#include <fstream>
 #include <memory>
 #include <strayphotons.h>
-#include <strayphotons/components.h>
 #include <string_view>
+#include <thread>
 #include <tracy/Tracy.hpp>
 #include <vulkan/vulkan.hpp>
 
-TECS_IMPLEMENT_C_ABI
+#ifdef SP_PACKAGE_RELEASE
+    #include <fstream>
+#endif
 
 namespace sp {
     sp_game_t *GameInstance = nullptr;

@@ -11,9 +11,9 @@
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
 #include "ecs/components/Focus.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <memory>
 #include <robin_hood.h>

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/LockFreeMutex.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Logging.hh"
 
 #include <memory>
 #include <mutex>

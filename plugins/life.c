@@ -5,10 +5,8 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include <c_abi/Tecs.h>
-#include <c_abi/strayphotons_exports_entity_gen.h>
-#include <c_abi/strayphotons_exports_lock_gen.h>
-#include <strayphotons/components.h>
+#include <strayphotons/Tecs_abi_gen.h>
+#include <strayphotons/components_gen.h>
 #include <string.h>
 
 typedef struct script_life_cell_t {
@@ -58,29 +56,28 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].desc = "An event handling script to notify neighboring cells when state changes";
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
-        event_name_t *events = sp_event_name_vector_resize(&output[0].events, 2);
-        strncpy(events[0], "/life/neighbor_alive", sizeof(events[0]) - 1);
-        strncpy(events[1], "/life/toggle_alive", sizeof(events[1]) - 1);
+        sp_dynamic_script_definition_add_event(&output[0], "/life/neighbor_alive");
+        sp_dynamic_script_definition_add_event(&output[0], "/life/toggle_alive");
         sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
 
-        sp_string_set(&fields[0].name, "alive");
-        fields[0].type.type_index = SP_TYPE_INDEX_BOOL;
-        fields[0].type.is_trivial = true;
-        fields[0].size = sizeof(bool);
-        fields[0].offset = offsetof(script_life_cell_t, alive);
+        sp_dynamic_script_definition_add_field(&output[0],
+            "alive",
+            SP_TYPE_INDEX_BOOL,
+            sizeof(bool),
+            offsetof(script_life_cell_t, alive));
 
-        sp_string_set(&fields[1].name, "initialized");
-        fields[1].type.type_index = SP_TYPE_INDEX_BOOL;
-        fields[1].type.is_trivial = true;
-        fields[1].size = sizeof(bool);
-        fields[1].offset = offsetof(script_life_cell_t, initialized);
-        fields[1].actions = 0; // None
+        sp_struct_field_t *field = sp_dynamic_script_definition_add_field(&output[0],
+            "initialized",
+            SP_TYPE_INDEX_BOOL,
+            sizeof(bool),
+            offsetof(script_life_cell_t, initialized));
+        field->actions = 0; // None
 
-        sp_string_set(&fields[2].name, "neighbor_count");
-        fields[2].type.type_index = SP_TYPE_INDEX_INT32;
-        fields[2].type.is_trivial = true;
-        fields[2].size = sizeof(int);
-        fields[2].offset = offsetof(script_life_cell_t, neighborCount);
+        sp_dynamic_script_definition_add_field(&output[0],
+            "neighbor_count",
+            SP_TYPE_INDEX_INT32,
+            sizeof(int),
+            offsetof(script_life_cell_t, neighborCount));
 
         output[0].context_size = sizeof(script_life_cell_t);
         output[0].on_tick_func = &life_cell_on_tick;

@@ -15,8 +15,8 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>

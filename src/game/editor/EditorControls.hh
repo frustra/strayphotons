@@ -11,7 +11,7 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "game/SceneRef.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/LockFreeMutex.hh"
 
 namespace sp {
     struct EditorContext {

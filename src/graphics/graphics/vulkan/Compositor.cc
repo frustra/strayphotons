@@ -13,6 +13,7 @@
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalRef.hh"
+#include "ecs/components/Events.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/Access.hh"
@@ -26,9 +27,9 @@
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
 #include "gui/GuiContext.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/Defer.hh"
-#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/Defer.hh"
+#include "strayphotons/gui/ImGuiHelpers.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
@@ -332,19 +333,22 @@ namespace sp::vulkan {
                 }
             }
 
+            const ecs::Name &guiName = ent.Get<ecs::Name>(lock);
+
             auto guiContext = renderOutput.guiContext.lock();
             if (!guiContext && !renderOutput.guiElements.empty()) {
                 guiContext = ephemeralGuiContexts.Load(ent);
                 if (!guiContext) {
-                    guiContext = std::make_shared<GuiContext>(ent);
+                    guiContext = std::make_shared<GuiContext>(guiName);
                     ephemeralGuiContexts.Register(ent, guiContext, true);
                 }
             }
+            if (guiContext && ent.Has<ecs::EventInput>(lock)) guiContext->RegisterEvents(ent);
 
             // If outputSize is still -1 here, the compositor will inherit the source texture extents, otherwise (1, 1)
             if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = CVarWindowScale.Get();
             existingOutputs.emplace(ent, renderOutputs.size());
-            renderOutputs.emplace_back(RenderOutputInfo{ent.Get<ecs::Name>(lock),
+            renderOutputs.emplace_back(RenderOutputInfo{guiName,
                 ent,
                 outputSize,
                 windowScale,
@@ -530,35 +534,38 @@ namespace sp::vulkan {
                         inheritExtent = false;
                     }
 
-                    outputDesc.extent = vk::Extent3D(std::max(1u, outputDesc.extent.width),
-                        std::max(1u, outputDesc.extent.height),
-                        1);
+                    outputDesc.extent = vk::Extent3D(outputDesc.extent.width, outputDesc.extent.height, 1);
                     outputDesc.mipLevels = CalculateMipmapLevels(outputDesc.extent);
 
                     builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
-                    builder.OutputColorAttachment(0, "RenderOutput", outputDesc, {LoadOp::Clear, StoreOp::Store});
+                    if (outputDesc.extent.width != 0 && outputDesc.extent.height != 0) {
+                        builder.OutputColorAttachment(0, "RenderOutput", outputDesc, {LoadOp::Clear, StoreOp::Store});
+                    }
                 })
-                .Execute([output, viewOutput, sourceImageOutput](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.SetDepthTest(false, false);
-                    if (viewOutput != rg::InvalidResource) {
-                        cmd.DrawScreenCover(resources.GetImageView(viewOutput));
-                    }
-                    cmd.SetBlending(true);
-
-                    if (output.sourceResourceID != rg::InvalidResource) {
-                        ImageViewPtr sourceImgView = resources.GetImageView(output.sourceResourceID);
-                        if (sourceImgView) {
-                            cmd.DrawScreenCover(sourceImgView);
-                        } else {
-                            cmd.DrawScreenCover(resources.GetImageView("ErrorColor"));
+                .Execute(
+                    [output, outputDesc, viewOutput, sourceImageOutput](rg::Resources &resources, CommandContext &cmd) {
+                        if (outputDesc.extent.width == 0 || outputDesc.extent.height == 0) return;
+                        cmd.SetDepthTest(false, false);
+                        if (viewOutput != rg::InvalidResource) {
+                            cmd.DrawScreenCover(resources.GetImageView(viewOutput));
                         }
-                    }
+                        cmd.SetBlending(true);
 
-                    if (sourceImageOutput != rg::InvalidResource) {
-                        ImageViewPtr sourceImgView = resources.GetImageView(sourceImageOutput);
-                        if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
-                    }
-                });
+                        if (output.sourceResourceID != rg::InvalidResource) {
+                            ImageViewPtr sourceImgView = resources.GetImageView(output.sourceResourceID);
+                            if (sourceImgView) {
+                                cmd.DrawScreenCover(sourceImgView);
+                            } else {
+                                cmd.DrawScreenCover(resources.GetImageView("ErrorColor"));
+                            }
+                        }
+
+                        if (sourceImageOutput != rg::InvalidResource) {
+                            ImageViewPtr sourceImgView = resources.GetImageView(sourceImageOutput);
+                            if (sourceImgView) cmd.DrawScreenCover(sourceImgView);
+                        }
+                    });
+            if (outputDesc.extent.width == 0 || outputDesc.extent.height == 0) return;
 
             if (!output.effectName.empty() && output.enableEffect) {
                 if (output.effectName == "background_blur") {

@@ -8,8 +8,8 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/Utility.hh"
 
 #include <robin_hood.h>
 

@@ -9,7 +9,7 @@
 
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/gtx/norm.hpp>
 

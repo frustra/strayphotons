@@ -11,6 +11,7 @@ add_library(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} STATIC)
 target_include_directories(${PROJECT_GRAPHICS_CORE_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PROJECT_ROOT_DIR}/sdk/include
 )
 
 target_include_directories(${PROJECT_GRAPHICS_VULKAN_CORE_LIB}

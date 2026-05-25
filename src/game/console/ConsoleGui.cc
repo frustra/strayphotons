@@ -7,6 +7,7 @@
 
 #include "ConsoleGui.hh"
 
+#include "common/Tracing.hh"
 #include "console/Console.hh"
 
 #include <imgui.h>

@@ -11,9 +11,9 @@
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Utility.hh"
 
 #include <memory>
 #include <string>

@@ -34,8 +34,8 @@ namespace sp::vulkan {
         SetBlending(false);
         SetBlendFunc(vk::BlendFactor::eSrcAlpha,
             vk::BlendFactor::eOneMinusSrcAlpha,
-            vk::BlendFactor::eOne,
-            vk::BlendFactor::eOneMinusSrcAlpha);
+            vk::BlendFactor::eOneMinusDstAlpha,
+            vk::BlendFactor::eOne);
         SetCullMode(vk::CullModeFlagBits::eBack);
         SetFrontFaceWinding(vk::FrontFace::eCounterClockwise);
         SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);

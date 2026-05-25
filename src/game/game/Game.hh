@@ -11,7 +11,7 @@
 #include "console/ConsoleBindingManager.hh"
 #include "editor/EditorSystem.hh"
 #include "game/GameLogic.hh"
-#include "strayphotons/cpp/LockFreeEventQueue.hh"
+#include "strayphotons/LockFreeEventQueue.hh"
 
 #include <memory>
 

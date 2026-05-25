@@ -11,7 +11,8 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <string_view>
 #include <vector>
@@ -130,7 +131,7 @@ namespace sp::vulkan::render_graph {
             AddPreBarriers(cmd, pass); // creates cmd if necessary
             if (pass.flushCommands) submitPendingCmds(false);
 
-            RenderPassInfo renderPassInfo;
+            RenderPassInfo renderPassInfo = {};
 
             for (uint32_t i = 0; i < pass.attachments.size(); i++) {
                 auto &attachment = pass.attachments[i];

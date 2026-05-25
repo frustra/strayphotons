@@ -10,8 +10,8 @@
 #include "ecs/EcsImpl.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <glm/gtx/norm.hpp>
 

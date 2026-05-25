@@ -12,8 +12,8 @@
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/EventQueue.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Logging.hh"
 
 // Components
 #include "ecs/components/ActiveScene.hh"

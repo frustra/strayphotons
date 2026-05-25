@@ -8,7 +8,7 @@
 #include "Components.hh"
 
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <glm/glm.hpp>
 #include <map>

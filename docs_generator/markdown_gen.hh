@@ -9,8 +9,10 @@
 
 #include "assets/JsonHelpers.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "ecs/StructFieldTypes.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "magic_enum.hpp"
+#include "strayphotons/Utility.hh"
 
 #include <filesystem>
 #include <fstream>
@@ -143,6 +145,7 @@ enum class PageType {
     Component,
     Prefab,
     Script,
+    GUI,
 };
 
 struct MarkdownContext {
@@ -273,6 +276,7 @@ struct MarkdownContext {
             DocsStruct docs;
 
             const ecs::StructMetadata *metadata = nullptr;
+            PageType entryType = pageType;
             std::optional<std::string_view> name = {};
             if constexpr (std::is_same<std::decay_t<decltype(entry)>, std::string>()) {
                 Assertf(pageType == PageType::Component,
@@ -293,10 +297,24 @@ struct MarkdownContext {
                 name = entry;
                 metadata = &comp.metadata;
             } else {
-                Assertf(pageType == PageType::Prefab || pageType == PageType::Script,
+                Assertf(pageType == PageType::Prefab || pageType == PageType::Script || pageType == PageType::GUI,
                     "Unexpected page type: %s for %s",
                     magic_enum::enum_name(pageType),
                     typeid(ListType).name());
+
+                switch (entry.second.type) {
+                case ecs::ScriptType::PrefabScript:
+                    entryType = PageType::Prefab;
+                    break;
+                case ecs::ScriptType::EventScript:
+                case ecs::ScriptType::LogicScript:
+                case ecs::ScriptType::PhysicsScript:
+                    entryType = PageType::Script;
+                    break;
+                case ecs::ScriptType::GuiScript:
+                    entryType = PageType::GUI;
+                    break;
+                }
 
                 auto ctx = entry.second.context.lock();
                 const void *defaultScript = ctx->GetDefault();
@@ -309,25 +327,29 @@ struct MarkdownContext {
             }
 
             file << std::endl << "<div class=\"component_definition\">" << std::endl << std::endl;
-            file << "## `" << *name << "` " << magic_enum::enum_name(pageType) << std::endl << std::endl;
+            file << "## `" << *name << "` " << magic_enum::enum_name(entryType);
+            if (entryType != pageType) {
+                file << " " << magic_enum::enum_name(pageType);
+            }
+            file << std::endl << std::endl;
 
             if (docs.fields.empty()) {
                 if (!metadata->description.empty()) {
                     file << metadata->description << std::endl << std::endl;
-                } else if (pageType == PageType::Component) {
+                } else if (entryType == PageType::Component) {
                     file << "The `" << *name << "` component has no public fields" << std::endl;
                 } else {
-                    file << "The `" << *name << "` " << sp::to_lower_copy(magic_enum::enum_name(pageType))
+                    file << "The `" << *name << "` " << sp::to_lower_copy(magic_enum::enum_name(entryType))
                          << " has no configurable parameters" << std::endl;
                 }
             } else if (docs.fields.size() == 1 && docs.fields.front().name.empty()) {
                 if (!metadata->description.empty()) {
                     file << metadata->description << std::endl << std::endl;
                 }
-                if (pageType == PageType::Component) {
+                if (entryType == PageType::Component) {
                     file << "The `" << *name << "` component has type: " << docs.fields.front().typeString << std::endl;
                 } else {
-                    file << "The `" << *name << "` " << sp::to_lower_copy(magic_enum::enum_name(pageType))
+                    file << "The `" << *name << "` " << sp::to_lower_copy(magic_enum::enum_name(entryType))
                          << " has parameter type: " << docs.fields.front().typeString << std::endl;
                 }
             } else {
@@ -335,7 +357,7 @@ struct MarkdownContext {
                     file << metadata->description << std::endl << std::endl;
                 }
 
-                auto fieldName = (pageType == PageType::Component ? "Field" : "Parameter");
+                auto fieldName = (entryType == PageType::Component ? "Field" : "Parameter");
                 file << "| " << fieldName << " Name | Type | Default Value | Description |" << std::endl;
                 file << "|------------|------|---------------|-------------|" << std::endl;
                 for (auto &field : docs.fields) {

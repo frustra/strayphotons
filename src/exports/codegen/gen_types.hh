@@ -10,7 +10,7 @@
 #include "ecs/StructFieldTypes.hh"
 #include "ecs/StructMetadata.hh"
 #include "gen_common.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 #include <functional>
 #include <string>

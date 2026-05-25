@@ -18,7 +18,7 @@
 #include "assets/ConsoleScript.hh"
 #include "common/RegisteredThread.hh"
 #include "common/Tracing.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <algorithm>
 #include <chrono>

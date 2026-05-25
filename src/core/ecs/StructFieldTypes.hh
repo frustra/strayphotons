@@ -13,11 +13,11 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/InlineString.hh"
-#include "strayphotons/cpp/Utility.hh"
-#include "strayphotons/cpp/gui/GuiDrawData.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/InlineString.hh"
+#include "strayphotons/Utility.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>

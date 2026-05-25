@@ -23,11 +23,14 @@ namespace sp {
 
         static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName);
 
+        void RegisterEvents(ecs::Entity guiEntity) override;
+        void UnregisterEvents() override;
+
         bool BeforeFrame(GenericCompositor &compositor) override;
         void DefineWindows() override;
 
     private:
-        OverlayGuiManager(const ecs::EntityRef &guiEntity);
+        OverlayGuiManager(const ecs::Name &entityName);
 
         std::shared_ptr<ConsoleGui> consoleGui;
         std::shared_ptr<FpsCounterGui> fpsCounterGui;

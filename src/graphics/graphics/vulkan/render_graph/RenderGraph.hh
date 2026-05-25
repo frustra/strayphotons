@@ -168,7 +168,11 @@ namespace sp::vulkan::render_graph {
         void UpdateLastOutput(const Pass &pass) {
             if (pass.primaryAttachmentIndex >= pass.attachments.size()) return;
             auto primaryID = pass.attachments[pass.primaryAttachmentIndex].resourceID;
-            if (primaryID != InvalidResource) resources.lastOutputID = primaryID;
+            if (primaryID != InvalidResource) {
+                resources.lastOutputID = primaryID;
+                auto &scope = resources.nameScopes[resources.scopeStack.back()];
+                scope.frames[resources.frameIndex].passCount++;
+            }
         }
 
         DeviceContext &device;

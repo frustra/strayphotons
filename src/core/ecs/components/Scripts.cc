@@ -10,7 +10,7 @@
 #include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace ecs {
     template<>

@@ -10,8 +10,9 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <array>
 #include <atomic>
@@ -251,6 +252,7 @@ namespace ecs {
         sp::AsyncPtr<EventData> data;
 
         uint64_t transactionId = 0;
+        std::shared_ptr<sp::InlineVector<Entity, 64>> trace;
 
         AsyncEvent() {}
         AsyncEvent(std::string_view name, const Entity &source, const sp::AsyncPtr<EventData> &data)
@@ -295,6 +297,10 @@ namespace ecs {
         static Ref New(uint32_t maxQueueSize = EventQueue::MAX_QUEUE_SIZE);
 
         EventQueue() : events(0), state({0, 0}) {}
+
+        size_t QueueIndex() const {
+            return poolIndex;
+        }
 
     private:
         struct State {

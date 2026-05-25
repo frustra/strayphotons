@@ -12,8 +12,8 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <variant>

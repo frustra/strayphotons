@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
 
 #include <Tecs.hh>
 #include <iostream>

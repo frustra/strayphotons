@@ -10,10 +10,10 @@
 #include "assets/AssetManager.hh"
 #include "ecs/Components.hh"
 #include "ecs/EntityRef.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <glm/glm.hpp>
 

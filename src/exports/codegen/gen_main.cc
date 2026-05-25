@@ -8,16 +8,21 @@
 #include "gen_components.hh"
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        std::cerr << "Usage: strayphotons-exports-components-codegen out/components.h out/components.cc" << std::endl;
+    if (argc != 4) {
+        std::cerr << "Usage: codegen out/components_gen.h out/components_gen_internal.hh out/components_gen.cc"
+                  << std::endl;
         return -1;
     }
     {
         auto outH = std::ofstream(argv[1], std::ios::trunc);
-        GenerateComponentsH(outH);
+        GenerateComponentsH(outH, false);
     }
     {
-        auto outCC = std::ofstream(argv[2], std::ios::trunc);
+        auto outH = std::ofstream(argv[2], std::ios::trunc);
+        GenerateComponentsH(outH, true);
+    }
+    {
+        auto outCC = std::ofstream(argv[3], std::ios::trunc);
         GenerateComponentsCC(outCC);
     }
 }

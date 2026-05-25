@@ -15,6 +15,7 @@
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+#include "strayphotons/Utility.hh"
 
 #include <algorithm>
 #include <glm/gtx/vector_angle.hpp>
@@ -338,19 +339,25 @@ namespace sp::vulkan::renderer {
         graph.BeginScope("ShadowMap");
 
         auto drawAllIDs = scene.GenerateDrawsForView(graph, ecs::VisibilityMask::LightingShadow);
+        if (!drawAllIDs) {
+            graph.EndScope();
+            return;
+        }
         auto drawOpticIDs = scene.GenerateDrawsForView(graph, ecs::VisibilityMask::Optics);
 
-        graph.AddPass("InitOptics")
-            .Build([&](rg::PassBuilder &builder) {
-                builder.CreateBuffer("OpticVisibility",
-                    {sizeof(uint32_t), MAX_LIGHTS * MAX_OPTICS},
-                    Residency::GPU_ONLY,
-                    Access::TransferWrite);
-            })
-            .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                auto visBuffer = resources.GetBuffer("OpticVisibility");
-                cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
-            });
+        if (drawOpticIDs) {
+            graph.AddPass("InitOptics")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.CreateBuffer("OpticVisibility",
+                        {sizeof(uint32_t), MAX_LIGHTS * MAX_OPTICS},
+                        Residency::GPU_ONLY,
+                        Access::TransferWrite);
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                    auto visBuffer = resources.GetBuffer("OpticVisibility");
+                    cmd.Raw().fillBuffer(*visBuffer, 0, sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS, 0);
+                });
+        }
 
         graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
@@ -440,109 +447,113 @@ namespace sp::vulkan::renderer {
                 }
             });
 
-        graph.AddPass("OpticsVisibility")
-            .Build([&](rg::PassBuilder &builder) {
-                builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
+        if (drawOpticIDs) {
+            graph.AddPass("OpticsVisibility")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
 
-                builder.Write("OpticVisibility", Access::FragmentShaderWrite);
-                builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                    builder.Write("OpticVisibility", Access::FragmentShaderWrite);
+                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
-                builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
-                builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
-            })
-            .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
+                    builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
+                    builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
+                })
+                .Execute([this, drawOpticIDs](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("optic_visibility.vert", "optic_visibility.frag");
 
-                struct {
-                    uint32_t lightIndex;
-                } constants;
+                    struct {
+                        uint32_t lightIndex;
+                    } constants;
 
-                auto visBuffer = resources.GetBuffer("OpticVisibility");
+                    auto visBuffer = resources.GetBuffer("OpticVisibility");
 
-                for (uint32_t i = 0; i < lights.size(); i++) {
-                    GPUViewState lightViews[] = {{views[i]}, {}};
-                    cmd.UploadUniformData("ViewStates", lightViews, 2);
-                    cmd.SetStorageBuffer("OpticVisibility", visBuffer);
+                    for (uint32_t i = 0; i < lights.size(); i++) {
+                        GPUViewState lightViews[] = {{views[i]}, {}};
+                        cmd.UploadUniformData("ViewStates", lightViews, 2);
+                        cmd.SetStorageBuffer("OpticVisibility", visBuffer);
 
-                    vk::Rect2D viewport;
-                    viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
-                    viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
-                    cmd.SetViewport(viewport);
-                    cmd.SetYDirection(YDirection::Down);
-                    cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
-                    cmd.SetDepthTest(true, false);
+                        vk::Rect2D viewport;
+                        viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
+                        viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
+                        cmd.SetViewport(viewport);
+                        cmd.SetYDirection(YDirection::Down);
+                        cmd.SetDepthCompareOp(vk::CompareOp::eLessOrEqual);
+                        cmd.SetDepthTest(true, false);
 
-                    constants.lightIndex = i;
-                    cmd.PushConstants(constants);
+                        constants.lightIndex = i;
+                        cmd.PushConstants(constants);
 
-                    scene.DrawSceneIndirect(cmd,
-                        resources.GetBuffer("WarpedVertexBuffer"),
-                        resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
-                        resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
-                }
-            });
-
-        AddBufferReadback(graph,
-            "OpticVisibility",
-            0,
-            sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
-            [this, lights = this->lights, optics = this->scene.opticEntities](BufferPtr buffer) {
-                ZoneScopedN("OpticVisibilityReadback");
-                auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
-                for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
-                    for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
-                        uint32_t visible = visibility[lightIndex][opticIndex];
-                        if (visible == 1) {
-                            Assertf(opticIndex < optics.size(), "Optic index out of range");
-                        } else if (visible != 0) {
-                            Abortf("OpticVisibilityReadback got unexpected value: %u", visible);
-                        }
+                        scene.DrawSceneIndirect(cmd,
+                            resources.GetBuffer("WarpedVertexBuffer"),
+                            resources.GetBuffer(drawOpticIDs.drawCommandsBuffer),
+                            resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
                     }
-                }
+                });
 
-                readbackLights.clear();
-                InlineVector<bool, MAX_LIGHTS> lightValid;
-                lightValid.resize(lights.size());
-                std::fill(lightValid.begin(), lightValid.end(), true);
-                for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
-                    auto &vLight = lights[lightIndex];
-                    if (vLight.lightPath.size() >= MAX_LIGHTS) continue;
-
-                    // Check if the path to the current light is still valid, else skip this light.
-                    if (vLight.parentIndex && vLight.opticIndex) {
-                        Assertf(*vLight.parentIndex < lightValid.size(), "Virtual light parent index is out of range");
-                        if (!lightValid[*vLight.parentIndex]) {
-                            lightValid[lightIndex] = false;
-                            continue;
-                        }
-                        if (*vLight.opticIndex >= MAX_OPTICS ||
-                            visibility[*vLight.parentIndex][*vLight.opticIndex] != 1) {
-                            lightValid[lightIndex] = false;
-                            continue;
-                        }
-                    }
-
-                    // Check if any optics are visible from the end of the current light path.
-                    for (uint32_t opticIndex = 0; opticIndex < optics.size() && opticIndex < MAX_OPTICS; opticIndex++) {
-                        if (readbackLights.size() >= MAX_LIGHTS) break;
-                        if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
-                        if (visibility[lightIndex][opticIndex] == 1) {
-                            if (optics[opticIndex].pass) {
-                                auto &newLight = readbackLights.emplace_back(vLight);
-                                newLight.parentIndex = lightIndex;
-                                newLight.opticIndex = opticIndex;
-                                newLight.lightPath.emplace_back(optics[opticIndex].ent, false);
-                            }
-                            if (optics[opticIndex].reflect) {
-                                auto &newLight = readbackLights.emplace_back(vLight);
-                                newLight.parentIndex = lightIndex;
-                                newLight.opticIndex = opticIndex;
-                                newLight.lightPath.emplace_back(optics[opticIndex].ent, true);
+            AddBufferReadback(graph,
+                "OpticVisibility",
+                0,
+                sizeof(uint32_t) * MAX_LIGHTS * MAX_OPTICS,
+                [this, lights = this->lights, optics = this->scene.opticEntities](BufferPtr buffer) {
+                    ZoneScopedN("OpticVisibilityReadback");
+                    auto visibility = (const std::array<uint32_t, MAX_OPTICS> *)buffer->Mapped();
+                    for (uint32_t lightIndex = 0; lightIndex < MAX_LIGHTS; lightIndex++) {
+                        for (uint32_t opticIndex = 0; opticIndex < MAX_OPTICS; opticIndex++) {
+                            uint32_t visible = visibility[lightIndex][opticIndex];
+                            if (visible == 1) {
+                                Assertf(opticIndex < optics.size(), "Optic index out of range");
+                            } else if (visible != 0) {
+                                Abortf("OpticVisibilityReadback got unexpected value: %u", visible);
                             }
                         }
                     }
-                }
-            });
+
+                    readbackLights.clear();
+                    InlineVector<bool, MAX_LIGHTS> lightValid;
+                    lightValid.resize(lights.size());
+                    std::fill(lightValid.begin(), lightValid.end(), true);
+                    for (uint32_t lightIndex = 0; lightIndex < lights.size(); lightIndex++) {
+                        auto &vLight = lights[lightIndex];
+                        if (vLight.lightPath.size() >= MAX_LIGHTS) continue;
+
+                        // Check if the path to the current light is still valid, else skip this light.
+                        if (vLight.parentIndex && vLight.opticIndex) {
+                            Assertf(*vLight.parentIndex < lightValid.size(),
+                                "Virtual light parent index is out of range");
+                            if (!lightValid[*vLight.parentIndex]) {
+                                lightValid[lightIndex] = false;
+                                continue;
+                            }
+                            if (*vLight.opticIndex >= MAX_OPTICS ||
+                                visibility[*vLight.parentIndex][*vLight.opticIndex] != 1) {
+                                lightValid[lightIndex] = false;
+                                continue;
+                            }
+                        }
+
+                        // Check if any optics are visible from the end of the current light path.
+                        for (uint32_t opticIndex = 0; opticIndex < optics.size() && opticIndex < MAX_OPTICS;
+                            opticIndex++) {
+                            if (readbackLights.size() >= MAX_LIGHTS) break;
+                            if (vLight.opticIndex && opticIndex == *vLight.opticIndex) continue;
+                            if (visibility[lightIndex][opticIndex] == 1) {
+                                if (optics[opticIndex].pass) {
+                                    auto &newLight = readbackLights.emplace_back(vLight);
+                                    newLight.parentIndex = lightIndex;
+                                    newLight.opticIndex = opticIndex;
+                                    newLight.lightPath.emplace_back(optics[opticIndex].ent, false);
+                                }
+                                if (optics[opticIndex].reflect) {
+                                    auto &newLight = readbackLights.emplace_back(vLight);
+                                    newLight.parentIndex = lightIndex;
+                                    newLight.opticIndex = opticIndex;
+                                    newLight.lightPath.emplace_back(optics[opticIndex].ent, true);
+                                }
+                            }
+                        }
+                    }
+                });
+        }
         graph.EndScope();
 
         graph.BeginScope("ShadowMapBlur");

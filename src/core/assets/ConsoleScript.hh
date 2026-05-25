@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 namespace sp {
     class Asset;

@@ -9,7 +9,7 @@
 
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::vulkan {
     CVar<bool> CVarProfileRender("r.Profile", false, "Display frame timing");

@@ -12,7 +12,7 @@
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/GameEntities.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 #include <memory>
 #include <resonance_audio/api/resonance_audio_api.h>

@@ -30,6 +30,9 @@ namespace sp {
 
         static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName, Game &game);
 
+        void RegisterEvents(ecs::Entity guiEntity) override;
+        void UnregisterEvents() override;
+
         bool BeforeFrame(GenericCompositor &compositor) override;
         void DefineWindows() override;
 
@@ -38,7 +41,7 @@ namespace sp {
         void RefreshSaveList();
 
     private:
-        MenuGuiManager(const ecs::EntityRef &guiEntity, Game &game);
+        MenuGuiManager(const ecs::Name &guiName, Game &game);
 
         std::weak_ptr<AudioManager> audioPtr;
         std::weak_ptr<GraphicsManager> graphicsPtr;

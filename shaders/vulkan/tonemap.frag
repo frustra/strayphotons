@@ -25,8 +25,8 @@ layout(constant_id = 0) const float WHITE_POINT_R = 8.0;
 layout(constant_id = 1) const float WHITE_POINT_G = 8.0;
 layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
 layout(constant_id = 3) const float CURVE_SCALE = 2.9;
-layout(constant_id = 4) const float DARK_SATURATION = 0.7;
-layout(constant_id = 5) const float BRIGHT_SATURATION = 1.2;
+layout(constant_id = 4) const float DARK_SATURATION = 0.75;
+layout(constant_id = 5) const float BRIGHT_SATURATION = 1.1;
 const float ditherAmount = 1.0 / 255.0;
 
 void main() {
@@ -41,7 +41,8 @@ void main() {
 
     vec3 hsv = RGBtoHSV(toneMapped);
     float brightness = clamp(hsv.z, 0, 1);
-    float darkMix = (2 - brightness) * brightness;
+    float x = (brightness - 1);
+    float darkMix = 1 - x * x * x * x;
     hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, darkMix), 0, 1);
     outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
 

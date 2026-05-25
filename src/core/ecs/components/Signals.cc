@@ -10,9 +10,9 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalManager.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/Logging.hh"
 
 #include <vector>
 

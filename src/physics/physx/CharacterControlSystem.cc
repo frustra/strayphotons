@@ -16,8 +16,8 @@
 #include "game/SceneManager.hh"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <PxRigidActor.h>
 #include <PxScene.h>
@@ -241,7 +241,7 @@ namespace sp {
         filterData.word0 = ecs::PHYSICS_GROUP_WORLD | ecs::PHYSICS_GROUP_INTERACTIVE;
         PxControllerFilters moveQueryFilter(&filterData);
 
-        float dt = (float)(manager.interval.count() / 1e9);
+        float dt = (float)(std::max<int64_t>(1, manager.interval.count()) / 1e9);
 
         for (const ecs::Entity &entity : lock.EntitiesWith<ecs::CharacterController>()) {
             if (!entity.Has<ecs::CharacterController, ecs::TransformTree>(lock)) continue;

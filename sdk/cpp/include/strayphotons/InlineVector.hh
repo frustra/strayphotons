@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <array>
 #include <cstring>

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 #include <atomic>
 #include <string>

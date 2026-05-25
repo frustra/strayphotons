@@ -7,7 +7,7 @@
 
 #include "Asset.hh"
 
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <MurmurHash3.h>
 

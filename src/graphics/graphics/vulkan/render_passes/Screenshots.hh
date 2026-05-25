@@ -9,7 +9,7 @@
 
 #include "Common.hh"
 #include "console/CFunc.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/LockFreeMutex.hh"
 
 #include <string>
 #include <vector>
@@ -23,7 +23,11 @@ namespace sp::vulkan::renderer {
     private:
         CFuncCollection funcs;
         LockFreeMutex screenshotMutex;
-        std::vector<std::pair<std::string, std::string>> pendingScreenshots;
+        struct PendingScreenshot {
+            std::string path, resource;
+            bool assert = false;
+        };
+        std::vector<PendingScreenshot> pendingScreenshots;
     };
 
     void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view);

@@ -12,9 +12,9 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
-#include "strayphotons/cpp/FlatSet.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/FlatSet.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <robin_hood.h>
 

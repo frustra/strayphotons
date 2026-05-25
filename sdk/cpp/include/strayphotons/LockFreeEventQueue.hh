@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/InlineVector.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
+#include "strayphotons/InlineVector.hh"
+#include "strayphotons/LockFreeMutex.hh"
 
 #include <mutex>
 

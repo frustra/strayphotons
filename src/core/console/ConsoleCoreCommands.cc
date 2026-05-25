@@ -9,12 +9,15 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalStructAccess.hh"
 #include "ecs/components/Name.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/InlineVector.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
+#include <memory>
 #include <shared_mutex>
 #include <sstream>
 
@@ -256,11 +259,18 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             }
 
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-            auto sent = ecs::EventBindings::SendEvent(lock, entityName, event);
+            ecs::AsyncEvent asyncEvent = ecs::AsyncEvent(event.name, event.source, event.data);
+            asyncEvent.transactionId = lock.GetTransactionId();
+            auto tracePtr = std::make_shared<sp::InlineVector<ecs::Entity, 64>>();
+            asyncEvent.trace = tracePtr;
+            auto sent = ecs::EventBindings::SendAsyncEvent(lock, entityName, asyncEvent);
             if (sent == 0) {
                 Warnf("No event target found: %s%s", entityName.String(), eventName);
             } else {
                 Logf("Sent %u events to %s%s", sent, entityName.String(), eventName);
+                for (auto &ent : *tracePtr) {
+                    Logf(" received by %s %s", ecs::EntityRef(ent).Name().String(), std::to_string(ent));
+                }
             }
         });
 

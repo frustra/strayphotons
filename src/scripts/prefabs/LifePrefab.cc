@@ -8,7 +8,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/glm.hpp>
 #include <string>

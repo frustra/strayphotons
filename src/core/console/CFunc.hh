@@ -9,7 +9,7 @@
 
 #include "console/CVar.hh"
 #include "ecs/EntityRef.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <functional>
 #include <magic_enum.hpp>

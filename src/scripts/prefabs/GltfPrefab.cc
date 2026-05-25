@@ -10,9 +10,9 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
 #include "game/Scene.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/Logging.hh"
 
 namespace ecs {
     struct GltfPrefab {
@@ -42,7 +42,22 @@ namespace ecs {
                 auto &node = *model->nodes[nodeId];
 
                 if (node.name.empty()) return "gltf" + std::to_string(nodeId);
-                return node.name;
+                std::string out(node.name);
+                std::transform(node.name.begin(), node.name.end(), out.begin(), [](auto &ch) {
+                    switch (ch) {
+                    case ',':
+                    case '(':
+                    case ')':
+                    case ':':
+                    case '/':
+                    case '#':
+                    case ' ':
+                        return '_';
+                    default:
+                        return ch;
+                    }
+                });
+                return out;
             };
 
             robin_hood::unordered_set<size_t> jointNodes;
@@ -69,11 +84,8 @@ namespace ecs {
                     nodes.pop_front();
                     continue;
                 }
-                Entity newEntity = scene->NewPrefabEntity(lock,
-                    ent,
-                    state.GetInstanceId(),
-                    getNodeName(nodeId),
-                    prefixName);
+                Entity newEntity = scene->NewPrefabEntity(lock, ent, state.GetInstanceId(), nodeName, prefixName);
+                if (!newEntity) continue;
                 EntityRef newRef(newEntity);
 
                 auto &transform = newEntity.Set<TransformTree>(lock, node.transform);

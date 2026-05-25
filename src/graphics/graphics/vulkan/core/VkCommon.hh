@@ -8,7 +8,7 @@
 #pragma once
 
 #include "graphics/vulkan/core/UniqueID.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Utility.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

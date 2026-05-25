@@ -9,7 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
-#include "strayphotons/cpp/HeapVector.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <glm/glm.hpp>
 #include <variant>

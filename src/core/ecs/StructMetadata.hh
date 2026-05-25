@@ -11,10 +11,10 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Name.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/Utility.hh"
 
 #include <map>
 #include <robin_hood.h>
@@ -435,8 +435,8 @@ namespace ecs {
         const bool knownSize;
         const std::string name;
         const std::string description;
-        std::vector<StructField> fields;
-        std::vector<StructFunction> functions;
+        sp::HeapVector<StructField> fields;
+        sp::HeapVector<StructFunction> functions;
         EnumDescriptions enumMap;
 
         // === The following functions are meant to specialized by individual structs
@@ -479,6 +479,8 @@ namespace ecs {
     template<typename T>
     TypeInfo TypeInfo::Lookup() {
         using StrippedT = std::remove_pointer_t<std::decay_t<T>>;
+        static_assert(!std::is_same_v<StrippedT, std::string>, "Use sp::HeapString instead of std::string");
+        static_assert(!sp::is_vector<StrippedT>(), "Use sp::HeapVector instead of std::vector");
         return TypeInfo{
             .typeIndex = GetFieldTypeIndex(typeid(std::conditional_t<std::is_function_v<StrippedT>, T, StrippedT>)),
             .isTrivial = std::is_fundamental<std::remove_cv_t<T>>() || std::is_pointer<T>() || std::is_reference<T>() ||

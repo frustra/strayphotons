@@ -11,9 +11,9 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/ext/quaternion_trigonometric.hpp>
 #include <glm/glm.hpp>

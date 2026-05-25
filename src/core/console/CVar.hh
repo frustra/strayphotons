@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "strayphotons/cpp/StreamOverloads.hh"
+#include "strayphotons/StreamOverloads.hh"
 
 #include <atomic>
 #include <mutex>

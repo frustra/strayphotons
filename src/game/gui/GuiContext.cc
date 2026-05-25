@@ -8,15 +8,18 @@
 #include "GuiContext.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
+#include "ecs/components/Events.hh"
 #include "game/SceneManager.hh"
 #include "graphics/GenericCompositor.hh"
-#include "strayphotons/cpp/gui/GuiDrawData.hh"
-#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
-#include "strayphotons/cpp/gui/ImGuiKeyCodes.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
-#include "strayphotons/cpp/input/KeyCodes.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
+#include "strayphotons/gui/ImGuiHelpers.hh"
+#include "strayphotons/gui/ImGuiKeyCodes.hh"
+#include "strayphotons/input/BindingNames.hh"
+#include "strayphotons/input/KeyCodes.hh"
 
 #include <imgui.h>
+#include <string>
 
 namespace sp {
     static std::array fontList = {
@@ -27,32 +30,13 @@ namespace sp {
         GuiFontDef{GuiFont::Monospace, "3270SemiCondensed-Regular.ttf", 32.0f, {0, 0}},
     };
 
-    GuiContext::GuiContext(const ecs::EntityRef &guiEntity) : guiEntity(guiEntity) {
-        if (guiEntity) {
-            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
-                    Assertf(ent.Has<ecs::EventInput>(lock),
-                        "GuiContext entity has no EventInput: %s",
-                        guiEntity.Name().String());
-                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_DOWN);
-                    eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_UP);
-                    eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
-                    eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
-                });
-        }
-
+    GuiContext::GuiContext(const ecs::Name &guiName) : guiName(guiName) {
         imCtx = ImGui::CreateContext();
     }
 
     GuiContext::GuiContext(GuiContext &&other) {
         imCtx = std::move(other.imCtx);
+        guiName = std::move(other.guiName);
         guiEntity = std::move(other.guiEntity);
         events = std::move(other.events);
         elements = std::move(other.elements);
@@ -60,13 +44,44 @@ namespace sp {
     }
 
     GuiContext::~GuiContext() {
-        ImGui::DestroyContext(imCtx);
+        if (imCtx) ImGui::DestroyContext(imCtx);
         imCtx = nullptr;
 
+        UnregisterEvents();
+    }
+
+    void GuiContext::RegisterEvents(ecs::Entity guiEntity) {
+        UnregisterEvents();
+        this->guiEntity = guiEntity;
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
+                [name = this->guiName, guiEntity = this->guiEntity, events = this->events](auto &lock) {
+                    ecs::Entity ent = guiEntity;
+                    if (!ent.Has<ecs::EventInput>(lock)) {
+                        ent = ecs::EntityRef(name).Get(lock);
+                    }
+                    if (ent.Has<ecs::EventInput>(lock)) {
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_SECONDARY_TRIGGER);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_TEXT_INPUT);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_DOWN);
+                        eventInput.Register(lock, events, INPUT_EVENT_MENU_KEY_UP);
+                        eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_POINT);
+                        eventInput.Register(lock, events, INTERACT_EVENT_INTERACT_PRESS);
+                    } else {
+                        Errorf("GuiContext entity has no EventInput: %s", name.String());
+                    }
+                });
+        }
+    }
+
+    void GuiContext::UnregisterEvents() {
+        if (guiEntity) {
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+                [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Unregister(events, INPUT_EVENT_MENU_SCROLL);
@@ -80,6 +95,7 @@ namespace sp {
                         eventInput.Unregister(events, INTERACT_EVENT_INTERACT_PRESS);
                     }
                 });
+            this->guiEntity = {};
         }
     }
 
@@ -100,10 +116,9 @@ namespace sp {
         {
             auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
 
-            ecs::Entity ent = guiEntity.Get(lock);
             ecs::Transform screenInverseTransform;
-            if (ent.Has<ecs::TransformSnapshot>(lock)) {
-                screenInverseTransform = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse();
+            if (guiEntity.Has<ecs::TransformSnapshot>(lock)) {
+                screenInverseTransform = guiEntity.Get<ecs::TransformSnapshot>(lock).globalPose.GetInverse();
             }
 
             ecs::Event event;
@@ -162,7 +177,7 @@ namespace sp {
                     } else {
                         Warnf("Entity %s sent primary trigger event to gui %s without cursor event",
                             std::to_string(event.source),
-                            guiEntity.Name().String());
+                            guiName.String());
                     }
                 } else if (event.name == INPUT_EVENT_MENU_SECONDARY_TRIGGER) {
                     if (event.data.type != ecs::EventDataType::Bool) {
@@ -269,7 +284,7 @@ namespace sp {
                         } else {
                             Warnf("Entity %s sent press event to gui %s without point event",
                                 std::to_string(event.source),
-                                guiEntity.Name().String());
+                                guiName.String());
                         }
                     } else {
                         Warnf("GuiContext received unexpected event data: %s, expected bool", event.ToString());
@@ -291,9 +306,8 @@ namespace sp {
         bool anyEnabled = false;
         for (auto &element : elements) {
             if (!element.definition) continue;
-            ecs::Entity ent = guiEntity.GetLive();
-            if (!ent) continue;
-            element.enabled = element.definition->BeforeFrame(compositor, ent);
+            if (!guiEntity) continue;
+            element.enabled = element.definition->BeforeFrame(compositor, guiEntity);
             anyEnabled |= element.enabled;
         }
         return anyEnabled;
@@ -345,10 +359,9 @@ namespace sp {
         for (auto &element : elements) {
             if (!element.definition || !element.enabled) continue;
 
-            ecs::Entity ent = guiEntity.GetLive();
-            if (!ent) continue;
+            if (!guiEntity) continue;
 
-            element.definition->PreDefine(ent);
+            element.definition->PreDefine(guiEntity);
 
             ImVec2 windowSize(element.preferredSize.x, element.preferredSize.y);
             if (element.anchor != ecs::GuiLayoutAnchor::Floating) {
@@ -397,10 +410,10 @@ namespace sp {
             }
 
             ImGui::Begin(element.definition->name.c_str(), nullptr, element.definition->windowFlags);
-            element.definition->DefineContents(ent);
+            element.definition->DefineContents(guiEntity);
             ImGui::End();
 
-            element.definition->PostDefine(ent);
+            element.definition->PostDefine(guiEntity);
         }
 
         ImGui::PopStyleVar();

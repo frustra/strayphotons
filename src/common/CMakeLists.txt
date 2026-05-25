@@ -6,15 +6,15 @@
 #
 
 add_library(${PROJECT_COMMON_LIB} STATIC
-    ${PROJECT_ROOT_DIR}/sdk/src/DispatchQueue.cc
-    ${PROJECT_ROOT_DIR}/sdk/src/LockFreeMutex.cc
-    ${PROJECT_ROOT_DIR}/sdk/src/Utility.cc
+    ${PROJECT_ROOT_DIR}/sdk/cpp/src/DispatchQueue.cc
+    ${PROJECT_ROOT_DIR}/sdk/cpp/src/LockFreeMutex.cc
+    ${PROJECT_ROOT_DIR}/sdk/cpp/src/Utility.cc
 )
 
 target_include_directories(${PROJECT_COMMON_LIB}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${PROJECT_ROOT_DIR}/sdk/include
+        ${PROJECT_ROOT_DIR}/sdk/cpp/include
 )
 
 target_link_libraries(${PROJECT_COMMON_LIB}

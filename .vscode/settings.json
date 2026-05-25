@@ -38,5 +38,9 @@
             "url": "./docs/generated/scene.schema.json"
         }
     ],
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "lldb.launch.initCommands": [
+        "type summary add sp::HeapString --summary-string \"${var.storage%s}\"",
+        "type summary add -x \"sp::InlineString<\" --summary-string \"${var._M_elems}\""
+    ]
 }

@@ -7,7 +7,7 @@
 
 #include "Focus.hh"
 
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace ecs {
     FocusLock::FocusLock(FocusLayer layer) {

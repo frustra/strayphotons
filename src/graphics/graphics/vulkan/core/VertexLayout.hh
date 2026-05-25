@@ -8,7 +8,7 @@
 #pragma once
 
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::vulkan {
     const int MAX_VERTEX_ATTRIBUTES = 5, MAX_VERTEX_INPUT_BINDINGS = 5;

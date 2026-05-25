@@ -22,8 +22,8 @@
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/input/BindingNames.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -38,15 +38,21 @@ namespace sp {
     static CVar<bool> CVarMenuOpen("g.MenuOpen", 0, "Display pause menu");
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
-    MenuGuiManager::MenuGuiManager(const ecs::EntityRef &guiEntity, Game &game)
-        : GuiContext(guiEntity), audioPtr(game.audio), graphicsPtr(game.graphics) {
+    MenuGuiManager::MenuGuiManager(const ecs::Name &guiName, Game &game)
+        : GuiContext(guiName), audioPtr(game.audio), graphicsPtr(game.graphics) {}
+
+    MenuGuiManager::~MenuGuiManager() {
+        UnregisterEvents();
+    }
+
+    void MenuGuiManager::RegisterEvents(ecs::Entity guiEntity) {
+        GuiContext::RegisterEvents(guiEntity);
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
+                [name = this->guiName, ent = this->guiEntity, events = this->events](auto &lock) {
                     Assertf(ent.Has<ecs::EventInput>(lock),
                         "Expected menu gui to start with an EventInput: %s",
-                        guiEntity.Name().String());
+                        name.String());
 
                     auto &eventInput = ent.Get<ecs::EventInput>(lock);
                     eventInput.Register(lock, events, INPUT_EVENT_MENU_OPEN);
@@ -55,11 +61,10 @@ namespace sp {
         }
     }
 
-    MenuGuiManager::~MenuGuiManager() {
+    void MenuGuiManager::UnregisterEvents() {
         if (guiEntity) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
-                [guiEntity = this->guiEntity, events = this->events](auto &lock) {
-                    ecs::Entity ent = guiEntity.Get(lock);
+                [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Unregister(events, INPUT_EVENT_MENU_OPEN);
@@ -67,6 +72,7 @@ namespace sp {
                     }
                 });
         }
+        GuiContext::UnregisterEvents();
     }
 
     std::shared_ptr<GuiContext> MenuGuiManager::CreateContext(const ecs::Name &guiName, Game &game) {
@@ -79,7 +85,7 @@ namespace sp {
             });
 
         ecs::EntityRef ref(guiName);
-        auto guiContext = std::shared_ptr<MenuGuiManager>(new MenuGuiManager(ref, game));
+        auto guiContext = std::shared_ptr<MenuGuiManager>(new MenuGuiManager(guiName, game));
         {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::RenderOutput>>();
 
@@ -87,6 +93,7 @@ namespace sp {
             Assert(ent.Has<ecs::RenderOutput>(lock), "Expected menu gui to start with a RenderOutput");
 
             ent.Get<ecs::RenderOutput>(lock).guiContext = guiContext;
+            guiContext->RegisterEvents(ent);
         }
         return guiContext;
     }

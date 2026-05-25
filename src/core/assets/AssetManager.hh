@@ -10,10 +10,10 @@
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <atomic>
 #include <filesystem>

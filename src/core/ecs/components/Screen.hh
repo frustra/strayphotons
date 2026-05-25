@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ecs/Components.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/InlineString.hh"
 
 namespace ecs {
     struct Screen {

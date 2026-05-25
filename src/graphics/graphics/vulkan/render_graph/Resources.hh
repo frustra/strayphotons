@@ -11,8 +11,8 @@
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <robin_hood.h>
 #include <string_view>
@@ -151,8 +151,9 @@ namespace sp::vulkan::render_graph {
             ResourceName name;
 
             struct PerFrame {
-                robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
-                // std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                // robin_hood::unordered_flat_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                std::unordered_map<ResourceName, ResourceID, StringHash, StringEqual> resourceNames;
+                uint32_t passCount = 0;
             };
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/HeapString.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/Logging.hh"
 
 #include <array>
 #include <cstring>

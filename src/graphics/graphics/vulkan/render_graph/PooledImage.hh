@@ -8,7 +8,7 @@
 #pragma once
 
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <memory>
 #include <vector>

@@ -23,11 +23,11 @@
 #include "physx/PhysicsQuerySystem.hh"
 #include "physx/SimulationCallbackHandler.hh"
 #include "physx/TriggerSystem.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/EntityMap.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/LockFreeEventQueue.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/EntityMap.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/LockFreeEventQueue.hh"
 
 #include <PxPhysicsAPI.h>
 #include <extensions/PxDefaultAllocator.h>

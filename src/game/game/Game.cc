@@ -15,7 +15,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <atomic>
 #include <cxxopts.hpp>

@@ -8,7 +8,7 @@
 #include "RenderPass.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <memory>
 
@@ -50,7 +50,6 @@ namespace sp::vulkan {
             colorAttachmentRef.attachment = i;
             colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
 
-            initialLayouts[i] = colorAttachment.initialLayout;
             finalLayouts[i] = colorAttachment.finalLayout;
             attachmentCount++;
         }
@@ -92,7 +91,6 @@ namespace sp::vulkan {
             depthAttachmentRef.attachment = attachmentCount;
             depthAttachmentRef.layout = depthStencilAttachment.finalLayout;
 
-            initialLayouts[attachmentCount] = depthStencilAttachment.initialLayout;
             finalLayouts[attachmentCount] = depthStencilAttachment.finalLayout;
             attachmentCount++;
         }
@@ -144,11 +142,11 @@ namespace sp::vulkan {
 
     void RenderPass::RecordImplicitImageLayoutTransitions(const RenderPassInfo &info) {
         for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
-            info.colorAttachments[i]->Image()->SetLayout(initialLayouts[i], finalLayouts[i]);
+            info.colorAttachments[i]->Image()->SetLayout(vk::ImageLayout::eUndefined, finalLayouts[i]);
         }
         if (info.HasDepthStencil()) {
             auto i = info.state.colorAttachmentCount;
-            info.depthStencilAttachment->Image()->SetLayout(initialLayouts[i], finalLayouts[i]);
+            info.depthStencilAttachment->Image()->SetLayout(vk::ImageLayout::eUndefined, finalLayouts[i]);
         }
     }
 

@@ -10,8 +10,8 @@
 #include "common/RegisteredThread.hh"
 #include "console/CFunc.hh"
 #include "console/CVar.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Logging.hh"
 
 #include <condition_variable>
 #include <map>

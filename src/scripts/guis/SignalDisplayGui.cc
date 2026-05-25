@@ -11,9 +11,9 @@
 #include "ecs/EventQueue.hh"
 #include "graphics/GenericCompositor.hh"
 #include "gui/GuiContext.hh"
-#include "strayphotons/cpp/Defer.hh"
-#include "strayphotons/cpp/InlineString.hh"
-#include "strayphotons/cpp/gui/ImGuiHelpers.hh"
+#include "strayphotons/Defer.hh"
+#include "strayphotons/InlineString.hh"
+#include "strayphotons/gui/ImGuiHelpers.hh"
 
 #include <imgui.h>
 #include <imgui_internal.h>

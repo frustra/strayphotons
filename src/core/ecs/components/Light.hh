@@ -9,7 +9,7 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <glm/glm.hpp>
 

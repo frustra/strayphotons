@@ -9,8 +9,8 @@
 
 #include "ecs/Components.hh"
 #include "ecs/SignalExpression.hh"
-#include "strayphotons/cpp/HeapVector.hh"
-#include "strayphotons/cpp/InlineString.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineString.hh"
 
 #include <glm/glm.hpp>
 #include <memory>

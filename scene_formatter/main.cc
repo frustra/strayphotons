@@ -7,7 +7,7 @@
 
 #include "assets/AssetManager.hh"
 #include "game/SceneManager.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <cxxopts.hpp>
 

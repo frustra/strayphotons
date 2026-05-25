@@ -10,7 +10,7 @@
 #include "assets/GltfImpl.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <robin_hood.h>
 

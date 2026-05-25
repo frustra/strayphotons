@@ -9,7 +9,7 @@
 
 #include "assets/JsonHelpers.hh"
 #include "ecs/EcsImpl.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <glm/gtx/string_cast.hpp>
 #include <picojson.h>
@@ -308,7 +308,7 @@ namespace ecs {
         std::lock_guard lock(ctx.eventQueues.mutex);
         if (ctx.eventQueues.freeList.empty()) {
             size_t offset = ctx.eventQueues.pool.size();
-#define QUEUE_POOL_BLOCK_SIZE 1
+#define QUEUE_POOL_BLOCK_SIZE 16
             ctx.eventQueues.pool.resize(offset + QUEUE_POOL_BLOCK_SIZE);
             for (size_t i = 0; i < QUEUE_POOL_BLOCK_SIZE; i++) {
                 ctx.eventQueues.pool[offset + i].poolIndex = offset + i;

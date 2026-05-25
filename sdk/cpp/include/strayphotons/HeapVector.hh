@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <algorithm>
 #include <cstddef>
@@ -80,14 +80,19 @@ namespace sp {
             reset();
         }
 
-        HeapVector &operator=(const HeapVector &other) {
+        template<class InputIt>
+        void assign(InputIt first, InputIt last) {
             reset();
-            if (!other.empty()) {
-                size_type count = other.size();
+            auto count = std::distance(first, last);
+            if (count > 0) {
                 reserve(count);
-                std::uninitialized_copy_n(other.begin(), count, begin());
+                std::uninitialized_copy_n(first, count, begin());
                 offset = count;
             }
+        }
+
+        HeapVector &operator=(const HeapVector &other) {
+            assign(other.begin(), other.end());
             return *this;
         }
 
@@ -103,11 +108,7 @@ namespace sp {
         }
 
         HeapVector &operator=(std::initializer_list<T> init) {
-            clear();
-            reserve(init.size());
-            for (auto it = init.begin(); it != init.end(); it++) {
-                push_back(*it);
-            }
+            assign(init.begin(), init.end());
             return *this;
         }
 
@@ -249,7 +250,7 @@ namespace sp {
         iterator insert(const_iterator pos, InputIt first, InputIt last) {
             auto n = std::distance(first, last);
             size_type posOffset = pos == nullptr ? 0 : pos - begin();
-            if (offset + n > cap) reserve(offset + n);
+            reserve(offset + n);
 
             Assertf(posOffset >= 0 && (size_type)posOffset <= offset, "HeapVector::insert pos out of range");
             T *posPtr = data() + posOffset;
@@ -274,7 +275,7 @@ namespace sp {
         template<class... Args>
         iterator emplace(const_iterator pos, Args &&...args) {
             size_type posOffset = pos == nullptr ? 0 : pos - begin();
-            if (offset + 1 > cap) reserve(offset + 1);
+            reserve(offset + 1);
 
             Assertf(posOffset >= 0 && posOffset <= offset, "HeapVector::emplace pos out of range");
             T *posPtr = data() + posOffset;
@@ -310,14 +311,14 @@ namespace sp {
         }
 
         void push_back(const T &value) {
-            if (offset + 1 > cap) reserve(offset + 1);
+            reserve(offset + 1);
             new (begin() + offset) T{value};
             offset++;
         }
 
         template<class... Args>
         T &emplace_back(Args &&...args) {
-            if (offset + 1 > cap) reserve(offset + 1);
+            reserve(offset + 1);
             T *ptr = new (begin() + offset) T(std::forward<Args>(args)...);
             offset++;
             return *ptr;
@@ -330,7 +331,7 @@ namespace sp {
         }
 
         void resize(size_type count) {
-            if (count > cap) reserve(count);
+            reserve(count);
             if (count < offset) {
                 std::destroy(begin() + count, end());
             } else if (count > offset) {

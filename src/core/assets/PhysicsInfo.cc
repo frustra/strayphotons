@@ -9,7 +9,7 @@
 
 #include "assets/Asset.hh"
 #include "common/Tracing.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <cstdlib>
 #include <iostream>

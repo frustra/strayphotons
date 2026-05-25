@@ -5,15 +5,17 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/gui/GuiDrawData.hh"
+#pragma once
+
+#include "strayphotons/Logging.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
 
 #include <imgui.h>
 
 #ifdef SP_SHARED_INTERNAL
 typedef sp::GuiDrawData sp_gui_draw_data_t;
 #else
-    #include <strayphotons/components.h>
+    #include <strayphotons/components_gen.h>
 #endif
 
 namespace sp {

@@ -8,7 +8,7 @@
 #include "Events.hh"
 
 #include "assets/JsonHelpers.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 #include <optional>
 #include <picojson.h>
@@ -356,14 +356,16 @@ namespace ecs {
         ZoneScoped;
         Entity ent = target.Get(lock);
         if (!ent.Exists(lock)) {
-            Errorf("Tried to send event to missing entity: %s", target.Name().String());
+            Debugf("Tried to send event to missing entity: %s", target.Name().String());
             return 0;
         }
 
         uint64_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<const EventInput>(lock);
-            eventsSent += eventInput.Add(event);
+            size_t count = eventInput.Add(event);
+            eventsSent += count;
+            if (count > 0 && event.trace) event.trace->emplace_back(ent);
         }
         if (ent.Has<EventBindings>(lock)) {
             auto &bindings = ent.Get<const EventBindings>(lock);

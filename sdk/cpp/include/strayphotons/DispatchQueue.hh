@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/Utility.hh"
 
 #ifdef TRACY_ENABLE
     #include "common/Tracing.hh"

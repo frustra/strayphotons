@@ -9,7 +9,7 @@
 #include "ecs/ScriptImpl.hh"
 #include "ecs/SignalStructAccess_common.hh"
 #include "game/GameEntities.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::scripts {
     using namespace ecs;

@@ -12,10 +12,10 @@
 #include "common/PreservingMap.hh"
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
-#include "strayphotons/cpp/Async.hh"
-#include "strayphotons/cpp/DispatchQueue.hh"
-#include "strayphotons/cpp/EntityMap.hh"
-#include "strayphotons/cpp/LockFreeEventQueue.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/EntityMap.hh"
+#include "strayphotons/LockFreeEventQueue.hh"
 
 #include <vector>
 

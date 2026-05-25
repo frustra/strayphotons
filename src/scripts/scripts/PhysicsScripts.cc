@@ -8,9 +8,9 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
-#include "strayphotons/cpp/Hashing.hh"
-#include "strayphotons/cpp/InlineString.hh"
-#include "strayphotons/cpp/Logging.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/InlineString.hh"
+#include "strayphotons/Logging.hh"
 
 namespace sp::scripts {
     using namespace ecs;

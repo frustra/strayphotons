@@ -7,7 +7,7 @@
 
 #include "Shader.hh"
 
-#include "strayphotons/cpp/InlineVector.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <string>
 

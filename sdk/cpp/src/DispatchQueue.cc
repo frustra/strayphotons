@@ -5,7 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "strayphotons/cpp/DispatchQueue.hh"
+#include "strayphotons/DispatchQueue.hh"
 
 #ifdef TRACY_ENABLE
     #include "common/Tracing.hh"

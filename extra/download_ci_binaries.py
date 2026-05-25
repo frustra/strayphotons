@@ -8,8 +8,6 @@
 
 import argparse
 import os
-import glob
-import subprocess
 import urllib.request
 import json
 

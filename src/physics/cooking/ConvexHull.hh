@@ -8,7 +8,7 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
-#include "strayphotons/cpp/Async.hh"
+#include "strayphotons/Async.hh"
 
 #include <filesystem>
 #include <glm/glm.hpp>

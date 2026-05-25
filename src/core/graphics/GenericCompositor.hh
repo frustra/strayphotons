@@ -8,9 +8,9 @@
 #pragma once
 
 #include "ecs/StructMetadata.hh"
-#include "strayphotons/cpp/InlineString.hh"
-#include "strayphotons/cpp/Utility.hh"
-#include "strayphotons/cpp/gui/GuiDrawData.hh"
+#include "strayphotons/InlineString.hh"
+#include "strayphotons/Utility.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>

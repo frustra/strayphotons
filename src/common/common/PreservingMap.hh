@@ -8,10 +8,10 @@
 #pragma once
 
 #include "common/Tracing.hh"
-#include "strayphotons/cpp/InlineVector.hh"
-#include "strayphotons/cpp/LockFreeMutex.hh"
-#include "strayphotons/cpp/Logging.hh"
-#include "strayphotons/cpp/Utility.hh"
+#include "strayphotons/InlineVector.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <atomic>
 #include <memory>

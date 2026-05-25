@@ -269,12 +269,23 @@ namespace ecs {
         }
     }
 
+#ifdef __clang__
+// No warning on clang
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
     DynamicScript::DynamicScript(DynamicLibrary &library, const DynamicScriptDefinition &dynamicDefinition)
         : ScriptDefinitionBase(this->metadata), metadata(typeid(void),
                                                     dynamicDefinition.contextSize,
                                                     dynamicDefinition.name.c_str(),
                                                     dynamicDefinition.desc ? dynamicDefinition.desc : ""),
           library(&library), dynamicDefinition(dynamicDefinition) {
+#ifdef __clang__
+// No warning on clang
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
         definition.name = dynamicDefinition.name;
         definition.type = dynamicDefinition.type;
         definition.events = dynamicDefinition.events;
@@ -369,4 +380,21 @@ namespace ecs {
     void DynamicScript::Register() const {
         GetScriptDefinitions().RegisterScript(ScriptDefinition(definition));
     }
+
+    void DynamicScriptDefinition::AddEvent(const char *eventName) {
+        events.emplace_back(eventName);
+    }
+
+    StructField &DynamicScriptDefinition::AddField(const char *name,
+        uint32_t typeIndex,
+        uint64_t size,
+        uint64_t offset) {
+        StructField &field = fields.emplace_back();
+        field.name = name;
+        field.type.typeIndex = typeIndex;
+        field.size = size;
+        field.offset = offset;
+        return field;
+    }
+
 } // namespace ecs

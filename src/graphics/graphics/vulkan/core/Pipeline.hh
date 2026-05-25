@@ -10,8 +10,8 @@
 #include "graphics/vulkan/core/Shader.hh"
 #include "graphics/vulkan/core/VertexLayout.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
-#include "strayphotons/cpp/EnumTypes.hh"
-#include "strayphotons/cpp/Hashing.hh"
+#include "strayphotons/EnumTypes.hh"
+#include "strayphotons/Hashing.hh"
 
 #include <bitset>
 #include <memory>
