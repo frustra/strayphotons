@@ -190,13 +190,6 @@ namespace sp {
         PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;
         DispatchQueue workQueue;
 
-        struct TransformCacheEntry {
-            ecs::Entity parent;
-            ecs::Transform pose;
-            int dirty = -1;
-        };
-        EntityMap<TransformCacheEntry> transformCache;
-
         friend class CharacterControlSystem;
         friend class ConstraintSystem;
         friend class PhysicsQuerySystem;

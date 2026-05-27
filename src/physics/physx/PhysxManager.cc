@@ -464,14 +464,6 @@ namespace sp {
         }
 
         cache.Tick(interval);
-
-        {
-            ZoneScopedN("TransformCache Reset");
-            // Reset dirty flags in transform cache outside of the transaction
-            for (auto &[generation, cache] : transformCache) {
-                if (generation != 0) cache.dirty = -1;
-            }
-        }
     }
 
     void PhysxManager::CreatePhysxScene() {
