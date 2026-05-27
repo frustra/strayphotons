@@ -794,22 +794,21 @@ namespace sp {
             actorEnt = e;
         }
         if (actors.count(actorEnt) == 0) {
-            if (actorEnt == e) CreateActor(lock, e);
-            return;
-        }
-        auto &actor = actors[actorEnt];
-        if (actorEnt != e) {
+            if (actorEnt != e) return; // Parent actor needs to be created first
+            CreateActor(lock, e);
+        } else if (actorEnt != e) {
             if (actors.count(e) > 0) RemoveActor(actors[e]);
             if (subActors.count(e) > 0) {
-                if (subActors[e] != actor) {
+                if (subActors[e] != actors[actorEnt]) {
                     RemoveActor(subActors[e]);
-                    subActors[e] = actor;
+                    subActors[e] = actors[actorEnt];
                 }
             } else {
-                subActors[e] = actor;
+                subActors[e] = actors[actorEnt];
             }
         }
 
+        auto &actor = actors[actorEnt];
         auto dynamic = actor->is<PxRigidDynamic>();
         if (actorEnt == e) {
             bool requestDynamicActor = ph.type == ecs::PhysicsActorType::Dynamic ||
@@ -817,7 +816,6 @@ namespace sp {
             if (requestDynamicActor != !!dynamic) {
                 RemoveActor(actor);
                 CreateActor(lock, e);
-                return;
             }
         }
 

@@ -279,7 +279,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-test",
-            "args": ["-v", "--assets", "../assets/", "--run", "tests/editor.txt"],
+            "args": ["-v", "--assets", "../assets/", "--run", "tests/scene-overrides.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
