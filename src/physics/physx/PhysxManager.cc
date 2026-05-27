@@ -854,7 +854,7 @@ namespace sp {
         if (shapeCount == 0) return actor;
         scene->addActor(*actor);
         SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
-        if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
+        if (sceneUserData && dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
             sceneUserData->dynamicActors.emplace(e);
         }
         return actor;
@@ -966,7 +966,7 @@ namespace sp {
         if (!actor->getScene() && shapeCount > 0) {
             scene->addActor(*actor);
             SceneUserData *sceneUserData = (SceneUserData *)scene->userData;
-            if (sceneUserData && dynamic && !(dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)) {
+            if (sceneUserData && dynamic && !dynamic->getRigidBodyFlags().isSet(PxRigidBodyFlag::eKINEMATIC)) {
                 sceneUserData->dynamicActors.emplace(actorEnt);
             }
         }
