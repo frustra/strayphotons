@@ -10,6 +10,7 @@
 #include "ecs/StructFieldTypes.hh"
 #include "ecs/StructMetadata.hh"
 #include "gen_common.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/Utility.hh"
 
 #include <functional>
@@ -169,6 +170,9 @@ std::string LookupCTypeName(std::type_index type) {
                 subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
             return "sp_" + subtype + "_pair_t";
+        } else if constexpr (sp::is_flat_set<T>()) {
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            return "sp_" + subtype + "_flatset_t";
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
@@ -458,6 +462,26 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
         out << "    return v->data();" << std::endl;
         out << "}" << std::endl;
         out << std::endl;
+    } else if constexpr (sp::is_flat_set<T>()) {
+        std::string fullSubtype = LookupCTypeName(typeid(typename T::key_type));
+        std::string subtype = StripTypeDecorators(fullSubtype);
+        out << "SP_EXPORT size_t sp_" << subtype << "_flatset_get_size(const sp_" << subtype << "_flatset_t *s) {"
+            << std::endl;
+        out << "    return s->size();" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_flatset_get_const_data(const sp_" << subtype
+            << "_flatset_t *s) {" << std::endl;
+        out << "    return s->data();" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_flatset_insert(sp_" << subtype
+            << "_flatset_t *s, const " << fullSubtype << " *v) {" << std::endl;
+        out << "    return s->insert(*v).first;" << std::endl;
+        out << "}" << std::endl;
+        out << "SP_EXPORT size_t sp_" << subtype << "_flatset_erase(sp_" << subtype << "_flatset_t *s, const "
+            << fullSubtype << " *v) {" << std::endl;
+        out << "    return s->erase(*v);" << std::endl;
+        out << "}" << std::endl;
+        out << std::endl;
     } else {
         auto *metadata = ecs::StructMetadata::Get(typeid(T));
         if (!metadata) return;
@@ -695,13 +719,9 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             GenerateCTypeDefinition(out, typeid(typename T::value_type));
             std::string fullSubtype = LookupCTypeName(typeid(typename T::value_type));
             std::string subtype = StripTypeDecorators(fullSubtype);
-            if constexpr (sp::is_heap_vector<T>()) {
-                out << "typedef struct sp_" << subtype << "_vector_t {" << std::endl;
-                out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
-                out << "} sp_" << subtype << "_vector_t;" << std::endl;
-            } else {
-                out << "typedef void sp_" << subtype << "_vector_t;" << std::endl;
-            }
+            out << "typedef struct sp_" << subtype << "_vector_t {" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "} sp_" << subtype << "_vector_t;" << std::endl;
             out << "SP_EXPORT size_t sp_" << subtype << "_vector_get_size(const sp_" << subtype << "_vector_t *v);"
                 << std::endl;
             out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_vector_get_const_data(const sp_"
@@ -746,6 +766,23 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "typedef struct sp_" << subtype << "_pair_t {" << std::endl;
             out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
             out << "} sp_" << subtype << "_pair_t;" << std::endl;
+        } else if constexpr (sp::is_flat_set<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCTypeDefinition(out, typeid(sp::HeapVector<typename T::key_type>));
+            std::string fullSubtype = LookupCTypeName(typeid(typename T::key_type));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            out << "typedef struct sp_" << subtype << "_flatset_t {" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "} sp_" << subtype << "_flatset_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subtype << "_flatset_get_size(const sp_" << subtype << "_flatset_t *s);"
+                << std::endl;
+            out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_flatset_get_const_data(const sp_"
+                << subtype << "_flatset_t *s);" << std::endl;
+            out << "SP_EXPORT const " << fullSubtype << " *sp_" << subtype << "_flatset_insert(sp_" << subtype
+                << "_flatset_t *s, const " << fullSubtype << " *v);" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subtype << "_flatset_erase(sp_" << subtype << "_flatset_t *s, const "
+                << fullSubtype << " *v);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::key_type));
             GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
@@ -946,14 +983,13 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
         } else if constexpr (sp::is_optional<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::value_type)));
-            std::string subCppType = TypeToString<typename T::value_type>();
-            out << "typedef std::optional<" << subCppType << "> sp_optional_" << subCType << "_t;" << std::endl;
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
+            out << "typedef std::optional<" << fullCSubtype << "> sp_optional_" << subCType << "_t;" << std::endl;
         } else if constexpr (sp::is_heap_vector<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(fullCSubtype);
-            std::string subCppType = TypeToString<typename T::value_type>();
-            out << "typedef sp::HeapVector<" << subCppType << "> sp_" << subCType << "_vector_t;" << std::endl;
+            out << "typedef sp::HeapVector<" << fullCSubtype << "> sp_" << subCType << "_vector_t;" << std::endl;
             out << "SP_EXPORT size_t sp_" << subCType << "_vector_get_size(const sp_" << subCType << "_vector_t *v);"
                 << std::endl;
             out << "SP_EXPORT const " << fullCSubtype << " *sp_" << subCType << "_vector_get_const_data(const sp_"
@@ -967,9 +1003,8 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(fullCSubtype);
-            std::string subCppType = TypeToString<typename T::value_type>();
-            out << "typedef sp::InlineVector<" << subCppType << "> sp_" << subCType << "_inlinevector_" << T::max_size()
-                << "_t;" << std::endl;
+            out << "typedef sp::InlineVector<" << fullCSubtype << "> sp_" << subCType << "_inlinevector_"
+                << T::max_size() << "_t;" << std::endl;
             out << "SP_EXPORT size_t sp_" << subCType << "_inlinevector_" << T::max_size() << "_get_size(const sp_"
                 << subCType << "_inlinevector_" << T::max_size() << "_t *v);" << std::endl;
             out << "SP_EXPORT const " << fullCSubtype << " *sp_" << subCType << "_inlinevector_" << T::max_size()
@@ -985,8 +1020,7 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             GenerateCppTypeDefinition(out, typeid(typename T::value_type));
             std::string fullCSubtype = LookupCTypeName(typeid(typename T::value_type));
             std::string subCType = StripTypeDecorators(fullCSubtype);
-            std::string subCppType = TypeToString<typename T::value_type>();
-            out << "typedef std::array<" << subCppType << ", " << std::to_string(std::tuple_size<T>()) << "> sp_"
+            out << "typedef std::array<" << fullCSubtype << ", " << std::to_string(std::tuple_size<T>()) << "> sp_"
                 << subCType << "_array_" + std::to_string(std::tuple_size<T>()) + "_t;" << std::endl;
         } else if constexpr (sp::is_pair<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::first_type));
@@ -995,26 +1029,42 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             if constexpr (!std::is_same<typename T::first_type, typename T::second_type>()) {
                 subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::second_type)));
             }
-            std::string subCppType = TypeToString<typename T::first_type>() + ", " +
-                                     TypeToString<typename T::second_type>();
-            out << "typedef std::pair<" << subCppType << "> sp_" << subCType << "_pair_t;" << std::endl;
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::first_type)) + ", " +
+                                       LookupCTypeName(typeid(typename T::second_type));
+            out << "typedef std::pair<" << fullCSubtype << "> sp_" << subCType << "_pair_t;" << std::endl;
+        } else if constexpr (sp::is_flat_set<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCppTypeDefinition(out, typeid(sp::HeapVector<typename T::key_type>));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::key_type));
+
+            out << "typedef sp::FlatSet<" << fullCSubtype << "> sp_" << subCType << "_flatset_t;" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subCType << "_flatset_get_size(const sp_" << subCType << "_flatset_t *s);"
+                << std::endl;
+            out << "SP_EXPORT const " << fullCSubtype << " *sp_" << subCType << "_flatset_get_const_data(const sp_"
+                << subCType << "_flatset_t *s);" << std::endl;
+            out << "SP_EXPORT const " << fullCSubtype << " *sp_" << subCType << "_flatset_insert(sp_" << subCType
+                << "_flatset_t *s, const " << fullCSubtype << " *v);" << std::endl;
+            out << "SP_EXPORT size_t sp_" << subCType << "_flatset_erase(sp_" << subCType << "_flatset_t *s, const "
+                << fullCSubtype << " *v);" << std::endl;
+            out << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::key_type));
             GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            std::string subCppType = TypeToString<typename T::key_type>() + ", " +
-                                     TypeToString<typename T::mapped_type>();
-            out << "typedef robin_hood::unordered_flat_map<" << subCppType << "> sp_" << subCType << "_flatmap_t;"
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::key_type)) + ", " +
+                                       LookupCTypeName(typeid(typename T::mapped_type));
+            out << "typedef robin_hood::unordered_flat_map<" << fullCSubtype << "> sp_" << subCType << "_flatmap_t;"
                 << std::endl;
         } else if constexpr (sp::is_unordered_node_map<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::key_type));
             GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));
             std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subCType += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
-            std::string subCppType = TypeToString<typename T::key_type>() + ", " +
-                                     TypeToString<typename T::mapped_type>();
-            out << "typedef robin_hood::unordered_node_map<" << subCppType << "> sp_" << subCType << "_map_t;"
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::key_type)) + ", " +
+                                       LookupCTypeName(typeid(typename T::mapped_type));
+            out << "typedef robin_hood::unordered_node_map<" << fullCSubtype << "> sp_" << subCType << "_map_t;"
                 << std::endl;
         } else if constexpr (std::is_same<T, sp::GenericCompositor>()) {
             // Defined in "strayphotons/graphics.h"

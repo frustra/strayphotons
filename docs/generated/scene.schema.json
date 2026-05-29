@@ -975,7 +975,25 @@
 						]
 					},
 					"transform_snapshot": {
-						"$ref": "#/definitions/Transform"
+						"allOf": [
+							{
+								"$ref": "#/definitions/Transform"
+							},
+							{
+								"properties": {
+									"childEntities": {
+										"default": [],
+										"description": "No description"
+									},
+									"firstParent": {
+										"default": null,
+										"description": "No description",
+										"type": "string"
+									}
+								},
+								"type": "object"
+							}
+						]
 					},
 					"trigger_area": {
 						"enum": [

@@ -8,13 +8,16 @@
 #pragma once
 
 #include "assets/AssetManager.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
+#include "strayphotons/FlatSet.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/InlineString.hh"
 #include "strayphotons/Utility.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
@@ -118,8 +121,10 @@ namespace ecs {
         sp::HeapVector<ScriptInstance>,
         sp::HeapVector<Sound>,
         sp::HeapVector<StructField>,
+        sp::HeapVector<Entity>,
         sp::HeapVector<EntityRef>,
         sp::HeapVector<std::pair<EntityRef, EntityRef>>,
+        sp::FlatSet<Entity>,
         std::pair<EntityRef, EntityRef>,
         std::optional<double>,
         std::optional<EventData>,

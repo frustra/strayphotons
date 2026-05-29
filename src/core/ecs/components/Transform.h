@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "ecs/StructMetadata.hh"
 #include "strayphotons/FlatSet.hh"
 #include "strayphotons/HeapVector.hh"
 
@@ -160,7 +161,9 @@ Transform snapshots are used by the render thread for drawing entities in a phys
 while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 )",
-            StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave)},
+            StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave),
+            StructField::New("firstParent", &TransformSnapshot::firstParent, FieldAction::None),
+            StructField::New("childEntities", &TransformSnapshot::childEntities, FieldAction::None)},
         "transform_snapshot");
 
     struct TransformTree {

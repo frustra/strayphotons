@@ -209,8 +209,10 @@ namespace sp {
     class HeapString;
     template<typename, size_t, typename>
     class InlineVector;
-    template<typename T>
+    template<typename>
     class HeapVector;
+    template<typename, typename, typename>
+    class FlatSet;
 
     template<typename T>
     struct is_vector : std::false_type {};
@@ -246,6 +248,11 @@ namespace sp {
     struct is_pair : std::false_type {};
     template<typename A, typename B>
     struct is_pair<std::pair<A, B>> : std::true_type {};
+
+    template<typename T>
+    struct is_flat_set : std::false_type {};
+    template<typename T, typename Compare, typename ContainerT>
+    struct is_flat_set<FlatSet<T, Compare, ContainerT>> : std::true_type {};
 
     template<typename T>
     struct is_unordered_flat_map : std::false_type {};
