@@ -26,6 +26,11 @@ namespace sp::vulkan {
 namespace ecs {
     class ScriptState;
 
+    // Thread-safe equality check without weak_ptr::lock()
+    inline bool operator==(const std::weak_ptr<sp::GuiContext> &a, const std::weak_ptr<sp::GuiContext> &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
+
     struct RenderOutput {
         sp::InlineString<127> sourceName;
         glm::ivec2 outputSize = {-1, -1}; // -1 == inherit
@@ -40,6 +45,8 @@ namespace ecs {
         RenderOutput() {}
         RenderOutput(std::string sourceName, std::initializer_list<EntityRef> guiElements = {})
             : sourceName(sourceName), guiElements(guiElements) {}
+
+        bool operator==(const RenderOutput &) const = default;
     };
 
     static EntityComponent<RenderOutput> ComponentRenderOutput("render_output",

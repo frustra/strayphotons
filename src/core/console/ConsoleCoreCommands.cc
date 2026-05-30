@@ -32,7 +32,7 @@ void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
     } else {
         auto &transform = entity.Get<ecs::TransformTree>(lock);
         callback(lock, transform);
-        entity.Set<ecs::TransformSnapshot>(lock, transform.GetGlobalTransform(lock));
+        entity.Get<ecs::TransformSnapshot>(lock).globalPose = transform.GetGlobalTransform(lock);
     }
 }
 

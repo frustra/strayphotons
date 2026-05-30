@@ -11,6 +11,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructMetadata.hh"
+#include "strayphotons/FlatSet.hh"
 #include "strayphotons/HeapString.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
@@ -265,6 +266,17 @@ namespace sp::json {
             return true;
         }
     }
+    template<typename T, typename Compare, typename ContainerT>
+    inline bool Load(FlatSet<T, Compare, ContainerT> &dst, const picojson::value &src) {
+        if (!src.is<picojson::array>()) return false;
+        dst.clear();
+        for (auto &p : src.get<picojson::array>()) {
+            T v = {};
+            if (!json::Load(v, p)) return false;
+            dst.emplace(v);
+        }
+        return true;
+    }
     template<typename K, typename T, typename H, typename E>
     inline bool Load(robin_hood::unordered_flat_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
@@ -435,6 +447,15 @@ namespace sp::json {
             }
             dst = picojson::value(vec);
         }
+    }
+    template<typename T, typename Compare, typename ContainerT>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const FlatSet<T, Compare, ContainerT> &src) {
+        picojson::array vec(src.size());
+        auto *data = src.begin();
+        for (size_t i = 0; i < src.size(); i++) {
+            Save(s, vec[i], data[i]);
+        }
+        dst = picojson::value(vec);
     }
     template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,

@@ -44,7 +44,7 @@ namespace sp::scripts {
 
             bool enableInteraction = !highlightOnly && !disabled;
             if (ent.Has<Physics, PhysicsJoints>(lock)) {
-                auto &ph = ent.Get<Physics>(lock);
+                auto &ph = ent.Get<const Physics>(lock);
                 enableInteraction &= ph.type == PhysicsActorType::Dynamic;
             }
 
@@ -106,7 +106,7 @@ namespace sp::scripts {
                         if (ent.Has<PhysicsJoints>(lock)) {
                             auto &joints = ent.Get<PhysicsJoints>(lock);
                             if (event.source.Has<PhysicsJoints>(lock)) {
-                                auto &targetJoints = event.source.Get<PhysicsJoints>(lock);
+                                auto &targetJoints = event.source.Get<const PhysicsJoints>(lock);
                                 for (auto &joint : targetJoints.joints) {
                                     if (joint.type != PhysicsJointType::Force) continue;
                                     auto target = joint.target.Get(lock);
@@ -174,12 +174,12 @@ namespace sp::scripts {
             }
 
             if (ent.Has<Physics>(lock)) {
-                auto &ph = ent.Get<Physics>(lock);
+                auto &ph = ent.Get<const Physics>(lock);
                 if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
-                    ph.group = PhysicsGroup::World;
+                    ent.Get<Physics>(lock).group = PhysicsGroup::World;
                 } else if (!grabEntities.empty() && ph.group == PhysicsGroup::World) {
                     if (actualMass > 0.0f && actualMass <= CVarCarryWeightLimit.Get()) {
-                        ph.group = PhysicsGroup::HeldObject;
+                        ent.Get<Physics>(lock).group = PhysicsGroup::HeldObject;
                     }
                 }
             }

@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <stdexcept>
 
 #ifdef _WIN32
     #include <intrin.h>

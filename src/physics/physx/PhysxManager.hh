@@ -26,6 +26,7 @@
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/EntityMap.hh"
+#include "strayphotons/FlatSet.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 
@@ -45,6 +46,15 @@ namespace sp {
     class SceneManager;
     class ForceConstraint;
     class NoClipConstraint;
+
+    struct SceneUserData {
+        PhysxManager *manager = nullptr;
+        FlatSet<ecs::Entity> dynamicActors;
+        FlatSet<ecs::Entity> awakeDynamicActors;
+
+        SceneUserData() {}
+        SceneUserData(PhysxManager *manager) : manager(manager) {}
+    };
 
     struct ShapeUserData {
         ecs::Entity owner; // SubActor physics source entity
@@ -159,7 +169,9 @@ namespace sp {
         physx::PxPvdTransport *pxPvdTransport = nullptr;
 #endif
 
-        ecs::ComponentAddRemoveObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentModifiedObserver<ecs::Physics> physicsObserver;
+        ecs::ComponentModifiedObserver<ecs::TransformTree> transformTreeObserver;
+        ecs::ComponentAddRemoveObserver<ecs::TransformSnapshot> transformSnapshotObserver;
         ecs::EntityRef debugLineEntity = ecs::Name("physx", "debug_lines");
 
         CharacterControlSystem characterControlSystem;
@@ -177,13 +189,6 @@ namespace sp {
         std::mutex cacheMutex;
         PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;
         DispatchQueue workQueue;
-
-        struct TransformCacheEntry {
-            ecs::Entity parent;
-            ecs::Transform pose;
-            int dirty = -1;
-        };
-        EntityMap<TransformCacheEntry> transformCache;
 
         friend class CharacterControlSystem;
         friend class ConstraintSystem;

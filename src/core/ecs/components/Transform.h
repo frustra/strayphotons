@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include "ecs/StructMetadata.hh"
+#include "strayphotons/FlatSet.hh"
+#include "strayphotons/HeapVector.hh"
+
 #include <ecs/CHelpers.h>
 
 #ifdef __cplusplus
@@ -128,6 +132,8 @@ namespace ecs {
 
     struct TransformSnapshot {
         Transform globalPose;
+        Entity firstParent;
+        sp::FlatSet<Entity> childEntities;
 
         TransformSnapshot() {}
         TransformSnapshot(const Transform &pose) : globalPose(pose) {}
@@ -136,6 +142,8 @@ namespace ecs {
         operator Transform() const {
             return globalPose;
         }
+
+        bool operator==(const TransformSnapshot &) const = default;
     };
 
     static EntityComponent<TransformSnapshot> ComponentTransformSnapshot(
@@ -153,7 +161,9 @@ Transform snapshots are used by the render thread for drawing entities in a phys
 while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 )",
-            StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave)},
+            StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave),
+            StructField::New("firstParent", &TransformSnapshot::firstParent, FieldAction::None),
+            StructField::New("childEntities", &TransformSnapshot::childEntities, FieldAction::None)},
         "transform_snapshot");
 
     struct TransformTree {
@@ -174,6 +184,8 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
 
         // Returns a flatted Transform relative to the specified entity.
         Transform GetRelativeTransform(Lock<Read<TransformTree>> lock, const Entity &relative) const;
+
+        bool operator==(const TransformTree &) const = default;
     };
 
     static EntityComponent<TransformTree> ComponentTransformTree(
