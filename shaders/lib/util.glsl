@@ -27,7 +27,8 @@ uint lowbias32(uint x) {
     x ^= x >> 16;
     return x;
 }
-#define hash(x) (float(lowbias32(floatBitsToUint(x))) / float(0xffffffffU))
+#define uintBitsToNormalizedFloat(x) (uintBitsToFloat(x & 0x007fffffu | 0x3f800000u) - 1.0)
+#define hash(x) uintBitsToNormalizedFloat(lowbias32(floatBitsToUint(x)))
 
 float rand2(inout vec4 state) {
     // PRNG parameters from: http://web.archive.org/web/20101217080108/http://gpgpu.org/forums/viewtopic.php?t=2591
