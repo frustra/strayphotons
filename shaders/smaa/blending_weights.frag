@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justin Li
+ * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -26,6 +26,11 @@ void main() {
     offset[0].y = textureSize(areaTex, 0).x;
     offset[0].z = textureSize(searchTex, 0).x;
     SMAABlendingWeightCalculationVS(inTexCoord, pixCoord, offset);
-    outFragColor =
-        SMAABlendingWeightCalculationPS(inTexCoord, pixCoord, offset, edgesTex, areaTex, searchTex, vec4(0.0));
+    outFragColor = SMAABlendingWeightCalculationPS(inTexCoord,
+        pixCoord,
+        offset,
+        edgesTex,
+        areaTex,
+        searchTex,
+        vec4(0.0));
 }
