@@ -228,6 +228,7 @@ namespace sp::vulkan {
             voxels.AddVoxelizationInit(graph, lighting);
             voxels.AddVoxelization(graph, lighting);
             voxels.AddVoxelization2(graph, lighting);
+            voxels.AddMarchingCubes(graph);
             renderer::AddLightSensors(graph, scene, lock);
 
             AddViewOutputs(lock, elapsedTime);

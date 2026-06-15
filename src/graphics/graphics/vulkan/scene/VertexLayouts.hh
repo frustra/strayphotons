@@ -10,6 +10,19 @@
 #include "graphics/vulkan/core/VertexLayout.hh"
 
 namespace sp::vulkan {
+    struct PositionVertex {
+        glm::vec4 position;
+
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(PositionVertex));
+                info.PushAttribute(0, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(PositionVertex, position));
+            }
+            return info;
+        }
+    };
+
     struct TextureVertex {
         glm::vec3 position;
         glm::vec2 uv;

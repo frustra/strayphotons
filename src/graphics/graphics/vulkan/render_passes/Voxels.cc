@@ -7,19 +7,32 @@
 
 #include "Voxels.hh"
 
+#include "MarchingCubes.h"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/Shader.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
+#include "graphics/vulkan/scene/VertexLayouts.hh"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace sp::vulkan::renderer {
     static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
     static CVar<bool> CVarEnableVoxels2("r.EnableVoxels2", true, "Enable world voxelization for lighting");
+    static CVar<uint32_t> CVarEnableMarchingCubes("r.EnableMarchingCubes",
+        0,
+        "Enable converting the voxel grid into a triangle mesh (0: off, 1: basic, 2: advanced)");
+    static CVar<uint32_t> CVarMarchingCubesLayer("r.MarchingCubesLayer",
+        0,
+        "The voxel grid layer to convert to a triangle mesh");
     static CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
@@ -71,7 +84,12 @@ namespace sp::vulkan::renderer {
 
     Voxels::Voxels(GPUScene &scene) : scene(scene) {
         funcs.Register("printgraphics", "Print graphics debug information", [this]() {
-            if (debugThisFrame.test_and_set()) {
+            if (debugThisFrame[0].test_and_set()) {
+                Warnf("Graphics frame already flagged for debug printing");
+            }
+        });
+        funcs.Register("printvoxels", "Print graphics debug information", [this]() {
+            if (debugThisFrame[1].test_and_set()) {
                 Warnf("Graphics frame already flagged for debug printing");
             }
         });
@@ -498,8 +516,8 @@ namespace sp::vulkan::renderer {
             [this, listCount = fragmentListCount](BufferPtr buffer) {
                 ZoneScopedN("FragmentListReadback");
                 auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
-                bool printDebug = debugThisFrame.test();
-                debugThisFrame.clear();
+                bool printDebug = debugThisFrame[0].test();
+                debugThisFrame[0].clear();
                 for (uint32_t i = 0; i < listCount; i++) {
                     if (printDebug) {
                         Logf("fragment list %d, count: %u, capacity %u", i, map[i].count, map[i].capacity);
@@ -817,7 +835,197 @@ namespace sp::vulkan::renderer {
         }
     }
 
+    void Voxels::AddMarchingCubes(RenderGraph &graph) {
+        uint32_t version = CVarEnableMarchingCubes.Get();
+        if (voxelGridSize == glm::ivec3(0) || voxelLayerCount == 0 || !CVarEnableVoxels.Get() ||
+            !CVarEnableVoxels2.Get() || version == 0) {
+            return;
+        }
+        uint32_t cubeLayer = CVarMarchingCubesLayer.Get();
+        cubeLayer = std::min(cubeLayer, voxelLayerCount - 1);
+        glm::uvec3 cubeGridSize = glm::max(glm::ivec3(1), voxelGridSize - 1);
+        cubeGridSize >>= cubeLayer;
+        size_t cubeCount = cubeGridSize.x * cubeGridSize.y * cubeGridSize.z;
+
+        ZoneScoped;
+        auto scope = graph.Scope("MarchingCubes");
+
+        graph.AddPass("Init")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateBuffer("VertexBuffer",
+                    {sizeof(PositionVertex), 4 * cubeCount},
+                    Residency::GPU_ONLY,
+                    Access::None);
+
+                builder.CreateBuffer("IndexLookup",
+                    {sizeof(uint32_t), 1 + 4 * cubeCount},
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
+
+                builder.CreateBuffer("IndexBuffer",
+                    {sizeof(uint32_t), (sizeof(VkDrawIndexedIndirectCommand) / sizeof(uint32_t)) + 5 * cubeCount},
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
+            })
+            .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                auto lookupBuffer = resources.GetBuffer("IndexLookup");
+                cmd.Raw().fillBuffer(*lookupBuffer, 0, sizeof(uint32_t), 1u);
+                cmd.Raw().fillBuffer(*lookupBuffer, sizeof(uint32_t), sizeof(glm::vec3), 0u);
+                auto indexBuffer = resources.GetBuffer("IndexBuffer");
+                cmd.Raw().fillBuffer(*indexBuffer, 0, sizeof(VkDrawIndexedIndirectCommand), 0u);
+                cmd.Raw().fillBuffer(*indexBuffer,
+                    offsetof(VkDrawIndexedIndirectCommand, instanceCount),
+                    sizeof(uint32_t),
+                    1u);
+            });
+        graph.AddPass("UploadTriangleData")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateBuffer("TriangleIndexBuffer",
+                    {sizeof(triangleIndexBuffer[0]), sizeof(triangleIndexBuffer) / sizeof(triangleIndexBuffer[0])},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                builder.CreateBuffer("CaseInteriorEdges",
+                    {sizeof(caseInteriorEdge[0][0]), sizeof(caseInteriorEdge) / sizeof(caseInteriorEdge[0][0])},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                builder.CreateBuffer("TriangleCaseOffsets",
+                    {sizeof(triangleCaseOffset[0][0][0]),
+                        sizeof(triangleCaseOffset) / sizeof(triangleCaseOffset[0][0][0])},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+                builder.CreateBuffer("CaseTests",
+                    {sizeof(caseTests[0][0]), sizeof(caseTests) / sizeof(caseTests[0][0])},
+                    Residency::CPU_TO_GPU,
+                    Access::HostWrite);
+            })
+            .Execute([](rg::Resources &resources, DeviceContext &device) {
+                resources.GetBuffer("TriangleIndexBuffer")
+                    ->CopyFrom(&triangleIndexBuffer[0], sizeof(triangleIndexBuffer) / sizeof(triangleIndexBuffer[0]));
+                resources.GetBuffer("CaseInteriorEdges")
+                    ->CopyFrom(&caseInteriorEdge[0][0], sizeof(caseInteriorEdge) / sizeof(caseInteriorEdge[0][0]));
+                resources.GetBuffer("TriangleCaseOffsets")
+                    ->CopyFrom(&triangleCaseOffset[0][0][0],
+                        sizeof(triangleCaseOffset) / sizeof(triangleCaseOffset[0][0][0]));
+                resources.GetBuffer("CaseTests")
+                    ->CopyFrom(&caseTests[0][0], sizeof(caseTests) / sizeof(caseTests[0][0]));
+            });
+
+        graph.AddPass("MarchChunkVertex")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.Read("Voxels/Radiance", Access::ComputeShaderSampleImage);
+
+                builder.Read("IndexLookup", Access::ComputeShaderReadStorage);
+                builder.Write("IndexLookup", Access::ComputeShaderWrite);
+                builder.Write("VertexBuffer", Access::ComputeShaderWrite);
+                builder.ReadUniform("VoxelState");
+            })
+
+            .Execute([cubeLayer, cubeGridSize, version](rg::Resources &resources, CommandContext &cmd) {
+                if (version == 2) {
+                    cmd.SetComputeShader("marching_cubes_vertex2.comp");
+                } else {
+                    cmd.SetComputeShader("marching_cubes_vertex.comp");
+                }
+                cmd.SetShaderConstant(ShaderStage::Compute, "CUBE_LAYER", cubeLayer);
+
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
+
+                cmd.SetImageView("voxelRadiance", resources.GetImageMipView("Voxels/Radiance", cubeLayer));
+                cmd.SetStorageBuffer("IndexLookupBuffer", "IndexLookup");
+                cmd.SetStorageBuffer("VertexBuffer", "VertexBuffer");
+
+                glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
+                cmd.Dispatch(groups.x, groups.y, groups.z);
+            });
+
+        graph.AddPass("MarchChunkTriangle")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.Read("Voxels/Radiance", Access::ComputeShaderSampleImage);
+
+                builder.Read("IndexLookup", Access::ComputeShaderReadStorage);
+                builder.Read("IndexBuffer", Access::ComputeShaderReadStorage);
+                builder.Write("IndexBuffer", Access::ComputeShaderWrite);
+                builder.Read("TriangleIndexBuffer", Access::ComputeShaderReadStorage);
+                builder.Read("CaseInteriorEdges", Access::ComputeShaderReadStorage);
+                builder.Read("TriangleCaseOffsets", Access::ComputeShaderReadStorage);
+                builder.Read("CaseTests", Access::ComputeShaderReadStorage);
+                builder.ReadUniform("VoxelState");
+            })
+
+            .Execute([cubeLayer, cubeGridSize, version](rg::Resources &resources, CommandContext &cmd) {
+                if (version == 2) {
+                    cmd.SetComputeShader("marching_cubes_triangle2.comp");
+
+                    cmd.SetStorageBuffer("TriangleIndexBuffer", "TriangleIndexBuffer");
+                    cmd.SetStorageBuffer("CaseInteriorEdges", "CaseInteriorEdges");
+                    cmd.SetStorageBuffer("TriangleCaseOffsets", "TriangleCaseOffsets");
+                    cmd.SetStorageBuffer("CaseTests", "CaseTests");
+                } else {
+                    cmd.SetComputeShader("marching_cubes_triangle.comp");
+                }
+                cmd.SetShaderConstant(ShaderStage::Compute, "CUBE_LAYER", cubeLayer);
+
+                cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
+
+                cmd.SetImageView("voxelRadiance", resources.GetImageMipView("Voxels/Radiance", cubeLayer));
+                cmd.SetStorageBuffer("IndexLookupBuffer", "IndexLookup");
+                cmd.SetStorageBuffer("IndexBuffer", "IndexBuffer");
+
+                glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
+                cmd.Dispatch(groups.x, groups.y, groups.z);
+            });
+
+        bool printDebug = debugThisFrame[1].test();
+        debugThisFrame[1].clear();
+        if (printDebug) {
+            AddBufferReadback(graph, "IndexBuffer", 0, sizeof(uint32_t) * (1 + 3 * cubeCount), [](BufferPtr buffer) {
+                ZoneScopedN("IndexBufferReadback");
+                const uint32_t *indexData = (const uint32_t *)buffer->Mapped();
+                uint32_t triangleCount = indexData[0];
+                Logf("Triangle count: %u", triangleCount);
+                // for (uint32_t triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++) {
+                //     Logf("Triangle %u = [%u %u %u]",
+                //         triangleIndex,
+                //         indexData[triangleIndex * 3],
+                //         indexData[triangleIndex * 3 + 1],
+                //         indexData[triangleIndex * 3 + 2]);
+                // }
+            });
+        }
+    }
+
     void Voxels::AddDebugPass(RenderGraph &graph) {
+        if (graph.HasResource("MarchingCubes/IndexBuffer")) {
+            graph.AddPass("DrawChunk")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.ReadUniform("ViewState");
+                    builder.ReadUniform("VoxelState");
+                    builder.Read("ExposureState", Access::FragmentShaderReadStorage);
+                    builder.Read("MarchingCubes/VertexBuffer", Access::VertexBuffer);
+                    builder.Read("MarchingCubes/IndexBuffer", Access::IndexBuffer);
+                    builder.Read("MarchingCubes/IndexBuffer", Access::IndirectBuffer);
+
+                    builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
+                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                    cmd.SetShaders("cubescene.vert", "depth_colored.frag");
+                    cmd.SetUniformBuffer("ViewStates", "ViewState");
+                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
+
+                    auto vertexBuffer = resources.GetBuffer("MarchingCubes/VertexBuffer");
+                    auto indexBuffer = resources.GetBuffer("MarchingCubes/IndexBuffer");
+
+                    cmd.SetVertexLayout(PositionVertex::Layout());
+                    cmd.Raw().bindIndexBuffer(*indexBuffer,
+                        sizeof(VkDrawIndexedIndirectCommand),
+                        vk::IndexType::eUint32);
+                    cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+
+                    cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                });
+        }
+
         if (CVarVoxelDebug.Get() <= 0 || voxelGridSize == glm::ivec3(0)) return;
         auto debugMipLayer = std::min(CVarVoxelDebugMip.Get(), voxelLayerCount - 1);
 

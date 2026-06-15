@@ -11,6 +11,8 @@
 #include "console/CFunc.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
+#include <cstdint>
+
 namespace sp::vulkan::renderer {
     static const uint32_t MAX_VOXEL_FRAGMENT_LISTS = 16;
 
@@ -30,6 +32,7 @@ namespace sp::vulkan::renderer {
         void AddVoxelization(RenderGraph &graph, const Lighting &lighting);
         void AddVoxelizationInit(RenderGraph &graph, const Lighting &lighting);
         void AddVoxelization2(RenderGraph &graph, const Lighting &lighting);
+        void AddMarchingCubes(RenderGraph &graph);
         void AddDebugPass(RenderGraph &graph);
 
         vk::DescriptorSet GetCurrentVoxelDescriptorSet() const;
@@ -51,10 +54,13 @@ namespace sp::vulkan::renderer {
         glm::ivec3 voxelGridSize = glm::ivec3(0);
         uint32_t voxelLayerCount;
 
+        BufferPtr indexBuffer;
+        BufferPtr vertexBuffer;
+
         std::array<vk::DescriptorSet, 2> layerDescriptorSets;
         uint32_t currentSetFrame = 0;
 
-        std::atomic_flag debugThisFrame;
+        std::atomic_flag debugThisFrame[2];
         CFuncCollection funcs;
 
         void updateDescriptorSet(rg::Resources &resources, DeviceContext &device);

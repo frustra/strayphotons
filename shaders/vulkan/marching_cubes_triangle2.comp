@@ -1,0 +1,329 @@
+/*
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+#include "lib/marching_cubes2.glsl"
+#include "lib/scene.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform sampler3D voxelRadiance;
+
+layout(std430, binding = 2) buffer IndexLookupBuffer {
+    uint vertexCount;
+    uint indexLookup[];
+};
+
+layout(std430, binding = 3) buffer IndexBuffer {
+    VkDrawIndexedIndirectCommand drawCmd;
+    uint indices[];
+};
+
+layout(std430, binding = 4) readonly buffer TriangleIndexBuffer {
+    uint triangleIndexBuffer[];
+};
+layout(std430, binding = 5) readonly buffer CaseInteriorEdges {
+    int caseInteriorEdge[];
+};
+layout(std430, binding = 6) readonly buffer TriangleCaseOffsets {
+    uint triangleCaseOffset[];
+};
+layout(std430, binding = 7) readonly buffer CaseTests {
+    int caseTests[];
+};
+
+layout(constant_id = 0) const int CUBE_LAYER = 0;
+
+bool testInterior(float[8] _cube, uint _case, int edge, int s) {
+
+    float t, At = 0, Bt = 0, Ct = 0, Dt = 0, a, b;
+    int test = 0;
+
+    switch (_case) {
+    case 4:
+    case 10:
+        a = (_cube[4] - _cube[0]) * (_cube[6] - _cube[2]) - (_cube[7] - _cube[3]) * (_cube[5] - _cube[1]);
+        b = _cube[2] * (_cube[4] - _cube[0]) + _cube[0] * (_cube[6] - _cube[2]) - _cube[1] * (_cube[7] - _cube[3]) -
+            _cube[3] * (_cube[5] - _cube[1]);
+        t = -b / (2 * a);
+        if (t < 0 || t > 1) return s > 0;
+
+        At = _cube[0] + (_cube[4] - _cube[0]) * t;
+        Bt = _cube[3] + (_cube[7] - _cube[3]) * t;
+        Ct = _cube[2] + (_cube[6] - _cube[2]) * t;
+        Dt = _cube[1] + (_cube[5] - _cube[1]) * t;
+        break;
+
+    case 6:
+    case 7:
+    case 12:
+    case 13:
+        switch (edge) {
+        case 0:
+            t = _cube[0] / (_cube[0] - _cube[1]);
+            At = 0;
+            Bt = _cube[3] + (_cube[2] - _cube[3]) * t;
+            Ct = _cube[7] + (_cube[6] - _cube[7]) * t;
+            Dt = _cube[4] + (_cube[5] - _cube[4]) * t;
+            break;
+        case 1:
+            t = _cube[1] / (_cube[1] - _cube[2]);
+            At = 0;
+            Bt = _cube[0] + (_cube[3] - _cube[0]) * t;
+            Ct = _cube[4] + (_cube[7] - _cube[4]) * t;
+            Dt = _cube[5] + (_cube[6] - _cube[5]) * t;
+            break;
+        case 2:
+            t = _cube[2] / (_cube[2] - _cube[3]);
+            At = 0;
+            Bt = _cube[1] + (_cube[0] - _cube[1]) * t;
+            Ct = _cube[5] + (_cube[4] - _cube[5]) * t;
+            Dt = _cube[6] + (_cube[7] - _cube[6]) * t;
+            break;
+        case 3:
+            t = _cube[3] / (_cube[3] - _cube[0]);
+            At = 0;
+            Bt = _cube[2] + (_cube[1] - _cube[2]) * t;
+            Ct = _cube[6] + (_cube[5] - _cube[6]) * t;
+            Dt = _cube[7] + (_cube[4] - _cube[7]) * t;
+            break;
+        case 4:
+            t = _cube[4] / (_cube[4] - _cube[5]);
+            At = 0;
+            Bt = _cube[7] + (_cube[6] - _cube[7]) * t;
+            Ct = _cube[3] + (_cube[2] - _cube[3]) * t;
+            Dt = _cube[0] + (_cube[1] - _cube[0]) * t;
+            break;
+        case 5:
+            t = _cube[5] / (_cube[5] - _cube[6]);
+            At = 0;
+            Bt = _cube[4] + (_cube[7] - _cube[4]) * t;
+            Ct = _cube[0] + (_cube[3] - _cube[0]) * t;
+            Dt = _cube[1] + (_cube[2] - _cube[1]) * t;
+            break;
+        case 6:
+            t = _cube[6] / (_cube[6] - _cube[7]);
+            At = 0;
+            Bt = _cube[5] + (_cube[4] - _cube[5]) * t;
+            Ct = _cube[1] + (_cube[0] - _cube[1]) * t;
+            Dt = _cube[2] + (_cube[3] - _cube[2]) * t;
+            break;
+        case 7:
+            t = _cube[7] / (_cube[7] - _cube[4]);
+            At = 0;
+            Bt = _cube[6] + (_cube[5] - _cube[6]) * t;
+            Ct = _cube[2] + (_cube[1] - _cube[2]) * t;
+            Dt = _cube[3] + (_cube[0] - _cube[3]) * t;
+            break;
+        case 8:
+            t = _cube[0] / (_cube[0] - _cube[4]);
+            At = 0;
+            Bt = _cube[3] + (_cube[7] - _cube[3]) * t;
+            Ct = _cube[2] + (_cube[6] - _cube[2]) * t;
+            Dt = _cube[1] + (_cube[5] - _cube[1]) * t;
+            break;
+        case 9:
+            t = _cube[1] / (_cube[1] - _cube[5]);
+            At = 0;
+            Bt = _cube[0] + (_cube[4] - _cube[0]) * t;
+            Ct = _cube[3] + (_cube[7] - _cube[3]) * t;
+            Dt = _cube[2] + (_cube[6] - _cube[2]) * t;
+            break;
+        case 10:
+            t = _cube[2] / (_cube[2] - _cube[6]);
+            At = 0;
+            Bt = _cube[1] + (_cube[5] - _cube[1]) * t;
+            Ct = _cube[0] + (_cube[4] - _cube[0]) * t;
+            Dt = _cube[3] + (_cube[7] - _cube[3]) * t;
+            break;
+        case 11:
+            t = _cube[3] / (_cube[3] - _cube[7]);
+            At = 0;
+            Bt = _cube[2] + (_cube[6] - _cube[2]) * t;
+            Ct = _cube[1] + (_cube[5] - _cube[1]) * t;
+            Dt = _cube[0] + (_cube[4] - _cube[0]) * t;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    if (At >= 0) test++;
+    if (Bt >= 0) test += 2;
+    if (Ct >= 0) test += 4;
+    if (Dt >= 0) test += 8;
+    switch (test) {
+    case 0:
+        return s > 0;
+    case 1:
+        return s > 0;
+    case 2:
+        return s > 0;
+    case 3:
+        return s > 0;
+    case 4:
+        return s > 0;
+    case 5:
+        if (At * Ct - Bt * Dt < 0.00001) return s > 0;
+        break;
+    case 6:
+        return s > 0;
+    case 7:
+        return s < 0;
+    case 8:
+        return s > 0;
+    case 9:
+        return s > 0;
+    case 10:
+        if (At * Ct - Bt * Dt >= 0.00001) return s > 0;
+        break;
+    case 11:
+        return s < 0;
+    case 12:
+        return s > 0;
+    case 13:
+        return s < 0;
+    case 14:
+        return s < 0;
+    case 15:
+        return s < 0;
+    }
+
+    return s < 0;
+}
+
+bool testFace(float[8] _cube, int face) {
+    float A;
+    float B;
+    float C;
+    float D;
+
+    switch (face) {
+    case -1:
+    case 1:
+        A = _cube[0];
+        B = _cube[4];
+        C = _cube[5];
+        D = _cube[1];
+        break;
+    case -2:
+    case 2:
+        A = _cube[1];
+        B = _cube[5];
+        C = _cube[6];
+        D = _cube[2];
+        break;
+    case -3:
+    case 3:
+        A = _cube[2];
+        B = _cube[6];
+        C = _cube[7];
+        D = _cube[3];
+        break;
+    case -4:
+    case 4:
+        A = _cube[3];
+        B = _cube[7];
+        C = _cube[4];
+        D = _cube[0];
+        break;
+    case -5:
+    case 5:
+        A = _cube[0];
+        B = _cube[3];
+        C = _cube[2];
+        D = _cube[1];
+        break;
+    case -6:
+    case 6:
+        A = _cube[4];
+        B = _cube[7];
+        C = _cube[6];
+        D = _cube[5];
+        break;
+    default:
+        A = B = C = D = 0;
+    };
+
+    if (abs(A * C - B * D) < 0.00001) return face >= 0;
+    return face * A * (A * C - B * D) >= 0; // face and A invert signs
+}
+
+void main() {
+    ivec3 position = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 2))) return;
+
+    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
+        sampleGrid(voxelRadiance, position + vertexOffset[1]),
+        sampleGrid(voxelRadiance, position + vertexOffset[2]),
+        sampleGrid(voxelRadiance, position + vertexOffset[3]),
+        sampleGrid(voxelRadiance, position + vertexOffset[4]),
+        sampleGrid(voxelRadiance, position + vertexOffset[5]),
+        sampleGrid(voxelRadiance, position + vertexOffset[6]),
+        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+
+    uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
+                   uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
+                   uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    // uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[5] > 0) << 2 |
+    //                uint(cornerData[4] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[2] > 0) << 5 |
+    //                uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    if (caseNum == 0 || caseNum == 255) return;
+
+    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
+    uint posIndex = FlattenIndex(position, cubeGridSize);
+
+    uint testCount = caseTestCount[caseNum];
+    uint testResult = 0;
+    for (int t = 0; t < 7; t++) {
+        int test = caseTests[caseNum * 7 + t];
+        // int test = caseTestsFoo[caseNum][t];
+        if (test == 0) break;
+        if (abs(test) < 7) {
+            // int bit = (sampleGrid(voxelRadiance, vec3(position) + testPos[abs(test) - 1])) > 0 ? 1 : 0;
+            int bit = testFace(cornerData, test) ? 1 : 0;
+            if (test < 0) bit ^= 1;
+            testResult |= bit << (abs(test) - 1);
+        } else {
+            int bit = testInterior(cornerData, caseNum, caseInteriorEdge[caseNum * 64 + testResult], test) ? 1 : 0;
+            // if (test < 0) bit ^= 1;
+            testResult |= bit << (abs(test) - 1);
+        }
+    }
+
+    uint bufferOffset = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2];
+    uint indexCount = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2 + 1];
+    // uint bufferOffset = triangleCaseOffsetFoo[caseNum][testResult][0];
+    // uint indexCount = triangleCaseOffsetFoo[caseNum][testResult][1];
+    for (int i = 0; i < indexCount; i += 3) {
+        if (i + 2 >= indexCount) break;
+        uvec3 edgeNums = uvec3(triangleIndexBuffer[bufferOffset + i],
+            triangleIndexBuffer[bufferOffset + i + 1],
+            triangleIndexBuffer[bufferOffset + i + 2]);
+
+        uint triangleOffset = atomicAdd(drawCmd.indexCount, 3);
+        for (int vertex = 0; vertex < 3; vertex++) {
+            uint edge = edgeNums[vertex];
+            ivec4 edgeInfo = edgeLookup[edge];
+            uint edgeIndex = FlattenIndex(position + edgeInfo.xyz, cubeGridSize) * 4 + edgeInfo.w;
+
+            indices[triangleOffset + 2 - vertex] = indexLookup[edgeIndex];
+        }
+    }
+    // drawCmd.indexCount = vertexCount;
+}

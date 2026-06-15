@@ -1,0 +1,91 @@
+/*
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+#include "lib/marching_cubes2.glsl"
+#include "lib/scene.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform sampler3D voxelRadiance;
+
+layout(std430, binding = 2) buffer IndexLookupBuffer {
+    uint vertexCount;
+    uint indexLookup[];
+};
+
+layout(std430, binding = 3) buffer VertexBuffer {
+    vec4 vertices[];
+};
+
+layout(constant_id = 0) const int CUBE_LAYER = 0;
+
+void main() {
+    ivec3 position = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 1))) return;
+
+    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
+        sampleGrid(voxelRadiance, position + vertexOffset[1]),
+        sampleGrid(voxelRadiance, position + vertexOffset[2]),
+        sampleGrid(voxelRadiance, position + vertexOffset[3]),
+        sampleGrid(voxelRadiance, position + vertexOffset[4]),
+        sampleGrid(voxelRadiance, position + vertexOffset[5]),
+        sampleGrid(voxelRadiance, position + vertexOffset[6]),
+        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+
+    uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
+                   uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
+                   uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    // uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[5] > 0) << 2 |
+    //                uint(cornerData[4] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[2] > 0) << 5 |
+    //                uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    if (caseNum == 0 || caseNum == 255) return;
+
+    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
+    uint posIndex = FlattenIndex(position, cubeGridSize);
+
+    uint[3] axisMap = {1, 3, 4};
+    uint vertexIndex = atomicAdd(vertexCount, 4);
+    for (int axis = 0; axis < 3; axis++) {
+        vec2 edgeData = clamp(vec2(cornerData[0], cornerData[axisMap[axis]]), 0, 1);
+        // if (edgeData.x > 0 != edgeData.y > 0) {
+        if (sign(edgeData.x) != sign(edgeData.y)) {
+            if (edgeData.y > 0) {
+                edgeData.x = 1;
+                edgeData.y = 1 - edgeData.y;
+            }
+            vec3 voxelPos = vec3(position) + AxisDirections[axis] * (edgeData.x + edgeData.y) * 0.5;
+            // vec3 voxelPos = vec3(position) + AxisDirections[axis] * 0.5;
+            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+
+            // Emit vertex
+            vertices[vertexIndex + axis] = worldPosition;
+            indexLookup[posIndex * 4 + axis] = vertexIndex + axis;
+        } else {
+            indexLookup[posIndex * 4 + axis] = 0;
+        }
+    }
+
+    if (triangleCaseMaybeExtraVertex[caseNum]) {
+        // TODO: Compute weighted center vertex based on average edge intersection
+        vec3 voxelPos = vec3(position) + edges[12];
+        vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+
+        // Emit vertex
+        vertices[vertexIndex + 3] = worldPosition;
+        indexLookup[posIndex * 4 + 3] = vertexIndex + 3;
+    } else {
+        indexLookup[posIndex * 4 + 3] = 0;
+    }
+}
