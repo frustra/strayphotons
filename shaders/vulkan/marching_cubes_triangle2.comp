@@ -11,7 +11,6 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
 #include "../lib/types_common.glsl"
 #include "../lib/voxel_shared.glsl"
-#include "lib/marching_cubes2.glsl"
 #include "lib/scene.glsl"
 
 layout(binding = 0) uniform VoxelStateUniform {
@@ -21,6 +20,7 @@ layout(binding = 0) uniform VoxelStateUniform {
 layout(binding = 1) uniform sampler3D voxelRadiance;
 
 layout(std430, binding = 2) buffer IndexLookupBuffer {
+    uint time;
     uint vertexCount;
     uint indexLookup[];
 };
@@ -42,6 +42,8 @@ layout(std430, binding = 6) readonly buffer TriangleCaseOffsets {
 layout(std430, binding = 7) readonly buffer CaseTests {
     int caseTests[];
 };
+
+#include "lib/marching_cubes2.glsl"
 
 layout(constant_id = 0) const int CUBE_LAYER = 0;
 
@@ -297,11 +299,9 @@ void main() {
         if (abs(test) < 7) {
             // int bit = (sampleGrid(voxelRadiance, vec3(position) + testPos[abs(test) - 1])) > 0 ? 1 : 0;
             int bit = testFace(cornerData, test) ? 1 : 0;
-            if (test < 0) bit ^= 1;
             testResult |= bit << (abs(test) - 1);
         } else {
             int bit = testInterior(cornerData, caseNum, caseInteriorEdge[caseNum * 64 + testResult], test) ? 1 : 0;
-            // if (test < 0) bit ^= 1;
             testResult |= bit << (abs(test) - 1);
         }
     }

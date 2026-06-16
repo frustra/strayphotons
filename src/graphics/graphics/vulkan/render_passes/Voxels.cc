@@ -858,7 +858,7 @@ namespace sp::vulkan::renderer {
                     Access::None);
 
                 builder.CreateBuffer("IndexLookup",
-                    {sizeof(uint32_t), 1 + 4 * cubeCount},
+                    {sizeof(uint32_t), 2 + 4 * cubeCount},
                     Residency::GPU_ONLY,
                     Access::TransferWrite);
 
@@ -868,9 +868,11 @@ namespace sp::vulkan::renderer {
                     Access::TransferWrite);
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                static uint32_t time = 0;
                 auto lookupBuffer = resources.GetBuffer("IndexLookup");
-                cmd.Raw().fillBuffer(*lookupBuffer, 0, sizeof(uint32_t), 1u);
-                cmd.Raw().fillBuffer(*lookupBuffer, sizeof(uint32_t), sizeof(glm::vec3), 0u);
+                cmd.Raw().fillBuffer(*lookupBuffer, 0, sizeof(uint32_t), time++);
+                cmd.Raw().fillBuffer(*lookupBuffer, sizeof(uint32_t), sizeof(uint32_t), 1u);
+                cmd.Raw().fillBuffer(*lookupBuffer, 2 * sizeof(uint32_t), sizeof(glm::vec3), 0u);
                 auto indexBuffer = resources.GetBuffer("IndexBuffer");
                 cmd.Raw().fillBuffer(*indexBuffer, 0, sizeof(VkDrawIndexedIndirectCommand), 0u);
                 cmd.Raw().fillBuffer(*indexBuffer,
