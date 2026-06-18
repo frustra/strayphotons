@@ -47,114 +47,92 @@ layout(std430, binding = 7) readonly buffer CaseTests {
 
 layout(constant_id = 0) const int CUBE_LAYER = 0;
 
-bool testInterior(float[8] _cube, uint _case, int edge, int s) {
-
-    float t, At = 0, Bt = 0, Ct = 0, Dt = 0, a, b;
-    int test = 0;
-
-    switch (_case) {
+// Implemented using reference algorithm: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
+bool testInterior(float[8] cornerData, uint caseNum, int edge, int s) {
+    float t = 0;
+    mat2 corners = mat2(0, 0, 0, 0);
+    switch (caseNum) {
     case 4:
     case 10:
-        a = (_cube[4] - _cube[0]) * (_cube[6] - _cube[2]) - (_cube[7] - _cube[3]) * (_cube[5] - _cube[1]);
-        b = _cube[2] * (_cube[4] - _cube[0]) + _cube[0] * (_cube[6] - _cube[2]) - _cube[1] * (_cube[7] - _cube[3]) -
-            _cube[3] * (_cube[5] - _cube[1]);
+        float a = (cornerData[4] - cornerData[0]) * (cornerData[6] - cornerData[2]) -
+                  (cornerData[7] - cornerData[3]) * (cornerData[5] - cornerData[1]);
+        float b = cornerData[2] * (cornerData[4] - cornerData[0]) + cornerData[0] * (cornerData[6] - cornerData[2]) -
+                  cornerData[1] * (cornerData[7] - cornerData[3]) - cornerData[3] * (cornerData[5] - cornerData[1]);
         t = -b / (2 * a);
         if (t < 0 || t > 1) return s > 0;
 
-        At = _cube[0] + (_cube[4] - _cube[0]) * t;
-        Bt = _cube[3] + (_cube[7] - _cube[3]) * t;
-        Ct = _cube[2] + (_cube[6] - _cube[2]) * t;
-        Dt = _cube[1] + (_cube[5] - _cube[1]) * t;
+        corners[0][0] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+        corners[1][0] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+        corners[1][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+        corners[0][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
         break;
 
     case 6:
     case 7:
     case 12:
     case 13:
+        t = cornerData[edges[edge][0]] / (cornerData[edges[edge][0]] - cornerData[edges[edge][1]]);
+        corners[0][0] = 0;
         switch (edge) {
         case 0:
-            t = _cube[0] / (_cube[0] - _cube[1]);
-            At = 0;
-            Bt = _cube[3] + (_cube[2] - _cube[3]) * t;
-            Ct = _cube[7] + (_cube[6] - _cube[7]) * t;
-            Dt = _cube[4] + (_cube[5] - _cube[4]) * t;
+            corners[1][0] = cornerData[3] + (cornerData[2] - cornerData[3]) * t;
+            corners[1][1] = cornerData[7] + (cornerData[6] - cornerData[7]) * t;
+            corners[0][1] = cornerData[4] + (cornerData[5] - cornerData[4]) * t;
             break;
         case 1:
-            t = _cube[1] / (_cube[1] - _cube[2]);
-            At = 0;
-            Bt = _cube[0] + (_cube[3] - _cube[0]) * t;
-            Ct = _cube[4] + (_cube[7] - _cube[4]) * t;
-            Dt = _cube[5] + (_cube[6] - _cube[5]) * t;
+            corners[1][0] = cornerData[0] + (cornerData[3] - cornerData[0]) * t;
+            corners[1][1] = cornerData[4] + (cornerData[7] - cornerData[4]) * t;
+            corners[0][1] = cornerData[5] + (cornerData[6] - cornerData[5]) * t;
             break;
         case 2:
-            t = _cube[2] / (_cube[2] - _cube[3]);
-            At = 0;
-            Bt = _cube[1] + (_cube[0] - _cube[1]) * t;
-            Ct = _cube[5] + (_cube[4] - _cube[5]) * t;
-            Dt = _cube[6] + (_cube[7] - _cube[6]) * t;
+            corners[1][0] = cornerData[1] + (cornerData[0] - cornerData[1]) * t;
+            corners[1][1] = cornerData[5] + (cornerData[4] - cornerData[5]) * t;
+            corners[0][1] = cornerData[6] + (cornerData[7] - cornerData[6]) * t;
             break;
         case 3:
-            t = _cube[3] / (_cube[3] - _cube[0]);
-            At = 0;
-            Bt = _cube[2] + (_cube[1] - _cube[2]) * t;
-            Ct = _cube[6] + (_cube[5] - _cube[6]) * t;
-            Dt = _cube[7] + (_cube[4] - _cube[7]) * t;
+            corners[1][0] = cornerData[2] + (cornerData[1] - cornerData[2]) * t;
+            corners[1][1] = cornerData[6] + (cornerData[5] - cornerData[6]) * t;
+            corners[0][1] = cornerData[7] + (cornerData[4] - cornerData[7]) * t;
             break;
         case 4:
-            t = _cube[4] / (_cube[4] - _cube[5]);
-            At = 0;
-            Bt = _cube[7] + (_cube[6] - _cube[7]) * t;
-            Ct = _cube[3] + (_cube[2] - _cube[3]) * t;
-            Dt = _cube[0] + (_cube[1] - _cube[0]) * t;
+            corners[1][0] = cornerData[7] + (cornerData[6] - cornerData[7]) * t;
+            corners[1][1] = cornerData[3] + (cornerData[2] - cornerData[3]) * t;
+            corners[0][1] = cornerData[0] + (cornerData[1] - cornerData[0]) * t;
             break;
         case 5:
-            t = _cube[5] / (_cube[5] - _cube[6]);
-            At = 0;
-            Bt = _cube[4] + (_cube[7] - _cube[4]) * t;
-            Ct = _cube[0] + (_cube[3] - _cube[0]) * t;
-            Dt = _cube[1] + (_cube[2] - _cube[1]) * t;
+            corners[1][0] = cornerData[4] + (cornerData[7] - cornerData[4]) * t;
+            corners[1][1] = cornerData[0] + (cornerData[3] - cornerData[0]) * t;
+            corners[0][1] = cornerData[1] + (cornerData[2] - cornerData[1]) * t;
             break;
         case 6:
-            t = _cube[6] / (_cube[6] - _cube[7]);
-            At = 0;
-            Bt = _cube[5] + (_cube[4] - _cube[5]) * t;
-            Ct = _cube[1] + (_cube[0] - _cube[1]) * t;
-            Dt = _cube[2] + (_cube[3] - _cube[2]) * t;
+            corners[1][0] = cornerData[5] + (cornerData[4] - cornerData[5]) * t;
+            corners[1][1] = cornerData[1] + (cornerData[0] - cornerData[1]) * t;
+            corners[0][1] = cornerData[2] + (cornerData[3] - cornerData[2]) * t;
             break;
         case 7:
-            t = _cube[7] / (_cube[7] - _cube[4]);
-            At = 0;
-            Bt = _cube[6] + (_cube[5] - _cube[6]) * t;
-            Ct = _cube[2] + (_cube[1] - _cube[2]) * t;
-            Dt = _cube[3] + (_cube[0] - _cube[3]) * t;
+            corners[1][0] = cornerData[6] + (cornerData[5] - cornerData[6]) * t;
+            corners[1][1] = cornerData[2] + (cornerData[1] - cornerData[2]) * t;
+            corners[0][1] = cornerData[3] + (cornerData[0] - cornerData[3]) * t;
             break;
         case 8:
-            t = _cube[0] / (_cube[0] - _cube[4]);
-            At = 0;
-            Bt = _cube[3] + (_cube[7] - _cube[3]) * t;
-            Ct = _cube[2] + (_cube[6] - _cube[2]) * t;
-            Dt = _cube[1] + (_cube[5] - _cube[1]) * t;
+            corners[1][0] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+            corners[1][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+            corners[0][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
             break;
         case 9:
-            t = _cube[1] / (_cube[1] - _cube[5]);
-            At = 0;
-            Bt = _cube[0] + (_cube[4] - _cube[0]) * t;
-            Ct = _cube[3] + (_cube[7] - _cube[3]) * t;
-            Dt = _cube[2] + (_cube[6] - _cube[2]) * t;
+            corners[1][0] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+            corners[1][1] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+            corners[0][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
             break;
         case 10:
-            t = _cube[2] / (_cube[2] - _cube[6]);
-            At = 0;
-            Bt = _cube[1] + (_cube[5] - _cube[1]) * t;
-            Ct = _cube[0] + (_cube[4] - _cube[0]) * t;
-            Dt = _cube[3] + (_cube[7] - _cube[3]) * t;
+            corners[1][0] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+            corners[1][1] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+            corners[0][1] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
             break;
         case 11:
-            t = _cube[3] / (_cube[3] - _cube[7]);
-            At = 0;
-            Bt = _cube[2] + (_cube[6] - _cube[2]) * t;
-            Ct = _cube[1] + (_cube[5] - _cube[1]) * t;
-            Dt = _cube[0] + (_cube[4] - _cube[0]) * t;
+            corners[1][0] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+            corners[1][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+            corners[0][1] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
             break;
         default:
             break;
@@ -165,10 +143,11 @@ bool testInterior(float[8] _cube, uint _case, int edge, int s) {
         break;
     }
 
-    if (At >= 0) test++;
-    if (Bt >= 0) test += 2;
-    if (Ct >= 0) test += 4;
-    if (Dt >= 0) test += 8;
+    int test = 0;
+    if (corners[0][0] >= 0) test++;
+    if (corners[1][0] >= 0) test += 2;
+    if (corners[1][1] >= 0) test += 4;
+    if (corners[0][1] >= 0) test += 8;
     switch (test) {
     case 0:
         return s > 0;
@@ -181,7 +160,7 @@ bool testInterior(float[8] _cube, uint _case, int edge, int s) {
     case 4:
         return s > 0;
     case 5:
-        if (At * Ct - Bt * Dt < 0.00001) return s > 0;
+        if (determinant(corners) < 0.00001) return s > 0;
         break;
     case 6:
         return s > 0;
@@ -192,7 +171,7 @@ bool testInterior(float[8] _cube, uint _case, int edge, int s) {
     case 9:
         return s > 0;
     case 10:
-        if (At * Ct - Bt * Dt >= 0.00001) return s > 0;
+        if (determinant(corners) >= 0.00001) return s > 0;
         break;
     case 11:
         return s < 0;
@@ -209,61 +188,14 @@ bool testInterior(float[8] _cube, uint _case, int edge, int s) {
     return s < 0;
 }
 
-bool testFace(float[8] _cube, int face) {
-    float A;
-    float B;
-    float C;
-    float D;
+// Implemented using reference algorithm: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
+bool testFace(float[8] cornerData, int face) {
+    uint i = abs(face) - 1;
+    mat2 corners = mat2(cornerData[faces[i].x], cornerData[faces[i].y], cornerData[faces[i].w], cornerData[faces[i].z]);
 
-    switch (face) {
-    case -1:
-    case 1:
-        A = _cube[0];
-        B = _cube[4];
-        C = _cube[5];
-        D = _cube[1];
-        break;
-    case -2:
-    case 2:
-        A = _cube[1];
-        B = _cube[5];
-        C = _cube[6];
-        D = _cube[2];
-        break;
-    case -3:
-    case 3:
-        A = _cube[2];
-        B = _cube[6];
-        C = _cube[7];
-        D = _cube[3];
-        break;
-    case -4:
-    case 4:
-        A = _cube[3];
-        B = _cube[7];
-        C = _cube[4];
-        D = _cube[0];
-        break;
-    case -5:
-    case 5:
-        A = _cube[0];
-        B = _cube[3];
-        C = _cube[2];
-        D = _cube[1];
-        break;
-    case -6:
-    case 6:
-        A = _cube[4];
-        B = _cube[7];
-        C = _cube[6];
-        D = _cube[5];
-        break;
-    default:
-        A = B = C = D = 0;
-    };
-
-    if (abs(A * C - B * D) < 0.00001) return face >= 0;
-    return face * A * (A * C - B * D) >= 0; // face and A invert signs
+    float det = determinant(corners);
+    if (abs(det) < 0.00001) return face >= 0;
+    return sign(face) * sign(corners[0][0]) * det >= 0;
 }
 
 void main() {
@@ -282,22 +214,16 @@ void main() {
     uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
                    uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
                    uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
-    // uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[5] > 0) << 2 |
-    //                uint(cornerData[4] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[2] > 0) << 5 |
-    //                uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
     if (caseNum == 0 || caseNum == 255) return;
 
     ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
     uint posIndex = FlattenIndex(position, cubeGridSize);
 
-    uint testCount = caseTestCount[caseNum];
     uint testResult = 0;
     for (int t = 0; t < 7; t++) {
         int test = caseTests[caseNum * 7 + t];
-        // int test = caseTestsFoo[caseNum][t];
         if (test == 0) break;
         if (abs(test) < 7) {
-            // int bit = (sampleGrid(voxelRadiance, vec3(position) + testPos[abs(test) - 1])) > 0 ? 1 : 0;
             int bit = testFace(cornerData, test) ? 1 : 0;
             testResult |= bit << (abs(test) - 1);
         } else {
@@ -308,8 +234,6 @@ void main() {
 
     uint bufferOffset = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2];
     uint indexCount = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2 + 1];
-    // uint bufferOffset = triangleCaseOffsetFoo[caseNum][testResult][0];
-    // uint indexCount = triangleCaseOffsetFoo[caseNum][testResult][1];
     for (int i = 0; i < indexCount; i += 3) {
         if (i + 2 >= indexCount) break;
         uvec3 edgeNums = uvec3(triangleIndexBuffer[bufferOffset + i],

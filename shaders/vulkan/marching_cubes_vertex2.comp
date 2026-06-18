@@ -49,26 +49,32 @@ void main() {
     uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
                    uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
                    uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
-    // uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[5] > 0) << 2 |
-    //                uint(cornerData[4] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[2] > 0) << 5 |
-    //                uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
     if (caseNum == 0 || caseNum == 255) return;
 
     ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
     uint posIndex = FlattenIndex(position, cubeGridSize);
 
-    uint[3] axisMap = {1, 3, 4};
-    uint vertexIndex = atomicAdd(vertexCount, 4);
-    for (int axis = 0; axis < 3; axis++) {
-        vec2 edgeData = vec2(cornerData[0], cornerData[axisMap[axis]]);
-        // if (edgeData.x > 0 != edgeData.y > 0) {
+    float[12] edgeIntersection;
+    vec4 intersectionSum = vec4(0);
+    for (int edge = 0; edge < 12; edge++) {
+        vec2 edgeData = vec2(cornerData[edges[edge].x], cornerData[edges[edge].y]);
         if (sign(edgeData.x) != sign(edgeData.y)) {
             float intersection = clamp(-edgeData.x / (edgeData.y - edgeData.x), 0, 1);
-            vec3 voxelPos = vec3(position) + AxisDirections[axis] * intersection;
-            // vec3 voxelPos = vec3(position) + AxisDirections[axis] * 0.5;
-            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+            intersectionSum += vec4(edgeLookup[edge].xyz + AxisDirections[edgeLookup[edge].w] * intersection, 1);
+            edgeIntersection[edge] = intersection;
+        } else {
+            edgeIntersection[edge] = -1;
+        }
+    }
 
-            // Emit vertex
+    uint[3] axisEdgeMap = {0, 3, 8};
+    uint vertexIndex = atomicAdd(vertexCount, 4);
+    for (uint axis = 0; axis < 3; axis++) {
+        uint edge = axisEdgeMap[axis];
+        if (edgeIntersection[edge] >= 0) {
+            // Emit edge vertex
+            vec3 voxelPos = vec3(position) + AxisDirections[axis] * edgeIntersection[edge];
+            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
             vertices[vertexIndex + axis] = worldPosition;
             indexLookup[posIndex * 4 + axis] = vertexIndex + axis;
         } else {
@@ -76,15 +82,9 @@ void main() {
         }
     }
 
-    if (triangleCaseMaybeExtraVertex[caseNum]) {
-        // TODO: Compute weighted center vertex based on average edge intersection
-        vec3 voxelPos = vec3(position) + edges[12];
-        vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
-
-        // Emit vertex
-        vertices[vertexIndex + 3] = worldPosition;
-        indexLookup[posIndex * 4 + 3] = vertexIndex + 3;
-    } else {
-        indexLookup[posIndex * 4 + 3] = 0;
-    }
+    // Emit center vertex
+    vec3 voxelPos = vec3(position) + intersectionSum.xyz / intersectionSum.w;
+    vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+    vertices[vertexIndex + 3] = worldPosition;
+    indexLookup[posIndex * 4 + 3] = vertexIndex + 3;
 }

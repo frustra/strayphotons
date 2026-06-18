@@ -47,7 +47,6 @@ void main() {
 
     for (int axis = 0; axis < 3; axis++) {
         vec2 edgeData = vec2(cornerData[0], cornerData[1 + axis]);
-        // if (edgeData.x > 0 != edgeData.y > 0) {
         if (sign(edgeData.x) != sign(edgeData.y)) {
             float intersection = clamp(-edgeData.x / (edgeData.y - edgeData.x), 0, 1);
             vec3 voxelPos = vec3(position) + AxisDirections[axis] * intersection;
