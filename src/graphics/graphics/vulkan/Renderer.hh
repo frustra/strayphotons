@@ -15,6 +15,7 @@
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_passes/Emissive.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
+#include "graphics/vulkan/render_passes/MarchingCubes.hh"
 #include "graphics/vulkan/render_passes/SMAA.hh"
 #include "graphics/vulkan/render_passes/Screenshots.hh"
 #include "graphics/vulkan/render_passes/Transparency.hh"
@@ -79,6 +80,7 @@ namespace sp::vulkan {
         GPUScene scene;
 
         renderer::Voxels voxels;
+        renderer::MarchingCubes marchingCubes;
         renderer::Lighting lighting;
         renderer::Transparency transparency;
         renderer::Emissive emissive;

@@ -26,7 +26,7 @@ layout(std430, binding = 2) buffer IndexLookupBuffer {
 };
 
 layout(std430, binding = 3) buffer VertexBuffer {
-    vec4 vertices[];
+    SceneVertex vertices[];
 };
 
 #include "lib/marching_cubes2.glsl"
@@ -55,15 +55,27 @@ void main() {
     uint posIndex = FlattenIndex(position, cubeGridSize);
 
     float[12] edgeIntersection;
+    vec3[12] edgeNormal;
     vec4 intersectionSum = vec4(0);
+    vec3 normalSum = vec3(0);
     for (int edge = 0; edge < 12; edge++) {
         vec2 edgeData = vec2(cornerData[edges[edge].x], cornerData[edges[edge].y]);
         if (sign(edgeData.x) != sign(edgeData.y)) {
             float intersection = clamp(-edgeData.x / (edgeData.y - edgeData.x), 0, 1);
-            intersectionSum += vec4(edgeLookup[edge].xyz + AxisDirections[edgeLookup[edge].w] * intersection, 1);
             edgeIntersection[edge] = intersection;
+            vec3 intersectionPos = edgeLookup[edge].xyz + AxisDirections[edgeLookup[edge].w] * intersection;
+            intersectionSum += vec4(intersectionPos, 1);
+            vec3 normal;
+            for (int axis = 0; axis < 3; axis++) {
+                normal[axis] = sampleGrid(voxelRadiance, vec3(position) + intersectionPos - AxisDirections[axis]) -
+                               sampleGrid(voxelRadiance, vec3(position) + intersectionPos + AxisDirections[axis]);
+            }
+            normal = normalize(normal);
+            normalSum += normal;
+            edgeNormal[edge] = normal;
         } else {
             edgeIntersection[edge] = -1;
+            edgeNormal[edge] = vec3(0);
         }
     }
 
@@ -75,7 +87,12 @@ void main() {
             // Emit edge vertex
             vec3 voxelPos = vec3(position) + AxisDirections[axis] * edgeIntersection[edge];
             vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
-            vertices[vertexIndex + axis] = worldPosition;
+            vec3 normal = transpose(mat3(voxelInfo.worldToVoxel)) * edgeNormal[edge];
+            SceneVertex vertex;
+            vertex.positionAndNormalX = vec4(worldPosition.xyz, normal.x);
+            vertex.normalYZ = normal.yz;
+            vertex.uv = vec2(0);
+            vertices[vertexIndex + axis] = vertex;
             indexLookup[posIndex * 4 + axis] = vertexIndex + axis;
         } else {
             indexLookup[posIndex * 4 + axis] = 0;
@@ -85,6 +102,11 @@ void main() {
     // Emit center vertex
     vec3 voxelPos = vec3(position) + intersectionSum.xyz / intersectionSum.w;
     vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
-    vertices[vertexIndex + 3] = worldPosition;
+    vec3 normal = transpose(mat3(voxelInfo.worldToVoxel)) * normalize(normalSum);
+    SceneVertex vertex;
+    vertex.positionAndNormalX = vec4(worldPosition.xyz, normal.x);
+    vertex.normalYZ = normal.yz;
+    vertex.uv = vec2(0);
+    vertices[vertexIndex + 3] = vertex;
     indexLookup[posIndex * 4 + 3] = vertexIndex + 3;
 }

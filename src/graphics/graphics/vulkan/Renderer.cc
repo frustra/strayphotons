@@ -25,6 +25,7 @@
 #include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/LightSensors.hh"
+#include "graphics/vulkan/render_passes/MarchingCubes.hh"
 #include "graphics/vulkan/render_passes/Outline.hh"
 #include "graphics/vulkan/render_passes/Skybox.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
@@ -60,7 +61,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device, rg::RenderGraph &graph, Compositor &compositor)
         : game(game), device(device), graph(graph), compositor(compositor), scene(device), voxels(scene),
-          lighting(scene, voxels), transparency(scene, voxels), emissive(scene) {
+          marchingCubes(scene), lighting(scene, voxels), transparency(scene, voxels), emissive(scene) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -220,6 +221,7 @@ namespace sp::vulkan {
             scene.LoadState(graph, lock);
             lighting.LoadState(graph, lock);
             voxels.LoadState(graph, lock);
+            marchingCubes.LoadState(graph, lock);
 
             scene.AddGeometryWarp(graph);
             lighting.AddShadowPasses(graph);
@@ -228,7 +230,7 @@ namespace sp::vulkan {
             voxels.AddVoxelizationInit(graph, lighting);
             voxels.AddVoxelization(graph, lighting);
             voxels.AddVoxelization2(graph, lighting);
-            voxels.AddMarchingCubes(graph);
+            marchingCubes.AddMarchingCubes(graph, voxels);
             renderer::AddLightSensors(graph, scene, lock);
 
             AddViewOutputs(lock, elapsedTime);
@@ -401,6 +403,10 @@ namespace sp::vulkan {
 
                 builder.Read("ViewState", Access::VertexShaderReadUniform);
 
+                builder.ReadPreviousFrame("/MarchingCubes/VertexBuffer", Access::VertexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
@@ -414,6 +420,18 @@ namespace sp::vulkan {
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
+
+                auto vertexID = resources.GetID("MarchingCubes/VertexBuffer", false, 1);
+                auto indexID = resources.GetID("MarchingCubes/IndexBuffer", false, 1);
+                if (vertexID != rg::InvalidResource && indexID != rg::InvalidResource) {
+                    auto vertexBuffer = resources.GetBuffer(vertexID);
+                    auto indexBuffer = resources.GetBuffer(indexID);
+                    cmd.Raw().bindIndexBuffer(*indexBuffer,
+                        sizeof(VkDrawIndexedIndirectCommand),
+                        vk::IndexType::eUint32);
+                    cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+                    cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                }
             });
         return view;
     }
@@ -631,6 +649,7 @@ namespace sp::vulkan {
         }
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
+        marchingCubes.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);

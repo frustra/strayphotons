@@ -1,5 +1,9 @@
 #include <cstdint>
 
+// Data translated from reference: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
+
+// Face/center tests combine into a 7 bit TestResult which keys into triangleCaseOffset
+// Negative values invert the test result
 static const int32_t caseTests[256][7] = {
     // clang-format off
 	{0, 0, 0, 0, 0, 0, 0},
@@ -261,6 +265,7 @@ static const int32_t caseTests[256][7] = {
     // clang-format on
 };
 
+// Edge number used for calculating the center plane in cube interior tests
 const int caseInteriorEdge[256][64] = {
     // clang-format off
 	{
@@ -1290,6 +1295,7 @@ const int caseInteriorEdge[256][64] = {
     // clang-format on
 };
 
+// Case-TestResult key looks up a pair {offset in triangleIndexBuffer, number of indexes}
 static const uint32_t triangleCaseOffset[256][128][2] = {
     // clang-format off
 	{
@@ -2831,8 +2837,9 @@ static const uint32_t triangleCaseOffset[256][128][2] = {
     // clang-format on
 };
 
+// Triangle edge numbers in pairs of 3, edge 12 represents a center vertex
+// Indexes into edges[] in the GPU shader
 static const uint32_t triangleIndexBuffer[11709] = {
-    // Indexes point to edges[] array in pairs of 3
     // clang-format off
 	0, 8, 3, 0, 1, 9, 1, 8, 3, 9, 8, 1, 1, 2, 10, 0, 8, 3, 1, 2, 10, 10, 3, 2, 10, 8, 3, 10, 1, 0, 8, 10,
 	0, 9, 2, 10, 0, 2, 9, 2, 8, 3, 2, 10, 8, 10, 9, 8, 3, 11, 2, 0, 11, 2, 8, 11, 0, 1, 9, 0, 2, 3, 11, 11,

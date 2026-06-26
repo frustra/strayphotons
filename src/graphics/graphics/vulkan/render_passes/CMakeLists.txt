@@ -17,6 +17,7 @@ target_sources(${PROJECT_GRAPHICS_VULKAN_CORE_LIB} PRIVATE
     SMAA.cc
     Lighting.cc
     LightSensors.cc
+    MarchingCubes.cc
     Outline.cc
     Tonemap.cc
     Transparency.cc

@@ -11,6 +11,7 @@
 #include "game/Scene.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
@@ -423,6 +424,10 @@ namespace sp::vulkan::renderer {
 
                 builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
 
+                builder.ReadPreviousFrame("/MarchingCubes/VertexBuffer", Access::VertexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
@@ -444,6 +449,18 @@ namespace sp::vulkan::renderer {
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
                         resources.GetBuffer(drawAllIDs.drawParamsBuffer));
+
+                    auto vertexID = resources.GetID("/MarchingCubes/VertexBuffer", false, 1);
+                    auto indexID = resources.GetID("/MarchingCubes/IndexBuffer", false, 1);
+                    if (vertexID != rg::InvalidResource && indexID != rg::InvalidResource) {
+                        auto vertexBuffer = resources.GetBuffer(vertexID);
+                        auto indexBuffer = resources.GetBuffer(indexID);
+                        cmd.Raw().bindIndexBuffer(*indexBuffer,
+                            sizeof(VkDrawIndexedIndirectCommand),
+                            vk::IndexType::eUint32);
+                        cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+                        cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                    }
                 }
             });
 
@@ -633,7 +650,6 @@ namespace sp::vulkan::renderer {
                 for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
                     cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
                 }
-                // cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
 
                 cmd.Draw(3);
             });
