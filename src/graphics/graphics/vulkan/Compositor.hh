@@ -99,8 +99,6 @@ namespace sp::vulkan {
         LockFreeMutex dynamicSourceMutex;
         robin_hood::unordered_map<ecs::Entity, DynamicImageSource> dynamicImageSources;
 
-        std::unique_ptr<VertexLayout> vertexLayout;
-
         std::shared_ptr<ImFontAtlas> fontAtlas;
         AsyncPtr<ImageView> fontView;
     };

@@ -10,10 +10,9 @@
 #include "physx/PhysxUtils.hh"
 
 #include <glm/gtx/string_cast.hpp>
-#include <limits>
 
 bool floatEqual(float a, float b) {
-    float feps = std::numeric_limits<float>::epsilon() * 5.0f;
+    float feps = 2e-6; // std::numeric_limits<float>::epsilon() * 5.0f;
     return (a - feps < b) && (a + feps > b);
 }
 
@@ -36,6 +35,21 @@ void sp::PhysxManager::RegisterDebugCommands() {
             }
             auto &tree = entity.Get<ecs::TransformTree>(lock);
             tree.pose.SetPosition(position);
+            entity.Get<ecs::TransformSnapshot>(lock).globalPose = tree.GetGlobalTransform(lock);
+        });
+
+    funcs.Register<ecs::EntityRef, ecs::EntityRef>("set_parent",
+        "Sets an entity's transform parent to the specified entity (set_parent <entity> <parent>)",
+        [](ecs::EntityRef entityRef, ecs::EntityRef parentRef) {
+            auto lock = ecs::StartTransaction<ecs::Write<ecs::TransformTree, ecs::TransformSnapshot>>();
+            ecs::Entity entity = entityRef.Get(lock);
+            if (!entity.Exists(lock)) {
+                Abortf("Entity does not exist: %s", entityRef.Name().String());
+            } else if (!entity.Has<ecs::TransformTree, ecs::TransformSnapshot>(lock)) {
+                Abortf("Entity has no TransformTree and/or TransformSnapshot component: %s", entityRef.Name().String());
+            }
+            auto &tree = entity.Get<ecs::TransformTree>(lock);
+            tree.parent = parentRef;
             entity.Get<ecs::TransformSnapshot>(lock).globalPose = tree.GetGlobalTransform(lock);
         });
 

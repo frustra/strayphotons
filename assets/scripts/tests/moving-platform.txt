@@ -4,21 +4,44 @@ steplogic
 stepphysics
 assert_screenshot moving-platform-frame0.png
 stepgraphics
+set_parent moving-platform:button_holder
 setsignal moving-platform:platform_root/animation_target 3
 steplogic
-stepphysics 100
+stepphysics
+set_parent moving-platform:button_holder moving-platform:platform_root
+stepphysics 99
 assert_screenshot moving-platform-frame1.png
 stepgraphics
+assert_position moving-platform:platform_root 0.527654 0 0
+assert_position moving-platform:button_holder 0.527654 0.75 -2
+assert_position moving-platform:fixed_test 0.517215 1.8 -2
+assert_position moving-platform:force_test1 0.517215 1.6 -2
+assert_position moving-platform:force_test2 0.517215 1.7 -2
 stepphysics 499
 # Turn debug lines on 1 frame early to account for delay
 x.DebugColliders 1
 stepphysics
 assert_screenshot moving-platform-frame2.png
 stepgraphics
+assert_position moving-platform:platform_root 16.202106 0 0
+assert_position moving-platform:button_holder 16.202106 0.75 -2
+assert_position moving-platform:fixed_test 16.154259 1.8 -2
+assert_position moving-platform:force_test1 16.154259 1.6 -2
+assert_position moving-platform:force_test2 16.154259 1.7 -2
 stepphysics
 assert_screenshot moving-platform-frame2b.png
 stepgraphics
+assert_position moving-platform:platform_root 16.249996 0 0
+assert_position moving-platform:button_holder 16.249996 0.75 -2
+assert_position moving-platform:fixed_test 16.202106 1.8 -2
+assert_position moving-platform:force_test1 16.202106 1.6 -2
+assert_position moving-platform:force_test2 16.202106 1.7 -2
 x.DebugColliders 0
 stepphysics 500
 assert_screenshot moving-platform-frame3.png
 stepgraphics
+assert_position moving-platform:platform_root 44.114586 0 0
+assert_position moving-platform:button_holder 44.114586 0.75 -2
+assert_position moving-platform:fixed_test 44.055374 1.8 -2
+assert_position moving-platform:force_test1 44.055374 1.6 -2
+assert_position moving-platform:force_test2 44.055374 1.7 -2

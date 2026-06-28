@@ -26,10 +26,11 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
+#include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/Defer.hh"
-#include "strayphotons/gui/ImGuiHelpers.hh"
+#include "strayphotons/gui/GuiDrawData.hh"
 #include "vulkan/vulkan.hpp"
 
 #include <algorithm>
@@ -43,11 +44,6 @@
 
 namespace sp::vulkan {
     Compositor::Compositor(DeviceContext &device, rg::RenderGraph &graph) : device(device), graph(graph) {
-        vertexLayout = std::make_unique<VertexLayout>(0, sizeof(GuiDrawVertex));
-        vertexLayout->PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, pos));
-        vertexLayout->PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(GuiDrawVertex, uv));
-        vertexLayout->PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(GuiDrawVertex, col));
-
         fontAtlas = std::make_shared<ImFontAtlas>();
 
         static const ImWchar glyphRanges[] = {
@@ -668,6 +664,8 @@ namespace sp::vulkan {
                 idxDesc.residency = Residency::CPU_TO_GPU;
                 auto indexBuffer = cmd.Device().GetBuffer(idxDesc);
 
+                static_assert(sizeof(TextureColorVertex2D) == sizeof(GuiDrawVertex),
+                    "Vulkan vertex layout doesn't match GuiDrawVertex");
                 GuiDrawVertex *vtxData;
                 GuiDrawIndex *idxData;
                 vertexBuffer->Map((void **)&vtxData);
@@ -679,7 +677,7 @@ namespace sp::vulkan {
 
                 cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);
-                cmd.SetVertexLayout(*vertexLayout);
+                cmd.SetVertexLayout(TextureColorVertex2D::Layout());
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetDepthTest(false, false);
                 cmd.SetBlending(true);
@@ -792,7 +790,7 @@ namespace sp::vulkan {
 
                 cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);
-                cmd.SetVertexLayout(*vertexLayout);
+                cmd.SetVertexLayout(TextureColorVertex2D::Layout());
                 cmd.SetCullMode(vk::CullModeFlagBits::eNone);
                 cmd.SetDepthTest(false, false);
                 cmd.SetBlending(true);

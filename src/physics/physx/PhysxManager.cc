@@ -283,11 +283,11 @@ namespace sp {
                         auto &parentSnapshot = oldParent.Get<ecs::TransformSnapshot>(lock);
                         parentSnapshot.childEntities.erase(transformTreeEntity);
                     }
+                    snapshot.firstParent = parent;
                     if (!parent.Has<ecs::TransformSnapshot>(lock)) continue;
                     // Add the entity to the new parent's child list
                     auto &parentSnapshot = parent.Get<ecs::TransformSnapshot>(lock);
                     parentSnapshot.childEntities.emplace(transformTreeEntity);
-                    snapshot.firstParent = parent;
                 }
             }
             // Add character transform entities possibly modified within this transaction

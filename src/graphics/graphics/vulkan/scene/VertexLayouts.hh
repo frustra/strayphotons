@@ -42,16 +42,33 @@ namespace sp::vulkan {
         }
     };
 
+    struct TextureColorVertex2D {
+        glm::vec2 position;
+        glm::vec2 uv;
+        uint32_t color;
+
+        static VertexLayout Layout() {
+            static VertexLayout info;
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(TextureColorVertex2D));
+                info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(TextureColorVertex2D, position));
+                info.PushAttribute(1, 0, vk::Format::eR32G32Sfloat, offsetof(TextureColorVertex2D, uv));
+                info.PushAttribute(2, 0, vk::Format::eR8G8B8A8Unorm, offsetof(TextureColorVertex2D, color));
+            }
+            return info;
+        }
+    };
+
     struct ColorVertex2D {
         glm::vec2 position;
-        glm::vec3 color;
+        uint32_t color;
 
         static VertexLayout Layout() {
             static VertexLayout info;
             if (!info.bindingCount) {
                 info.PushBinding(0, sizeof(ColorVertex2D));
                 info.PushAttribute(0, 0, vk::Format::eR32G32Sfloat, offsetof(ColorVertex2D, position));
-                info.PushAttribute(1, 0, vk::Format::eR32G32B32Sfloat, offsetof(ColorVertex2D, color));
+                info.PushAttribute(1, 0, vk::Format::eR8G8B8A8Unorm, offsetof(ColorVertex2D, color));
             }
             return info;
         }
@@ -75,15 +92,13 @@ namespace sp::vulkan {
         glm::u16vec4 jointIndexes;
         float _padding[2];
 
-        static void AddLayout(VertexLayout &layout, int binding) {
-            layout.PushBinding(binding, sizeof(JointVertex));
-            layout.PushAttribute(0, 0, vk::Format::eR16G16B16A16Uint, offsetof(JointVertex, jointIndexes));
-            layout.PushAttribute(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(JointVertex, jointWeights));
-        }
-
         static VertexLayout Layout() {
             static VertexLayout info;
-            if (!info.bindingCount) AddLayout(info, 0);
+            if (!info.bindingCount) {
+                info.PushBinding(0, sizeof(JointVertex));
+                info.PushAttribute(0, 0, vk::Format::eR16G16B16A16Uint, offsetof(JointVertex, jointIndexes));
+                info.PushAttribute(1, 0, vk::Format::eR32G32B32A32Sfloat, offsetof(JointVertex, jointWeights));
+            }
             return info;
         }
     };

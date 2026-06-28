@@ -27,6 +27,7 @@ void life_cell_on_tick(void *context,
             sp_event_send(lock, ent, &event);
         }
         ctx->initialized = true;
+        state->definition.filter_on_event = true;
         return;
     }
 
@@ -58,7 +59,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].filter_on_event = false;
         sp_dynamic_script_definition_add_event(&output[0], "/life/neighbor_alive");
         sp_dynamic_script_definition_add_event(&output[0], "/life/toggle_alive");
-        sp_struct_field_t *fields = sp_struct_field_vector_resize(&output[0].fields, 3);
 
         sp_dynamic_script_definition_add_field(&output[0],
             "alive",
