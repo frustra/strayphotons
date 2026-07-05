@@ -45,7 +45,7 @@ namespace ecs {
         Transform localOffset = Transform();
         Transform remoteOffset = Transform();
 
-        bool operator==(const PhysicsJoint &) const = default;
+        bool operator==(const PhysicsJoint &) const noexcept = default;
     };
 
     static StructMetadata MetadataPhysicsJoint(typeid(PhysicsJoint),

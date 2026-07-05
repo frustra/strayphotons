@@ -132,18 +132,18 @@ namespace sp {
             data()[StorageT::size() - 2] = ch;
         }
 
-        reverse_iterator rend() {
-            return std::reverse_iterator(begin());
-        }
-        const const_reverse_iterator rend() const {
-            return std::reverse_iterator(begin());
-        }
-
         reverse_iterator rbegin() {
-            return rend() - size();
+            return std::reverse_iterator(end());
         }
         const_reverse_iterator rbegin() const {
-            return rend() - size();
+            return std::reverse_iterator(end());
+        }
+
+        reverse_iterator rend() noexcept {
+            return std::reverse_iterator(begin());
+        }
+        const const_reverse_iterator rend() const noexcept {
+            return std::reverse_iterator(begin());
         }
 
         char *data() {

@@ -59,5 +59,6 @@ float sampleGrid(sampler3D voxelRadiance, vec3 position) {
     ivec3 gridSize = textureSize(voxelRadiance, 0);
     // return texture(voxelRadiance, (position + 0.5) / gridSize, 0).a * 2 - 1;
     float sphere = 0.1 - length(vec3(position - gridSize / 2) / gridSize);
-    return PerlinNoise3D(vec3(position) * 0.05 + vec3(time * 0.01, 0, 0)) * 0.05 + sphere;
+    return PerlinNoise3D(vec3(position) * 0.1 + vec3(time * 0.01, 0, 0)) * 0.15 -
+           PerlinNoise3D(vec3(position) * 0.1 - vec3(0, time * 0.01, 0)) * 0.13 + sphere;
 }

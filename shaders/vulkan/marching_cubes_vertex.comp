@@ -26,7 +26,7 @@ layout(std430, binding = 2) buffer IndexLookupBuffer {
 };
 
 layout(std430, binding = 3) buffer VertexBuffer {
-    vec4 vertices[];
+    SceneVertex vertices[];
 };
 
 #include "lib/marching_cubes.glsl"
@@ -45,17 +45,28 @@ void main() {
     ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
     uint posIndex = FlattenIndex(position, cubeGridSize);
 
+    vec3 normal;
+    // Calculate a rough normal for this voxel
+    for (int axis = 0; axis < 3; axis++) {
+        normal[axis] = cornerData[0] - cornerData[1 + axis];
+    }
+    normal = transpose(mat3(voxelInfo.worldToVoxel)) * normalize(normal);
     for (int axis = 0; axis < 3; axis++) {
         vec2 edgeData = vec2(cornerData[0], cornerData[1 + axis]);
         if (sign(edgeData.x) != sign(edgeData.y)) {
             float intersection = clamp(-edgeData.x / (edgeData.y - edgeData.x), 0, 1);
             vec3 voxelPos = vec3(position) + AxisDirections[axis] * intersection;
             vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
-
             // Emit vertex
             uint vertexIndex = atomicAdd(vertexCount, 1);
-            vertices[vertexIndex] = worldPosition;
+            SceneVertex vertex;
+            vertex.positionAndNormalX = vec4(worldPosition.xyz, normal.x);
+            vertex.normalYZ = normal.yz;
+            vertex.uv = vec2(0);
+            vertices[vertexIndex] = vertex;
             indexLookup[posIndex * 3 + axis] = vertexIndex;
+        } else {
+            indexLookup[posIndex * 3 + axis] = 0;
         }
     }
 }

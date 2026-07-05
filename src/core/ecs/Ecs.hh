@@ -200,19 +200,19 @@ namespace ecs {
         });
     }
 
-    static inline bool IsLive(const Entity &e) {
+    static inline bool IsLive(const Entity &e) noexcept {
         return Tecs::IdentifierFromGeneration(e.generation) == World().GetInstanceId();
     }
 
-    static inline bool IsLive(const Lock<> &lock) {
+    static inline bool IsLive(const Lock<> &lock) noexcept {
         return lock.GetInstance().GetInstanceId() == World().GetInstanceId();
     }
 
-    static inline bool IsStaging(const Entity &e) {
+    static inline bool IsStaging(const Entity &e) noexcept {
         return Tecs::IdentifierFromGeneration(e.generation) == StagingWorld().GetInstanceId();
     }
 
-    static inline bool IsStaging(const Lock<> &lock) {
+    static inline bool IsStaging(const Lock<> &lock) noexcept {
         return lock.GetInstance().GetInstanceId() == StagingWorld().GetInstanceId();
     }
 }; // namespace ecs

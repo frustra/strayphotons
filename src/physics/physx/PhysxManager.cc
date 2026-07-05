@@ -115,7 +115,8 @@ namespace sp {
             }
         }
         joints.clear();
-        for (auto &actor : actors) {
+        auto actorsCopy = actors;
+        for (auto &actor : actorsCopy) {
             RemoveActor(actor.second);
         }
         actors.clear();

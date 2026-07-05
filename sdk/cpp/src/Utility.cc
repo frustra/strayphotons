@@ -26,11 +26,11 @@ namespace sp {
         throw std::runtime_error("sp::Abort() called");
     }
 
-    float angle_t::degrees() const {
+    float angle_t::degrees() const noexcept {
         return glm::degrees(radians_);
     }
 
-    bool is_float(std::string_view str) {
+    bool is_float(std::string_view str) noexcept {
         if (str.empty()) return false;
         int state = 0;
         // States:
@@ -59,22 +59,22 @@ namespace sp {
         return state > 1;
     }
 
-    bool all_lower(const std::string &str) {
+    bool all_lower(const std::string &str) noexcept {
         return std::all_of(str.begin(), str.end(), [](unsigned char c) {
             return std::islower(c);
         });
     }
 
     namespace boost_replacements {
-        bool starts_with(const std::string &str, const std::string &prefix) {
+        bool starts_with(const std::string &str, const std::string &prefix) noexcept {
             return str.rfind(prefix, 0) == 0;
         }
 
-        bool starts_with(const std::string_view &str, const std::string_view &prefix) {
+        bool starts_with(const std::string_view &str, const std::string_view &prefix) noexcept {
             return str.rfind(prefix, 0) == 0;
         }
 
-        bool ends_with(const std::string &str, const std::string &suffix) {
+        bool ends_with(const std::string &str, const std::string &suffix) noexcept {
             if (str.length() >= suffix.length()) {
                 return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
             } else {
@@ -82,7 +82,7 @@ namespace sp {
             }
         }
 
-        bool ends_with(const std::string_view &str, const std::string_view &suffix) {
+        bool ends_with(const std::string_view &str, const std::string_view &suffix) noexcept {
             if (str.length() >= suffix.length()) {
                 return (str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0);
             } else {
@@ -90,21 +90,21 @@ namespace sp {
             }
         }
 
-        std::string to_lower(std::string &str) {
+        std::string to_lower(std::string &str) noexcept {
             std::transform(str.begin(), str.end(), str.begin(), [](auto &ch) {
                 return std::tolower(ch);
             });
             return str;
         }
 
-        std::string to_upper(std::string &str) {
+        std::string to_upper(std::string &str) noexcept {
             std::transform(str.begin(), str.end(), str.begin(), [](auto &ch) {
                 return std::toupper(ch);
             });
             return str;
         }
 
-        std::string to_lower_copy(const std::string &str) {
+        std::string to_lower_copy(const std::string &str) noexcept {
             std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::tolower(ch);
@@ -112,7 +112,7 @@ namespace sp {
             return out;
         }
 
-        std::string to_upper_copy(const std::string &str) {
+        std::string to_upper_copy(const std::string &str) noexcept {
             std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::toupper(ch);
@@ -120,7 +120,7 @@ namespace sp {
             return out;
         }
 
-        std::string to_lower_copy(const std::string_view &str) {
+        std::string to_lower_copy(const std::string_view &str) noexcept {
             std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::tolower(ch);
@@ -128,7 +128,7 @@ namespace sp {
             return out;
         }
 
-        std::string to_upper_copy(const std::string_view &str) {
+        std::string to_upper_copy(const std::string_view &str) noexcept {
             std::string out(str);
             std::transform(str.begin(), str.end(), out.begin(), [](auto &ch) {
                 return std::toupper(ch);
@@ -136,49 +136,49 @@ namespace sp {
             return out;
         }
 
-        bool iequals(const std::string &str1, const std::string &str2) {
+        bool iequals(const std::string &str1, const std::string &str2) noexcept {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
             });
         }
 
-        bool iequals(const std::string_view &str1, const std::string_view &str2) {
+        bool iequals(const std::string_view &str1, const std::string_view &str2) noexcept {
             return std::equal(str1.begin(), str1.end(), str2.begin(), str2.end(), [](auto &a, auto &b) {
                 return std::tolower(a) == std::tolower(b);
             });
         }
 
-        void trim(std::string &str) {
+        void trim(std::string &str) noexcept {
             trim_right(str);
             trim_left(str);
         }
 
-        void trim_left(std::string &str) {
+        void trim_left(std::string &str) noexcept {
             auto left = std::find_if(str.begin(), str.end(), [](char ch) {
                 return !std::isspace(ch);
             });
             str.erase(str.begin(), left);
         }
 
-        void trim_right(std::string &str) {
+        void trim_right(std::string &str) noexcept {
             auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
                 return !std::isspace(ch);
             }).base();
             str.erase(right, str.end());
         }
 
-        std::string_view trim(const std::string_view &str) {
+        std::string_view trim(const std::string_view &str) noexcept {
             return trim_right(trim_left(str));
         }
 
-        std::string_view trim_left(const std::string_view &str) {
+        std::string_view trim_left(const std::string_view &str) noexcept {
             auto left = std::find_if(str.begin(), str.end(), [](char ch) {
                 return !std::isspace(ch);
             });
             return str.substr(left - str.begin());
         }
 
-        std::string_view trim_right(const std::string_view &str) {
+        std::string_view trim_right(const std::string_view &str) noexcept {
             auto right = std::find_if(str.rbegin(), str.rend(), [](char ch) {
                 return !std::isspace(ch);
             }).base();

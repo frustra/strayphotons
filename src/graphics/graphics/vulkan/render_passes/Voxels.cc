@@ -73,12 +73,7 @@ namespace sp::vulkan::renderer {
 
     Voxels::Voxels(GPUScene &scene) : scene(scene) {
         funcs.Register("printgraphics", "Print graphics debug information", [this]() {
-            if (debugThisFrame[0].test_and_set()) {
-                Warnf("Graphics frame already flagged for debug printing");
-            }
-        });
-        funcs.Register("printvoxels", "Print graphics debug information", [this]() {
-            if (debugThisFrame[1].test_and_set()) {
+            if (debugThisFrame.test_and_set()) {
                 Warnf("Graphics frame already flagged for debug printing");
             }
         });
@@ -476,8 +471,8 @@ namespace sp::vulkan::renderer {
             [this, listCount = fragmentListCount](BufferPtr buffer) {
                 ZoneScopedN("FragmentListReadback");
                 auto map = (const GPUVoxelFragmentList *)buffer->Mapped();
-                bool printDebug = debugThisFrame[0].test();
-                debugThisFrame[0].clear();
+                bool printDebug = debugThisFrame.test();
+                debugThisFrame.clear();
                 for (uint32_t i = 0; i < listCount; i++) {
                     if (printDebug) {
                         Logf("fragment list %d, count: %u, capacity %u", i, map[i].count, map[i].capacity);

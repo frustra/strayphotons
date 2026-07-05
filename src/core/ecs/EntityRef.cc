@@ -116,7 +116,7 @@ namespace ecs {
         Assertf(ptr, "EntityRef(%s, %s) is invalid", name.String(), std::to_string(ent));
     }
 
-    ecs::Name EntityRef::Name() const {
+    ecs::Name EntityRef::Name() const noexcept {
         return ptr ? ptr->name : ecs::Name();
     }
 
@@ -130,15 +130,15 @@ namespace ecs {
         }
     }
 
-    Entity EntityRef::GetLive() const {
+    Entity EntityRef::GetLive() const noexcept {
         return ptr ? ptr->liveEntity.load() : Entity();
     }
 
-    Entity EntityRef::GetStaging() const {
+    Entity EntityRef::GetStaging() const noexcept {
         return ptr ? ptr->stagingEntity.load() : Entity();
     }
 
-    bool EntityRef::IsValid() const {
+    bool EntityRef::IsValid() const noexcept {
         return !!ptr;
     }
 
@@ -152,11 +152,11 @@ namespace ecs {
         }
     }
 
-    void EntityRef::Clear() {
+    void EntityRef::Clear() noexcept {
         ptr.reset();
     }
 
-    EntityRef EntityRef::Empty() {
+    EntityRef EntityRef::Empty() noexcept {
         return EntityRef();
     }
 
@@ -164,7 +164,7 @@ namespace ecs {
         return EntityRef(ent);
     }
 
-    EntityRef EntityRef::Copy(const EntityRef &ref) {
+    EntityRef EntityRef::Copy(const EntityRef &ref) noexcept {
         return EntityRef(ref);
     }
 
@@ -172,7 +172,7 @@ namespace ecs {
         return EntityRef(ecs::Name(name, scope ? *scope : EntityScope{}));
     }
 
-    bool EntityRef::operator==(const EntityRef &other) const {
+    bool EntityRef::operator==(const EntityRef &other) const noexcept {
         if (!ptr || !other.ptr) return ptr == other.ptr;
         if (ptr == other.ptr) return true;
         auto live = ptr->liveEntity.load();
@@ -181,17 +181,17 @@ namespace ecs {
                (staging && staging == other.ptr->stagingEntity.load());
     }
 
-    bool EntityRef::operator==(const NamedEntity &other) const {
+    bool EntityRef::operator==(const NamedEntity &other) const noexcept {
         if (!ptr || !other) return false;
         return Name() == other.name;
     }
 
-    bool EntityRef::operator==(const Entity &other) const {
+    bool EntityRef::operator==(const Entity &other) const noexcept {
         if (!ptr || !other) return false;
         return ptr->liveEntity.load() == other || ptr->stagingEntity.load() == other;
     }
 
-    bool EntityRef::operator<(const EntityRef &other) const {
+    bool EntityRef::operator<(const EntityRef &other) const noexcept {
         return Name() < other.Name();
     }
 } // namespace ecs

@@ -25,7 +25,7 @@ namespace sp {
     [[noreturn]] void Abort();
 
     template<typename T>
-    T CeilToPowerOfTwo(T v) {
+    T CeilToPowerOfTwo(T v) noexcept {
         static_assert(std::is_unsigned<T>(), "CeilToPowerOfTwo expects unsigned integer types");
         v--;
         v |= v >> 1;
@@ -45,7 +45,7 @@ namespace sp {
     }
 
     template<typename T>
-    T UintLog2(T v) {
+    T UintLog2(T v) noexcept {
         static_assert(std::is_unsigned<T>(), "UintLog2 expects unsigned integer types");
         T r = 0;
         while (v >>= 1)
@@ -83,22 +83,22 @@ namespace sp {
 
     class angle_t {
     public:
-        angle_t() : radians_(0.0f) {}
-        angle_t(const float &angle) : radians_(angle) {}
+        angle_t() noexcept : radians_(0.0f) {}
+        angle_t(const float &angle) noexcept : radians_(angle) {}
 
-        operator float() const {
+        operator float() const noexcept {
             return radians_;
         }
 
-        const float &radians() const {
+        const float &radians() const noexcept {
             return radians_;
         }
 
-        float &radians() {
+        float &radians() noexcept {
             return radians_;
         }
 
-        float degrees() const;
+        float degrees() const noexcept;
 
     private:
         float radians_;
@@ -107,50 +107,50 @@ namespace sp {
     struct color_t {
         glm::vec3 color;
 
-        color_t() : color(1) {}
-        color_t(const glm::vec3 &color) : color(color) {}
+        color_t() noexcept : color(1) {}
+        color_t(const glm::vec3 &color) noexcept : color(color) {}
 
         typedef glm::vec3::value_type value_type;
 
-        operator glm::vec3() const {
+        operator glm::vec3() const noexcept {
             return color;
         }
 
-        const float &operator[](size_t i) const {
+        const float &operator[](size_t i) const noexcept {
             return color[i];
         }
 
-        float &operator[](size_t i) {
+        float &operator[](size_t i) noexcept {
             return color[i];
         }
 
-        color_t operator*(const color_t &other) const {
+        color_t operator*(const color_t &other) const noexcept {
             return color * other.color;
         }
 
-        color_t operator*(const float &multiplier) const {
+        color_t operator*(const float &multiplier) const noexcept {
             return color * multiplier;
         }
 
-        color_t &operator*=(const color_t &other) {
+        color_t &operator*=(const color_t &other) noexcept {
             color *= other.color;
             return *this;
         }
 
-        color_t &operator+=(const color_t &other) {
+        color_t &operator+=(const color_t &other) noexcept {
             color += other.color;
             return *this;
         }
 
-        color_t operator+(const color_t &other) const {
+        color_t operator+(const color_t &other) const noexcept {
             return color + other.color;
         }
 
-        bool operator==(const color_t &other) const {
+        bool operator==(const color_t &other) const noexcept {
             return color == other.color;
         }
 
-        static int length() {
+        static constexpr int length() {
             return 3;
         }
     };
@@ -158,33 +158,33 @@ namespace sp {
     struct color_alpha_t {
         glm::vec4 color;
 
-        color_alpha_t() : color(1) {}
-        color_alpha_t(const glm::vec3 &rgb) : color(rgb, 1) {}
-        color_alpha_t(const glm::vec4 &rgba) : color(rgba) {}
+        color_alpha_t() noexcept : color(1) {}
+        color_alpha_t(const glm::vec3 &rgb) noexcept : color(rgb, 1) {}
+        color_alpha_t(const glm::vec4 &rgba) noexcept : color(rgba) {}
 
         typedef glm::vec4::value_type value_type;
 
-        operator glm::vec4() const {
+        operator glm::vec4() const noexcept {
             return color;
         }
 
-        explicit operator glm::u8vec4() const {
+        explicit operator glm::u8vec4() const noexcept {
             return glm::clamp(color, glm::vec4(0), glm::vec4(1)) * 255.0f;
         }
 
-        const float &operator[](size_t i) const {
+        const float &operator[](size_t i) const noexcept {
             return color[i];
         }
 
-        float &operator[](size_t i) {
+        float &operator[](size_t i) noexcept {
             return color[i];
         }
 
-        bool operator==(const color_alpha_t &other) const {
+        bool operator==(const color_alpha_t &other) const noexcept {
             return color == other.color;
         }
 
-        static int length() {
+        static constexpr int length() {
             return 4;
         }
     };
@@ -289,16 +289,16 @@ namespace sp {
     template<glm::length_t L, typename T, glm::qualifier Q>
     struct is_glm_vec<glm::vec<L, T, Q>> : std::true_type {};
 
-    bool is_float(std::string_view str);
-    bool all_lower(const std::string &str);
+    bool is_float(std::string_view str) noexcept;
+    bool all_lower(const std::string &str) noexcept;
 
     struct float16_t {
         uint16_t value;
 
-        float16_t() : value(0) {}
-        float16_t(const uint16_t &value) : value(value) {}
+        float16_t() noexcept : value(0) {}
+        float16_t(const uint16_t &value) noexcept : value(value) {}
 
-        float16_t(const float &value_) {
+        float16_t(const float &value_) noexcept {
             if (value_ == 0.0f) {
                 value = 0u;
             } else {
@@ -308,30 +308,30 @@ namespace sp {
             }
         }
 
-        operator uint16_t() const {
+        operator uint16_t() const noexcept {
             return value;
         }
     };
 
     namespace boost_replacements {
-        bool starts_with(const std::string &str, const std::string &prefix);
-        bool starts_with(const std::string_view &str, const std::string_view &prefix);
-        bool ends_with(const std::string &str, const std::string &suffix);
-        bool ends_with(const std::string_view &str, const std::string_view &suffix);
-        std::string to_lower(std::string &str);
-        std::string to_upper(std::string &str);
-        std::string to_lower_copy(const std::string &str);
-        std::string to_upper_copy(const std::string &str);
-        std::string to_lower_copy(const std::string_view &str);
-        std::string to_upper_copy(const std::string_view &str);
-        bool iequals(const std::string &str1, const std::string &str2);
-        bool iequals(const std::string_view &str1, const std::string_view &str2);
-        void trim(std::string &str);
-        void trim_left(std::string &str);
-        void trim_right(std::string &str);
-        std::string_view trim(const std::string_view &str);
-        std::string_view trim_left(const std::string_view &str);
-        std::string_view trim_right(const std::string_view &str);
+        bool starts_with(const std::string &str, const std::string &prefix) noexcept;
+        bool starts_with(const std::string_view &str, const std::string_view &prefix) noexcept;
+        bool ends_with(const std::string &str, const std::string &suffix) noexcept;
+        bool ends_with(const std::string_view &str, const std::string_view &suffix) noexcept;
+        std::string to_lower(std::string &str) noexcept;
+        std::string to_upper(std::string &str) noexcept;
+        std::string to_lower_copy(const std::string &str) noexcept;
+        std::string to_upper_copy(const std::string &str) noexcept;
+        std::string to_lower_copy(const std::string_view &str) noexcept;
+        std::string to_upper_copy(const std::string_view &str) noexcept;
+        bool iequals(const std::string &str1, const std::string &str2) noexcept;
+        bool iequals(const std::string_view &str1, const std::string_view &str2) noexcept;
+        void trim(std::string &str) noexcept;
+        void trim_left(std::string &str) noexcept;
+        void trim_right(std::string &str) noexcept;
+        std::string_view trim(const std::string_view &str) noexcept;
+        std::string_view trim_left(const std::string_view &str) noexcept;
+        std::string_view trim_right(const std::string_view &str) noexcept;
     } // namespace boost_replacements
     using namespace boost_replacements;
 

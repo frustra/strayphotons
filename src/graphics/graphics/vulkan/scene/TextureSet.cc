@@ -43,18 +43,18 @@ namespace sp::vulkan {
         auto i = AllocateTextureIndex();
         textures[i] = ptr;
         texturesToFlush.push_back(i);
-        return {i, {}};
+        return TextureHandle(i);
     }
 
     TextureHandle TextureSet::Add(const AsyncPtr<ImageView> &asyncPtr) {
         if (asyncPtr->Ready()) return Add(asyncPtr->Get());
 
         auto i = AllocateTextureIndex();
-        return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
-                    DebugAssertf(view, "TextureSet::Add missing image view");
-                    textures[i] = view;
-                    texturesToFlush.push_back(i);
-                })};
+        return TextureHandle(i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+            DebugAssertf(view, "TextureSet::Add missing image view");
+            textures[i] = view;
+            texturesToFlush.push_back(i);
+        }));
     }
 
     TextureIndex TextureSet::AllocateTextureIndex() {

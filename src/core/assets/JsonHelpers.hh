@@ -451,9 +451,9 @@ namespace sp::json {
     template<typename T, typename Compare, typename ContainerT>
     inline void Save(const ecs::EntityScope &s, picojson::value &dst, const FlatSet<T, Compare, ContainerT> &src) {
         picojson::array vec(src.size());
-        auto *data = src.begin();
+        auto it = src.begin();
         for (size_t i = 0; i < src.size(); i++) {
-            Save(s, vec[i], data[i]);
+            Save(s, vec[i], it[i]);
         }
         dst = picojson::value(vec);
     }

@@ -69,7 +69,7 @@ namespace sp::vulkan::renderer {
         glm::ivec3 voxelGridSize = glm::ivec3(0);
         uint32_t voxelLayerCount;
 
-        std::atomic_flag debugThisFrame[2];
+        std::atomic_flag debugThisFrame;
         CFuncCollection funcs;
 
         static inline const std::array<glm::vec3, 6> directions = {

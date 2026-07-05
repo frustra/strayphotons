@@ -27,6 +27,13 @@ namespace sp::vulkan {
         TextureIndex index = 0;
         AsyncPtr<void> ref = nullptr;
 
+        TextureHandle() : index(0), ref(nullptr) {}
+        TextureHandle(TextureIndex index, const AsyncPtr<void> &ref = nullptr) : index(index), ref(ref) {}
+
+        explicit operator bool() const {
+            return index != 0 || ref != nullptr;
+        }
+
         bool Ready() const {
             return !ref || ref->Ready();
         }
