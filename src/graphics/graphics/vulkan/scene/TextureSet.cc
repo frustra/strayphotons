@@ -103,7 +103,7 @@ namespace sp::vulkan {
         }
         auto i = AllocateTextureIndex();
         auto pending = TextureHandle(i, std::make_shared<Async<void>>());
-        pendingResourceTextures.emplace_back(name, pending);
+        renderGraphTextures.emplace_back(name, pending);
         textureCache[resourceName] = pending;
         return pending;
     }
@@ -258,10 +258,11 @@ namespace sp::vulkan {
     }
 
     void TextureSet::AddGraphTextures(rg::RenderGraph &graph) {
-        InlineVector<std::pair<rg::ResourceID, TextureHandle>, 128> newGraphTextures;
+        if (renderGraphTextures.empty()) return;
+        InlineVector<std::pair<rg::ResourceID, TextureHandle>, 256> newGraphTextures;
         graph.AddPass("AddGraphTextures")
             .Build([&](rg::PassBuilder &builder) {
-                for (auto &tex : pendingResourceTextures) {
+                for (auto &tex : renderGraphTextures) {
                     DebugAssertf(starts_with(tex.first, "/"), "Graph resource references must start with /");
                     rg::ResourceID id = builder.GetID(tex.first, false);
                     if (id == rg::InvalidResource) {
@@ -269,22 +270,25 @@ namespace sp::vulkan {
                     } else {
                         builder.Read(id, Access::FragmentShaderSampleImage);
                     }
-                    newGraphTextures.emplace_back(id, tex.second);
+                    newGraphTextures.emplace_back(id, tex.second.lock());
                 }
                 builder.RequirePass();
             })
             .Execute([this, newGraphTextures](rg::Resources &resources, DeviceContext &device) {
                 for (auto &tex : newGraphTextures) {
                     ImageViewPtr imageView;
-                    if (tex.first != rg::InvalidResource) imageView = resources.GetImageView(tex.first);
-                    if (!imageView) imageView = GetSinglePixel(ERROR_COLOR);
+                    if (tex.first != rg::InvalidResource) {
+                        imageView = resources.GetImageView(tex.first);
+                    }
+                    if (!imageView) {
+                        imageView = GetSinglePixel(ERROR_COLOR);
+                    }
                     textures[tex.second.index] = imageView;
                     texturesToFlush.push_back(tex.second.index);
-                    tex.second.ref->Set(nullptr);
+                    if (tex.second.ref && !tex.second.Ready()) tex.second.ref->Set(nullptr);
                 }
                 Flush();
             });
-        pendingResourceTextures.clear();
     }
 
     void TextureSet::Flush() {
@@ -298,6 +302,13 @@ namespace sp::vulkan {
                 texturesPendingDelete.push_back(textures[handle.index]);
                 ReleaseTexture(handle.index);
                 it = textureCache.erase(it);
+            } else {
+                it++;
+            }
+        }
+        for (auto it = renderGraphTextures.begin(); it != renderGraphTextures.end();) {
+            if (it->second.ref.expired()) {
+                it = renderGraphTextures.erase(it);
             } else {
                 it++;
             }

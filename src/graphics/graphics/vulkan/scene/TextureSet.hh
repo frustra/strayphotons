@@ -44,6 +44,17 @@ namespace sp::vulkan {
         bool operator==(const TextureHandle &) const = default;
     };
 
+    struct WeakTextureHandle {
+        TextureIndex index = 0;
+        std::weak_ptr<Async<void>> ref;
+
+        WeakTextureHandle(const TextureHandle &handle) : index(handle.index), ref(handle.ref) {}
+
+        TextureHandle lock() {
+            return TextureHandle(index, ref.lock());
+        }
+    };
+
     const color_alpha_t ERROR_COLOR = glm::vec4(1, 0, 1, 1);
 
     class TextureSet {
@@ -84,7 +95,7 @@ namespace sp::vulkan {
         TextureIndex AllocateTextureIndex();
 
         HeapVector<ImageViewPtr> textures;
-        HeapVector<std::pair<rg::ResourceName, TextureHandle>> pendingResourceTextures;
+        HeapVector<std::pair<rg::ResourceName, WeakTextureHandle>> renderGraphTextures;
         HeapVector<ImageViewPtr> texturesPendingDelete;
 
         HeapVector<TextureIndex> freeTextureIndexes;
