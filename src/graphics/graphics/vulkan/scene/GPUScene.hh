@@ -158,6 +158,8 @@ namespace sp::vulkan {
         struct EntityState {
             rg::ResourceName lightFilterName, renderableTextureOverrideName;
             TextureHandle lightFilter, renderableTextureOverride;
+
+            bool operator==(const EntityState &) const = default;
         };
         EntityMap<EntityState> liveEntityState, stagingEntityState;
 

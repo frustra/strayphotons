@@ -14,12 +14,13 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
+#include "game/Scene.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
-#include "strayphotons/Async.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
 
 #include <chrono>
@@ -188,7 +189,38 @@ namespace sp::vulkan {
         ZoneScoped;
         Assertf(ecs::IsStaging(lock), "GPUScene::PreloadScene expects staging ecs lock");
         bool complete = true;
-        stagingEntityState.clear(); // TODO: Switch to observer pattern, building this each frame is inefficient
+        // TODO: Switch to observer pattern, iterating this each frame is inefficient
+        HeapVector<ecs::Entity> entitiesToRemove;
+        for (const auto &pair : stagingEntityState) {
+            if (!pair.first.Exists(lock)) {
+                entitiesToRemove.emplace_back(pair.first);
+                continue;
+            }
+            auto &state = stagingEntityState[pair.first];
+            if (pair.first.Has<ecs::Renderable>(lock)) {
+                auto &renderable = pair.first.Get<const ecs::Renderable>(lock);
+                if (renderable.textureOverrideName != state.renderableTextureOverrideName) {
+                    state.renderableTextureOverrideName = renderable.textureOverrideName;
+                    state.renderableTextureOverride = textures.LoadResource(renderable.textureOverrideName);
+                }
+            } else {
+                state.renderableTextureOverrideName = "";
+                state.renderableTextureOverride = {};
+            }
+            if (pair.first.Has<ecs::Light>(lock)) {
+                auto &light = pair.first.Get<const ecs::Light>(lock);
+                if (light.filterName != state.lightFilterName) {
+                    state.lightFilterName = light.filterName;
+                    state.lightFilter = textures.LoadResource(light.filterName);
+                }
+            } else {
+                state.lightFilterName = "";
+                state.lightFilter = {};
+            }
+        }
+        for (const ecs::Entity &ent : entitiesToRemove) {
+            stagingEntityState.erase(ent);
+        }
 
         for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
             if (!ent.Has<ecs::SceneInfo>(lock)) continue;

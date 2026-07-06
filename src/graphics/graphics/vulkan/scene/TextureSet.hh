@@ -40,6 +40,8 @@ namespace sp::vulkan {
         bool Ready() const {
             return !ref || ref->Ready();
         }
+
+        bool operator==(const TextureHandle &) const = default;
     };
 
     const color_alpha_t ERROR_COLOR = glm::vec4(1, 0, 1, 1);
