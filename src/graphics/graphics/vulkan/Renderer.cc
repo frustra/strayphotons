@@ -136,59 +136,6 @@ namespace sp::vulkan {
         graph.Execute();
     }
 
-    bool setModel(auto &lock, ecs::Entity ent, AsyncPtr<Gltf> model) {
-        if constexpr (Tecs::is_write_allowed<ecs::Renderable, std::decay_t<decltype(lock)>>()) {
-            auto &renderable = ent.Get<ecs::Renderable>(lock);
-            renderable.model = model;
-            return true;
-        } else {
-            if (ecs::IsLive(ent)) {
-                ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ent, model](auto lock) {
-                    if (!ent.Has<ecs::Renderable>(lock)) return;
-                    auto &renderable = ent.Get<ecs::Renderable>(lock);
-                    renderable.model = model;
-                });
-                return false;
-            } else {
-                return true;
-            }
-        }
-    }
-
-    bool loadModel(auto &lock, GPUScene &scene, ecs::Entity ent) {
-        auto &renderable = ent.Get<ecs::Renderable>(lock);
-        if (renderable.modelName.empty()) {
-            setModel(lock, ent, nullptr);
-            return true;
-        }
-        if (!setModel(lock, ent, sp::Assets().LoadGltf(renderable.modelName))) {
-            return false;
-        }
-        if (!renderable.model || !renderable.model->Ready()) {
-            return false;
-        }
-
-        auto model = renderable.model->Get();
-        if (!model) {
-            Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
-            // Don't hang preloading if models are null
-            return true;
-        } else if (renderable.meshIndex >= model->meshes.size()) {
-            Errorf("Renderable %s mesh index is out of range: %u/%u",
-                ecs::ToString(lock, ent),
-                renderable.meshIndex,
-                model->meshes.size());
-            return true;
-        }
-
-        auto vkMesh = scene.LoadMesh(model, renderable.meshIndex);
-        if (!vkMesh) {
-            return false;
-        }
-        if (!vkMesh->CheckReady()) return false;
-        return true;
-    }
-
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
 
@@ -210,14 +157,6 @@ namespace sp::vulkan {
                 ecs::VoxelArea,
                 ecs::XrView>>();
 
-            ecs::ComponentModifiedEvent<ecs::Renderable> event;
-            while (renderableObserver.Poll(lock, event)) {
-                if (event.Has<ecs::Renderable>(lock)) {
-                    loadModel(lock, this->scene, event);
-                }
-            }
-
-            scene.PreloadTextures(lock);
             scene.LoadState(graph, lock);
             lighting.LoadState(graph, lock);
             voxels.LoadState(graph, lock);
@@ -225,8 +164,7 @@ namespace sp::vulkan {
 
             scene.AddGeometryWarp(graph);
             lighting.AddShadowPasses(graph);
-            scene.AddGraphTextures(graph);
-            lighting.SetLightTextures(graph);
+            scene.textures.AddGraphTextures(graph);
             voxels.AddVoxelizationInit(graph, lighting);
             voxels.AddVoxelization(graph, lighting);
             voxels.AddVoxelization2(graph, lighting);
@@ -665,12 +603,7 @@ namespace sp::vulkan {
         GetSceneManager().PreloadSceneGraphics([&](auto lock, auto scene) {
             ZoneScopedN("PreloadSceneGraphics");
             bool complete = true;
-            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {
-                if (!ent.Has<ecs::SceneInfo>(lock)) continue;
-                if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
-                if (!loadModel(lock, this->scene, ent)) complete = false;
-            }
-            if (!this->scene.PreloadTextures(lock)) complete = false;
+            if (!this->scene.PreloadScene(lock, scene)) complete = false;
             if (!smaa.PreloadTextures(device)) complete = false;
             return complete;
         });

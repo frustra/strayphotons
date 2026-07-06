@@ -45,11 +45,8 @@ namespace ecs {
     struct Renderable {
         Renderable() {}
         Renderable(std::string_view modelName, uint64_t meshIndex = 0);
-        Renderable(std::string_view modelName, sp::AsyncPtr<sp::Gltf> model, uint64_t meshIndex = 0)
-            : modelName(modelName), model(model), meshIndex(meshIndex) {}
 
         sp::AssetName modelName;
-        sp::AsyncPtr<sp::Gltf> model;
         uint64_t meshIndex = 0;
 
         struct Joint {
@@ -108,8 +105,6 @@ It is usually preferred to load the model using the [gltf Prefab Script](#gltf-p
             "Values are in the range 0.0 to 1.0. -1 means the original material is used.",
             &Renderable::metallicRoughnessOverride));
 
-    template<>
-    bool StructMetadata::Load<Renderable>(Renderable &dst, const picojson::value &src);
     template<>
     void EntityComponent<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget);
 } // namespace ecs

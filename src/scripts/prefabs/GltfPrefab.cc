@@ -95,7 +95,7 @@ namespace ecs {
 
                 if (node.meshIndex) {
                     if (render) {
-                        auto &renderable = newEntity.Set<Renderable>(lock, modelName, asyncGltf, *node.meshIndex);
+                        auto &renderable = newEntity.Set<Renderable>(lock, modelName, *node.meshIndex);
 
                         if (node.skinIndex) {
                             auto &skin = model->skins[*node.skinIndex];

@@ -15,8 +15,12 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "strayphotons/Logging.hh"
 
+#include <memory>
+
 namespace sp::vulkan {
-    Mesh::Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device)
+    Mesh::Mesh(std::shared_ptr<const Gltf> source) : modelName(source ? source->name : ""), asset(source) {}
+
+    Mesh::Mesh(std::shared_ptr<const Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device)
         : modelName(source->name), asset(source) {
         ZoneScoped;
         ZonePrintf("%s.%u", modelName, meshIndex);

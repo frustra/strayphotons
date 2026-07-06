@@ -11,14 +11,17 @@
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/RenderGraph.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/Utility.hh"
 
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace sp::vulkan {
     typedef uint16_t TextureIndex;
@@ -45,7 +48,8 @@ namespace sp::vulkan {
     public:
         TextureSet(DeviceContext &device);
 
-        TextureHandle LoadAssetImage(std::string_view name, bool genMipmap = false, bool srgb = true);
+        TextureHandle LoadResource(std::string_view resourceName);
+        TextureHandle LoadAssetImage(std::string_view path, bool genMipmap = true, bool srgb = true);
         TextureHandle LoadGltfMaterial(const std::shared_ptr<const Gltf> &source, int materialIndex, TextureType type);
 
         TextureHandle Add(const ImageCreateInfo &imageInfo,
@@ -70,20 +74,22 @@ namespace sp::vulkan {
             return static_cast<TextureIndex>(textures.size());
         }
 
+        void AddGraphTextures(rg::RenderGraph &graph);
         void Flush();
 
     private:
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();
 
-        std::vector<ImageViewPtr> textures;
-        std::vector<ImageViewPtr> texturesPendingDelete;
+        HeapVector<ImageViewPtr> textures;
+        HeapVector<std::pair<rg::ResourceName, TextureHandle>> pendingResourceTextures;
+        HeapVector<ImageViewPtr> texturesPendingDelete;
 
-        std::vector<TextureIndex> freeTextureIndexes;
-        std::vector<TextureIndex> texturesToFlush;
+        HeapVector<TextureIndex> freeTextureIndexes;
+        HeapVector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
 
-        robin_hood::unordered_map<std::string, TextureHandle> textureCache;
+        robin_hood::unordered_map<HeapString, TextureHandle, StringHash, StringEqual> textureCache;
         robin_hood::unordered_map<uint32_t, TextureIndex> singlePixelMap;
 
         DeviceContext &device;

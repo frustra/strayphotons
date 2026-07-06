@@ -246,9 +246,12 @@ namespace sp::vulkan::render_graph {
 
         if (!name.empty() && !allowReplace) {
             auto existingID = GetID(name, false);
-            Assertf(existingID == InvalidResource,
-                "Resources::AddExternalImageView called with existing name: %s",
-                name);
+            if (existingID != InvalidResource) {
+                auto &resource = GetResourceRef(existingID);
+                Assertf(resource.type == Resource::Type::Future,
+                    "Resources::AddExternalImageView called with existing name: %s",
+                    name);
+            }
         }
 
         Resource resource(desc);

@@ -27,18 +27,19 @@ namespace sp::vulkan::renderer {
 
     class Lighting {
     public:
-        Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {}
+        Lighting(GPUScene &scene, Voxels &voxels);
         void LoadState(RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
-        void SetLightTextures(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
 
     private:
         void AllocateShadowMap();
         GPUScene &scene;
         Voxels &voxels;
+
+        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
         glm::ivec2 shadowAtlasSize = {};
 
@@ -60,9 +61,6 @@ namespace sp::vulkan::renderer {
             InlineVector<LightPathEntry, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
-
-            ResourceName filterName;
-            std::optional<TextureIndex> filterTexture;
 
             bool operator==(const VirtualLight &) const;
         };
