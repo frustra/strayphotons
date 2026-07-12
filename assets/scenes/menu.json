@@ -76,7 +76,7 @@
 			},
 			"gui_element": {},
 			"render_output": {
-				"source": "/ent:player:flatview"
+				"source": "player:flatview"
 			},
 			"screen": {
 				"luminance": [2, 1.6, 1]

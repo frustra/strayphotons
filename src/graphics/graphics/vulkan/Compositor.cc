@@ -304,8 +304,18 @@ namespace sp::vulkan {
             auto &renderOutput = ent.Get<const ecs::RenderOutput>(lock);
             auto outputSize = renderOutput.outputSize;
             auto windowScale = renderOutput.scale;
-            if (starts_with(renderOutput.sourceName, "/ent:")) {
-                ecs::EntityRef sourceRef = ecs::Name(renderOutput.sourceName.substr(5), ecs::EntityScope());
+            if (starts_with(renderOutput.sourceName, "asset:")) {
+                auto assetName = std::string(renderOutput.sourceName.substr(6));
+                if (!assetName.empty()) {
+                    assetImage = staticAssetImages.Load(assetName);
+                    if (!assetImage) {
+                        assetImage = device.LoadAssetImage(assetName, true);
+                        device.FlushMainQueue();
+                        staticAssetImages.Register(assetName, assetImage, true);
+                    }
+                }
+            } else if (!renderOutput.sourceName.empty()) {
+                ecs::EntityRef sourceRef = ecs::Name(renderOutput.sourceName, ecs::EntityScope());
                 ecs::Entity sourceEnt = sourceRef.Get(lock);
                 if (sourceEnt && sourceEnt != ent) {
                     auto it = existingOutputs.find(sourceEnt);
@@ -315,16 +325,6 @@ namespace sp::vulkan {
                         if (windowScale.x <= 0.0f || windowScale.y <= 0.0f) windowScale = existingInfo.scale;
                     } else if (!force) {
                         return false;
-                    }
-                }
-            } else if (starts_with(renderOutput.sourceName, "asset:")) {
-                auto assetName = std::string(renderOutput.sourceName.substr(6));
-                if (!assetName.empty()) {
-                    assetImage = staticAssetImages.Load(assetName);
-                    if (!assetImage) {
-                        assetImage = device.LoadAssetImage(assetName, true);
-                        device.FlushMainQueue();
-                        staticAssetImages.Register(assetName, assetImage, true);
                     }
                 }
             }
@@ -411,53 +411,27 @@ namespace sp::vulkan {
             Abortf("Compositor::AddOutputPasses called with invalid order: %s", order);
         }
         for (auto &output : outputSpan) {
-            auto scope = graph.Scope("ent:" + output.entityName.String());
+            auto entityScope = graph.Scope(output.entityName.String());
+            auto renderScope = graph.Scope("RenderOutput");
             // TODO:
-            // - Implement asset: source inputs
-            // - Implement reverse inheritance for menu and view to inherit from overlay/window
             // - Add crop / zoom / offset options
             // - Integrate with TransformSnapshot somehow to make sprite engine
             // - Remove extents from View and use RenderOutput instead
+            // - Implement reverse inheritance for view to inherit from overlay/window
             // - Remove "cached" matrices from View and keep them in Renderer
-
-            /**
-            "render_output": {
-                "output_size": [1280, 720],
-                "background": [
-                    {"view": "player:flatview"},
-                    {
-                        "effect": "background_blur",
-                        "enable_if": "is_focused(Menu)"
-                    }
-                ]
-            },
-            "render_element": {
-                {"gui": "menu:signal_display"},
-                {
-                    "gui": "menu:signal_display",
-                    "offset": [10, 30],
-                    "size": [100, 50]
-                },
-                {
-                    "asset": "logos/sp_menu.png",
-                    "offset": [10, 30],
-                    "size": [100, 50]
-                }
-            }
-             */
 
             rg::ResourceID viewOutput = rg::InvalidResource;
             rg::ResourceID sourceImageOutput = rg::InvalidResource;
 
             rg::ImageDesc outputDesc = {};
 
-            graph.AddPass("RenderOutput")
+            graph.AddPass("Composite")
                 .Build([&](rg::PassBuilder &builder) {
                     bool inheritExtent = true;
                     outputDesc.format = vk::Format::eR8G8B8A8Srgb;
                     outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
-                    auto viewName = rg::ResourceName("view:") + output.entityName.String() + "/LastOutput";
+                    rg::ResourceName viewName = rg::ResourceName(output.entityName.String()) + "/View";
                     viewOutput = builder.GetID(viewName, false);
                     if (viewOutput != rg::InvalidResource) {
                         builder.Read(viewOutput, Access::FragmentShaderSampleImage);
@@ -472,31 +446,7 @@ namespace sp::vulkan {
 
                     output.sourceResourceID = rg::InvalidResource;
 
-                    if (starts_with(output.sourceName, "/ent:")) {
-                        auto resourceID = builder.GetID(output.sourceName + "/LastOutput", false);
-                        if (resourceID != rg::InvalidResource) {
-                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
-                        } else {
-                            resourceID = builder.ReadPreviousFrame(output.sourceName + "/LastOutput",
-                                Access::FragmentShaderSampleImage);
-                        }
-                        if (resourceID != rg::InvalidResource) {
-                            auto res = builder.GetResource(resourceID);
-                            if (res.type == rg::Resource::Type::Image) {
-                                auto derivedDesc = builder.DeriveImage(resourceID);
-                                if (inheritExtent) {
-                                    outputDesc.extent = derivedDesc.extent;
-                                    inheritExtent = false;
-                                }
-                                outputDesc.sampler = derivedDesc.sampler;
-                                output.sourceResourceID = resourceID;
-                            } else {
-                                output.sourceResourceID = builder.GetID("ErrorColor");
-                            }
-                        } else {
-                            output.sourceResourceID = builder.GetID("ErrorColor");
-                        }
-                    } else if (starts_with(output.sourceName, "asset:") && output.assetImage) {
+                    if (starts_with(output.sourceName, "asset:") && output.assetImage) {
                         if (output.assetImage->Ready()) {
                             auto assetView = output.assetImage->Get();
                             if (assetView) {
@@ -520,9 +470,33 @@ namespace sp::vulkan {
                                 output.sourceResourceID = builder.GetID("ErrorColor");
                             }
                         }
+                    } else if (!output.sourceName.empty()) {
+                        auto resourceID = builder.GetID(output.sourceName, false);
+                        if (resourceID != rg::InvalidResource) {
+                            builder.Read(resourceID, Access::FragmentShaderSampleImage);
+                        } else {
+                            resourceID = builder.ReadPreviousFrame(output.sourceName,
+                                Access::FragmentShaderSampleImage);
+                        }
+                        if (resourceID != rg::InvalidResource) {
+                            auto res = builder.GetResource(resourceID);
+                            if (res.type == rg::Resource::Type::Image) {
+                                auto derivedDesc = builder.DeriveImage(resourceID);
+                                if (inheritExtent) {
+                                    outputDesc.extent = derivedDesc.extent;
+                                    inheritExtent = false;
+                                }
+                                outputDesc.sampler = derivedDesc.sampler;
+                                output.sourceResourceID = resourceID;
+                            } else {
+                                output.sourceResourceID = builder.GetID("ErrorColor");
+                            }
+                        } else {
+                            output.sourceResourceID = builder.GetID("ErrorColor");
+                        }
                     }
 
-                    auto sourceImageName = rg::ResourceName("image:") + output.entityName.String();
+                    auto sourceImageName = rg::ResourceName(output.entityName.String()) + "/Image";
                     sourceImageOutput = builder.GetID(sourceImageName, false);
                     if (sourceImageOutput != rg::InvalidResource) {
                         builder.Read(sourceImageOutput, Access::FragmentShaderSampleImage);
@@ -535,7 +509,10 @@ namespace sp::vulkan {
 
                     builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
                     if (outputDesc.extent.width != 0 && outputDesc.extent.height != 0) {
-                        builder.OutputColorAttachment(0, "RenderOutput", outputDesc, {LoadOp::Clear, StoreOp::Store});
+                        builder.OutputColorAttachment(0,
+                            "CompositeOutput",
+                            outputDesc,
+                            {LoadOp::Clear, StoreOp::Store});
                     }
                 })
                 .Execute(

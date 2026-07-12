@@ -34,38 +34,47 @@ namespace sp::vulkan::render_graph {
             Undefined,
             Image,
             Buffer,
-            Future,
+            Alias,
         };
 
         Resource() {}
         Resource(ImageDesc desc) : type(Type::Image), imageDesc(desc) {}
         Resource(BufferDesc desc) : type(Type::Buffer), bufferDesc(desc) {}
+        Resource(ResourceID aliasID) : type(Type::Alias), aliasDesc(aliasID, {}) {}
 
         explicit operator bool() const {
             return type != Type::Undefined;
         }
 
         ImageDesc DeriveImage() const {
-            Assert(type == Type::Image, "resource is not a render target");
+            Assert(type == Resource::Type::Image, "DeriveImage resource is not an image");
             auto desc = imageDesc;
             desc.usage = {};
             return desc;
         }
 
         vk::Format ImageFormat() const {
+            Assert(type == Resource::Type::Image, "ImageFormat resource is not an image");
             return imageDesc.format;
         }
 
         vk::Extent3D ImageExtents() const {
+            Assert(type == Resource::Type::Image, "ImageExtents resource is not an image");
             return imageDesc.extent;
         }
 
         uint32_t ImageLayers() const {
+            Assert(type == Resource::Type::Image, "ImageLayers resource is not an image");
             return imageDesc.arrayLayers;
         }
 
         size_t BufferSize() const {
+            Assert(type == Resource::Type::Buffer, "BufferSize resource is not a buffer");
             return bufferDesc.layout.size;
+        }
+
+        ResourceID AliasID() const {
+            return type == Type::Alias ? aliasDesc.id : InvalidResource;
         }
 
         ResourceID id = InvalidResource;
@@ -73,9 +82,16 @@ namespace sp::vulkan::render_graph {
         bool externalResource = false;
 
     private:
+        struct AliasDesc {
+            ResourceID id;
+            InlineVector<Access, 16> accessList;
+        };
+        static_assert(sizeof(AliasDesc) <= sizeof(ImageDesc), "Alias resource access list too big");
+
         union {
             ImageDesc imageDesc;
             BufferDesc bufferDesc;
+            AliasDesc aliasDesc;
         };
 
         friend class PassBuilder;
@@ -101,10 +117,10 @@ namespace sp::vulkan::render_graph {
         BufferPtr GetBuffer(ResourceID id);
         BufferPtr GetBuffer(std::string_view name);
 
-        const Resource &GetResource(std::string_view name) const;
-        const Resource &GetResource(ResourceID id) const;
+        const Resource &GetResource(std::string_view name, bool followAliases) const;
+        const Resource &GetResource(ResourceID id, bool followAliases) const;
         const ResourceName &GetName(ResourceID id) const;
-        ResourceID GetID(std::string_view name, bool assertExists = true, uint32_t framesAgo = 0) const;
+        ResourceID GetID(std::string_view name, uint32_t framesAgo = 0) const;
 
         ResourceID AddExternalImageView(std::string_view name, ImageViewPtr view, bool allowReplace = false);
 
@@ -112,7 +128,7 @@ namespace sp::vulkan::render_graph {
             return lastOutputID;
         }
         const Resource &LastOutput() const {
-            return GetResource(lastOutputID);
+            return GetResource(lastOutputID, false);
         }
         const ResourceName &LastOutputName() const {
             return GetName(lastOutputID);
@@ -138,10 +154,7 @@ namespace sp::vulkan::render_graph {
         void AdvanceFrame();
         void Reset();
 
-        Resource &GetResourceRef(ResourceID id) {
-            Assertf(id < resources.size(), "resource ID %u is invalid", id);
-            return resources[id];
-        }
+        Resource *GetResourcePtr(ResourceID id, bool followAliases = true);
 
         DeviceContext &device;
         uint32_t frameIndex = 0;
@@ -158,7 +171,7 @@ namespace sp::vulkan::render_graph {
             std::array<PerFrame, RESOURCE_FRAME_COUNT> frames = {};
 
             ResourceID GetID(std::string_view name, uint32_t frameIndex) const;
-            void SetID(std::string_view name, ResourceID id, uint32_t frameIndex, bool replace = false);
+            void SetID(std::string_view name, ResourceID id, uint32_t frameIndex);
             void ClearID(ResourceID id);
         };
 

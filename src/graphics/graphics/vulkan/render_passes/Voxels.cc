@@ -341,14 +341,14 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer("VoxelFragmentListMetadata", "FragmentListMetadata");
                 cmd.SetStorageBuffer("VoxelFragmentList", "FragmentLists");
 
-                auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                auto lastVoxelStateID = resources.GetID("VoxelState", 1);
                 if (lastVoxelStateID != InvalidResource) {
                     cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                 } else {
                     cmd.SetUniformBuffer("PreviousVoxelStateUniform", "VoxelState");
                 }
                 for (auto &voxelLayer : VoxelLayers[voxelFillIndex]) {
-                    auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, false, 1);
+                    auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, 1);
                     if (lastVoxelLayerID != InvalidResource) {
                         cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView(lastVoxelLayerID));
                     } else {
@@ -727,7 +727,7 @@ namespace sp::vulkan::renderer {
 
                     cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
-                    auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                    auto lastVoxelStateID = resources.GetID("VoxelState", 1);
                     if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
                         cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                     } else {
@@ -743,7 +743,7 @@ namespace sp::vulkan::renderer {
                             resources.GetImageView(VoxelLayers[layer][i].preBlurName));
 
                         auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][i].preBlurName;
-                        auto lastVoxelLayerID = resources.GetID(lastFrameOutput, false, 1);
+                        auto lastVoxelLayerID = resources.GetID(lastFrameOutput, 1);
                         if (lastVoxelLayerID != InvalidResource) {
                             cmd.SetImageView(0,
                                 2 + directions.size() * 2 + i,

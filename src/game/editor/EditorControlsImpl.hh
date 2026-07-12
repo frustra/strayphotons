@@ -222,7 +222,7 @@ namespace sp {
                 if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
                     auto *str = static_cast<HeapString *>(data->UserData);
                     Assert(str->data() == data->Buf, "Invalid ImGuiInputTextCallbackData callback");
-                    str->resize(data->BufSize);
+                    str->resize(data->BufSize > 1 ? data->BufSize - 1 : 0);
                     data->Buf = str->data();
                 }
                 return 0;

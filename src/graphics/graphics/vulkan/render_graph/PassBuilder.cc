@@ -8,6 +8,7 @@
 #include "PassBuilder.hh"
 
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/Logging.hh"
 
 #include <string_view>
 
@@ -23,12 +24,12 @@ namespace sp::vulkan::render_graph {
     }
 
     ResourceID PassBuilder::ReadPreviousFrame(std::string_view name, Access access, uint32_t framesAgo) {
-        auto thisFrameID = resources.GetID(name, false);
+        auto thisFrameID = resources.GetID(name);
         if (thisFrameID == InvalidResource) thisFrameID = resources.ReserveID(name);
         if (thisFrameID == InvalidResource) return InvalidResource;
         pass.AddFutureRead(thisFrameID, access, framesAgo);
 
-        auto prevFrameID = resources.GetID(name, false, framesAgo);
+        auto prevFrameID = resources.GetID(name, framesAgo);
         if (prevFrameID != InvalidResource) pass.AddAccess(prevFrameID, access);
         return prevFrameID;
     }
@@ -49,9 +50,10 @@ namespace sp::vulkan::render_graph {
 
     const Resource &PassBuilder::ReadUniform(ResourceID id) {
         Read(id, Access::AnyShaderReadUniform);
-        auto &resource = resources.GetResourceRef(id);
-        resource.bufferDesc.residency = Residency::CPU_TO_GPU;
-        return resource;
+        Resource *res = resources.GetResourcePtr(id);
+        Assert(res && res->type == Resource::Type::Buffer, "ReadUniform resource must be a buffer");
+        res->bufferDesc.residency = Residency::CPU_TO_GPU;
+        return *res;
     }
 
     Resource PassBuilder::CreateImage(std::string_view name, const ImageDesc &desc, Access access) {
@@ -67,8 +69,8 @@ namespace sp::vulkan::render_graph {
     }
 
     void PassBuilder::SetColorAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info) {
-        auto &res = resources.GetResourceRef(id);
-        Assert(res.type == Resource::Type::Image, "resource must be a render target");
+        Resource *res = resources.GetResourcePtr(id);
+        Assert(res && res->type == Resource::Type::Image, "SetColorAttachment resource must be a render target");
         Write(id, Access::ColorAttachmentReadWrite);
         SetAttachment(index, id, info);
     }

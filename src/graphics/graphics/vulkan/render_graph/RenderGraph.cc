@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 
@@ -56,7 +57,7 @@ namespace sp::vulkan::render_graph {
                     resources.IncrementRef(access.id);
                     resources.AddUsageFromAccess(access.id, access.access);
                     auto accessFrame = (resources.frameIndex + access.framesFromNow) % RESOURCE_FRAME_COUNT;
-                    futureDependencies[accessFrame].push_back(access.id);
+                    futureDependencies[accessFrame].emplace_back(access.id);
                     futureDependencyAdded = true;
                 }
             }

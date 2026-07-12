@@ -127,7 +127,9 @@ namespace sp::vulkan::render_graph {
         ResourceID AddImageView(std::string_view name, ImageViewPtr view);
 
         void RequireResource(std::string_view name) {
-            RequireResource(resources.GetID(name));
+            ResourceID id = resources.GetID(name);
+            Assertf(id != InvalidResource, "required resource does not exist: %s", name);
+            RequireResource(id);
         }
 
         void RequireResource(ResourceID id) {
@@ -153,7 +155,7 @@ namespace sp::vulkan::render_graph {
         }
 
         bool HasResource(std::string_view name) const {
-            return resources.GetID(name, false) != InvalidResource;
+            return resources.GetID(name) != InvalidResource;
         }
 
         DeviceContext &Device() {

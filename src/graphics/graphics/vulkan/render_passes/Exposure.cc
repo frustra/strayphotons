@@ -60,7 +60,7 @@ namespace sp::vulkan::renderer {
                 auto manualExposure = CVarExposure.Get();
                 if (manualExposure > 0) state.exposure = manualExposure;
 
-                auto lastStateID = resources.GetID("NextExposureState", false, 1);
+                auto lastStateID = resources.GetID("NextExposureState", 1);
                 if (lastStateID == InvalidResource || manualExposure > 0) {
                     stateBuffer->CopyFrom(&state);
                 } else {

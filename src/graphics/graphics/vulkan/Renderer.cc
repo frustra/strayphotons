@@ -43,8 +43,8 @@
 #include <vector>
 
 namespace sp::vulkan {
-    static const std::string defaultWindowViewTarget = "/ent:gui:menu/LastOutput";
-    static const std::string defaultXrViewTarget = "/XrView/LastOutput";
+    static const std::string defaultWindowViewTarget = "gui:menu";
+    static const std::string defaultXrViewTarget = "XrView";
 
     CVar<std::string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
@@ -218,12 +218,13 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 builder.RequirePass();
 
-                auto &sourceName = CVarWindowViewTarget.Get();
+                rg::ResourceName sourceName = CVarWindowViewTarget.Get();
+                if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
                 if (sourceID == rg::InvalidResource && sourceName != defaultWindowViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                    sourceID = builder.GetID(defaultWindowViewTarget, false);
+                    sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
                 }
 
                 auto loadOp = LoadOp::DontCare;
@@ -276,13 +277,12 @@ namespace sp::vulkan {
         chrono_clock::duration elapsedTime) {
         ZoneScoped;
         for (auto &ent : lock.EntitiesWith<ecs::View>()) {
-            if (ent.Has<ecs::RenderOutput>(lock)) {
-                auto scope = graph.Scope(rg::ResourceName("view:") + ent.Get<ecs::Name>(lock).String());
-                auto view = AddFlatView(lock, ent);
-                if (view) {
-                    AddDeferredPasses(lock, view, elapsedTime);
-                    renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
-                }
+            auto entityScope = graph.Scope(ent.Get<ecs::Name>(lock).String());
+            auto viewScope = graph.Scope("View");
+            auto view = AddFlatView(lock, ent);
+            if (view) {
+                AddDeferredPasses(lock, view, elapsedTime);
+                renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
             }
         }
 
@@ -359,11 +359,11 @@ namespace sp::vulkan {
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
 
-                auto vertexID = resources.GetID("MarchingCubes/VertexBuffer", false, 1);
-                auto indexID = resources.GetID("MarchingCubes/IndexBuffer", false, 1);
-                if (vertexID != rg::InvalidResource && indexID != rg::InvalidResource) {
-                    auto vertexBuffer = resources.GetBuffer(vertexID);
-                    auto indexBuffer = resources.GetBuffer(indexID);
+                auto vertexID = resources.GetID("MarchingCubes/VertexBuffer", 1);
+                auto indexID = resources.GetID("MarchingCubes/IndexBuffer", 1);
+                auto vertexBuffer = resources.GetBuffer(vertexID);
+                auto indexBuffer = resources.GetBuffer(indexID);
+                if (vertexBuffer && indexBuffer) {
                     cmd.Raw().bindIndexBuffer(*indexBuffer,
                         sizeof(VkDrawIndexedIndirectCommand),
                         vk::IndexType::eUint32);
@@ -532,12 +532,13 @@ namespace sp::vulkan {
         rg::ResourceID sourceID;
         graph.AddPass("XrSubmit")
             .Build([&](rg::PassBuilder &builder) {
-                auto &sourceName = CVarXrViewTarget.Get();
+                rg::ResourceName sourceName = CVarXrViewTarget.Get();
+                if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
                 if (sourceID == rg::InvalidResource && sourceName != defaultXrViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
                     CVarXrViewTarget.Set(defaultXrViewTarget);
-                    sourceID = builder.GetID(defaultXrViewTarget, false);
+                    sourceID = builder.GetID("/" + defaultXrViewTarget, false);
                 }
 
                 if (sourceID != rg::InvalidResource) {

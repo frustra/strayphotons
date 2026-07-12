@@ -400,14 +400,14 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
-                auto lastFrameID = resources.GetID("ShadowMap/Linear", false, 1);
+                auto lastFrameID = resources.GetID("ShadowMap/Linear", 1);
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
                     cmd.SetImageView("shadowMap", scene.textures.GetSinglePixel(glm::vec4(1)));
                 }
 
-                auto lastStateID = resources.GetID("LightState", false, 1);
+                auto lastStateID = resources.GetID("LightState", 1);
                 if (lastStateID != InvalidResource) {
                     cmd.SetUniformBuffer("PreviousLightData", lastStateID);
                 } else {
@@ -466,11 +466,11 @@ namespace sp::vulkan::renderer {
                         resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
                         resources.GetBuffer(drawAllIDs.drawParamsBuffer));
 
-                    auto vertexID = resources.GetID("/MarchingCubes/VertexBuffer", false, 1);
-                    auto indexID = resources.GetID("/MarchingCubes/IndexBuffer", false, 1);
-                    if (vertexID != rg::InvalidResource && indexID != rg::InvalidResource) {
-                        auto vertexBuffer = resources.GetBuffer(vertexID);
-                        auto indexBuffer = resources.GetBuffer(indexID);
+                    auto vertexID = resources.GetID("/MarchingCubes/VertexBuffer", 1);
+                    auto indexID = resources.GetID("/MarchingCubes/IndexBuffer", 1);
+                    auto vertexBuffer = resources.GetBuffer(vertexID);
+                    auto indexBuffer = resources.GetBuffer(indexID);
+                    if (vertexBuffer && indexBuffer) {
                         cmd.Raw().bindIndexBuffer(*indexBuffer,
                             sizeof(VkDrawIndexedIndirectCommand),
                             vk::IndexType::eUint32);
@@ -597,7 +597,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur/LastOutput" : "ShadowMap/Linear";
+        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur" : "ShadowMap/Linear";
         uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Lighting")
