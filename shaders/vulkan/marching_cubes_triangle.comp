@@ -47,9 +47,6 @@ void main() {
         sampleGrid(voxelRadiance, position + vertexOffset[6]),
         sampleGrid(voxelRadiance, position + vertexOffset[7]));
 
-    // uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
-    //                uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
-    //                uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
     uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[2] > 0) << 1 | uint(cornerData[7] > 0) << 2 |
                    uint(cornerData[1] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
                    uint(cornerData[4] > 0) << 6 | uint(cornerData[6] > 0) << 7;
@@ -71,5 +68,4 @@ void main() {
             indices[triangleOffset + vertex] = indexLookup[edgeIndex];
         }
     }
-    // drawCmd.indexCount = vertexCount;
 }

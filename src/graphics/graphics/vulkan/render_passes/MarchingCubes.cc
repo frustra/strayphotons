@@ -31,12 +31,6 @@ namespace sp::vulkan::renderer {
     CVar<uint32_t> CVarMarchingCubesLayer("r.MarchingCubesLayer",
         0,
         "The voxel grid layer to convert to a triangle mesh");
-    CVar<int> CVarMarchingCubesDebug("r.MarchingCubesDebug",
-        0,
-        "Enable marching cube grid debug view (0: off, 1: draw triangles)");
-    CVar<float> CVarMarchingCubesDebugBlend("r.MarchingCubesDebugBlend",
-        0.0f,
-        "The blend weight used to overlay marching cube debug");
 
     MarchingCubes::MarchingCubes(GPUScene &scene) { // : scene(scene) {
         funcs.Register("printmarchingcubes", "Print graphics debug information", [this]() {
@@ -44,25 +38,6 @@ namespace sp::vulkan::renderer {
                 Warnf("Graphics frame already flagged for debug printing");
             }
         });
-    }
-
-    void MarchingCubes::LoadState(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock) {
-        // VoxelSolid component?
-        for (const ecs::Entity &entity : lock.EntitiesWith<ecs::Renderable>()) {
-            if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
-
-            // auto &renderable = entity.Get<ecs::Renderable>(lock);
-        }
-
-        // graph.AddPass("MarchingCubesState")
-        //     .Build([&](rg::PassBuilder &builder) {
-        //         builder.CreateUniform("MarchingCubesState", sizeof(GPUMarchingCubesState));
-        //     })
-        //     .Execute([this](rg::Resources &resources, DeviceContext &device) {
-        //         GPUMarchingCubesState gpuData = {voxelToWorld.GetInverse().GetMatrix(), voxelGridSize};
-        //         resources.GetBuffer("MarchingCubesState")->CopyFrom(&gpuData);
-        //     });
     }
 
     void MarchingCubes::AddMarchingCubes(RenderGraph &graph, const Voxels &voxels) {
@@ -225,40 +200,6 @@ namespace sp::vulkan::renderer {
                 //         indexData[triangleIndex * 3 + 2]);
                 // }
             });
-        }
-    }
-
-    void MarchingCubes::AddDebugPass(RenderGraph &graph) {
-        if (CVarMarchingCubesDebug.Get() <= 0) return;
-        if (graph.HasResource("MarchingCubes/IndexBuffer")) {
-            graph.AddPass("DrawChunk")
-                .Build([&](rg::PassBuilder &builder) {
-                    builder.ReadUniform("ViewState");
-                    builder.ReadUniform("VoxelState");
-                    builder.Read("ExposureState", Access::FragmentShaderReadStorage);
-                    builder.Read("MarchingCubes/VertexBuffer", Access::VertexBuffer);
-                    builder.Read("MarchingCubes/IndexBuffer", Access::IndexBuffer);
-                    builder.Read("MarchingCubes/IndexBuffer", Access::IndirectBuffer);
-
-                    builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
-                    builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
-                })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                    cmd.SetShaders("cubescene.vert", "depth_colored.frag");
-                    cmd.SetUniformBuffer("ViewStates", "ViewState");
-                    cmd.SetStorageBuffer("ExposureState", "ExposureState");
-
-                    auto vertexBuffer = resources.GetBuffer("MarchingCubes/VertexBuffer");
-                    auto indexBuffer = resources.GetBuffer("MarchingCubes/IndexBuffer");
-
-                    cmd.SetVertexLayout(SceneVertex::Layout());
-                    cmd.Raw().bindIndexBuffer(*indexBuffer,
-                        sizeof(VkDrawIndexedIndirectCommand),
-                        vk::IndexType::eUint32);
-                    cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
-
-                    cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
-                });
         }
     }
 } // namespace sp::vulkan::renderer

@@ -14,18 +14,14 @@
 namespace sp::vulkan::renderer {
     extern CVar<uint32_t> CVarEnableMarchingCubes;
     extern CVar<uint32_t> CVarMarchingCubesLayer;
-    extern CVar<int> CVarMarchingCubesDebug;
-    extern CVar<float> CVarMarchingCubesDebugBlend;
 
     class Voxels;
 
     class MarchingCubes {
     public:
         MarchingCubes(GPUScene &scene);
-        void LoadState(rg::RenderGraph &graph, ecs::Lock<ecs::Read<ecs::Renderable, ecs::TransformSnapshot>> lock);
 
         void AddMarchingCubes(rg::RenderGraph &graph, const Voxels &voxels);
-        void AddDebugPass(rg::RenderGraph &graph);
 
     private:
         // GPUScene &scene;

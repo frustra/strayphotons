@@ -160,7 +160,6 @@ namespace sp::vulkan {
             scene.LoadState(graph, lock);
             lighting.LoadState(graph, lock);
             voxels.LoadState(graph, lock);
-            marchingCubes.LoadState(graph, lock);
 
             scene.AddGeometryWarp(graph);
             lighting.AddShadowPasses(graph);
@@ -221,7 +220,7 @@ namespace sp::vulkan {
                 rg::ResourceName sourceName = CVarWindowViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultWindowViewTarget) {
+                if (sourceID == rg::InvalidResource && sourceName != "/" + defaultWindowViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
                     sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
@@ -535,7 +534,7 @@ namespace sp::vulkan {
                 rg::ResourceName sourceName = CVarXrViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultXrViewTarget) {
+                if (sourceID == rg::InvalidResource && sourceName != "/" + defaultXrViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
                     CVarXrViewTarget.Set(defaultXrViewTarget);
                     sourceID = builder.GetID("/" + defaultXrViewTarget, false);
@@ -588,7 +587,6 @@ namespace sp::vulkan {
         }
         emissive.AddPass(graph, lock, elapsedTime);
         voxels.AddDebugPass(graph);
-        marchingCubes.AddDebugPass(graph);
         renderer::AddExposureUpdate(graph);
         renderer::AddOutlines(graph, scene);
         renderer::AddBloom(graph);

@@ -249,5 +249,4 @@ void main() {
             indices[triangleOffset + 2 - vertex] = indexLookup[edgeIndex];
         }
     }
-    // drawCmd.indexCount = vertexCount;
 }

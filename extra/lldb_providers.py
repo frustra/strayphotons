@@ -105,7 +105,6 @@ class EntityMapSyntheticChildrenProvider:
 def __lldb_init_module(debugger, _):
     print("Loading Stray Photons LLDB provider...")
     debugger.HandleCommand('type summary add sp::HeapString --summary-string "${var.storage%s}"')
-    # debugger.HandleCommand('type summary add -x "^sp::InlineString<.*>$" --summary-string "${var._M_elems}"')
     debugger.HandleCommand('type summary add -x "^sp::InlineString<.*>$" -F lldb_providers.inlinestring_summary')
     debugger.HandleCommand('type summary add -x "^sp::HeapVector<.*>$" -F lldb_providers.heapvector_summary')
     debugger.HandleCommand('type synthetic add -x "^sp::HeapVector<.*>$" -l lldb_providers.HeapVectorSyntheticChildrenProvider')
