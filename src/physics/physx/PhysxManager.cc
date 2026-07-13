@@ -29,6 +29,7 @@
 #include <MurmurHash3.h>
 #include <PxActor.h>
 #include <PxRigidActor.h>
+#include <PxRigidDynamic.h>
 #include <PxScene.h>
 #include <chrono>
 #include <glm/ext/matrix_relational.hpp>
@@ -114,7 +115,8 @@ namespace sp {
             }
         }
         joints.clear();
-        for (auto &actor : actors) {
+        auto actorsCopy = actors;
+        for (auto &actor : actorsCopy) {
             RemoveActor(actor.second);
         }
         actors.clear();
@@ -896,14 +898,16 @@ namespace sp {
             }
         }
 
-        auto &actor = actors[actorEnt];
-        auto dynamic = actor->is<PxRigidDynamic>();
+        PxRigidActor *actor = actors[actorEnt];
+        PxRigidDynamic *dynamic = actor->is<PxRigidDynamic>();
         if (actorEnt == e) {
             bool requestDynamicActor = ph.type == ecs::PhysicsActorType::Dynamic ||
                                        ph.type == ecs::PhysicsActorType::Kinematic;
             if (requestDynamicActor != !!dynamic) {
                 RemoveActor(actor);
                 CreateActor(lock, e);
+                actor = actors[e];
+                dynamic = actor->is<PxRigidDynamic>();
             }
         }
 

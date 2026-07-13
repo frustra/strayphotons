@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "strayphotons/Utility.hh"
 
 namespace sp::vulkan::renderer {
     void Emissive::AddPass(RenderGraph &graph,
@@ -78,7 +79,7 @@ namespace sp::vulkan::renderer {
                         textureName = screenComp.textureName;
                     } else if (ent.Has<ecs::RenderOutput>(lock)) {
                         ecs::EntityRef ref(ent);
-                        textureName = ResourceName("/ent:") + ref.Name().String() + "/RenderOutput";
+                        textureName = ResourceName(ref.Name().String()) + "/RenderOutput";
                     } else {
                         continue;
                     }
@@ -88,7 +89,8 @@ namespace sp::vulkan::renderer {
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
-                    if (starts_with(textureName, "/ent:")) {
+                    if (!textureName.empty()) {
+                        if (!starts_with(textureName, "/")) textureName = "/" + textureName;
                         auto resourceID = builder.GetID(textureName, false);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;

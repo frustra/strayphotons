@@ -34,7 +34,11 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
-        InlineVector(size_t initialSize = 0) : ArrayT() {
+        InlineVector() : ArrayT() {
+            resize(0);
+        }
+
+        InlineVector(size_t initialSize) : ArrayT() {
             resize(initialSize);
         }
 
@@ -49,11 +53,11 @@ namespace sp {
             }
         }
 
-        size_type size() const {
+        size_type size() const noexcept {
             return offset;
         }
 
-        size_type capacity() const {
+        size_type capacity() const noexcept {
             return ArrayT::size();
         }
 
@@ -69,7 +73,7 @@ namespace sp {
             std::fill(begin(), end(), value);
         }
 
-        bool empty() const {
+        bool empty() const noexcept {
             return !offset;
         }
 
@@ -144,22 +148,22 @@ namespace sp {
         }
 
         using ArrayT::begin;
-        iterator end() {
+        iterator end() noexcept {
             return begin() + offset;
         }
-        const_iterator end() const {
+        const_iterator end() const noexcept {
             return begin() + offset;
         }
 
         using ArrayT::rend;
-        reverse_iterator rbegin() {
-            return rend() - offset;
+        reverse_iterator rbegin() noexcept {
+            return std::reverse_iterator(end());
         }
-        const_reverse_iterator rbegin() const {
-            return rend() - offset;
+        const_reverse_iterator rbegin() const noexcept {
+            return std::reverse_iterator(end());
         }
 
-        bool operator==(const InlineVector<T, MaxSize, ArrayT> &other) const {
+        bool operator==(const InlineVector<T, MaxSize, ArrayT> &other) const noexcept {
             return offset == other.offset && std::equal(begin(), end(), other.begin());
         }
 

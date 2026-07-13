@@ -43,11 +43,11 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
-        InlineString() : ArrayT() {
+        InlineString() noexcept : ArrayT() {
             setSize(0);
         }
 
-        InlineString(size_t count, CharT ch) : ArrayT() {
+        InlineString(size_t count, CharT ch) noexcept : ArrayT() {
             resize(count, ch);
         }
 
@@ -139,12 +139,12 @@ namespace sp {
             setSize(newSize);
         }
 
-        void fill(const CharT &value) {
+        void fill(const CharT &value) noexcept {
             std::fill(begin(), end(), value);
             setSize(value == CharT() ? 0 : MaxSize);
         }
 
-        bool empty() const {
+        bool empty() const noexcept {
             return at(0) == CharT();
         }
 
@@ -182,7 +182,7 @@ namespace sp {
             return ref;
         }
 
-        void clear() {
+        void clear() noexcept {
             fill(CharT());
         }
 
@@ -196,10 +196,10 @@ namespace sp {
 
         using ArrayT::rend;
         reverse_iterator rbegin() {
-            return rend() - size();
+            return std::reverse_iterator(end());
         }
         const_reverse_iterator rbegin() const {
-            return rend() - size();
+            return std::reverse_iterator(end());
         }
 
         size_type find(std::basic_string_view<CharT> str, size_type pos = 0) const {

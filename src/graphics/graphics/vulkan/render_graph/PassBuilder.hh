@@ -17,14 +17,16 @@ namespace sp::vulkan::render_graph {
     public:
         PassBuilder(Resources &resources, Pass &pass) : resources(resources), pass(pass) {}
 
-        ResourceID GetID(std::string_view name, bool assertExists = true) {
-            return resources.GetID(name, assertExists);
+        ResourceID GetID(std::string_view name, bool assertExists = true) const {
+            ResourceID id = resources.GetID(name);
+            Assertf(!assertExists || id != InvalidResource, "resource does not exist: %s", name);
+            return id;
         }
-        Resource GetResource(ResourceID id) {
-            return resources.GetResource(id);
+        Resource GetResource(ResourceID id) const {
+            return resources.GetResource(id, true);
         }
-        Resource GetResource(std::string_view name) {
-            return resources.GetResource(GetID(name));
+        Resource GetResource(std::string_view name) const {
+            return resources.GetResource(GetID(name), true);
         }
 
         void Read(ResourceID id, Access access);
@@ -54,8 +56,9 @@ namespace sp::vulkan::render_graph {
 
         Resource CreateImage(std::string_view name, const ImageDesc &desc, Access access);
 
-        ImageDesc DeriveImage(ResourceID id) {
-            return resources.GetResourceRef(id).DeriveImage();
+        ImageDesc DeriveImage(ResourceID id) const {
+            const Resource &res = resources.GetResource(id, true);
+            return res.DeriveImage();
         }
 
         Resource CreateBuffer(BufferLayout layout, Residency residency, Access access);

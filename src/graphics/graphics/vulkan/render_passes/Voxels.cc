@@ -8,42 +8,44 @@
 #include "Voxels.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/Shader.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_passes/Lighting.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 
+#include <cstdint>
 #include <string>
-#include <vector>
 
 namespace sp::vulkan::renderer {
-    static CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
-    static CVar<bool> CVarEnableVoxels2("r.EnableVoxels2", true, "Enable world voxelization for lighting");
-    static CVar<int> CVarVoxelDebug("r.VoxelDebug",
+    CVar<bool> CVarEnableVoxels("r.EnableVoxels", true, "Enable world voxelization for lighting");
+    CVar<bool> CVarEnableVoxels2("r.EnableVoxels2", true, "Enable world voxelization for lighting");
+    CVar<int> CVarVoxelDebug("r.VoxelDebug",
         0,
         "Enable voxel grid debug view (0: off, 1: ray march, 2: cone trace, 3: diffuse trace)");
-    static CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
-    static CVar<uint32_t> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
-    static CVar<size_t> CVarVoxelLayers("r.VoxelLayers", 3, "The number of voxel mipmap layers");
-    static CVar<int> CVarVoxelClear("r.VoxelClear",
+    CVar<float> CVarVoxelDebugBlend("r.VoxelDebugBlend", 0.0f, "The blend weight used to overlay voxel debug");
+    CVar<uint32_t> CVarVoxelDebugMip("r.VoxelDebugMip", 0, "The voxel mipmap to sample in the debug view");
+    CVar<size_t> CVarVoxelLayers("r.VoxelLayers", 3, "The number of voxel mipmap layers");
+    CVar<int> CVarVoxelClear("r.VoxelClear",
         15,
         "Change the voxel grid clearing operation used between frames "
         "(bitfield: 1=radiance, 2=counters, 4=normals, 8=mipmap)");
-    static CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1f, "Light attenuation for voxel bounces");
-    static CVar<float> CVarLightLowPass("r.LightLowPass",
-        0.95,
-        "Blend this amount of light in from the previous frame");
-    static CVar<uint32_t> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
-    static CVar<bool> CVarReprojectVoxelGrid("r.VoxelReprojectGrid",
+    CVar<float> CVarLightAttenuation("r.LightAttenuation", 0.1f, "Light attenuation for voxel bounces");
+    CVar<float> CVarLightLowPass("r.LightLowPass", 0.95, "Blend this amount of light in from the previous frame");
+    CVar<uint32_t> CVarVoxelFillIndex("r.VoxelFillIndex", 7, "Voxel layer index to read for light feedback");
+    CVar<bool> CVarReprojectVoxelGrid("r.VoxelReprojectGrid",
         true,
         "Account for the voxel grid moving when sampling previous frames");
 
-    static CVar<uint32_t> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
+    CVar<uint32_t> CVarVoxelFragmentBuckets("r.VoxelFragmentBuckets",
         9,
         "The number of fragments that can be written to a voxel.");
 
-    static CVar<float> CVarVoxelFragmentBucketSizeFactor("r.VoxelFragmentBucketSizeFactor",
+    CVar<float> CVarVoxelFragmentBucketSizeFactor("r.VoxelFragmentBucketSizeFactor",
         1.75f,
         "Factor to decrease size of subsequent buckets");
 
@@ -90,11 +92,6 @@ namespace sp::vulkan::renderer {
             }
         }
 
-        // currentSetFrame = (currentSetFrame + 1) % layerDescriptorSets.size();
-        // if (!layerDescriptorSets[currentSetFrame]) {
-        //     layerDescriptorSets[currentSetFrame] = graph.Device().CreateBindlessDescriptorSet();
-        // }
-
         graph.AddPass("VoxelState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateUniform("VoxelState", sizeof(GPUVoxelState));
@@ -103,30 +100,6 @@ namespace sp::vulkan::renderer {
                 GPUVoxelState gpuData = {voxelToWorld.GetInverse().GetMatrix(), voxelGridSize};
                 resources.GetBuffer("VoxelState")->CopyFrom(&gpuData);
             });
-    }
-
-    void Voxels::updateDescriptorSet(rg::Resources &resources, DeviceContext &device) {
-        if (voxelLayerCount == 0) return;
-
-        std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
-        descriptorImageInfos.reserve(voxelLayerCount * 6);
-
-        for (size_t layer = 0; layer < voxelLayerCount; layer++) {
-            for (auto &voxelLayer : VoxelLayers[layer]) {
-                auto tex = resources.GetImageView(voxelLayer.name);
-                descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, vk::ImageLayout::eShaderReadOnlyOptimal);
-            }
-        }
-
-        vk::WriteDescriptorSet descriptorWrite;
-        descriptorWrite.dstSet = GetCurrentVoxelDescriptorSet();
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrite.pImageInfo = descriptorImageInfos.data();
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorCount = descriptorImageInfos.size();
-
-        device->updateDescriptorSets({descriptorWrite}, {});
     }
 
     void Voxels::AddVoxelization(RenderGraph &graph, const Lighting &lighting) {
@@ -368,14 +341,14 @@ namespace sp::vulkan::renderer {
                 cmd.SetStorageBuffer("VoxelFragmentListMetadata", "FragmentListMetadata");
                 cmd.SetStorageBuffer("VoxelFragmentList", "FragmentLists");
 
-                auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                auto lastVoxelStateID = resources.GetID("VoxelState", 1);
                 if (lastVoxelStateID != InvalidResource) {
                     cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                 } else {
                     cmd.SetUniformBuffer("PreviousVoxelStateUniform", "VoxelState");
                 }
                 for (auto &voxelLayer : VoxelLayers[voxelFillIndex]) {
-                    auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, false, 1);
+                    auto lastVoxelLayerID = resources.GetID(voxelLayer.fullName, 1);
                     if (lastVoxelLayerID != InvalidResource) {
                         cmd.SetImageView(0, 10 + voxelLayer.dirIndex, resources.GetImageView(lastVoxelLayerID));
                     } else {
@@ -754,7 +727,7 @@ namespace sp::vulkan::renderer {
 
                     cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
-                    auto lastVoxelStateID = resources.GetID("VoxelState", false, 1);
+                    auto lastVoxelStateID = resources.GetID("VoxelState", 1);
                     if (lastVoxelStateID != InvalidResource && CVarReprojectVoxelGrid.Get()) {
                         cmd.SetUniformBuffer("PreviousVoxelStateUniform", lastVoxelStateID);
                     } else {
@@ -770,7 +743,7 @@ namespace sp::vulkan::renderer {
                             resources.GetImageView(VoxelLayers[layer][i].preBlurName));
 
                         auto &lastFrameOutput = VoxelLayers[voxelLayerCount - 1][i].preBlurName;
-                        auto lastVoxelLayerID = resources.GetID(lastFrameOutput, false, 1);
+                        auto lastVoxelLayerID = resources.GetID(lastFrameOutput, 1);
                         if (lastVoxelLayerID != InvalidResource) {
                             cmd.SetImageView(0,
                                 2 + directions.size() * 2 + i,
@@ -868,9 +841,5 @@ namespace sp::vulkan::renderer {
 
                 cmd.Draw(3);
             });
-    }
-
-    vk::DescriptorSet Voxels::GetCurrentVoxelDescriptorSet() const {
-        return layerDescriptorSets[currentSetFrame];
     }
 } // namespace sp::vulkan::renderer

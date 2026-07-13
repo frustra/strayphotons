@@ -5,7 +5,7 @@
 		{
 			"name": "gui:menu",
 			"render_output": {
-				"source": "/ent:player:flatview",
+				"source": "player:flatview",
 				"effect": "background_blur",
 				"effect_if": "is_focused(Menu)"
 			}

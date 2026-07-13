@@ -1,0 +1,112 @@
+/*
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+#include "lib/scene.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform sampler3D voxelRadiance;
+
+layout(std430, binding = 2) buffer IndexLookupBuffer {
+    uint time;
+    uint vertexCount;
+    uint indexLookup[];
+};
+
+layout(std430, binding = 3) buffer VertexBuffer {
+    SceneVertex vertices[];
+};
+
+#include "lib/marching_cubes2.glsl"
+
+layout(constant_id = 0) const int CUBE_LAYER = 0;
+
+void main() {
+    ivec3 position = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 1))) return;
+
+    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
+        sampleGrid(voxelRadiance, position + vertexOffset[1]),
+        sampleGrid(voxelRadiance, position + vertexOffset[2]),
+        sampleGrid(voxelRadiance, position + vertexOffset[3]),
+        sampleGrid(voxelRadiance, position + vertexOffset[4]),
+        sampleGrid(voxelRadiance, position + vertexOffset[5]),
+        sampleGrid(voxelRadiance, position + vertexOffset[6]),
+        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+
+    uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
+                   uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
+                   uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    if (caseNum == 0 || caseNum == 255) return;
+
+    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
+    uint posIndex = FlattenIndex(position, cubeGridSize);
+
+    float[12] edgeIntersection;
+    vec3[12] edgeNormal;
+    vec4 intersectionSum = vec4(0);
+    vec3 normalSum = vec3(0);
+    for (int edge = 0; edge < 12; edge++) {
+        vec2 edgeData = vec2(cornerData[edges[edge].x], cornerData[edges[edge].y]);
+        if (sign(edgeData.x) != sign(edgeData.y)) {
+            float intersection = clamp(-edgeData.x / (edgeData.y - edgeData.x), 0, 1);
+            edgeIntersection[edge] = intersection;
+            vec3 intersectionPos = edgeLookup[edge].xyz + AxisDirections[edgeLookup[edge].w] * intersection;
+            intersectionSum += vec4(intersectionPos, 1);
+            vec3 normal;
+            for (int axis = 0; axis < 3; axis++) {
+                normal[axis] = sampleGrid(voxelRadiance, vec3(position) + intersectionPos - AxisDirections[axis]) -
+                               sampleGrid(voxelRadiance, vec3(position) + intersectionPos + AxisDirections[axis]);
+            }
+            normal = normalize(normal);
+            normalSum += normal;
+            edgeNormal[edge] = normal;
+        } else {
+            edgeIntersection[edge] = -1;
+            edgeNormal[edge] = vec3(0);
+        }
+    }
+
+    uint[3] axisEdgeMap = {0, 3, 8};
+    uint vertexIndex = atomicAdd(vertexCount, 4);
+    for (uint axis = 0; axis < 3; axis++) {
+        uint edge = axisEdgeMap[axis];
+        if (edgeIntersection[edge] >= 0) {
+            // Emit edge vertex
+            vec3 voxelPos = vec3(position) + AxisDirections[axis] * edgeIntersection[edge];
+            vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+            vec3 normal = transpose(mat3(voxelInfo.worldToVoxel)) * edgeNormal[edge];
+            SceneVertex vertex;
+            vertex.positionAndNormalX = vec4(worldPosition.xyz, normal.x);
+            vertex.normalYZ = normal.yz;
+            vertex.uv = vec2(0);
+            vertices[vertexIndex + axis] = vertex;
+            indexLookup[posIndex * 4 + axis] = vertexIndex + axis;
+        } else {
+            indexLookup[posIndex * 4 + axis] = 0;
+        }
+    }
+
+    // Emit center vertex
+    vec3 voxelPos = vec3(position) + intersectionSum.xyz / intersectionSum.w;
+    vec4 worldPosition = inverse(voxelInfo.worldToVoxel) * vec4((voxelPos + 0.5) * pow(2, CUBE_LAYER), 1.0);
+    vec3 normal = transpose(mat3(voxelInfo.worldToVoxel)) * normalize(normalSum);
+    SceneVertex vertex;
+    vertex.positionAndNormalX = vec4(worldPosition.xyz, normal.x);
+    vertex.normalYZ = normal.yz;
+    vertex.uv = vec2(0);
+    vertices[vertexIndex + 3] = vertex;
+    indexLookup[posIndex * 4 + 3] = vertexIndex + 3;
+}

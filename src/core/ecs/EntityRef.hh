@@ -71,34 +71,34 @@ The special `"scoperoot"` alias can be used to reference the parent entity durin
         struct Ref;
 
     public:
-        EntityRef() {}
+        EntityRef() noexcept {}
         EntityRef(const Entity &ent);
         EntityRef(const ecs::Name &name, const Entity &ent = Entity());
-        EntityRef(const EntityRef &ref) : ptr(ref.ptr) {}
-        EntityRef(const std::shared_ptr<Ref> &ptr) : ptr(ptr) {}
+        EntityRef(const EntityRef &ref) noexcept : ptr(ref.ptr) {}
+        EntityRef(const std::shared_ptr<Ref> &ptr) noexcept : ptr(ptr) {}
 
-        ecs::Name Name() const;
+        ecs::Name Name() const noexcept;
         Entity Get(const Lock<> &lock) const;
-        Entity GetLive() const;
-        Entity GetStaging() const;
-        bool IsValid() const;
+        Entity GetLive() const noexcept;
+        Entity GetStaging() const noexcept;
+        bool IsValid() const noexcept;
 
         void SetScope(const EntityScope &scope);
-        void Clear();
+        void Clear() noexcept;
 
-        static EntityRef Empty();
+        static EntityRef Empty() noexcept;
         static EntityRef New(Entity ent);
-        static EntityRef Copy(const EntityRef &ref);
+        static EntityRef Copy(const EntityRef &ref) noexcept;
         static EntityRef Lookup(const char *name, const EntityScope *scope = nullptr);
 
-        explicit operator bool() const {
+        explicit operator bool() const noexcept {
             return !!ptr;
         }
 
-        bool operator==(const EntityRef &other) const;
-        bool operator==(const NamedEntity &other) const;
-        bool operator==(const Entity &other) const;
-        bool operator<(const EntityRef &other) const;
+        bool operator==(const EntityRef &other) const noexcept;
+        bool operator==(const NamedEntity &other) const noexcept;
+        bool operator==(const Entity &other) const noexcept;
+        bool operator<(const EntityRef &other) const noexcept;
 
     private:
         std::shared_ptr<Ref> ptr;

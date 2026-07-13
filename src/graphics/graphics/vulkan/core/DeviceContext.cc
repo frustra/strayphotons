@@ -1513,12 +1513,12 @@ namespace sp::vulkan {
         });
     }
 
-    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(std::string_view assetName, bool genMipmap, bool srgb) {
-        auto futImage = Assets().LoadImage(assetName);
+    AsyncPtr<ImageView> DeviceContext::LoadAssetImage(std::string_view path, bool genMipmap, bool srgb) {
+        auto futImage = Assets().LoadImage(path);
         return allocatorQueue.Dispatch<ImageView>(futImage,
-            [this, name = std::string(assetName), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
+            [this, path = AssetPath(path), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
                 if (!image) {
-                    Warnf("Missing asset image: %s", name);
+                    Warnf("Missing asset image: %s", path);
                     return CreateSinglePixel(ERROR_COLOR);
                 }
                 return LoadImage(image, genMipmap, srgb);

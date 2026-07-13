@@ -188,15 +188,14 @@ typedef struct vec2_t { float v[2]; } vec2_t;
 // Component: renderable
 typedef struct sp_ecs_renderable_t {
     event_string_t model; // 256 bytes
-    const uint8_t _unknown256[16];
     uint64_t mesh_index; // 8 bytes
-    const uint8_t _unknown280[24];
+    const uint8_t _unknown264[24];
     sp_visibility_mask_t visibility; // 4 bytes
     float emissive; // 4 bytes
     sp_color_alpha_t color_override; // 16 bytes
     event_name_t texture_override; // 128 bytes
     vec2_t metallic_roughness_override; // 8 bytes
-} sp_ecs_renderable_t; // 464 bytes
+} sp_ecs_renderable_t; // 448 bytes
 const uint64_t SP_RENDERABLE_INDEX = 5;
 const uint64_t SP_ACCESS_RENDERABLE = 2ull << 5;
 SP_EXPORT sp_ecs_renderable_t *sp_entity_set_renderable(tecs_lock_t *dynLockPtr, sp_entity_t ent);

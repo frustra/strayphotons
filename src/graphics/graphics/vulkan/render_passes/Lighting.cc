@@ -7,17 +7,21 @@
 
 #include "Lighting.hh"
 
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Scene.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
+#include "graphics/vulkan/scene/TextureSet.hh"
 #include "strayphotons/Utility.hh"
 
 #include <algorithm>
+#include <cerrno>
 #include <glm/gtx/vector_angle.hpp>
 
 namespace sp::vulkan::renderer {
@@ -60,20 +64,51 @@ namespace sp::vulkan::renderer {
         return glm::mix(x1, x2, alpha.y);
     }
 
+    Lighting::Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {
+        auto lock = ecs::StartTransaction<ecs::AddRemove>();
+        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
+    }
+
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
+        Assertf(ecs::IsLive(lock), "Lighting::LoadState expects live ecs lock");
         lights.clear();
+
+        {
+            ZoneScopedN("UpdateModified");
+            ecs::ComponentModifiedEvent<ecs::Light> lightModifiedEvent;
+            while (lightObserver.Poll(lock, lightModifiedEvent)) {
+                if (!lightModifiedEvent.Exists(lock)) {
+                    scene.liveEntityState.erase(lightModifiedEvent);
+                    continue;
+                }
+                auto &state = scene.liveEntityState[lightModifiedEvent];
+                if (lightModifiedEvent.Has<ecs::Light>(lock)) {
+                    auto &light = lightModifiedEvent.Get<const ecs::Light>(lock);
+                    if (light.filterName != state.lightFilterName) {
+                        state.lightFilterName = light.filterName;
+                        state.lightFilter = scene.textures.LoadResource(light.filterName);
+                    }
+                } else {
+                    state.lightFilterName = "";
+                    state.lightFilter = {};
+                }
+            }
+        }
 
         for (const ecs::Entity &entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;
 
             auto &light = entity.Get<ecs::Light>(lock);
             auto &filterName = light.filterName;
+            const auto &state = scene.liveEntityState[entity];
 
-            if (!filterName.empty() && scene.liveTextureCache.find(filterName) == scene.liveTextureCache.end()) {
-                // cull lights that don't have their filter texture loaded yet
-                continue;
+            if (!filterName.empty()) {
+                if (state.lightFilterName != filterName || !state.lightFilter.Ready()) {
+                    // cull lights that don't have their filter texture loaded yet
+                    continue;
+                }
             }
 
             if (!light.on) continue;
@@ -116,8 +151,11 @@ namespace sp::vulkan::renderer {
                     glm::vec2(1, 1),
                     glm::vec2(1, 0),
                 };
-                vLight.filterName = filterName;
-                vLight.filterTexture = scene.liveTextureCache[filterName].index;
+                if (state.lightFilter) {
+                    data.filterId = state.lightFilter.index;
+                } else {
+                    data.filterId = scene.textures.GetSinglePixelIndex(ERROR_COLOR);
+                }
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -238,9 +276,7 @@ namespace sp::vulkan::renderer {
                         parentLight.cornerUVs[2],
                         coord);
                 }
-
-                vLight.filterName = light.filterName;
-                vLight.filterTexture = scene.liveTextureCache[light.filterName].index;
+                data.filterId = parentLight.filterId;
             }
 
             data.previousIndex = std::find(previousLights.begin(), previousLights.end(), vLight) -
@@ -315,25 +351,6 @@ namespace sp::vulkan::renderer {
         }
     }
 
-    void Lighting::SetLightTextures(RenderGraph &graph) {
-        graph.AddPass("SetLightTextures")
-            .Build([&](PassBuilder &builder) {
-                builder.Write("LightState", Access::HostWrite);
-            })
-            .Execute([this](Resources &resources, DeviceContext &device) {
-                for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; i++) {
-                    if (lights[i].filterTexture.has_value()) {
-                        if (starts_with(lights[i].filterName, "/ent:")) {
-                            gpuData.lights[i].filterId = scene.liveTextureCache[lights[i].filterName].index;
-                        } else {
-                            gpuData.lights[i].filterId = lights[i].filterTexture.value();
-                        }
-                    }
-                }
-                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
-            });
-    }
-
     void Lighting::AddShadowPasses(RenderGraph &graph) {
         ZoneScoped;
         graph.BeginScope("ShadowMap");
@@ -383,14 +400,14 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_WIDTH", CVarShadowMapSampleWidth.Get());
                 cmd.SetShaderConstant(ShaderStage::Fragment, "SHADOW_MAP_SAMPLE_COUNT", CVarShadowMapSampleCount.Get());
 
-                auto lastFrameID = resources.GetID("ShadowMap/Linear", false, 1);
+                auto lastFrameID = resources.GetID("ShadowMap/Linear", 1);
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
                     cmd.SetImageView("shadowMap", scene.textures.GetSinglePixel(glm::vec4(1)));
                 }
 
-                auto lastStateID = resources.GetID("LightState", false, 1);
+                auto lastStateID = resources.GetID("LightState", 1);
                 if (lastStateID != InvalidResource) {
                     cmd.SetUniformBuffer("PreviousLightData", lastStateID);
                 } else {
@@ -423,6 +440,10 @@ namespace sp::vulkan::renderer {
 
                 builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::Store});
 
+                builder.ReadPreviousFrame("/MarchingCubes/VertexBuffer", Access::VertexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
@@ -444,6 +465,18 @@ namespace sp::vulkan::renderer {
                         resources.GetBuffer("WarpedVertexBuffer"),
                         resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
                         resources.GetBuffer(drawAllIDs.drawParamsBuffer));
+
+                    auto vertexID = resources.GetID("/MarchingCubes/VertexBuffer", 1);
+                    auto indexID = resources.GetID("/MarchingCubes/IndexBuffer", 1);
+                    auto vertexBuffer = resources.GetBuffer(vertexID);
+                    auto indexBuffer = resources.GetBuffer(indexID);
+                    if (vertexBuffer && indexBuffer) {
+                        cmd.Raw().bindIndexBuffer(*indexBuffer,
+                            sizeof(VkDrawIndexedIndirectCommand),
+                            vk::IndexType::eUint32);
+                        cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+                        cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                    }
                 }
             });
 
@@ -564,7 +597,7 @@ namespace sp::vulkan::renderer {
     }
 
     void Lighting::AddLightingPass(RenderGraph &graph) {
-        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur/LastOutput" : "ShadowMap/Linear";
+        auto shadowDepth = CVarBlurShadowMap.Get() ? "ShadowMapBlur" : "ShadowMap/Linear";
         uint32_t voxelLayerCount = std::min(CVarLightingVoxelLayers.Get(), voxels.GetLayerCount());
 
         graph.AddPass("Lighting")
@@ -633,7 +666,6 @@ namespace sp::vulkan::renderer {
                 for (auto &voxelLayer : Voxels::VoxelLayers[voxelLayerCount - 1]) {
                     cmd.SetImageView(2, voxelLayer.dirIndex, resources.GetImageView(voxelLayer.fullName));
                 }
-                // cmd.SetBindlessDescriptors(2, voxels.GetCurrentVoxelDescriptorSet());
 
                 cmd.Draw(3);
             });

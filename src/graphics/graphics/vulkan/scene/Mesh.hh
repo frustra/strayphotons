@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 #include "strayphotons/Async.hh"
@@ -32,7 +33,8 @@ namespace sp::vulkan {
             glm::vec3 center = glm::vec3(0);
         };
 
-        Mesh(std::shared_ptr<const sp::Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
+        Mesh(std::shared_ptr<const Gltf> source = nullptr);
+        Mesh(std::shared_ptr<const Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
         ~Mesh();
 
         uint32_t SceneIndex() const;
@@ -60,8 +62,12 @@ namespace sp::vulkan {
             return true;
         }
 
+        bool Valid() const {
+            return !modelName.empty() && staging.transferComplete != nullptr;
+        }
+
     private:
-        std::string modelName;
+        AssetName modelName;
         std::shared_ptr<const sp::Gltf> asset;
 
         std::vector<Primitive> primitives;

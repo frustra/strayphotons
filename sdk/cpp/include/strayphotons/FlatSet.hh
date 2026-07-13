@@ -37,6 +37,8 @@ namespace sp {
         using const_iterator = typename ContainerT::const_iterator;
         using reverse_iterator = typename ContainerT::reverse_iterator;
         using const_reverse_iterator = typename ContainerT::const_reverse_iterator;
+        using ContainerT::operator[];
+        using ContainerT::at;
         using ContainerT::back;
         using ContainerT::begin;
         using ContainerT::capacity;
@@ -45,7 +47,6 @@ namespace sp {
         using ContainerT::data;
         using ContainerT::empty;
         using ContainerT::end;
-        using ContainerT::erase;
         using ContainerT::front;
         using ContainerT::max_size;
         using ContainerT::rbegin;
@@ -120,6 +121,20 @@ namespace sp {
         template<typename... Args>
         std::pair<iterator, bool> emplace(Args &&...args) {
             return insert(std::move(T(std::forward<Args>(args)...)));
+        }
+
+        iterator erase(iterator pos) {
+            return ContainerT::erase(pos);
+        }
+        const_iterator erase(const_iterator pos) const {
+            return ContainerT::erase(pos);
+        }
+
+        iterator erase(iterator first, iterator last) {
+            return ContainerT::erase(first, last);
+        }
+        const_iterator erase(const_iterator first, const_iterator last) const {
+            return ContainerT::erase(first, last);
         }
 
         template<typename Key>

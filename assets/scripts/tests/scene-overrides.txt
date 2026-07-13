@@ -7,7 +7,7 @@ steplogic
 stepphysics
 stepgraphics 2
 assert_screenshot load-override-first1.png
-assert_screenshot load-override-first-shadowmap1.png ShadowMap/LastOutput
+assert_screenshot load-override-first-shadowmap1.png ShadowMap
 stepgraphics
 steplogic 2700
 stepphysics 2
@@ -33,7 +33,7 @@ steplogic
 stepphysics
 stepgraphics 2
 assert_screenshot load-override-after1.png
-assert_screenshot load-override-after-shadowmap1.png ShadowMap/LastOutput
+assert_screenshot load-override-after-shadowmap1.png ShadowMap
 stepgraphics
 steplogic 2700
 stepphysics 2

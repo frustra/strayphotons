@@ -113,7 +113,6 @@ namespace sp::scripts {
                         if (!modelName.empty()) {
                             Renderable newRenderable = LookupComponent<Renderable>().StagingDefault();
                             newRenderable.modelName = modelName;
-                            newRenderable.model = sp::Assets().LoadGltf(modelName);
                             newRenderable.meshIndex = 0;
                             newEntity.Set<Renderable>(lock, newRenderable);
 

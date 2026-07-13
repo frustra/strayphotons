@@ -11,8 +11,24 @@
 #include "console/CFunc.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
+#include <cstdint>
+
 namespace sp::vulkan::renderer {
     static const uint32_t MAX_VOXEL_FRAGMENT_LISTS = 16;
+
+    extern CVar<bool> CVarEnableVoxels;
+    extern CVar<bool> CVarEnableVoxels2;
+    extern CVar<int> CVarVoxelDebug;
+    extern CVar<float> CVarVoxelDebugBlend;
+    extern CVar<uint32_t> CVarVoxelDebugMip;
+    extern CVar<size_t> CVarVoxelLayers;
+    extern CVar<int> CVarVoxelClear;
+    extern CVar<float> CVarLightAttenuation;
+    extern CVar<float> CVarLightLowPass;
+    extern CVar<uint32_t> CVarVoxelFillIndex;
+    extern CVar<bool> CVarReprojectVoxelGrid;
+    extern CVar<uint32_t> CVarVoxelFragmentBuckets;
+    extern CVar<float> CVarVoxelFragmentBucketSizeFactor;
 
     class Lighting;
 
@@ -32,10 +48,12 @@ namespace sp::vulkan::renderer {
         void AddVoxelization2(RenderGraph &graph, const Lighting &lighting);
         void AddDebugPass(RenderGraph &graph);
 
-        vk::DescriptorSet GetCurrentVoxelDescriptorSet() const;
-
         uint32_t GetLayerCount() const {
             return voxelLayerCount;
+        }
+
+        glm::ivec3 GetGridSize() const {
+            return voxelGridSize;
         }
 
     private:
@@ -51,13 +69,8 @@ namespace sp::vulkan::renderer {
         glm::ivec3 voxelGridSize = glm::ivec3(0);
         uint32_t voxelLayerCount;
 
-        std::array<vk::DescriptorSet, 2> layerDescriptorSets;
-        uint32_t currentSetFrame = 0;
-
         std::atomic_flag debugThisFrame;
         CFuncCollection funcs;
-
-        void updateDescriptorSet(rg::Resources &resources, DeviceContext &device);
 
         static inline const std::array<glm::vec3, 6> directions = {
             glm::vec3(1, 0, 0),

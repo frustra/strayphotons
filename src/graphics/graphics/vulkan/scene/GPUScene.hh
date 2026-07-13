@@ -7,13 +7,19 @@
 
 #pragma once
 
+#include "assets/AssetManager.hh"
 #include "assets/Gltf.hh"
 #include "common/PreservingMap.hh"
+#include "ecs/Ecs.hh"
+#include "ecs/components/Light.hh"
+#include "ecs/components/Renderable.hh"
 #include "ecs/components/View.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/EntityMap.hh"
 #include "strayphotons/Hashing.hh"
 
 #include <memory>
@@ -87,11 +93,14 @@ namespace sp::vulkan {
         GPUScene(DeviceContext &device);
         void Flush();
         void LoadState(rg::RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Renderable, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>> lock);
-        bool PreloadTextures(
-            ecs::Lock<ecs::Read<ecs::Name, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>> lock);
-        void AddGraphTextures(rg::RenderGraph &graph);
-        std::shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex);
+            ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>>
+                lock);
+        bool PreloadScene(
+            ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>>
+                lock,
+            std::shared_ptr<Scene> scene);
+        std::shared_ptr<Mesh> LoadMesh(const AssetName &modelName, size_t meshIndex);
+        std::shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const Gltf> &model, size_t meshIndex);
 
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer = rg::InvalidResource; // first 4 bytes are the number of draws
@@ -145,10 +154,18 @@ namespace sp::vulkan {
         uint32_t primitiveCountPowerOfTwo = 0;
 
         TextureSet textures;
-        robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> liveTextureCache;
-        robin_hood::unordered_map<rg::ResourceName, TextureHandle, StringHash, StringEqual> stagingTextureCache;
+
+        struct EntityState {
+            rg::ResourceName lightFilterName, renderableTextureOverrideName;
+            TextureHandle lightFilter, renderableTextureOverride;
+
+            bool operator==(const EntityState &) const = default;
+        };
+        EntityMap<EntityState> liveEntityState, stagingEntityState;
 
     private:
+        ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
+
         void FlushMeshes();
         struct MeshKey {
             rg::ResourceName modelName;
@@ -187,10 +204,11 @@ namespace sp::vulkan {
             }
         };
 
+        PreservingMap<AssetName, Async<Gltf>, 10000, StringHash, StringEqual> activeModels;
+        std::vector<AssetName> modelsToLoad;
         PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
-        std::vector<std::pair<std::shared_ptr<const sp::Gltf>, size_t>> meshesToLoad;
-        std::vector<GPURenderableEntity> renderables;
-        std::vector<std::pair<rg::ResourceName, size_t>> renderableTextureOverrides;
+        std::vector<std::pair<std::shared_ptr<const Gltf>, size_t>> meshesToLoad;
+        std::vector<GPURenderableEntity> gpuRenderables;
         std::vector<std::weak_ptr<Mesh>> meshes;
     };
 } // namespace sp::vulkan

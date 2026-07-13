@@ -14,6 +14,7 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <filesystem>
 #include <fpng.h>
@@ -42,6 +43,7 @@ namespace sp::vulkan::renderer {
             std::string screenshotPath = pending.path;
             std::string screenshotResource = pending.resource;
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
+            if (!starts_with(screenshotResource, "/")) screenshotResource = "/" + screenshotResource;
 
             rg::ResourceID sourceID = rg::InvalidResource;
 
@@ -77,7 +79,7 @@ namespace sp::vulkan::renderer {
                 })
                 .Execute([screenshotPath, assert = pending.assert, sourceID](rg::Resources &resources,
                              DeviceContext &device) {
-                    auto &res = resources.GetResource(sourceID);
+                    auto &res = resources.GetResource(sourceID, true);
                     if (res.type == rg::Resource::Type::Image) {
                         auto target = resources.GetImageView(res.id);
                         renderer::WriteScreenshot(device, screenshotPath, target);

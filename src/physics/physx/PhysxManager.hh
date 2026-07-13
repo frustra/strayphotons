@@ -28,6 +28,7 @@
 #include "strayphotons/EntityMap.hh"
 #include "strayphotons/FlatSet.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 
 #include <PxPhysicsAPI.h>
@@ -108,6 +109,8 @@ namespace sp {
         physx::PxJoint *pxJoint = nullptr;
         ForceConstraint *forceConstraint = nullptr;
         NoClipConstraint *noclipConstraint = nullptr;
+
+        bool operator==(const JointState &) const noexcept = default;
     };
 
     class PhysxManager : public RegisteredThread {
@@ -184,7 +187,7 @@ namespace sp {
         EntityMap<physx::PxRigidActor *> actors, subActors;
         EntityMap<physx::PxController *> controllers;
 
-        EntityMap<std::vector<JointState>> joints;
+        EntityMap<HeapVector<JointState>> joints;
 
         std::mutex cacheMutex;
         PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;

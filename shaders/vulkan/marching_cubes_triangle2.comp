@@ -1,0 +1,252 @@
+/*
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+ * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+#version 460
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "../lib/types_common.glsl"
+#include "../lib/voxel_shared.glsl"
+#include "lib/scene.glsl"
+
+layout(binding = 0) uniform VoxelStateUniform {
+    VoxelState voxelInfo;
+};
+
+layout(binding = 1) uniform sampler3D voxelRadiance;
+
+layout(std430, binding = 2) buffer IndexLookupBuffer {
+    uint time;
+    uint vertexCount;
+    uint indexLookup[];
+};
+
+layout(std430, binding = 3) buffer IndexBuffer {
+    VkDrawIndexedIndirectCommand drawCmd;
+    uint indices[];
+};
+
+layout(std430, binding = 4) readonly buffer TriangleIndexBuffer {
+    uint triangleIndexBuffer[];
+};
+layout(std430, binding = 5) readonly buffer CaseInteriorEdges {
+    int caseInteriorEdge[];
+};
+layout(std430, binding = 6) readonly buffer TriangleCaseOffsets {
+    uint triangleCaseOffset[];
+};
+layout(std430, binding = 7) readonly buffer CaseTests {
+    int caseTests[];
+};
+
+#include "lib/marching_cubes2.glsl"
+
+layout(constant_id = 0) const int CUBE_LAYER = 0;
+
+// Implemented using reference algorithm: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
+bool testInterior(float[8] cornerData, uint caseNum, int edge, int s) {
+    float t = 0;
+    mat2 corners = mat2(0, 0, 0, 0);
+    switch (caseNum) {
+    case 4:
+    case 10:
+        float a = (cornerData[4] - cornerData[0]) * (cornerData[6] - cornerData[2]) -
+                  (cornerData[7] - cornerData[3]) * (cornerData[5] - cornerData[1]);
+        float b = cornerData[2] * (cornerData[4] - cornerData[0]) + cornerData[0] * (cornerData[6] - cornerData[2]) -
+                  cornerData[1] * (cornerData[7] - cornerData[3]) - cornerData[3] * (cornerData[5] - cornerData[1]);
+        t = -b / (2 * a);
+        if (t < 0 || t > 1) return s > 0;
+
+        corners[0][0] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+        corners[1][0] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+        corners[1][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+        corners[0][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+        break;
+
+    case 6:
+    case 7:
+    case 12:
+    case 13:
+        t = cornerData[edges[edge][0]] / (cornerData[edges[edge][0]] - cornerData[edges[edge][1]]);
+        corners[0][0] = 0;
+        switch (edge) {
+        case 0:
+            corners[1][0] = cornerData[3] + (cornerData[2] - cornerData[3]) * t;
+            corners[1][1] = cornerData[7] + (cornerData[6] - cornerData[7]) * t;
+            corners[0][1] = cornerData[4] + (cornerData[5] - cornerData[4]) * t;
+            break;
+        case 1:
+            corners[1][0] = cornerData[0] + (cornerData[3] - cornerData[0]) * t;
+            corners[1][1] = cornerData[4] + (cornerData[7] - cornerData[4]) * t;
+            corners[0][1] = cornerData[5] + (cornerData[6] - cornerData[5]) * t;
+            break;
+        case 2:
+            corners[1][0] = cornerData[1] + (cornerData[0] - cornerData[1]) * t;
+            corners[1][1] = cornerData[5] + (cornerData[4] - cornerData[5]) * t;
+            corners[0][1] = cornerData[6] + (cornerData[7] - cornerData[6]) * t;
+            break;
+        case 3:
+            corners[1][0] = cornerData[2] + (cornerData[1] - cornerData[2]) * t;
+            corners[1][1] = cornerData[6] + (cornerData[5] - cornerData[6]) * t;
+            corners[0][1] = cornerData[7] + (cornerData[4] - cornerData[7]) * t;
+            break;
+        case 4:
+            corners[1][0] = cornerData[7] + (cornerData[6] - cornerData[7]) * t;
+            corners[1][1] = cornerData[3] + (cornerData[2] - cornerData[3]) * t;
+            corners[0][1] = cornerData[0] + (cornerData[1] - cornerData[0]) * t;
+            break;
+        case 5:
+            corners[1][0] = cornerData[4] + (cornerData[7] - cornerData[4]) * t;
+            corners[1][1] = cornerData[0] + (cornerData[3] - cornerData[0]) * t;
+            corners[0][1] = cornerData[1] + (cornerData[2] - cornerData[1]) * t;
+            break;
+        case 6:
+            corners[1][0] = cornerData[5] + (cornerData[4] - cornerData[5]) * t;
+            corners[1][1] = cornerData[1] + (cornerData[0] - cornerData[1]) * t;
+            corners[0][1] = cornerData[2] + (cornerData[3] - cornerData[2]) * t;
+            break;
+        case 7:
+            corners[1][0] = cornerData[6] + (cornerData[5] - cornerData[6]) * t;
+            corners[1][1] = cornerData[2] + (cornerData[1] - cornerData[2]) * t;
+            corners[0][1] = cornerData[3] + (cornerData[0] - cornerData[3]) * t;
+            break;
+        case 8:
+            corners[1][0] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+            corners[1][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+            corners[0][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+            break;
+        case 9:
+            corners[1][0] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+            corners[1][1] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+            corners[0][1] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+            break;
+        case 10:
+            corners[1][0] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+            corners[1][1] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+            corners[0][1] = cornerData[3] + (cornerData[7] - cornerData[3]) * t;
+            break;
+        case 11:
+            corners[1][0] = cornerData[2] + (cornerData[6] - cornerData[2]) * t;
+            corners[1][1] = cornerData[1] + (cornerData[5] - cornerData[1]) * t;
+            corners[0][1] = cornerData[0] + (cornerData[4] - cornerData[0]) * t;
+            break;
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    int test = 0;
+    if (corners[0][0] >= 0) test++;
+    if (corners[1][0] >= 0) test += 2;
+    if (corners[1][1] >= 0) test += 4;
+    if (corners[0][1] >= 0) test += 8;
+    switch (test) {
+    case 0:
+        return s > 0;
+    case 1:
+        return s > 0;
+    case 2:
+        return s > 0;
+    case 3:
+        return s > 0;
+    case 4:
+        return s > 0;
+    case 5:
+        if (determinant(corners) < 0.00001) return s > 0;
+        break;
+    case 6:
+        return s > 0;
+    case 7:
+        return s < 0;
+    case 8:
+        return s > 0;
+    case 9:
+        return s > 0;
+    case 10:
+        if (determinant(corners) >= 0.00001) return s > 0;
+        break;
+    case 11:
+        return s < 0;
+    case 12:
+        return s > 0;
+    case 13:
+        return s < 0;
+    case 14:
+        return s < 0;
+    case 15:
+        return s < 0;
+    }
+
+    return s < 0;
+}
+
+// Implemented using reference algorithm: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
+bool testFace(float[8] cornerData, int face) {
+    uint i = abs(face) - 1;
+    mat2 corners = mat2(cornerData[faces[i].x], cornerData[faces[i].y], cornerData[faces[i].w], cornerData[faces[i].z]);
+
+    float det = determinant(corners);
+    if (abs(det) < 0.00001) return face >= 0;
+    return sign(face) * sign(corners[0][0]) * det >= 0;
+}
+
+void main() {
+    ivec3 position = ivec3(gl_GlobalInvocationID);
+    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 2))) return;
+
+    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
+        sampleGrid(voxelRadiance, position + vertexOffset[1]),
+        sampleGrid(voxelRadiance, position + vertexOffset[2]),
+        sampleGrid(voxelRadiance, position + vertexOffset[3]),
+        sampleGrid(voxelRadiance, position + vertexOffset[4]),
+        sampleGrid(voxelRadiance, position + vertexOffset[5]),
+        sampleGrid(voxelRadiance, position + vertexOffset[6]),
+        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+
+    uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
+                   uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
+                   uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
+    if (caseNum == 0 || caseNum == 255) return;
+
+    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
+    uint posIndex = FlattenIndex(position, cubeGridSize);
+
+    uint testResult = 0;
+    for (int t = 0; t < 7; t++) {
+        int test = caseTests[caseNum * 7 + t];
+        if (test == 0) break;
+        if (abs(test) < 7) {
+            int bit = testFace(cornerData, test) ? 1 : 0;
+            testResult |= bit << (abs(test) - 1);
+        } else {
+            int bit = testInterior(cornerData, caseNum, caseInteriorEdge[caseNum * 64 + testResult], test) ? 1 : 0;
+            testResult |= bit << (abs(test) - 1);
+        }
+    }
+
+    uint bufferOffset = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2];
+    uint indexCount = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2 + 1];
+    for (int i = 0; i < indexCount; i += 3) {
+        if (i + 2 >= indexCount) break;
+        uvec3 edgeNums = uvec3(triangleIndexBuffer[bufferOffset + i],
+            triangleIndexBuffer[bufferOffset + i + 1],
+            triangleIndexBuffer[bufferOffset + i + 2]);
+
+        uint triangleOffset = atomicAdd(drawCmd.indexCount, 3);
+        for (int vertex = 0; vertex < 3; vertex++) {
+            uint edge = edgeNums[vertex];
+            ivec4 edgeInfo = edgeLookup[edge];
+            uint edgeIndex = FlattenIndex(position + edgeInfo.xyz, cubeGridSize) * 4 + edgeInfo.w;
+
+            indices[triangleOffset + 2 - vertex] = indexLookup[edgeIndex];
+        }
+    }
+}

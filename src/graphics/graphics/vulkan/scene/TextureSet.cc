@@ -11,6 +11,12 @@
 #include "assets/GltfImpl.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/Async.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <cstdint>
 #include <memory>
@@ -43,18 +49,18 @@ namespace sp::vulkan {
         auto i = AllocateTextureIndex();
         textures[i] = ptr;
         texturesToFlush.push_back(i);
-        return {i, {}};
+        return TextureHandle(i);
     }
 
     TextureHandle TextureSet::Add(const AsyncPtr<ImageView> &asyncPtr) {
         if (asyncPtr->Ready()) return Add(asyncPtr->Get());
 
         auto i = AllocateTextureIndex();
-        return {i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
-                    DebugAssertf(view, "TextureSet::Add missing image view");
-                    textures[i] = view;
-                    texturesToFlush.push_back(i);
-                })};
+        return TextureHandle(i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+            DebugAssertf(view, "TextureSet::Add missing image view");
+            textures[i] = view;
+            texturesToFlush.push_back(i);
+        }));
     }
 
     TextureIndex TextureSet::AllocateTextureIndex() {
@@ -75,12 +81,40 @@ namespace sp::vulkan {
         texturesToFlush.push_back(i);
     }
 
-    TextureHandle TextureSet::LoadAssetImage(std::string_view name, bool genMipmap, bool srgb) {
-        std::string key = "asset:" + std::string(name);
+    TextureHandle TextureSet::LoadResource(std::string_view resourceName) {
+        if (resourceName.empty()) return {};
+        auto it = textureCache.find(resourceName);
+        if (it != textureCache.end()) return it->second;
+
+        if (resourceName.length() > 6 && starts_with(resourceName, "asset:")) {
+            auto path = resourceName.substr(6);
+            auto imageView = device.LoadAssetImage(path);
+            device.FlushMainQueue();
+            auto pending = Add(imageView);
+            textureCache[resourceName] = pending;
+            return pending;
+        }
+
+        rg::ResourceName name;
+        if (starts_with(resourceName, "/")) {
+            name = resourceName;
+        } else {
+            name = rg::ResourceName("/") + resourceName;
+        }
+        auto i = AllocateTextureIndex();
+        auto pending = TextureHandle(i, std::make_shared<Async<void>>());
+        renderGraphTextures.emplace_back(name, pending);
+        textureCache[resourceName] = pending;
+        return pending;
+    }
+
+    TextureHandle TextureSet::LoadAssetImage(std::string_view path, bool genMipmap, bool srgb) {
+        if (path.empty()) return {};
+        HeapString key = HeapString("asset:") + path;
         auto it = textureCache.find(key);
         if (it != textureCache.end()) return it->second;
 
-        auto imageView = device.LoadAssetImage(name, genMipmap, srgb);
+        auto imageView = device.LoadAssetImage(path, genMipmap, srgb);
         device.FlushMainQueue();
         auto pending = Add(imageView);
         textureCache[key] = pending;
@@ -223,6 +257,40 @@ namespace sp::vulkan {
         return pending;
     }
 
+    void TextureSet::AddGraphTextures(rg::RenderGraph &graph) {
+        if (renderGraphTextures.empty()) return;
+        InlineVector<std::pair<rg::ResourceID, TextureHandle>, 256> newGraphTextures;
+        graph.AddPass("AddGraphTextures")
+            .Build([&](rg::PassBuilder &builder) {
+                for (auto &tex : renderGraphTextures) {
+                    DebugAssertf(starts_with(tex.first, "/"), "Graph resource references must start with /");
+                    rg::ResourceID id = builder.GetID(tex.first, false);
+                    if (id == rg::InvalidResource) {
+                        id = builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
+                    } else {
+                        builder.Read(id, Access::FragmentShaderSampleImage);
+                    }
+                    newGraphTextures.emplace_back(id, tex.second.lock());
+                }
+                builder.RequirePass();
+            })
+            .Execute([this, newGraphTextures](rg::Resources &resources, DeviceContext &device) {
+                for (auto &tex : newGraphTextures) {
+                    ImageViewPtr imageView;
+                    if (tex.first != rg::InvalidResource) {
+                        imageView = resources.GetImageView(tex.first);
+                    }
+                    if (!imageView) {
+                        imageView = GetSinglePixel(ERROR_COLOR);
+                    }
+                    textures[tex.second.index] = imageView;
+                    texturesToFlush.push_back(tex.second.index);
+                    if (tex.second.ref && !tex.second.Ready()) tex.second.ref->Set(nullptr);
+                }
+                Flush();
+            });
+    }
+
     void TextureSet::Flush() {
         workQueue.Flush();
         texturesPendingDelete.clear();
@@ -234,6 +302,13 @@ namespace sp::vulkan {
                 texturesPendingDelete.push_back(textures[handle.index]);
                 ReleaseTexture(handle.index);
                 it = textureCache.erase(it);
+            } else {
+                it++;
+            }
+        }
+        for (auto it = renderGraphTextures.begin(); it != renderGraphTextures.end();) {
+            if (it->second.ref.expired()) {
+                it = renderGraphTextures.erase(it);
             } else {
                 it++;
             }

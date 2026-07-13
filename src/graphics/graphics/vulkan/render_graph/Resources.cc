@@ -8,7 +8,9 @@
 #include "Resources.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "strayphotons/Logging.hh"
 
+#include <cstddef>
 #include <memory>
 #include <string_view>
 
@@ -76,7 +78,9 @@ namespace sp::vulkan::render_graph {
     }
 
     ImageViewPtr Resources::GetImageView(std::string_view name) {
-        return GetImageView(GetID(name));
+        ResourceID id = GetID(name);
+        Assertf(id != InvalidResource, "GetImageView resource does not exist: %s", name);
+        return GetImageView(id);
     }
 
     ImageViewPtr Resources::GetImageView(ResourceID id) {
@@ -87,7 +91,9 @@ namespace sp::vulkan::render_graph {
     }
 
     ImageViewPtr Resources::GetImageLayerView(std::string_view name, uint32_t layer) {
-        return GetImageLayerView(GetID(name), layer);
+        ResourceID id = GetID(name);
+        Assertf(id != InvalidResource, "GetImageLayerView resource does not exist: %s", name);
+        return GetImageLayerView(id, layer);
     }
 
     ImageViewPtr Resources::GetImageLayerView(ResourceID id, uint32_t layer) {
@@ -98,7 +104,9 @@ namespace sp::vulkan::render_graph {
     }
 
     ImageViewPtr Resources::GetImageMipView(std::string_view name, uint32_t mip) {
-        return GetImageMipView(GetID(name), mip);
+        ResourceID id = GetID(name);
+        Assertf(id != InvalidResource, "GetImageMipView resource does not exist: %s", name);
+        return GetImageMipView(id, mip);
     }
 
     ImageViewPtr Resources::GetImageMipView(ResourceID id, uint32_t mip) {
@@ -109,7 +117,9 @@ namespace sp::vulkan::render_graph {
     }
 
     ImageViewPtr Resources::GetImageDepthView(std::string_view name) {
-        return GetImageDepthView(GetID(name));
+        ResourceID id = GetID(name);
+        Assertf(id != InvalidResource, "GetImageDepthView resource does not exist: %s", name);
+        return GetImageDepthView(id);
     }
 
     ImageViewPtr Resources::GetImageDepthView(ResourceID id) {
@@ -126,51 +136,74 @@ namespace sp::vulkan::render_graph {
             Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
         }
 
-        if (id >= resources.size()) return nullptr;
-        auto &res = resources[id];
-        if (res.type == Resource::Type::Future) return nullptr;
-        Assertf(res.type == Resource::Type::Image, "resource %s is not a render target", resourceNames[id]);
-        Assertf(RefCount(id) > 0, "can't get image %s without accessing it", resourceNames[id]);
-        auto &target = images[res.id];
+        Resource *res = GetResourcePtr(id);
+        if (!res) return nullptr;
+        Assertf(res->type == Resource::Type::Image, "resource %s is not a render target", resourceNames[res->id]);
+        Assertf(RefCount(id) > 0, "can't get image %s without accessing it", resourceNames[res->id]);
+        auto &target = images[res->id];
         if (!target) {
-            if (res.imageDesc.usage == vk::ImageUsageFlagBits::eTransferDst) {
-                Debugf("Image resource never accessed: %s", resourceNames[id]);
+            if (res->imageDesc.usage == vk::ImageUsageFlagBits::eTransferDst) {
+                Debugf("Image resource never accessed: %s", resourceNames[res->id]);
                 return nullptr;
             }
-            target = GetImageFromPool(res.imageDesc);
+            target = GetImageFromPool(res->imageDesc);
         }
         return target;
     }
 
     BufferPtr Resources::GetBuffer(std::string_view name) {
-        return GetBuffer(GetID(name));
+        ResourceID id = GetID(name);
+        Assertf(id != InvalidResource, "GetBuffer resource does not exist: %s", name);
+        return GetBuffer(id);
     }
 
     BufferPtr Resources::GetBuffer(ResourceID id) {
-        if (id >= resources.size()) return nullptr;
-        auto &res = resources[id];
-        if (res.type == Resource::Type::Future) return nullptr;
-        Assertf(res.type == Resource::Type::Buffer, "resource %s is not a buffer", resourceNames[id]);
-        Assertf(RefCount(id) > 0, "can't get buffer %s without accessing it", resourceNames[id]);
-        auto &buf = buffers[res.id];
+        Resource *res = GetResourcePtr(id);
+        if (!res) return nullptr;
+        Assertf(res->type == Resource::Type::Buffer, "resource %s is not a buffer", resourceNames[res->id]);
+        Assertf(RefCount(id) > 0, "can't get buffer %s without accessing it", resourceNames[res->id]);
+        auto &buf = buffers[res->id];
         if (!buf) {
-            DebugAssertf(res.bufferDesc.usage != vk::BufferUsageFlags(),
+            DebugAssertf(res->bufferDesc.usage != vk::BufferUsageFlags(),
                 "resource %s has no usage flags",
-                resourceNames[id]);
-            buf = device.GetBuffer(res.bufferDesc);
+                resourceNames[res->id]);
+            buf = device.GetBuffer(res->bufferDesc);
         }
-        DebugAssert(res.bufferDesc.usage == buf->Usage(), "buffer usage mismatch");
+        DebugAssert(res->bufferDesc.usage == buf->Usage(), "buffer usage mismatch");
         return buf;
     }
 
-    const Resource &Resources::GetResource(std::string_view name) const {
-        return GetResource(GetID(name, false));
+    const Resource &Resources::GetResource(std::string_view name, bool followAliases) const {
+        ResourceID id = GetID(name, 0);
+        Assertf(id != InvalidResource, "resource does not exist: %s", name);
+        return GetResource(id, followAliases);
     }
 
-    const Resource &Resources::GetResource(ResourceID id) const {
-        if (id < resources.size()) return resources[id];
-        static Resource invalidResource = {};
-        return invalidResource;
+    const Resource &Resources::GetResource(ResourceID id, bool followAliases) const {
+        Assertf(id < resources.size(), "resource id does not exist: %llu", id);
+        if (followAliases) {
+            ResourceID aliasID = id;
+            while (aliasID < resources.size()) {
+                id = aliasID;
+                aliasID = resources[aliasID].AliasID();
+            }
+        }
+        return resources[id];
+    }
+
+    Resource *Resources::GetResourcePtr(ResourceID id, bool followAliases) {
+        if (id >= resources.size()) return nullptr;
+        if (followAliases) {
+            ResourceID aliasID = id;
+            while (aliasID < resources.size()) {
+                id = aliasID;
+                aliasID = resources[aliasID].AliasID();
+            }
+            if (resources[id].type == Resource::Type::Alias) {
+                return nullptr;
+            }
+        }
+        return &resources[id];
     }
 
     const ResourceName &Resources::GetName(ResourceID id) const {
@@ -179,7 +212,7 @@ namespace sp::vulkan::render_graph {
         return invalidResourceName;
     }
 
-    ResourceID Resources::GetID(std::string_view name, bool assertExists, uint32_t framesAgo) const {
+    ResourceID Resources::GetID(std::string_view name, uint32_t framesAgo) const {
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
@@ -225,7 +258,6 @@ namespace sp::vulkan::render_graph {
                 }
             }
         }
-        Assertf(!assertExists || result != InvalidResource, "resource does not exist: %s", name);
         return result;
     }
 
@@ -245,10 +277,14 @@ namespace sp::vulkan::render_graph {
         desc.arrayLayers = view->ArrayLayers();
 
         if (!name.empty() && !allowReplace) {
-            auto existingID = GetID(name, false);
-            Assertf(existingID == InvalidResource,
-                "Resources::AddExternalImageView called with existing name: %s",
-                name);
+            ResourceID existingID = GetID(name);
+            if (existingID != InvalidResource) {
+                const Resource &resource = GetResource(existingID, false);
+                Assertf(resource.type == Resource::Type::Alias,
+                    "Resources::AddExternalImageView called with existing name: %s",
+                    name);
+                // TODO: Make sure Alias references don't leak
+            }
         }
 
         Resource resource(desc);
@@ -273,6 +309,8 @@ namespace sp::vulkan::render_graph {
             Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
         }
         Assert(id < resources.size(), "id out of range");
+        const Resource &res = resources[id];
+        if (res.type == Resource::Type::Alias && res.aliasDesc.id < refCounts.size()) IncrementRef(res.aliasDesc.id);
         ResizeIfNeeded();
         ++refCounts[id];
     }
@@ -284,9 +322,10 @@ namespace sp::vulkan::render_graph {
             Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
         }
         Assert(id < resources.size(), "id out of range");
+        const Resource &res = resources[id];
+        if (res.type == Resource::Type::Alias && res.aliasDesc.id < refCounts.size()) DecrementRef(res.aliasDesc.id);
         if (--refCounts[id] > 0) return;
 
-        auto &res = resources[id];
         switch (res.type) {
         case Resource::Type::Image:
             images[id].reset();
@@ -294,7 +333,7 @@ namespace sp::vulkan::render_graph {
         case Resource::Type::Buffer:
             buffers[id].reset();
             break;
-        case Resource::Type::Future:
+        case Resource::Type::Alias:
             break;
         default:
             Abortf("resource type is undefined: %s", resourceNames[id]);
@@ -302,7 +341,16 @@ namespace sp::vulkan::render_graph {
     }
 
     void Resources::AddUsageFromAccess(ResourceID id, Access access) {
-        auto &res = GetResourceRef(id);
+        Assertf(id < resources.size(), "resource ID %u is invalid", id);
+        Resource &res = resources[id];
+        if (res.type == Resource::Type::Alias) {
+            if (res.aliasDesc.id < resources.size()) {
+                AddUsageFromAccess(res.aliasDesc.id, access);
+            } else {
+                res.aliasDesc.accessList.emplace_back(access);
+            }
+            return;
+        }
         auto &acc = GetAccessInfo(access);
         switch (res.type) {
         case Resource::Type::Image:
@@ -310,8 +358,6 @@ namespace sp::vulkan::render_graph {
             break;
         case Resource::Type::Buffer:
             res.bufferDesc.usage |= acc.bufferUsageMask;
-            break;
-        case Resource::Type::Future:
             break;
         default:
             Abortf("resource type is undefined: %s", resourceNames[id]);
@@ -321,8 +367,7 @@ namespace sp::vulkan::render_graph {
     ResourceID Resources::ReserveID(std::string_view name) {
         Assert(!name.empty(), "Reserving empty render graph resource id");
 
-        Resource futureResource;
-        futureResource.type = Resource::Type::Future;
+        Resource futureResource(InvalidResource);
         Register(name, futureResource);
         return futureResource.id;
     }
@@ -344,7 +389,7 @@ namespace sp::vulkan::render_graph {
                 auto scopeName = name.substr(0, lastSep);
                 auto resourceName = name.substr(lastSep + 1);
 
-                for (auto &scope : nameScopes) {
+                for (Scope &scope : nameScopes) {
                     if (scope.name == scopeName) {
                         existingID = scope.GetID(resourceName, frameIndex);
                         break;
@@ -362,10 +407,16 @@ namespace sp::vulkan::render_graph {
                     "Resource::Register %s resource already exists as %s",
                     name,
                     resourceNames[existingID]);
-                Assertf(resources[existingID].type == Resource::Type::Undefined ||
-                            resources[existingID].type == Resource::Type::Future,
-                    "Resource::Register %s resource defined twice",
-                    name);
+                Resource &res = resources[existingID];
+                if (res.type == Resource::Type::Alias) {
+                    Assertf(res.aliasDesc.id == InvalidResource,
+                        "Resource::Register %s future resource defined twice",
+                        name);
+                } else {
+                    Assertf(res.type == Resource::Type::Undefined,
+                        "Resource::Register %s resource defined twice",
+                        name);
+                }
                 resource.id = existingID;
                 resources[existingID] = resource;
                 return true;
@@ -435,9 +486,29 @@ namespace sp::vulkan::render_graph {
 
     void Resources::EndScope() {
         Assert(scopeStack.size() > 1, "tried to end a scope that wasn't started");
-        auto &scope = nameScopes[scopeStack.back()];
+        const Scope &scope = nameScopes[scopeStack.back()];
         if (scope.frames[frameIndex].passCount > 0) {
-            scope.SetID("LastOutput", LastOutputID(), frameIndex, true);
+            Scope &parentScope = nameScopes[scopeStack[scopeStack.size() - 2]];
+            std::string_view resourceName = scope.name.substr(parentScope.name.size() + 1);
+            ResourceID existingID = parentScope.GetID(resourceName, frameIndex);
+            if (existingID != InvalidResource && existingID < resources.size()) {
+                Resource &existing = resources[existingID];
+                Assertf(existing.type == Resource::Type::Alias, "Expected existing scope root to be an Alias");
+                ResizeIfNeeded();
+                refCounts[lastOutputID] += refCounts[existingID];
+                for (const Access &access : existing.aliasDesc.accessList) {
+                    AddUsageFromAccess(lastOutputID, access);
+                }
+                existing.aliasDesc.accessList.clear();
+                existing.aliasDesc.id = lastOutputID;
+            } else {
+                ResourceID aliasID = ReserveID(scope.name);
+                Assertf(aliasID != InvalidResource, "Expected new scope root resource to be valid");
+                Resource &res = resources[aliasID];
+                Assertf(res.type == Resource::Type::Alias, "Expected new scope root to be an Alias");
+                res.aliasDesc.id = lastOutputID;
+            }
+            parentScope.frames[frameIndex].passCount++;
         }
         scopeStack.pop_back();
     }
@@ -449,10 +520,10 @@ namespace sp::vulkan::render_graph {
         return InvalidResource;
     }
 
-    void Resources::Scope::SetID(std::string_view name, ResourceID id, uint32_t frameIndex, bool replace) {
+    void Resources::Scope::SetID(std::string_view name, ResourceID id, uint32_t frameIndex) {
         auto &resourceNames = frames[frameIndex].resourceNames;
         auto &nameID = resourceNames[name.data()];
-        if (!replace) Assert(!nameID, "resource already registered");
+        Assert(!nameID, "resource already registered");
         nameID = id;
     }
 

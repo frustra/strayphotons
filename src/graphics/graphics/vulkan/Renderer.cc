@@ -25,6 +25,7 @@
 #include "graphics/vulkan/render_passes/Crosshair.hh"
 #include "graphics/vulkan/render_passes/Exposure.hh"
 #include "graphics/vulkan/render_passes/LightSensors.hh"
+#include "graphics/vulkan/render_passes/MarchingCubes.hh"
 #include "graphics/vulkan/render_passes/Outline.hh"
 #include "graphics/vulkan/render_passes/Skybox.hh"
 #include "graphics/vulkan/render_passes/Tonemap.hh"
@@ -42,8 +43,8 @@
 #include <vector>
 
 namespace sp::vulkan {
-    static const std::string defaultWindowViewTarget = "/ent:gui:menu/LastOutput";
-    static const std::string defaultXrViewTarget = "/XrView/LastOutput";
+    static const std::string defaultWindowViewTarget = "gui:menu";
+    static const std::string defaultXrViewTarget = "XrView";
 
     CVar<std::string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
 
@@ -60,7 +61,7 @@ namespace sp::vulkan {
 
     Renderer::Renderer(Game &game, DeviceContext &device, rg::RenderGraph &graph, Compositor &compositor)
         : game(game), device(device), graph(graph), compositor(compositor), scene(device), voxels(scene),
-          lighting(scene, voxels), transparency(scene, voxels), emissive(scene) {
+          marchingCubes(scene), lighting(scene, voxels), transparency(scene, voxels), emissive(scene) {
         funcs.Register("listgraphimages", "List all images in the render graph", [&]() {
             listImages = true;
         });
@@ -135,59 +136,6 @@ namespace sp::vulkan {
         graph.Execute();
     }
 
-    bool setModel(auto &lock, ecs::Entity ent, AsyncPtr<Gltf> model) {
-        if constexpr (Tecs::is_write_allowed<ecs::Renderable, std::decay_t<decltype(lock)>>()) {
-            auto &renderable = ent.Get<ecs::Renderable>(lock);
-            renderable.model = model;
-            return true;
-        } else {
-            if (ecs::IsLive(ent)) {
-                ecs::QueueTransaction<ecs::Write<ecs::Renderable>>([ent, model](auto lock) {
-                    if (!ent.Has<ecs::Renderable>(lock)) return;
-                    auto &renderable = ent.Get<ecs::Renderable>(lock);
-                    renderable.model = model;
-                });
-                return false;
-            } else {
-                return true;
-            }
-        }
-    }
-
-    bool loadModel(auto &lock, GPUScene &scene, ecs::Entity ent) {
-        auto &renderable = ent.Get<ecs::Renderable>(lock);
-        if (renderable.modelName.empty()) {
-            setModel(lock, ent, nullptr);
-            return true;
-        }
-        if (!setModel(lock, ent, sp::Assets().LoadGltf(renderable.modelName))) {
-            return false;
-        }
-        if (!renderable.model || !renderable.model->Ready()) {
-            return false;
-        }
-
-        auto model = renderable.model->Get();
-        if (!model) {
-            Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
-            // Don't hang preloading if models are null
-            return true;
-        } else if (renderable.meshIndex >= model->meshes.size()) {
-            Errorf("Renderable %s mesh index is out of range: %u/%u",
-                ecs::ToString(lock, ent),
-                renderable.meshIndex,
-                model->meshes.size());
-            return true;
-        }
-
-        auto vkMesh = scene.LoadMesh(model, renderable.meshIndex);
-        if (!vkMesh) {
-            return false;
-        }
-        if (!vkMesh->CheckReady()) return false;
-        return true;
-    }
-
     void Renderer::BuildFrameGraph(chrono_clock::duration elapsedTime) {
         ZoneScoped;
 
@@ -209,25 +157,17 @@ namespace sp::vulkan {
                 ecs::VoxelArea,
                 ecs::XrView>>();
 
-            ecs::ComponentModifiedEvent<ecs::Renderable> event;
-            while (renderableObserver.Poll(lock, event)) {
-                if (event.Has<ecs::Renderable>(lock)) {
-                    loadModel(lock, this->scene, event);
-                }
-            }
-
-            scene.PreloadTextures(lock);
             scene.LoadState(graph, lock);
             lighting.LoadState(graph, lock);
             voxels.LoadState(graph, lock);
 
             scene.AddGeometryWarp(graph);
             lighting.AddShadowPasses(graph);
-            scene.AddGraphTextures(graph);
-            lighting.SetLightTextures(graph);
+            scene.textures.AddGraphTextures(graph);
             voxels.AddVoxelizationInit(graph, lighting);
             voxels.AddVoxelization(graph, lighting);
             voxels.AddVoxelization2(graph, lighting);
+            marchingCubes.AddMarchingCubes(graph, voxels);
             renderer::AddLightSensors(graph, scene, lock);
 
             AddViewOutputs(lock, elapsedTime);
@@ -277,12 +217,13 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 builder.RequirePass();
 
-                auto &sourceName = CVarWindowViewTarget.Get();
+                rg::ResourceName sourceName = CVarWindowViewTarget.Get();
+                if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultWindowViewTarget) {
+                if (sourceID == rg::InvalidResource && sourceName != "/" + defaultWindowViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                    sourceID = builder.GetID(defaultWindowViewTarget, false);
+                    sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
                 }
 
                 auto loadOp = LoadOp::DontCare;
@@ -335,13 +276,12 @@ namespace sp::vulkan {
         chrono_clock::duration elapsedTime) {
         ZoneScoped;
         for (auto &ent : lock.EntitiesWith<ecs::View>()) {
-            if (ent.Has<ecs::RenderOutput>(lock)) {
-                auto scope = graph.Scope(rg::ResourceName("view:") + ent.Get<ecs::Name>(lock).String());
-                auto view = AddFlatView(lock, ent);
-                if (view) {
-                    AddDeferredPasses(lock, view, elapsedTime);
-                    renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
-                }
+            auto entityScope = graph.Scope(ent.Get<ecs::Name>(lock).String());
+            auto viewScope = graph.Scope("View");
+            auto view = AddFlatView(lock, ent);
+            if (view) {
+                AddDeferredPasses(lock, view, elapsedTime);
+                renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
             }
         }
 
@@ -400,6 +340,10 @@ namespace sp::vulkan {
 
                 builder.Read("ViewState", Access::VertexShaderReadUniform);
 
+                builder.ReadPreviousFrame("/MarchingCubes/VertexBuffer", Access::VertexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndexBuffer);
+                builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
@@ -413,6 +357,18 @@ namespace sp::vulkan {
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
+
+                auto vertexID = resources.GetID("MarchingCubes/VertexBuffer", 1);
+                auto indexID = resources.GetID("MarchingCubes/IndexBuffer", 1);
+                auto vertexBuffer = resources.GetBuffer(vertexID);
+                auto indexBuffer = resources.GetBuffer(indexID);
+                if (vertexBuffer && indexBuffer) {
+                    cmd.Raw().bindIndexBuffer(*indexBuffer,
+                        sizeof(VkDrawIndexedIndirectCommand),
+                        vk::IndexType::eUint32);
+                    cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
+                    cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                }
             });
         return view;
     }
@@ -575,12 +531,13 @@ namespace sp::vulkan {
         rg::ResourceID sourceID;
         graph.AddPass("XrSubmit")
             .Build([&](rg::PassBuilder &builder) {
-                auto &sourceName = CVarXrViewTarget.Get();
+                rg::ResourceName sourceName = CVarXrViewTarget.Get();
+                if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
                 sourceID = builder.GetID(sourceName, false);
-                if (sourceID == rg::InvalidResource && sourceName != defaultXrViewTarget) {
+                if (sourceID == rg::InvalidResource && sourceName != "/" + defaultXrViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
                     CVarXrViewTarget.Set(defaultXrViewTarget);
-                    sourceID = builder.GetID(defaultXrViewTarget, false);
+                    sourceID = builder.GetID("/" + defaultXrViewTarget, false);
                 }
 
                 if (sourceID != rg::InvalidResource) {
@@ -645,12 +602,7 @@ namespace sp::vulkan {
         GetSceneManager().PreloadSceneGraphics([&](auto lock, auto scene) {
             ZoneScopedN("PreloadSceneGraphics");
             bool complete = true;
-            for (const ecs::Entity &ent : lock.template EntitiesWith<ecs::Renderable>()) {
-                if (!ent.Has<ecs::SceneInfo>(lock)) continue;
-                if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
-                if (!loadModel(lock, this->scene, ent)) complete = false;
-            }
-            if (!this->scene.PreloadTextures(lock)) complete = false;
+            if (!this->scene.PreloadScene(lock, scene)) complete = false;
             if (!smaa.PreloadTextures(device)) complete = false;
             return complete;
         });

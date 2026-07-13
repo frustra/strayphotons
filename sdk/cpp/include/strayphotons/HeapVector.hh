@@ -37,7 +37,7 @@ namespace sp {
 
         static_assert(alignof(T) <= alignof(std::max_align_t), "HeapVector value type has unsupported alignment");
 
-        HeapVector() : cap(0), offset(0), storage(nullptr) {}
+        HeapVector() noexcept : cap(0), offset(0), storage(nullptr) {}
 
         HeapVector(size_t initialSize) : cap(0), offset(0), storage(nullptr) {
             resize(initialSize);
@@ -67,7 +67,7 @@ namespace sp {
             }
         }
 
-        HeapVector(HeapVector &&other) : cap(0), offset(0), storage(nullptr) {
+        HeapVector(HeapVector &&other) noexcept : cap(0), offset(0), storage(nullptr) {
             storage = other.storage;
             offset = other.offset;
             cap = other.cap;
@@ -148,50 +148,50 @@ namespace sp {
             return data()[offset - 1];
         }
 
-        T *data() {
+        T *data() noexcept {
             return static_cast<T *>(storage);
         }
-        const T *data() const {
+        const T *data() const noexcept {
             return static_cast<const T *>(storage);
         }
 
-        iterator begin() {
+        iterator begin() noexcept {
             return data();
         }
-        const_iterator begin() const {
+        const_iterator begin() const noexcept {
             return data();
         }
 
-        iterator end() {
+        iterator end() noexcept {
             return begin() + offset;
         }
-        const_iterator end() const {
+        const_iterator end() const noexcept {
             return begin() + offset;
         }
 
-        reverse_iterator rend() {
+        reverse_iterator rbegin() noexcept {
+            return std::reverse_iterator(end());
+        }
+        const_reverse_iterator rbegin() const noexcept {
+            return std::reverse_iterator(end());
+        }
+
+        reverse_iterator rend() noexcept {
             return std::reverse_iterator(begin());
         }
-        const const_reverse_iterator rend() const {
+        const const_reverse_iterator rend() const noexcept {
             return std::reverse_iterator(begin());
         }
 
-        reverse_iterator rbegin() {
-            return rend() - offset;
-        }
-        const_reverse_iterator rbegin() const {
-            return rend() - offset;
-        }
-
-        bool empty() const {
+        bool empty() const noexcept {
             return !offset;
         }
 
-        size_type size() const {
+        size_type size() const noexcept {
             return offset;
         }
 
-        size_type max_size() const {
+        size_type max_size() const noexcept {
             return std::numeric_limits<difference_type>::max();
         }
 
@@ -209,7 +209,7 @@ namespace sp {
             }
         }
 
-        size_type capacity() const {
+        size_type capacity() const noexcept {
             return cap;
         }
 
@@ -225,7 +225,7 @@ namespace sp {
             }
         }
 
-        void reset() {
+        void reset() noexcept {
             if (storage) {
                 clear();
                 ::operator delete(storage);
@@ -304,7 +304,7 @@ namespace sp {
                 iterator newEnd = std::move(begin() + endOffset, end(), begin() + startOffset);
                 std::destroy(newEnd, end());
                 offset = newEnd - begin();
-                return begin() + endOffset;
+                return begin() + startOffset;
             } else {
                 return begin() + endOffset;
             }
@@ -340,7 +340,7 @@ namespace sp {
             offset = count;
         }
 
-        bool operator==(const HeapVector<T> &other) const {
+        bool operator==(const HeapVector<T> &other) const noexcept {
             return offset == other.offset && (storage == other.storage || std::equal(begin(), end(), other.begin()));
         }
 

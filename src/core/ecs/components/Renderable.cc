@@ -13,20 +13,9 @@
 
 namespace ecs {
     template<>
-    bool StructMetadata::Load<Renderable>(Renderable &renderable, const picojson::value &src) {
-        if (!renderable.modelName.empty()) {
-            renderable.model = sp::Assets().LoadGltf(renderable.modelName);
-        }
-        return true;
-    }
-
-    template<>
     void EntityComponent<Renderable>::Apply(Renderable &dst, const Renderable &src, bool liveTarget) {
         if (liveTarget || (dst.modelName.empty() && !src.modelName.empty())) {
             dst.modelName = src.modelName;
-        }
-        if (liveTarget || (!dst.model && src.model)) {
-            dst.model = src.model;
         }
         if (dst.joints.empty()) dst.joints = src.joints;
     }
@@ -35,8 +24,6 @@ namespace ecs {
         : modelName(modelName), meshIndex(meshIndex) {
         if (modelName.empty()) {
             visibility = VisibilityMask::None;
-        } else {
-            model = sp::Assets().LoadGltf(modelName);
         }
     }
 } // namespace ecs

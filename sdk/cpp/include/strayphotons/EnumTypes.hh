@@ -27,7 +27,7 @@ namespace sp {
 
     namespace enum_flag_operators {
         template<typename E>
-        constexpr bool is_flags_enum() noexcept {
+        constexpr bool is_flags_enum() {
             if constexpr (!std::is_enum_v<E>) {
                 return false;
             } else if constexpr (magic_enum::detail::has_is_flags<E>::value) {
@@ -38,7 +38,7 @@ namespace sp {
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E operator~(E rhs) noexcept {
+        constexpr E operator~(E rhs) {
             magic_enum::underlying_type_t<E> mask = 0;
             for (auto &val : magic_enum::enum_values<E>()) {
                 mask |= static_cast<magic_enum::underlying_type_t<E>>(val);
@@ -48,40 +48,40 @@ namespace sp {
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E operator|(E lhs, E rhs) noexcept {
+        constexpr E operator|(E lhs, E rhs) {
             return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) |
                                   static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E operator&(E lhs, E rhs) noexcept {
+        constexpr E operator&(E lhs, E rhs) {
             return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) &
                                   static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E operator^(E lhs, E rhs) noexcept {
+        constexpr E operator^(E lhs, E rhs) {
             return static_cast<E>(static_cast<magic_enum::underlying_type_t<E>>(lhs) ^
                                   static_cast<magic_enum::underlying_type_t<E>>(rhs));
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E &operator|=(E &lhs, E rhs) noexcept {
+        constexpr E &operator|=(E &lhs, E rhs) {
             return lhs = (lhs | rhs);
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E &operator&=(E &lhs, E rhs) noexcept {
+        constexpr E &operator&=(E &lhs, E rhs) {
             return lhs = (lhs & rhs);
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr E &operator^=(E &lhs, E rhs) noexcept {
+        constexpr E &operator^=(E &lhs, E rhs) {
             return lhs = (lhs ^ rhs);
         }
 
         template<typename E, std::enable_if_t<is_flags_enum<E>(), int> = 0>
-        constexpr bool operator!(E rhs) noexcept {
+        constexpr bool operator!(E rhs) {
             return !static_cast<magic_enum::underlying_type_t<E>>(rhs);
         }
     } // namespace enum_flag_operators
