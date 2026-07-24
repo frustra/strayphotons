@@ -17,7 +17,8 @@
 
 namespace sp {
     ConsoleBindingManager::ConsoleBindingManager() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "console",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());

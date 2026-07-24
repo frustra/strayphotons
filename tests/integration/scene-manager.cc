@@ -85,7 +85,10 @@ namespace SceneManagerTests {
     void TestBasicLoadAddRemove() {
         {
             Timer t("Add system scene first");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(NewDispatchSource,
+                sp::SceneAction::ApplySystemScene,
+                "system",
+                systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -95,7 +98,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene second");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(NewDispatchSource, sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -105,7 +108,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload player scene (primary player entity)");
-            Scenes().QueueActionAndBlock([] {
+            Scenes().QueueActionAndBlock(NewDispatchSource, [] {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                 auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
 
@@ -130,7 +133,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload player scene");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(NewDispatchSource, sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -140,7 +143,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reset ECS");
-            Scenes().QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
+            Scenes().QueueActionAndBlock(NewDispatchSource, sp::SceneAction::RemoveScene, "system");
 
             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
             auto liveLock = ecs::StartTransaction<ecs::AddRemove>();
@@ -154,7 +157,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add player scene first");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ReloadPlayer);
+            Scenes().QueueActionAndBlock(NewDispatchSource, sp::SceneAction::ReloadPlayer);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -164,7 +167,10 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Add system scene second");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(NewDispatchSource,
+                sp::SceneAction::ApplySystemScene,
+                "system",
+                systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -174,7 +180,7 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Unload system scene (secondary player entity)");
-            Scenes().QueueActionAndBlock(sp::SceneAction::RemoveScene, "system");
+            Scenes().QueueActionAndBlock(NewDispatchSource, sp::SceneAction::RemoveScene, "system");
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();
@@ -184,7 +190,10 @@ namespace SceneManagerTests {
         }
         {
             Timer t("Reload system scene");
-            Scenes().QueueActionAndBlock(sp::SceneAction::ApplySystemScene, "system", systemSceneCallback);
+            Scenes().QueueActionAndBlock(NewDispatchSource,
+                sp::SceneAction::ApplySystemScene,
+                "system",
+                systemSceneCallback);
 
             {
                 auto stagingLock = ecs::StartStagingTransaction<ecs::Read<ecs::Name, ecs::SceneInfo>>();

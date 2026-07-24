@@ -172,10 +172,10 @@ namespace ecs {
      *  QueueTransaction<Write<FocusLock>>([ent](auto lock) { Assert(ent.Ready()); lock.Set<FocusLock>(); });
      */
     template<typename... Permissions, typename Fn>
-    inline auto QueueTransaction(Fn &&callback)
+    inline auto QueueTransaction(const sp::DispatchSourceInfo &sourceInfo, Fn &&callback)
         -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
-        return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
+        return TransactionQueue().Dispatch<ReturnType>(sourceInfo, [callback = std::move(callback)]() {
             Lock<Permissions...> lock = World().StartTransaction<Permissions...>();
             if constexpr (std::is_void_v<ReturnType>) {
                 callback(lock);
@@ -187,10 +187,10 @@ namespace ecs {
 
     // See QueueTransaction() for usage.
     template<typename... Permissions, typename Fn>
-    inline auto QueueStagingTransaction(Fn &&callback)
+    inline auto QueueStagingTransaction(const sp::DispatchSourceInfo &sourceInfo, Fn &&callback)
         -> sp::AsyncPtr<std::invoke_result_t<Fn, const Lock<Permissions...> &>> {
         using ReturnType = std::invoke_result_t<Fn, const Lock<Permissions...> &>;
-        return TransactionQueue().Dispatch<ReturnType>([callback = std::move(callback)]() {
+        return TransactionQueue().Dispatch<ReturnType>(sourceInfo, [callback = std::move(callback)]() {
             Lock<Permissions...> lock = StagingWorld().StartTransaction<Permissions...>();
             if constexpr (std::is_void_v<ReturnType>) {
                 callback(lock);
@@ -242,6 +242,7 @@ TECS_NAME_COMPONENT(ecs::SceneInfo, "SceneInfo");
 TECS_NAME_COMPONENT(ecs::SceneProperties, "SceneProperties");
 TECS_NAME_COMPONENT(ecs::Screen, "Screen");
 TECS_NAME_COMPONENT(ecs::Scripts, "Scripts");
+TECS_NAME_COMPONENT(ecs::Signals, "Signals");
 TECS_NAME_COMPONENT(ecs::SignalOutput, "SignalOutput");
 TECS_NAME_COMPONENT(ecs::SignalBindings, "SignalBindings");
 TECS_NAME_COMPONENT(ecs::TransformSnapshot, "TransformSnapshot");

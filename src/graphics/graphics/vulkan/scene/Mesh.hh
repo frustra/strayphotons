@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -15,7 +15,6 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <robin_hood.h>
-#include <string>
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan {
@@ -59,6 +58,11 @@ namespace sp::vulkan {
             if (!staging.transferComplete->Ready()) return false;
 
             ready = true;
+            staging.indexBuffer.reset();
+            staging.vertexBuffer.reset();
+            staging.jointsBuffer.reset();
+            staging.primitiveList.reset();
+            staging.modelEntry.reset();
             return true;
         }
 

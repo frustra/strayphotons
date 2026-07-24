@@ -106,7 +106,8 @@ namespace sp::xr {
             }
         }
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "vr_io",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto outputEnt = scene->NewSystemEntity(lock, scene, outputEntity.Name());
@@ -127,7 +128,7 @@ namespace sp::xr {
                     }
                 }
             });
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>([this](auto &lock) {
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource, [this](auto &lock) {
             ecs::Entity ent = outputEntity.Get(lock);
             auto &eventInput = ent.Get<ecs::EventInput>(lock);
 
@@ -140,7 +141,7 @@ namespace sp::xr {
     }
 
     InputBindings::~InputBindings() {
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_io");
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::RemoveScene, "vr_io");
     }
 
     void InputBindings::Frame() {
@@ -470,7 +471,8 @@ namespace sp::xr {
 
         if (missingEntities) {
             ZoneScopedN("InputBindings::AddMissingEntities");
-            GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+                SceneAction::ApplySystemScene,
                 "vr_io",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto &actionSet : actionSets) {

@@ -37,9 +37,9 @@ namespace sp {
         class iterator {
         public:
             typedef std::ptrdiff_t difference_type;
-            typedef value_type value_type;
-            typedef value_type *pointer;
-            typedef value_type &reference;
+            typedef std::pair<Tecs::Entity, T> value_type;
+            typedef std::pair<Tecs::Entity, T> *pointer;
+            typedef std::pair<Tecs::Entity, T> &reference;
             typedef std::random_access_iterator_tag iterator_category;
 
             iterator(EntityMap &map, size_t index = 0) : map(map), i(index) {}
@@ -138,9 +138,9 @@ namespace sp {
         class const_iterator {
         public:
             typedef std::ptrdiff_t difference_type;
-            typedef const value_type value_type;
-            typedef const value_type *pointer;
-            typedef const value_type &reference;
+            typedef const std::pair<Tecs::Entity, T> value_type;
+            typedef const std::pair<Tecs::Entity, T> *pointer;
+            typedef const std::pair<Tecs::Entity, T> &reference;
             typedef std::random_access_iterator_tag iterator_category;
 
             const_iterator(const EntityMap &map, size_t index = 0) : map(map), i(index) {}

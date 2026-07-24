@@ -104,6 +104,7 @@ namespace ecs {
         sp::SceneRef,
         TypeInfo,
         sp::InlineString<2>,
+        sp::HeapVector<uint8_t>,
         sp::HeapVector<float>,
         sp::HeapVector<glm::vec2>,
         sp::HeapVector<sp::HeapString>,

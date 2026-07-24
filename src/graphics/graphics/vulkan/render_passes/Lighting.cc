@@ -64,38 +64,13 @@ namespace sp::vulkan::renderer {
         return glm::mix(x1, x2, alpha.y);
     }
 
-    Lighting::Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {
-        auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
-    }
+    Lighting::Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {}
 
     void Lighting::LoadState(RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
         Assertf(ecs::IsLive(lock), "Lighting::LoadState expects live ecs lock");
         lights.clear();
-
-        {
-            ZoneScopedN("UpdateModified");
-            ecs::ComponentModifiedEvent<ecs::Light> lightModifiedEvent;
-            while (lightObserver.Poll(lock, lightModifiedEvent)) {
-                if (!lightModifiedEvent.Exists(lock)) {
-                    scene.liveEntityState.erase(lightModifiedEvent);
-                    continue;
-                }
-                auto &state = scene.liveEntityState[lightModifiedEvent];
-                if (lightModifiedEvent.Has<ecs::Light>(lock)) {
-                    auto &light = lightModifiedEvent.Get<const ecs::Light>(lock);
-                    if (light.filterName != state.lightFilterName) {
-                        state.lightFilterName = light.filterName;
-                        state.lightFilter = scene.textures.LoadResource(light.filterName);
-                    }
-                } else {
-                    state.lightFilterName = "";
-                    state.lightFilter = {};
-                }
-            }
-        }
 
         for (const ecs::Entity &entity : lock.EntitiesWith<ecs::Light>()) {
             if (!entity.Has<ecs::TransformSnapshot>(lock)) continue;

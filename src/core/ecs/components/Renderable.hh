@@ -44,10 +44,10 @@ namespace ecs {
 
     struct Renderable {
         Renderable() {}
-        Renderable(std::string_view modelName, uint64_t meshIndex = 0);
+        Renderable(std::string_view modelName, uint32_t meshIndex = 0);
 
         sp::AssetName modelName;
-        uint64_t meshIndex = 0;
+        uint32_t meshIndex = 0;
 
         struct Joint {
             EntityRef entity;

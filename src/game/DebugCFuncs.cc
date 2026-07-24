@@ -146,7 +146,7 @@ namespace sp {
         funcs.Register<std::string>("savescene",
             "Print out a json serialization of the specified staging scene",
             [](std::string sceneName) {
-                GetSceneManager().QueueActionAndBlock(SceneAction::SaveStagingScene, sceneName);
+                GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::SaveStagingScene, sceneName);
             });
 
         funcs.Register<std::string>("savegame",
@@ -159,7 +159,9 @@ namespace sp {
                     }
                     saveName = "save" + std::to_string(i);
                 }
-                GetSceneManager().QueueActionAndBlock(SceneAction::SaveLiveScene, "saves/" + saveName);
+                GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+                    SceneAction::SaveLiveScene,
+                    "saves/" + saveName);
             });
 
         funcs.Register<std::string>("loadgame",
@@ -173,9 +175,9 @@ namespace sp {
                     saveName = "save" + std::to_string(i);
                 }
                 auto &manager = GetSceneManager();
-                manager.QueueAction(SceneAction::LoadScene, "saves/" + saveName);
-                manager.QueueAction(SceneAction::SyncScene);
-                manager.QueueActionAndBlock(SceneAction::RespawnPlayer);
+                manager.QueueAction(NewDispatchSource, SceneAction::LoadScene, "saves/" + saveName);
+                manager.QueueAction(NewDispatchSource, SceneAction::SyncScene);
+                manager.QueueActionAndBlock(NewDispatchSource, SceneAction::RespawnPlayer);
             });
 
         funcs.Register("printevents", "Print out the current state of event queues", []() {

@@ -12,7 +12,9 @@
 #include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Logging.hh"
 
+#include <cstddef>
 #include <deque>
+#include <limits>
 #include <mutex>
 #include <queue>
 #include <robin_hood.h>
@@ -143,7 +145,7 @@ namespace sp {
                 storage[i].last_use = 0;
                 return ptr;
             } else {
-                size_t i = ~0u;
+                size_t i = std::numeric_limits<size_t>::max();
                 if (!freeList.empty()) {
                     i = freeList.top();
                     freeList.pop();

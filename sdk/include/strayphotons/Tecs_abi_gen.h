@@ -220,16 +220,16 @@ TECS_EXPORT bool Tecs_lock_is_read_event_bindings_allowed(tecs_lock_t *dynLockPt
 TECS_EXPORT uint64_t Tecs_previous_entities_with_event_bindings(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 TECS_EXPORT uint64_t Tecs_entities_with_event_bindings(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 
-TECS_EXPORT bool Tecs_lock_is_write_component31_allowed(tecs_lock_t *dynLockPtr);
-TECS_EXPORT bool Tecs_lock_is_read_component31_allowed(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_lock_is_write_signals_allowed(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_lock_is_read_signals_allowed(tecs_lock_t *dynLockPtr);
 
-TECS_EXPORT bool Tecs_has_component31(tecs_lock_t *dynLockPtr);
-TECS_EXPORT bool Tecs_had_component31(tecs_lock_t *dynLockPtr);
-TECS_EXPORT const void *Tecs_const_get_component31(tecs_lock_t *dynLockPtr);
-TECS_EXPORT void *Tecs_get_component31(tecs_lock_t *dynLockPtr);
-TECS_EXPORT const void *Tecs_get_previous_component31(tecs_lock_t *dynLockPtr);
-TECS_EXPORT void *Tecs_set_component31(tecs_lock_t *dynLockPtr, const void *value);
-TECS_EXPORT void Tecs_unset_component31(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_has_signals(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_had_signals(tecs_lock_t *dynLockPtr);
+TECS_EXPORT const void *Tecs_const_get_signals(tecs_lock_t *dynLockPtr);
+TECS_EXPORT void *Tecs_get_signals(tecs_lock_t *dynLockPtr);
+TECS_EXPORT const void *Tecs_get_previous_signals(tecs_lock_t *dynLockPtr);
+TECS_EXPORT void *Tecs_set_signals(tecs_lock_t *dynLockPtr, const void *value);
+TECS_EXPORT void Tecs_unset_signals(tecs_lock_t *dynLockPtr);
 
 TECS_EXPORT bool Tecs_lock_is_write_signal_output_allowed(tecs_lock_t *dynLockPtr);
 TECS_EXPORT bool Tecs_lock_is_read_signal_output_allowed(tecs_lock_t *dynLockPtr);

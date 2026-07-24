@@ -38,7 +38,8 @@ namespace sp {
             ToggleTray();
         });
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "editor",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto picker = scene->NewSystemEntity(lock, scene, pickerEntity.Name());
@@ -167,9 +168,9 @@ namespace sp {
         }
 
         if (trayOpen) {
-            GetSceneManager().QueueAction(SceneAction::RemoveScene, "editor/tray");
+            GetSceneManager().QueueAction(NewDispatchSource, SceneAction::RemoveScene, "editor/tray");
         } else {
-            GetSceneManager().QueueAction(SceneAction::AddScene, "editor/tray");
+            GetSceneManager().QueueAction(NewDispatchSource, SceneAction::AddScene, "editor/tray");
         }
     }
 } // namespace sp

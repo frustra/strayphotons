@@ -26,6 +26,7 @@
 #include "strayphotons/Utility.hh"
 #include "strayphotons/input/BindingNames.hh"
 
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <magic_enum.hpp>
@@ -130,15 +131,19 @@ namespace sp {
                 changed |= AddImGuiElement(optionalName, value.value());
             }
         } else {
-            ImGui::Indent();
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4());
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
-            if (fieldName.empty()) {
-                ImGui::TextUnformatted(jsonValue.serialize(true).c_str());
-            } else {
-                ImGui::Text("%s: %s", fieldName.c_str(), jsonValue.serialize(true).c_str());
-            }
-            ImGui::Unindent();
+            if (!fieldName.empty()) ImGui::Text("%s:", fieldName.c_str());
+            std::string serializedValue = jsonValue.serialize(true);
+            trim_right(serializedValue);
+            std::string textName = "##" + name;
+            float lines = 1 + std::count(serializedValue.begin(), serializedValue.end(), '\n');
+            ImGui::InputTextMultiline(textName.c_str(),
+                &serializedValue,
+                ImVec2(-1, lines * ImGui::GetTextLineHeight() + 0.5 * ImGui::GetTextLineHeightWithSpacing()),
+                ImGuiInputTextFlags_ReadOnly);
+            ImGui::PopStyleColor();
         }
         return changed;
     }
@@ -623,18 +628,20 @@ namespace sp {
 
         if (valueChanged) {
             if (IsLive(target)) {
-                QueueTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
-                    void *component = comp.AccessMut(lock, target);
-                    field.Access<T>(component) = value;
-                    if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
-                        GetScriptManager().RegisterActive(lock);
-                    }
-                });
+                QueueTransaction<WriteAll>(NewDispatchSource,
+                    [target = this->target, value, &comp, &field](auto &lock) {
+                        void *component = comp.AccessMut(lock, target);
+                        field.Access<T>(component) = value;
+                        if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
+                            GetScriptManager().RegisterActive(lock);
+                        }
+                    });
             } else if (scene) {
-                QueueStagingTransaction<WriteAll>([target = this->target, value, &comp, &field](auto &lock) {
-                    void *component = comp.AccessMut(lock, target);
-                    field.Access<T>(component) = value;
-                });
+                QueueStagingTransaction<WriteAll>(NewDispatchSource,
+                    [target = this->target, value, &comp, &field](auto &lock) {
+                        void *component = comp.AccessMut(lock, target);
+                        field.Access<T>(component) = value;
+                    });
             } else {
                 Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
             }

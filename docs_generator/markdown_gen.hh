@@ -36,6 +36,8 @@ private:
     std::string fieldTypeName() {
         if constexpr (std::is_same<T, bool>()) {
             return "bool";
+        } else if constexpr (std::is_same<T, uint8_t>()) {
+            return "uint8";
         } else if constexpr (std::is_same<T, int32_t>()) {
             return "int32";
         } else if constexpr (std::is_same<T, uint32_t>()) {

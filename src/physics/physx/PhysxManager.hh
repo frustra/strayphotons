@@ -113,6 +113,9 @@ namespace sp {
         bool operator==(const JointState &) const noexcept = default;
     };
 
+    extern CVar<bool> CVarPhysxDebugCollision;
+    extern CVar<uint32_t> CVarPhysicsFPS;
+
     class PhysxManager : public RegisteredThread {
     public:
         PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue);

@@ -79,8 +79,8 @@ namespace sp {
         auto &scenes = GetSceneManager();
         if (!graphics) scenes.DisableGraphicsPreload();
         if (!physics) scenes.DisablePhysicsPreload();
-        scenes.QueueAction(SceneAction::ReloadPlayer);
-        scenes.QueueAction(SceneAction::ReloadBindings);
+        scenes.QueueAction(NewDispatchSource, SceneAction::ReloadPlayer);
+        scenes.QueueAction(NewDispatchSource, SceneAction::ReloadBindings);
 
         if (scriptMode) {
             std::string scriptPath = options["run"].as<std::string>();
@@ -99,7 +99,7 @@ namespace sp {
             funcs.Register<int>("syncscene", "Pause command execution until all scenes are loaded", [](int count) {
                 if (count < 1) count = 1;
                 for (int i = 0; i < count; i++) {
-                    GetSceneManager().QueueActionAndBlock(SceneAction::SyncScene);
+                    GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::SyncScene);
                 }
             });
 
@@ -109,9 +109,9 @@ namespace sp {
             GetConsoleManager().StartThread(&startupScript);
         } else {
             if (options.count("scene")) {
-                scenes.QueueAction(SceneAction::LoadScene, options["scene"].as<std::string>());
+                scenes.QueueAction(NewDispatchSource, SceneAction::LoadScene, options["scene"].as<std::string>());
             } else {
-                scenes.QueueAction(SceneAction::LoadScene, "menu");
+                scenes.QueueAction(NewDispatchSource, SceneAction::LoadScene, "menu");
             }
             GetConsoleManager().StartThread();
         }

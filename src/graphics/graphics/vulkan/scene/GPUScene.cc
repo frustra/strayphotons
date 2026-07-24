@@ -12,6 +12,7 @@
 #include "common/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Scene.hh"
@@ -22,13 +23,17 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <chrono>
+#include <limits>
 #include <memory>
+#include <string>
 #include <tracy/Tracy.hpp>
 
 namespace sp::vulkan {
-    GPUScene::GPUScene(DeviceContext &device) : device(device), textures(device) {
+    GPUScene::GPUScene(DeviceContext &device)
+        : device(device), textures(device), workQueue("GPUScene", 0, std::chrono::milliseconds(1)) {
         indexBuffer = device.AllocateBuffer({sizeof(uint32_t), 64 * 1024 * 1024},
             vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_ONLY);
@@ -51,6 +56,7 @@ namespace sp::vulkan {
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
         renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
+        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
     }
 
     GPUScene::OpticInstance::OpticInstance(ecs::Entity ent, const ecs::OpticalElement &optic) : ent(ent) {
@@ -63,16 +69,40 @@ namespace sp::vulkan {
         FlushMeshes();
     }
 
+    RenderableIndex GPUScene::AllocateRenderableIndex(ecs::Entity ent) {
+        DebugAssertf(!sp::contains(gpuRenderableEntities, ent),
+            "GPURenderableEntity %s already exists",
+            ecs::EntityRef(ent).Name().String());
+        RenderableIndex index = gpuRenderables.size();
+        gpuRenderables.emplace_back();
+        gpuRenderableEntities.emplace_back(ent);
+        renderablesToFlush.emplace_back(index);
+        return index;
+    }
+
+    void GPUScene::ReleaseRenderable(RenderableIndex index) {
+        if (index >= gpuRenderables.size()) return;
+        // Deallocate the renderable index by swapping it with the last renderable slot
+        std::swap(gpuRenderables[index], gpuRenderables.back());
+        std::swap(gpuRenderableEntities[index], gpuRenderableEntities.back());
+        gpuRenderables.pop_back();
+        gpuRenderableEntities.pop_back();
+        renderablesToFlush.emplace_back(index);
+        if (index < gpuRenderableEntities.size()) {
+            const ecs::Entity &swappedEnt = gpuRenderableEntities[index];
+            DebugAssertf(liveEntityState[swappedEnt].renderableIndex == gpuRenderables.size(),
+                "Unexpected swapped renderable index");
+            liveEntityState[swappedEnt].renderableIndex = index;
+        }
+    }
+
     void GPUScene::LoadState(rg::RenderGraph &graph,
         ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>>
             lock) {
         ZoneScoped;
         DebugAssertf(ecs::IsLive(lock), "GPUScene::LoadState expects live ecs lock");
-        gpuRenderables.clear();
-        meshes.clear();
         opticEntities.clear();
         jointPoses.clear();
-        renderableCount = 0;
         primitiveCount = 0;
         vertexCount = 0;
 
@@ -80,92 +110,144 @@ namespace sp::vulkan {
             ZoneScopedN("UpdateModified");
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableModifiedEvent;
             while (renderableObserver.Poll(lock, renderableModifiedEvent)) {
-                if (!renderableModifiedEvent.Exists(lock)) {
-                    liveEntityState.erase(renderableModifiedEvent);
-                    continue;
-                }
-                auto &state = liveEntityState[renderableModifiedEvent];
+                if (!renderableModifiedEvent.Exists(lock)) entitiesPendingDelete.emplace_back(renderableModifiedEvent);
                 if (renderableModifiedEvent.Has<ecs::Renderable>(lock)) {
+                    auto &state = liveEntityState[renderableModifiedEvent];
                     auto &renderable = renderableModifiedEvent.Get<const ecs::Renderable>(lock);
+                    if (renderable.modelName != state.renderableModelName ||
+                        renderable.meshIndex != state.renderableMeshIndex) {
+                        state.renderableModelName = renderable.modelName;
+                        state.renderableMeshIndex = renderable.meshIndex;
+                        if (!renderable.modelName.empty()) {
+                            state.renderableMesh = LoadMesh(renderable);
+                            if (state.renderableMesh) {
+                                if (state.renderableIndex < gpuRenderables.size()) {
+                                    // Reuse existing index
+                                    renderablesToFlush.emplace_back(state.renderableIndex);
+                                } else {
+                                    state.renderableIndex = AllocateRenderableIndex(renderableModifiedEvent);
+                                }
+                            } else {
+                                Errorf("Renderable %s mesh is null: %s",
+                                    ecs::ToString(lock, renderableModifiedEvent),
+                                    renderable.modelName);
+                                ReleaseRenderable(state.renderableIndex);
+                                state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
+                            }
+                        } else {
+                            ReleaseRenderable(state.renderableIndex);
+                            state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
+                        }
+                    }
                     if (renderable.textureOverrideName != state.renderableTextureOverrideName) {
                         state.renderableTextureOverrideName = renderable.textureOverrideName;
                         state.renderableTextureOverride = textures.LoadResource(renderable.textureOverrideName);
                     }
-                } else {
+                } else if (liveEntityState.count(renderableModifiedEvent) > 0) {
+                    auto &state = liveEntityState[renderableModifiedEvent];
+                    state.renderableModelName = "";
+                    state.renderableMeshIndex = std::numeric_limits<MeshIndex>::max();
+                    state.renderableMesh.reset();
+                    ReleaseRenderable(state.renderableIndex);
+                    state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
                     state.renderableTextureOverrideName = "";
                     state.renderableTextureOverride = {};
                 }
             }
-        }
-
-        for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Renderable>()) {
-            if (!ent.Has<ecs::TransformSnapshot>(lock)) continue;
-
-            auto &renderable = ent.Get<ecs::Renderable>(lock);
-            if (renderable.modelName.empty()) continue;
-            auto vkMesh = LoadMesh(renderable.modelName, renderable.meshIndex);
-            if (!vkMesh || !vkMesh->Valid() || !vkMesh->CheckReady()) continue;
-
-            auto &transform = ent.Get<ecs::TransformSnapshot>(lock).globalPose;
-            const auto &state = liveEntityState[ent];
-
-            GPURenderableEntity gpuRenderable = {};
-            gpuRenderable.modelToWorld = transform.GetMatrix();
-            gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
-            gpuRenderable.meshIndex = vkMesh->SceneIndex();
-            gpuRenderable.vertexOffset = vertexCount;
-            gpuRenderable.emissiveScale = renderable.emissiveScale;
-            if (!renderable.textureOverrideName.empty()) {
-                if (state.renderableTextureOverride) {
-                    gpuRenderable.baseColorOverrideID = state.renderableTextureOverride.index;
-                } else {
-                    gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(ERROR_COLOR);
-                }
-            } else if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
-                gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
-            }
-            if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
-                gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(
-                    glm::vec4(0, renderable.metallicRoughnessOverride.g, renderable.metallicRoughnessOverride.r, 1));
-            }
-            if (ent.Has<ecs::OpticalElement>(lock)) {
-                auto &optic = ent.Get<ecs::OpticalElement>(lock);
-                opticEntities.emplace_back(ent, optic);
-                gpuRenderable.opticID = opticEntities.size();
-                gpuRenderable.visibilityMask |= (uint32_t)ecs::VisibilityMask::Optics;
-            } else {
-                gpuRenderable.visibilityMask &= (uint32_t)~ecs::VisibilityMask::Optics;
-            }
-
-            if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();
-
-            for (auto &joint : renderable.joints) {
-                auto jointEntity = joint.entity.Get(lock);
-                if (jointEntity.Has<ecs::TransformSnapshot>(lock)) {
-                    auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock).globalPose;
-                    jointPoses.push_back(jointTransform.GetMatrix() * joint.inverseBindPose);
-                } else {
-                    jointPoses.emplace_back(); // missing joints get an identity matrix
+            ecs::ComponentModifiedEvent<ecs::Light> lightModifiedEvent;
+            while (lightObserver.Poll(lock, lightModifiedEvent)) {
+                if (!lightModifiedEvent.Exists(lock)) entitiesPendingDelete.emplace_back(lightModifiedEvent);
+                if (lightModifiedEvent.Has<ecs::Light>(lock)) {
+                    auto &state = liveEntityState[lightModifiedEvent];
+                    auto &light = lightModifiedEvent.Get<const ecs::Light>(lock);
+                    if (light.filterName != state.lightFilterName) {
+                        state.lightFilterName = light.filterName;
+                        state.lightFilter = textures.LoadResource(light.filterName);
+                    }
+                } else if (liveEntityState.count(lightModifiedEvent) > 0) {
+                    auto &state = liveEntityState[lightModifiedEvent];
+                    state.lightFilterName = "";
+                    state.lightFilter = {};
                 }
             }
-
-            gpuRenderables.push_back(gpuRenderable);
-            meshes.emplace_back(vkMesh);
-
-            renderableCount++;
-            primitiveCount += vkMesh->PrimitiveCount();
-            vertexCount += vkMesh->VertexCount();
+            for (const ecs::Entity &ent : entitiesPendingDelete) {
+                liveEntityState.erase(ent);
+            }
+            entitiesPendingDelete.clear();
         }
 
-        Assertf(gpuRenderables.size() == meshes.size(),
-            "Mismatched renderable and mesh counts: %u != %u",
+        {
+            // TODO: Use observer on renderable + TransformSnapshot
+            ZoneScopedN("RefreshGPURenderables");
+            for (const auto &pair : liveEntityState) {
+                const ecs::Entity &ent = pair.first;
+                const EntityState &state = pair.second;
+                if (!ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) continue;
+                if (state.renderableIndex >= gpuRenderables.size()) continue;
+                if (!state.renderableMesh || !state.renderableMesh->Ready()) continue;
+                std::shared_ptr<Mesh> vkMesh = state.renderableMesh->Get();
+                if (!vkMesh || !vkMesh->Valid() || !vkMesh->CheckReady()) continue;
+
+                auto &renderable = ent.Get<ecs::Renderable>(lock);
+                auto &transform = ent.Get<ecs::TransformSnapshot>(lock).globalPose;
+                GPURenderableEntity &gpuRenderable = gpuRenderables[state.renderableIndex];
+                gpuRenderable.modelToWorld = transform.GetMatrix();
+                gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
+                gpuRenderable.meshIndex = vkMesh->SceneIndex();
+                gpuRenderable.vertexOffset = vertexCount;
+                gpuRenderable.emissiveScale = renderable.emissiveScale;
+                if (!renderable.textureOverrideName.empty()) {
+                    if (state.renderableTextureOverride) {
+                        gpuRenderable.baseColorOverrideID = state.renderableTextureOverride.index;
+                    } else {
+                        gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(ERROR_COLOR);
+                    }
+                } else if (glm::all(glm::greaterThanEqual(renderable.colorOverride.color, glm::vec4(0)))) {
+                    gpuRenderable.baseColorOverrideID = textures.GetSinglePixelIndex(renderable.colorOverride);
+                }
+                if (glm::all(glm::greaterThanEqual(renderable.metallicRoughnessOverride, glm::vec2(0)))) {
+                    gpuRenderable.metallicRoughnessOverrideID = textures.GetSinglePixelIndex(glm::vec4(0,
+                        renderable.metallicRoughnessOverride.g,
+                        renderable.metallicRoughnessOverride.r,
+                        1));
+                }
+                if (ent.Has<ecs::OpticalElement>(lock)) {
+                    auto &optic = ent.Get<ecs::OpticalElement>(lock);
+                    opticEntities.emplace_back(ent, optic);
+                    gpuRenderable.opticID = opticEntities.size();
+                    gpuRenderable.visibilityMask |= (uint32_t)ecs::VisibilityMask::Optics;
+                } else {
+                    gpuRenderable.visibilityMask &= (uint32_t)~ecs::VisibilityMask::Optics;
+                }
+
+                if (!renderable.joints.empty()) gpuRenderable.jointPosesOffset = jointPoses.size();
+
+                for (auto &joint : renderable.joints) {
+                    auto jointEntity = joint.entity.Get(lock);
+                    if (jointEntity.Has<ecs::TransformSnapshot>(lock)) {
+                        auto &jointTransform = jointEntity.Get<ecs::TransformSnapshot>(lock).globalPose;
+                        jointPoses.push_back(jointTransform.GetMatrix() * joint.inverseBindPose);
+                    } else {
+                        jointPoses.emplace_back(); // missing joints get an identity matrix
+                    }
+                }
+
+                primitiveCount += vkMesh->PrimitiveCount();
+                vertexCount += vkMesh->VertexCount();
+            }
+        }
+
+        Assertf(gpuRenderables.size() == gpuRenderableEntities.size(),
+            "Mismatched renderable and entity counts: %llu != %llu",
             gpuRenderables.size(),
-            meshes.size());
+            gpuRenderableEntities.size());
 
         primitiveCountPowerOfTwo = CeilToPowerOfTwo(primitiveCount);
 
         textures.Flush();
 
+        // TODO: Reuse or modify the previous frame's buffer to reduce upload bandwidth
+        renderablesToFlush.clear();
         graph.AddPass("SceneState")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("RenderableEntities",
@@ -199,11 +281,27 @@ namespace sp::vulkan {
             auto &state = stagingEntityState[pair.first];
             if (pair.first.Has<ecs::Renderable>(lock)) {
                 auto &renderable = pair.first.Get<const ecs::Renderable>(lock);
+                if (renderable.modelName != state.renderableModelName ||
+                    renderable.meshIndex != state.renderableMeshIndex) {
+                    state.renderableModelName = renderable.modelName;
+                    state.renderableMeshIndex = renderable.meshIndex;
+                    if (!renderable.modelName.empty()) {
+                        state.renderableMesh = LoadMesh(renderable);
+                        if (!state.renderableMesh) {
+                            Errorf("Renderable %s mesh is null: %s",
+                                ecs::ToString(lock, pair.first),
+                                renderable.modelName);
+                        }
+                    }
+                }
                 if (renderable.textureOverrideName != state.renderableTextureOverrideName) {
                     state.renderableTextureOverrideName = renderable.textureOverrideName;
                     state.renderableTextureOverride = textures.LoadResource(renderable.textureOverrideName);
                 }
             } else {
+                state.renderableModelName = "";
+                state.renderableMeshIndex = std::numeric_limits<MeshIndex>::max();
+                state.renderableMesh.reset();
                 state.renderableTextureOverrideName = "";
                 state.renderableTextureOverride = {};
             }
@@ -226,33 +324,49 @@ namespace sp::vulkan {
             if (!ent.Has<ecs::SceneInfo>(lock)) continue;
             if (ent.Get<ecs::SceneInfo>(lock).scene != scene) continue;
             auto &state = stagingEntityState[ent];
-            const auto &textureOverrideName = ent.Get<ecs::Renderable>(lock).textureOverrideName;
+            auto &renderable = ent.Get<ecs::Renderable>(lock);
+            if (renderable.modelName != state.renderableModelName ||
+                renderable.meshIndex != state.renderableMeshIndex) {
+                state.renderableModelName = renderable.modelName;
+                state.renderableMeshIndex = renderable.meshIndex;
+                if (!renderable.modelName.empty()) {
+                    state.renderableMesh = LoadMesh(renderable);
+                    if (!state.renderableMesh) {
+                        Errorf("Renderable %s mesh is null: %s", ecs::ToString(lock, ent), renderable.modelName);
+                    }
+                }
+            }
+            if (state.renderableMesh) {
+                if (!state.renderableMesh->Ready()) {
+                    complete = false;
+                } else {
+                    auto vkMesh = state.renderableMesh->Get();
+                    if (!vkMesh) {
+                        Errorf("Renderable %s mesh is null: %s", ecs::ToString(lock, ent), renderable.modelName);
+                        state.renderableMesh = nullptr;
+                    } else if (!vkMesh->Valid()) {
+                        if (!vkMesh->asset) {
+                            Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
+                        } else {
+                            Errorf("Renderable %s mesh index is out of range: %u/%u",
+                                ecs::ToString(lock, ent),
+                                renderable.meshIndex,
+                                vkMesh->asset->meshes.size());
+                        }
+                        state.renderableMesh = nullptr;
+                        // Don't hang preloading if mesh is null
+                    } else if (!vkMesh->CheckReady()) {
+                        complete = false;
+                    }
+                }
+            }
+            const auto &textureOverrideName = renderable.textureOverrideName;
             if (!textureOverrideName.empty()) {
                 if (state.renderableTextureOverrideName != textureOverrideName || !state.renderableTextureOverride) {
                     state.renderableTextureOverrideName = textureOverrideName;
                     state.renderableTextureOverride = textures.LoadResource(textureOverrideName);
                 }
                 if (!state.renderableTextureOverride.Ready()) complete = false;
-            }
-
-            auto &renderable = ent.Get<ecs::Renderable>(lock);
-            if (!renderable.modelName.empty()) {
-                auto vkMesh = LoadMesh(renderable.modelName, renderable.meshIndex);
-                if (!vkMesh) {
-                    complete = false;
-                } else if (!vkMesh->Valid()) {
-                    if (!vkMesh->asset) {
-                        Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
-                    } else {
-                        Errorf("Renderable %s mesh index is out of range: %u/%u",
-                            ecs::ToString(lock, ent),
-                            renderable.meshIndex,
-                            vkMesh->asset->meshes.size());
-                    }
-                    // Don't hang preloading if models are null
-                } else if (!vkMesh->CheckReady()) {
-                    complete = false;
-                }
             }
         }
         for (const ecs::Entity &ent : lock.EntitiesWith<ecs::Light>()) {
@@ -271,65 +385,36 @@ namespace sp::vulkan {
         return complete;
     }
 
-    std::shared_ptr<Mesh> GPUScene::LoadMesh(const AssetName &modelName, size_t meshIndex) {
-        if (modelName.empty()) return nullptr;
+    AsyncPtr<Mesh> GPUScene::LoadMesh(const ecs::Renderable &renderable) {
+        if (renderable.modelName.empty()) return nullptr;
         ZoneScoped;
-        ZoneStr(modelName.str());
-        auto vkMesh = activeMeshes.Load(MeshKeyView{modelName, meshIndex});
-        if (!vkMesh) {
-            auto modelPtr = activeModels.Load(modelName);
-            if (!modelPtr) {
-                modelsToLoad.emplace_back(modelName);
-                return nullptr;
-            } else if (!modelPtr->Ready()) {
-                return nullptr;
+        ZoneStr(renderable.modelName.str());
+        AsyncPtr<Mesh> asyncMesh = activeMeshes.Load(MeshKeyView{renderable.modelName, renderable.meshIndex});
+        if (!asyncMesh) {
+            AsyncPtr<Gltf> asyncModel = activeModels.Load(renderable.modelName);
+            if (!asyncModel) {
+                asyncModel = sp::Assets().LoadGltf(renderable.modelName);
+                if (!asyncModel) return nullptr;
+                activeModels.Register(renderable.modelName, asyncModel);
             }
 
-            std::shared_ptr<Gltf> model = modelPtr->Get();
-            if (!model) {
-                return std::make_shared<Mesh>();
-            } else if (meshIndex >= model->meshes.size()) {
-                return std::make_shared<Mesh>(model);
-            }
-            return LoadMesh(model, meshIndex);
+            if (!asyncModel) return nullptr;
+            asyncMesh = workQueue.Dispatch<Mesh>(NewDispatchSource,
+                asyncModel,
+                [this, meshIndex = renderable.meshIndex](std::shared_ptr<Gltf> model) {
+                    if (!model || meshIndex >= model->meshes.size()) return std::shared_ptr<Mesh>();
+                    return std::make_shared<Mesh>(model, meshIndex, *this, device);
+                });
+            activeMeshes.Register(MeshKey{rg::ResourceName{renderable.modelName}, renderable.meshIndex}, asyncMesh);
         }
-        return vkMesh;
-    }
-
-    std::shared_ptr<Mesh> GPUScene::LoadMesh(const std::shared_ptr<const sp::Gltf> &model, size_t meshIndex) {
-        if (meshIndex >= model->meshes.size()) return nullptr;
-        auto vkMesh = activeMeshes.Load(MeshKeyView{model->name, meshIndex});
-        if (!vkMesh) {
-            meshesToLoad.emplace_back(model, meshIndex);
-        }
-        return vkMesh;
+        return asyncMesh;
     }
 
     void GPUScene::FlushMeshes() {
+        ZoneScoped;
+        workQueue.Flush(false, std::chrono::milliseconds(5));
         activeModels.Tick(std::chrono::milliseconds(33));
         activeMeshes.Tick(std::chrono::milliseconds(33));
-
-        for (int i = (int)modelsToLoad.size() - 1; i >= 0; i--) {
-            auto &modelName = modelsToLoad[i];
-            if (activeModels.Contains(modelName)) {
-                modelsToLoad.pop_back();
-                continue;
-            }
-
-            activeModels.Register(modelName, sp::Assets().LoadGltf(modelName));
-            modelsToLoad.pop_back();
-        }
-        for (int i = (int)meshesToLoad.size() - 1; i >= 0; i--) {
-            auto &[model, meshIndex] = meshesToLoad[i];
-            if (activeMeshes.Contains(MeshKeyView{model->name, meshIndex})) {
-                meshesToLoad.pop_back();
-                continue;
-            }
-
-            activeMeshes.Register(MeshKey{rg::ResourceName{model->name}, meshIndex},
-                std::make_shared<Mesh>(model, meshIndex, *this, device));
-            meshesToLoad.pop_back();
-        }
     }
 
     GPUScene::DrawBufferIDs GPUScene::GenerateDrawsForView(rg::RenderGraph &graph,
@@ -377,12 +462,12 @@ namespace sp::vulkan {
                     uint32_t instanceCount;
                     uint32_t visibilityMask;
                 } constants;
-                constants.renderableCount = renderableCount;
+                constants.renderableCount = gpuRenderables.size();
                 constants.instanceCount = instanceCount;
                 constants.visibilityMask = (uint32_t)viewMask;
                 cmd.PushConstants(constants);
 
-                cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+                cmd.Dispatch((gpuRenderables.size() + 127) / 128, 1, 1);
             });
         return bufferIDs;
     }
@@ -423,7 +508,14 @@ namespace sp::vulkan {
                     auto &renderable = gpuRenderables[i];
                     if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
 
-                    auto mesh = meshes[i].lock();
+                    const ecs::Entity &ent = gpuRenderableEntities[i];
+                    DebugAssertf(liveEntityState.count(ent) > 0,
+                        "GPURenderableEntity %s has no state",
+                        ecs::EntityRef(ent).Name().String());
+                    DebugAssertf(liveEntityState[ent].renderableMesh,
+                        "GPURenderableEntity %s has null mesh",
+                        ecs::EntityRef(ent).Name().String());
+                    auto mesh = liveEntityState[ent].renderableMesh->Get();
                     if (!mesh || !mesh->CheckReady()) continue;
 
                     for (auto &primitive : mesh->primitives) {
@@ -539,9 +631,9 @@ namespace sp::vulkan {
                 struct {
                     uint32_t renderableCount;
                 } constants;
-                constants.renderableCount = renderableCount;
+                constants.renderableCount = gpuRenderables.size();
                 cmd.PushConstants(constants);
-                cmd.Dispatch((renderableCount + 127) / 128, 1, 1);
+                cmd.Dispatch((gpuRenderables.size() + 127) / 128, 1, 1);
             });
 
         graph.AddPass("GeometryWarp")

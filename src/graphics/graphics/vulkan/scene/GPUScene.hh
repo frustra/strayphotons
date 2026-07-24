@@ -21,11 +21,16 @@
 #include "strayphotons/Async.hh"
 #include "strayphotons/EntityMap.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineString.hh"
 
+#include <cstdint>
+#include <limits>
 #include <memory>
-#include <vector>
 
 namespace sp::vulkan {
+    typedef uint64_t RenderableIndex;
+    typedef uint32_t MeshIndex;
     class Mesh;
 
     struct GPUViewState {
@@ -66,10 +71,10 @@ namespace sp::vulkan {
 
     struct GPURenderableEntity {
         glm::mat4 modelToWorld;
-        uint32_t meshIndex;
-        uint32_t visibilityMask;
-        uint32_t vertexOffset;
-        uint32_t jointPosesOffset = 0xffffffff;
+        MeshIndex meshIndex = std::numeric_limits<MeshIndex>::max();
+        uint32_t visibilityMask = 0;
+        uint32_t vertexOffset = ~0u;
+        uint32_t jointPosesOffset = ~0u;
         uint32_t opticID = 0;
         float emissiveScale = 0;
         int32_t baseColorOverrideID = -1;
@@ -99,8 +104,7 @@ namespace sp::vulkan {
             ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>>
                 lock,
             std::shared_ptr<Scene> scene);
-        std::shared_ptr<Mesh> LoadMesh(const AssetName &modelName, size_t meshIndex);
-        std::shared_ptr<Mesh> LoadMesh(const std::shared_ptr<const Gltf> &model, size_t meshIndex);
+        AsyncPtr<Mesh> LoadMesh(const ecs::Renderable &renderable);
 
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer = rg::InvalidResource; // first 4 bytes are the number of draws
@@ -145,9 +149,8 @@ namespace sp::vulkan {
             bool operator==(const OpticInstance &) const = default;
         };
 
-        uint32_t renderableCount = 0;
-        std::vector<OpticInstance> opticEntities;
-        std::vector<glm::mat4> jointPoses;
+        HeapVector<OpticInstance> opticEntities;
+        HeapVector<glm::mat4> jointPoses;
 
         uint32_t vertexCount = 0;
         uint32_t primitiveCount = 0;
@@ -156,25 +159,31 @@ namespace sp::vulkan {
         TextureSet textures;
 
         struct EntityState {
+            AssetName renderableModelName;
+            RenderableIndex renderableIndex = std::numeric_limits<RenderableIndex>::max();
+            MeshIndex renderableMeshIndex = std::numeric_limits<MeshIndex>::max();
+            AsyncPtr<Mesh> renderableMesh;
             rg::ResourceName lightFilterName, renderableTextureOverrideName;
             TextureHandle lightFilter, renderableTextureOverride;
 
+            EntityState() {}
             bool operator==(const EntityState &) const = default;
         };
         EntityMap<EntityState> liveEntityState, stagingEntityState;
 
     private:
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
+        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
         void FlushMeshes();
         struct MeshKey {
             rg::ResourceName modelName;
-            size_t meshIndex;
+            MeshIndex meshIndex;
         };
 
         struct MeshKeyView {
             std::string_view modelName;
-            size_t meshIndex;
+            MeshIndex meshIndex;
         };
 
         struct MeshKeyHash {
@@ -205,10 +214,15 @@ namespace sp::vulkan {
         };
 
         PreservingMap<AssetName, Async<Gltf>, 10000, StringHash, StringEqual> activeModels;
-        std::vector<AssetName> modelsToLoad;
-        PreservingMap<MeshKey, Mesh, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
-        std::vector<std::pair<std::shared_ptr<const Gltf>, size_t>> meshesToLoad;
-        std::vector<GPURenderableEntity> gpuRenderables;
-        std::vector<std::weak_ptr<Mesh>> meshes;
+        PreservingMap<MeshKey, Async<Mesh>, 10000, MeshKeyHash, MeshKeyEqual> activeMeshes;
+
+        RenderableIndex AllocateRenderableIndex(ecs::Entity ent);
+        void ReleaseRenderable(RenderableIndex index);
+
+        HeapVector<GPURenderableEntity> gpuRenderables;
+        HeapVector<ecs::Entity> gpuRenderableEntities; // Indexes match 1-to-t with gpuRenderables
+        HeapVector<ecs::Entity> entitiesPendingDelete; // Entities index into liveEntityState
+        HeapVector<RenderableIndex> renderablesToFlush;
+        DispatchQueue workQueue;
     };
 } // namespace sp::vulkan

@@ -21,7 +21,7 @@ namespace sp {
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = std::make_shared<EditorContext>();
 
-        GetSceneManager().QueueAction([pickerEntity = this->pickerEntity, events = this->events] {
+        GetSceneManager().QueueAction(NewDispatchSource, [pickerEntity = this->pickerEntity, events = this->events] {
             auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
             ecs::Entity picker = pickerEntity.Get(lock);
             if (!picker.Has<ecs::EventInput>(lock)) return;
@@ -32,7 +32,7 @@ namespace sp {
     }
 
     EntityPickerGui::~EntityPickerGui() {
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
             [pickerEntity = this->pickerEntity, events = this->events](auto &lock) {
                 ecs::Entity ent = pickerEntity.Get(lock);
                 if (ent.Has<ecs::EventInput>(lock)) {
@@ -89,7 +89,7 @@ namespace sp {
                 if (ImGui::IsItemActivated()) context->RefreshEntityTree();
                 ImGui::BeginChild("entityViewScroll", ImVec2(0, -footerHeight));
                 if (context->ShowEntityTree(targetEntity)) {
-                    ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                    ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource, [this](auto &lock) {
                         ecs::EventBindings::SendEvent(lock,
                             inspectorEntity,
                             ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), targetEntity.GetLive()});
@@ -98,7 +98,8 @@ namespace sp {
                 ImGui::EndChild();
                 if (!context->scene) ImGui::BeginDisabled();
                 if (ImGui::Button("New Entity") && context->scene) {
-                    GetSceneManager().QueueAction(SceneAction::ApplySystemScene,
+                    GetSceneManager().QueueAction(NewDispatchSource,
+                        SceneAction::ApplySystemScene,
                         context->scene.data->name,
                         [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                             auto newEntity = scene->NewRootEntity(lock, scene);
@@ -106,16 +107,18 @@ namespace sp {
                             newEntity.Set<ecs::TransformTree>(lock);
                             newEntity.Set<ecs::TransformSnapshot>(lock);
 
-                            GetSceneManager().QueueAction([this, newTarget = ecs::EntityRef(newEntity)] {
-                                ecs::QueueTransaction<ecs::SendEventsLock>([this, newTarget](auto &lock) {
-                                    ecs::EventBindings::SendEvent(lock,
-                                        inspectorEntity,
-                                        ecs::Event{EDITOR_EVENT_EDIT_TARGET,
-                                            pickerEntity.GetLive(),
-                                            newTarget.GetLive()});
-                                    context->RefreshEntityTree();
+                            GetSceneManager().QueueAction(NewDispatchSource,
+                                [this, newTarget = ecs::EntityRef(newEntity)] {
+                                    ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource,
+                                        [this, newTarget](auto &lock) {
+                                            ecs::EventBindings::SendEvent(lock,
+                                                inspectorEntity,
+                                                ecs::Event{EDITOR_EVENT_EDIT_TARGET,
+                                                    pickerEntity.GetLive(),
+                                                    newTarget.GetLive()});
+                                            context->RefreshEntityTree();
+                                        });
                                 });
-                            });
                         });
                 }
                 if (!context->scene) {
@@ -128,7 +131,7 @@ namespace sp {
             if (ImGui::BeginTabItem("Entity View")) {
                 ImGui::BeginChild("entityViewScroll", ImVec2(0, -footerHeight));
                 if (context->ShowAllEntities(targetEntity, "##EntityList")) {
-                    ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                    ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource, [this](auto &lock) {
                         ecs::EventBindings::SendEvent(lock,
                             inspectorEntity,
                             ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), targetEntity.GetStaging()});

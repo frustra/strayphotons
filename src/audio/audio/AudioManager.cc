@@ -182,7 +182,7 @@ namespace sp {
         if (attemptRestart) {
             attemptRestart = false;
             Logf("Attempting audio thread restart (attempt %d/%d)", restartAttempt, maxRestartAttempts);
-            decoderQueue.Dispatch<void>([this] {
+            decoderQueue.Dispatch<void>(NewDispatchSource, [this] {
                 StopThread();
                 StartThread();
             });
@@ -203,7 +203,7 @@ namespace sp {
             CVarAudioBackend.Get(true);
             restartAttempt = 0;
             Logf("Restarting audio system (backend changed)");
-            decoderQueue.Dispatch<void>([this] {
+            decoderQueue.Dispatch<void>(NewDispatchSource, [this] {
                 StopThread();
                 StartThread();
             });
@@ -228,17 +228,18 @@ namespace sp {
         while (soundObserver.Poll(lock, compEvent)) {
             if (compEvent.type == Tecs::EventType::ADDED) {
                 if (!compEvent.entity.Has<ecs::EventInput, ecs::Audio>(lock)) continue;
-                ecs::QueueTransaction<ecs::Write<ecs::Audio, ecs::EventInput>>([ent = compEvent.entity](auto &lock) {
-                    if (!ent.Has<ecs::EventInput, ecs::Audio>(lock)) return;
+                ecs::QueueTransaction<ecs::Write<ecs::Audio, ecs::EventInput>>(NewDispatchSource,
+                    [ent = compEvent.entity](auto &lock) {
+                        if (!ent.Has<ecs::EventInput, ecs::Audio>(lock)) return;
 
-                    auto &audio = ent.Get<ecs::Audio>(lock);
-                    if (!audio.eventQueue) audio.eventQueue = ecs::EventQueue::New();
-                    auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                    eventInput.Register(lock, audio.eventQueue, "/sound/play");
-                    eventInput.Register(lock, audio.eventQueue, "/sound/resume");
-                    eventInput.Register(lock, audio.eventQueue, "/sound/pause");
-                    eventInput.Register(lock, audio.eventQueue, "/sound/stop");
-                });
+                        auto &audio = ent.Get<ecs::Audio>(lock);
+                        if (!audio.eventQueue) audio.eventQueue = ecs::EventQueue::New();
+                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        eventInput.Register(lock, audio.eventQueue, "/sound/play");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/resume");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/pause");
+                        eventInput.Register(lock, audio.eventQueue, "/sound/stop");
+                    });
             } else if (compEvent.type == Tecs::EventType::REMOVED) {
 
                 auto *entSound = soundEntityMap.find(compEvent.entity);
@@ -274,7 +275,8 @@ namespace sp {
                     state.bufferOffset = 0;
                     state.volume = 0;
                     state.occlusion = 0;
-                    state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(source.file,
+                    state.audioBuffer = decoderQueue.Dispatch<nqr::AudioData>(NewDispatchSource,
+                        source.file,
                         [this, file = source.file, filePath = source.filePath](std::shared_ptr<Asset> asset) {
                             ZoneScopedN("DecodeAudioData");
                             if (!asset) {
@@ -357,7 +359,7 @@ namespace sp {
 
         sounds.UpdateIndexes();
 
-        decoderQueue.Dispatch<void>([this] {
+        decoderQueue.Dispatch<void>(NewDispatchSource, [this] {
             decoderCache.Tick(interval);
         });
     }

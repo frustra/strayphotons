@@ -9,6 +9,7 @@
 
 #include "assets/AssetManager.hh"
 
+#include <cstdint>
 #include <picojson.h>
 
 namespace ecs {
@@ -20,7 +21,7 @@ namespace ecs {
         if (dst.joints.empty()) dst.joints = src.joints;
     }
 
-    Renderable::Renderable(std::string_view modelName, uint64_t meshIndex)
+    Renderable::Renderable(std::string_view modelName, uint32_t meshIndex)
         : modelName(modelName), meshIndex(meshIndex) {
         if (modelName.empty()) {
             visibility = VisibilityMask::None;

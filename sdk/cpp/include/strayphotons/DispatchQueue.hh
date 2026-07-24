@@ -8,7 +8,10 @@
 #pragma once
 
 #include "strayphotons/Async.hh"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/Utility.hh"
+
+#include <string_view>
 
 #ifdef TRACY_ENABLE
     #include "common/Tracing.hh"
@@ -94,7 +97,22 @@ namespace sp {
         };
     } // namespace detail
 
+    struct DispatchSourceInfo {
+        HeapString function, filename;
+        uint32_t lineNumber;
+
+        DispatchSourceInfo(std::string_view function, std::string_view filename, uint32_t lineNumber)
+            : function(function), filename(filename), lineNumber(lineNumber) {}
+
+        HeapString String() const;
+    };
+
+#define NewDispatchSource ::sp::DispatchSourceInfo(__FUNCTION__, __FILE__, __LINE__)
+
     struct DispatchQueueWorkItemBase {
+        DispatchSourceInfo sourceInfo;
+        DispatchQueueWorkItemBase(const DispatchSourceInfo &sourceInfo) : sourceInfo(sourceInfo) {}
+
         virtual void Process() = 0;
         virtual bool Ready() = 0;
     };
@@ -107,8 +125,9 @@ namespace sp {
         using ResultTuple = std::tuple<typename detail::Future<Futures>::ReturnType...>;
 
         template<typename... Args>
-        DispatchQueueWorkItem(DispatchQueue &queue, Fn &&func, Args &&...args)
-            : queue(queue), returnValue(std::make_shared<Async<ReturnType>>()), func(std::move(func)),
+        DispatchQueueWorkItem(DispatchQueue &queue, const DispatchSourceInfo &sourceInfo, Fn &&func, Args &&...args)
+            : DispatchQueueWorkItemBase(sourceInfo), queue(queue), returnValue(std::make_shared<Async<ReturnType>>()),
+              func(std::move(func)),
               waitForFutures(std::make_tuple(detail::Future<std::remove_cvref_t<Args>>(args)...)) {}
 
         DispatchQueue &queue;
@@ -140,7 +159,7 @@ namespace sp {
 
         ~DispatchQueue();
         void Shutdown();
-        void Flush(bool blockUntilReady = false);
+        void Flush(bool blockUntilReady = false, chrono_clock::duration timeLimit = {});
 
         /**
          * Queues a function.
@@ -151,13 +170,13 @@ namespace sp {
          * If the return value of the function is itself a future, the future returned
          * from Dispatch will be set to its value once it is ready.
          *
-         * Usage: Dispatch<R>(FutureType<T>..., [](T...) { return std::make_shared<R>(); });
+         * Usage: Dispatch<R>(NewDispatchSource, FutureType<T>..., [](T...) { return std::make_shared<R>(); });
          * Example:
-         *  auto image = queue.Dispatch<Image>([]() { return std::make_shared<Image>(); });
-         *  queue.Dispatch<void>(image, [](std::shared_ptr<Image> image) { });
+         *  auto image = queue.Dispatch<Image>(NewDispatchSource, []() { return std::make_shared<Image>(); });
+         *  queue.Dispatch<void>(NewDispatchSource, image, [](std::shared_ptr<Image> image) { });
          */
         template<typename ReturnType, typename... FuturesAndFn>
-        AsyncPtr<ReturnType> Dispatch(FuturesAndFn &&...args) {
+        AsyncPtr<ReturnType> Dispatch(const DispatchSourceInfo &sourceInfo, FuturesAndFn &&...args) {
             // if C++ adds support for parameters after a parameter pack, delete this function
             const size_t lastArg = sizeof...(FuturesAndFn) - 1;
             auto tupl = std::make_tuple(std::move(args)...);
@@ -165,7 +184,7 @@ namespace sp {
             auto futures = detail::subtuple(std::move(tupl), std::make_index_sequence<lastArg>());
             return std::apply(
                 [&](auto &&...futures) {
-                    return DispatchInternal<ReturnType>(std::move(fn), std::move(futures)...);
+                    return DispatchInternal<ReturnType>(sourceInfo, std::move(fn), std::move(futures)...);
                 },
                 futures);
         }
@@ -174,20 +193,21 @@ namespace sp {
          * When `from` is ready, its value will be set in `to`
          */
         template<typename FutT, typename T>
-        void ForwardAsync(FutT from, const AsyncPtr<T> &to) {
-            if (from->Ready()) {
-                to->Set(from->Get());
+        void ForwardAsync(const DispatchSourceInfo &sourceInfo, FutT from, const AsyncPtr<T> &to) {
+            if (!from || from->Ready()) {
+                to->Set(from ? from->Get() : nullptr);
             } else {
-                Dispatch<void>(from, [to](auto &fromValue) {
+                Dispatch<void>(sourceInfo, from, [to](auto &fromValue) {
                     to->Set(fromValue);
                 });
             }
         }
 
         template<typename ReturnType, typename Fn, typename... Futures>
-        AsyncPtr<ReturnType> DispatchInternal(Fn &&func, Futures &&...futures) {
+        AsyncPtr<ReturnType> DispatchInternal(const DispatchSourceInfo &sourceInfo, Fn &&func, Futures &&...futures) {
             Assert(!exit, "tried to dispatch to a shut down queue");
             auto item = std::make_shared<DispatchQueueWorkItem<ReturnType, Fn, std::remove_cvref_t<Futures>...>>(*this,
+                sourceInfo,
                 std::move(func),
                 std::move(futures)...);
 
@@ -215,6 +235,7 @@ namespace sp {
     void DispatchQueueWorkItem<ReturnType, Fn, Futures...>::Process() {
 #ifdef TRACY_ENABLE
         ZoneScoped;
+        DebugZoneStr(sourceInfo.String());
 #endif
         ResultTuple args;
         {
@@ -228,13 +249,14 @@ namespace sp {
                 waitForFutures);
         }
 
-        if constexpr (std::is_same<ReturnType, void>()) {
+        using ResultType = decltype(std::apply(func, args));
+        if constexpr (std::is_same<ResultType, void>()) {
             std::apply(func, args);
             returnValue->Set(nullptr);
         } else {
-            auto result = std::apply(func, args);
-            if constexpr (std::is_constructible<detail::Future<decltype(result)>, decltype(result)>()) {
-                queue.ForwardAsync(result, returnValue);
+            ResultType result = std::apply(func, args);
+            if constexpr (std::is_constructible<detail::Future<ResultType>, ResultType>()) {
+                queue.ForwardAsync(sourceInfo, result, returnValue);
             } else {
                 returnValue->Set(result);
             }

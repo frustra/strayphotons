@@ -32,7 +32,7 @@ namespace sp {
     void OverlayGuiManager::RegisterEvents(ecs::Entity guiEntity) {
         GuiContext::RegisterEvents(guiEntity);
         if (guiEntity) {
-            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [name = this->guiName, ent = this->guiEntity, events = this->events](auto &lock) {
                     Assertf(ent.Has<ecs::EventInput>(lock),
                         "Expected overlay gui to start with an EventInput: %s",
@@ -46,7 +46,7 @@ namespace sp {
 
     void OverlayGuiManager::UnregisterEvents() {
         if (guiEntity) {
-            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);
@@ -58,7 +58,8 @@ namespace sp {
     }
 
     std::shared_ptr<GuiContext> OverlayGuiManager::CreateContext(const ecs::Name &guiName) {
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "gui",
             [name = guiName](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, name);

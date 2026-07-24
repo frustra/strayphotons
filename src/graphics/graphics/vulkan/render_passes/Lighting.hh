@@ -39,8 +39,6 @@ namespace sp::vulkan::renderer {
         GPUScene &scene;
         Voxels &voxels;
 
-        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
-
         glm::ivec2 shadowAtlasSize = {};
 
         struct LightPathEntry {

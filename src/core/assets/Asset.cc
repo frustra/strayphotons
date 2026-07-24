@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -20,8 +20,7 @@ namespace sp {
             Assert(buffer.size() <= INT_MAX, "Buffer size overflows int");
             MurmurHash3_x86_128(buffer.data(), (int)buffer.size(), 0, output.data());
 
-            // This isn't really safe, but this cache isn't too important anyway.
-            const_cast<Asset *>(this)->hash = output;
+            hash = output;
             return output;
         }
     }

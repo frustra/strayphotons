@@ -16,7 +16,7 @@
 namespace sp {
     void EditorContext::RefreshEntityTree() {
         ZoneScoped;
-        ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>([this](auto &lock) {
+        ecs::QueueTransaction<ecs::Read<ecs::Name, ecs::TransformTree>>(NewDispatchSource, [this](auto &lock) {
             ZoneScopedN("RefreshEntityTree");
             std::lock_guard l(mutex);
 
@@ -137,7 +137,7 @@ namespace sp {
                     ImGui::TableNextRow();
                     ImGui::TableSetColumnIndex(0);
                     if (ImGui::Button("-", ImVec2(20, 0))) {
-                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref](auto &lock) {
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>>(NewDispatchSource, [ref = ref](auto &lock) {
                             ref.ClearValue(lock);
                             ref.ClearBinding(lock);
                         });
@@ -175,7 +175,7 @@ namespace sp {
                                 followFocusPos = signalNameCursorPos;
                             }
 
-                            ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(NewDispatchSource,
                                 [ref = ref, newRef](auto &lock) {
                                     if (ref.HasValue(lock)) {
                                         newRef.SetValue(lock, ref.GetValue(lock));
@@ -190,7 +190,7 @@ namespace sp {
                     }
                     ImGui::TableSetColumnIndex(2);
                     if (ImGui::Checkbox("", &hasValue)) {
-                        ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                        ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(NewDispatchSource,
                             [hasValue, ref = ref, scope](auto &lock) {
                                 if (hasValue) {
                                     ref.SetValue(lock, 0.0);
@@ -205,16 +205,17 @@ namespace sp {
                         ImGui::SetNextItemWidth(-FLT_MIN);
                         double signalValue = ref.GetValue(lock);
                         if (AddImGuiElement("##SignalValue."s + ref.GetSignalName(), signalValue)) {
-                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>([ref = ref, signalValue](auto &lock) {
-                                ref.SetValue(lock, signalValue);
-                            });
+                            ecs::QueueTransaction<ecs::Write<ecs::Signals>>(NewDispatchSource,
+                                [ref = ref, signalValue](auto &lock) {
+                                    ref.SetValue(lock, signalValue);
+                                });
                         }
                     } else {
                         ImGui::SetNextItemWidth(-80.0f);
                         ecs::SignalExpression expression = ref.GetBinding(lock);
                         if (AddImGuiElement("##SignalBinding."s + ref.GetSignalName(), expression)) {
                             if (expression) {
-                                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(NewDispatchSource,
                                     [ref = ref, expression](auto &lock) {
                                         ref.SetBinding(lock, expression);
                                     });
@@ -233,7 +234,7 @@ namespace sp {
             ImGui::EndTable();
 
             if (ImGui::Button("Add Signal")) {
-                ecs::QueueTransaction<ecs::Write<ecs::Signals>>([targetEntity](auto &lock) {
+                ecs::QueueTransaction<ecs::Write<ecs::Signals>>(NewDispatchSource, [targetEntity](auto &lock) {
                     for (size_t i = 0;; i++) {
                         std::string signalName = i > 0 ? ("value" + std::to_string(i)) : "value";
                         ecs::SignalRef newRef(targetEntity, signalName);
@@ -246,7 +247,7 @@ namespace sp {
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Binding")) {
-                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(
+                ecs::QueueTransaction<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>(NewDispatchSource,
                     [targetEntity, scope](auto &lock) {
                         for (size_t i = 0;; i++) {
                             std::string signalName = i > 0 ? ("binding" + std::to_string(i)) : "binding";
@@ -308,7 +309,7 @@ namespace sp {
                 if (!sceneInfo.prefabStagingId) {
                     ImGui::SameLine();
                     if (ImGui::Button("Copy to Staging")) {
-                        GetSceneManager().QueueAction([target = this->target] {
+                        GetSceneManager().QueueAction(NewDispatchSource, [target = this->target] {
                             auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
                             auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
 
@@ -328,15 +329,25 @@ namespace sp {
                 if (this->scene) {
                     ImGui::SameLine();
                     if (ImGui::Button("Apply Scene")) {
-                        GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
-                        GetSceneManager().QueueAction(SceneAction::ApplyResetStagingScene, this->scene.data->name);
+                        GetSceneManager().QueueAction(NewDispatchSource,
+                            SceneAction::RefreshScenePrefabs,
+                            this->scene.data->name);
+                        GetSceneManager().QueueAction(NewDispatchSource,
+                            SceneAction::ApplyResetStagingScene,
+                            this->scene.data->name);
                     }
                     if (!targetSceneInfo.prefabStagingId) {
                         ImGui::SameLine();
                         if (ImGui::Button("Save & Apply Scene")) {
-                            GetSceneManager().QueueAction(SceneAction::RefreshScenePrefabs, this->scene.data->name);
-                            GetSceneManager().QueueAction(SceneAction::ApplyResetStagingScene, this->scene.data->name);
-                            GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.data->name);
+                            GetSceneManager().QueueAction(NewDispatchSource,
+                                SceneAction::RefreshScenePrefabs,
+                                this->scene.data->name);
+                            GetSceneManager().QueueAction(NewDispatchSource,
+                                SceneAction::ApplyResetStagingScene,
+                                this->scene.data->name);
+                            GetSceneManager().QueueAction(NewDispatchSource,
+                                SceneAction::SaveStagingScene,
+                                this->scene.data->name);
                         }
                     }
                 }
@@ -419,15 +430,17 @@ namespace sp {
             std::string removeLabel = "X##" + name;
             if (ImGui::Button(removeLabel.c_str())) {
                 if (IsLive(lock)) {
-                    ecs::QueueTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
-                        if (!target.Exists(lock)) return;
-                        comp.UnsetComponent(lock, target);
-                    });
+                    ecs::QueueTransaction<ecs::AddRemove>(NewDispatchSource,
+                        [target = this->target, &comp](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp.UnsetComponent(lock, target);
+                        });
                 } else {
-                    ecs::QueueStagingTransaction<ecs::AddRemove>([target = this->target, &comp](auto &lock) {
-                        if (!target.Exists(lock)) return;
-                        comp.UnsetComponent(lock, target);
-                    });
+                    ecs::QueueStagingTransaction<ecs::AddRemove>(NewDispatchSource,
+                        [target = this->target, &comp](auto &lock) {
+                            if (!target.Exists(lock)) return;
+                            comp.UnsetComponent(lock, target);
+                        });
                 }
             }
             if (open) {
@@ -454,13 +467,13 @@ namespace sp {
                     scope = targetSceneInfo.scope;
                 }
                 if (IsLive(lock)) {
-                    ecs::QueueTransaction<ecs::AddRemove>(
+                    ecs::QueueTransaction<ecs::AddRemove>(NewDispatchSource,
                         [target = this->target, comp = selectedComponent, scope](auto &lock) {
                             if (!target.Exists(lock)) return;
                             comp->SetComponent(lock, scope, target);
                         });
                 } else {
-                    ecs::QueueStagingTransaction<ecs::AddRemove>(
+                    ecs::QueueStagingTransaction<ecs::AddRemove>(NewDispatchSource,
                         [target = this->target, comp = selectedComponent, scope](auto &lock) {
                             if (!target.Exists(lock)) return;
                             comp->SetComponent(lock, scope, target);
@@ -497,11 +510,12 @@ namespace sp {
                     if (lock.Has<ecs::ActiveScene>()) {
                         auto &active = lock.Get<ecs::ActiveScene>();
                         if (active.scene != entry) {
-                            ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>([scene = entry](auto &lock) {
-                                if (lock.template Has<ecs::ActiveScene>()) {
-                                    lock.template Set<ecs::ActiveScene>(scene);
-                                }
-                            });
+                            ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>(NewDispatchSource,
+                                [scene = entry](auto &lock) {
+                                    if (lock.template Has<ecs::ActiveScene>()) {
+                                        lock.template Set<ecs::ActiveScene>(scene);
+                                    }
+                                });
                         }
                     }
                 }
@@ -509,7 +523,7 @@ namespace sp {
             ImGui::EndListBox();
         }
         if (ImGui::Button("Reload All")) {
-            GetSceneManager().QueueAction(SceneAction::ReloadScene);
+            GetSceneManager().QueueAction(NewDispatchSource, SceneAction::ReloadScene);
         }
         ImGui::SameLine();
         bool openLoadScene = ImGui::Button("Load Scene");
@@ -522,7 +536,7 @@ namespace sp {
                 ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SameLine();
             if (ImGui::Button("Load") || submit) {
-                GetSceneManager().QueueAction(SceneAction::LoadScene, sceneEntry);
+                GetSceneManager().QueueAction(NewDispatchSource, SceneAction::LoadScene, sceneEntry);
                 sceneEntry.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -539,7 +553,7 @@ namespace sp {
                 ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SameLine();
             if (ImGui::Button("Add") || submit) {
-                GetSceneManager().QueueAction(SceneAction::AddScene, sceneEntry);
+                GetSceneManager().QueueAction(NewDispatchSource, SceneAction::AddScene, sceneEntry);
                 sceneEntry.clear();
                 ImGui::CloseCurrentPopup();
             }
@@ -548,7 +562,7 @@ namespace sp {
         if (this->scene) {
             ImGui::SameLine();
             if (ImGui::Button("Remove Scene")) {
-                GetSceneManager().QueueAction(SceneAction::RemoveScene, this->scene.data->name);
+                GetSceneManager().QueueAction(NewDispatchSource, SceneAction::RemoveScene, this->scene.data->name);
             }
         }
         ImGui::Separator();
@@ -558,11 +572,13 @@ namespace sp {
             if (this->scene.data->type != SceneType::System) {
                 ImGui::SameLine(ImGui::GetWindowWidth() - ImGui::GetStyle().ItemSpacing.x * 2.0f - 120.0f);
                 if (ImGui::Button("Reload", ImVec2(60, 0))) {
-                    GetSceneManager().QueueAction(SceneAction::ReloadScene, this->scene.data->name);
+                    GetSceneManager().QueueAction(NewDispatchSource, SceneAction::ReloadScene, this->scene.data->name);
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Save", ImVec2(60, 0))) {
-                    GetSceneManager().QueueAction(SceneAction::SaveStagingScene, this->scene.data->name);
+                    GetSceneManager().QueueAction(NewDispatchSource,
+                        SceneAction::SaveStagingScene,
+                        this->scene.data->name);
                 }
             }
             if (ImGui::CollapsingHeader("Scene Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -579,7 +595,8 @@ namespace sp {
                     });
                 }
                 if (changed) {
-                    GetSceneManager().QueueAction(SceneAction::EditStagingScene,
+                    GetSceneManager().QueueAction(NewDispatchSource,
+                        SceneAction::EditStagingScene,
                         this->scene.data->name,
                         [properties](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                             auto sceneId = scene->data->sceneEntity.Get(lock);
@@ -600,7 +617,7 @@ namespace sp {
                         auto &name = ent.Get<ecs::Name>(lock);
                         if (ImGui::Selectable(name.String().c_str(), ent == this->target)) {
                             this->target = ent;
-                            ecs::QueueTransaction<ecs::SendEventsLock>([this, ent](auto &lock) {
+                            ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource, [this, ent](auto &lock) {
                                 ecs::EventBindings::SendEvent(lock,
                                     this->inspectorEntity,
                                     ecs::Event{EDITOR_EVENT_EDIT_TARGET, this->inspectorEntity.Get(lock), ent});

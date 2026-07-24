@@ -22,18 +22,19 @@ namespace sp {
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = std::make_shared<EditorContext>();
 
-        GetSceneManager().QueueAction([inspectorEntity = this->inspectorEntity, events = this->events] {
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
-            ecs::Entity inspector = inspectorEntity.Get(lock);
-            if (!inspector.Has<ecs::EventInput>(lock)) return;
+        GetSceneManager().QueueAction(NewDispatchSource,
+            [inspectorEntity = this->inspectorEntity, events = this->events] {
+                auto lock = ecs::StartTransaction<ecs::Write<ecs::EventInput>>();
+                ecs::Entity inspector = inspectorEntity.Get(lock);
+                if (!inspector.Has<ecs::EventInput>(lock)) return;
 
-            auto &eventInput = inspector.Get<ecs::EventInput>(lock);
-            eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
-        });
+                auto &eventInput = inspector.Get<ecs::EventInput>(lock);
+                eventInput.Register(lock, events, EDITOR_EVENT_EDIT_TARGET);
+            });
     }
 
     InspectorGui::~InspectorGui() {
-        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+        ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
             [inspectorEntity = this->inspectorEntity, events = this->events](auto &lock) {
                 ecs::Entity ent = inspectorEntity.Get(lock);
                 if (ent.Has<ecs::EventInput>(lock)) {
@@ -55,11 +56,12 @@ namespace sp {
             if (lock.Has<ecs::ActiveScene>()) {
                 auto &active = lock.Get<ecs::ActiveScene>();
                 if (context->scene != active.scene) {
-                    ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>([scene = context->scene](auto &lock) {
-                        if (lock.template Has<ecs::ActiveScene>()) {
-                            lock.template Set<ecs::ActiveScene>(scene);
-                        }
-                    });
+                    ecs::QueueTransaction<ecs::Write<ecs::ActiveScene>>(NewDispatchSource,
+                        [scene = context->scene](auto &lock) {
+                            if (lock.template Has<ecs::ActiveScene>()) {
+                                lock.template Set<ecs::ActiveScene>(scene);
+                            }
+                        });
                 }
             }
 
@@ -105,7 +107,7 @@ namespace sp {
                     auto liveLock = ecs::StartTransaction<ecs::ReadAll>();
                     context->ShowEntityControls(liveLock, targetEntity);
                     if (targetEntity != context->target) {
-                        ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                        ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource, [this](auto &lock) {
                             ecs::EventBindings::SendEvent(lock,
                                 inspectorEntity,
                                 ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), context->target});
@@ -131,7 +133,7 @@ namespace sp {
                         targetRoot = stagingInfo.rootStagingId;
                     }
                     if (targetEntity != targetRoot) {
-                        ecs::QueueTransaction<ecs::SendEventsLock>([this](auto &lock) {
+                        ecs::QueueTransaction<ecs::SendEventsLock>(NewDispatchSource, [this](auto &lock) {
                             ecs::EventBindings::SendEvent(lock,
                                 inspectorEntity,
                                 ecs::Event{EDITOR_EVENT_EDIT_TARGET, inspectorEntity.Get(lock), context->target});

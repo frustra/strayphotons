@@ -7,11 +7,22 @@
 
 #include "strayphotons/DispatchQueue.hh"
 
+#include "strayphotons/Utility.hh"
+
+#include <sstream>
+
 #ifdef TRACY_ENABLE
     #include "common/Tracing.hh"
 #endif
 
 namespace sp {
+
+    HeapString DispatchSourceInfo::String() const {
+        std::stringstream ss;
+        ss << filename << ":" << lineNumber << " in function " << function;
+        return ss.view();
+    }
+
     DispatchQueue::~DispatchQueue() {
         dropPendingWork = true;
         Shutdown();
@@ -31,12 +42,22 @@ namespace sp {
         }
     }
 
-    void DispatchQueue::Flush(bool blockUntilReady) {
+    void DispatchQueue::Flush(bool blockUntilReady, chrono_clock::duration timeLimit) {
 #ifdef TRACY_ENABLE
         ZoneScoped;
 #endif
         std::unique_lock<std::mutex> lock(mutex);
-        FlushInternal(lock, workQueue.size(), blockUntilReady);
+        size_t maxWorkItems = workQueue.size();
+        if (maxWorkItems == 0) return;
+        if (blockUntilReady || timeLimit.count() == 0) {
+            FlushInternal(lock, maxWorkItems, blockUntilReady);
+        } else {
+            chrono_clock::time_point start = chrono_clock::now();
+            while (maxWorkItems > 0 && chrono_clock::now() - start < timeLimit) {
+                FlushInternal(lock, 1, false);
+                maxWorkItems--;
+            }
+        }
     }
 
     void DispatchQueue::ThreadMain() {
@@ -75,6 +96,10 @@ namespace sp {
     }
 
     size_t DispatchQueue::FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady) {
+#ifdef TRACY_ENABLE
+        ZoneScoped;
+        ZoneValue(maxWorkItems);
+#endif
         size_t flushCount = 0;
         while (maxWorkItems > 0 && !workQueue.empty()) {
             auto item = std::move(workQueue.front());
@@ -85,6 +110,7 @@ namespace sp {
             if (ready) {
 #ifdef TRACY_ENABLE
                 ZoneScopedN("DispatchQueue::Process");
+                DebugZoneStr(item->sourceInfo.String());
 #endif
                 item->Process();
                 std::this_thread::yield();

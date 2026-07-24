@@ -7,6 +7,7 @@
 
 #include "RenderGraph.hh"
 
+#include "common/Tracing.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
@@ -16,6 +17,7 @@
 #include "strayphotons/Utility.hh"
 
 #include <string_view>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace sp::vulkan::render_graph {
@@ -90,6 +92,8 @@ namespace sp::vulkan::render_graph {
 
         for (auto &pass : passes) {
             if (!pass.active) continue;
+            ZoneScopedN("ExecutePass");
+            ZoneStr(pass.name.str());
             Assert(pass.HasExecute(), "pass must have an Execute function");
 
             const auto &lastScopeStack = frameScopeStack;

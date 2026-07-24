@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -25,6 +25,7 @@ namespace sp {
     class Asset : public NonCopyable {
     public:
         Asset(std::string_view path = "") : path(path), extension(parseFileExtension(path)) {}
+        Asset(const std::vector<uint8_t> &buffer) : buffer(buffer) {}
 
         std::string String() const {
             return std::string((char *)buffer.data(), buffer.size());
@@ -49,7 +50,7 @@ namespace sp {
 
     private:
         std::vector<uint8_t> buffer;
-        std::optional<Hash128> hash;
+        mutable std::optional<Hash128> hash;
 
         friend class AssetManager;
     };
