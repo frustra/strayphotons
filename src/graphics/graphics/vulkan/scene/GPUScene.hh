@@ -96,15 +96,26 @@ namespace sp::vulkan {
 
     public:
         GPUScene(DeviceContext &device);
+        ~GPUScene();
         void Flush();
         void LoadState(rg::RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>>
-                lock);
-        bool PreloadScene(
-            ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>>
-                lock,
+            ecs::Lock<ecs::Read<ecs::Renderable,
+                ecs::VoxelData,
+                ecs::Light,
+                ecs::OpticalElement,
+                ecs::TransformSnapshot,
+                ecs::Name>> lock);
+        bool PreloadScene(ecs::Lock<ecs::Read<ecs::Name,
+                              ecs::SceneInfo,
+                              ecs::Renderable,
+                              ecs::VoxelData,
+                              ecs::Light,
+                              ecs::RenderOutput,
+                              ecs::Screen>> lock,
             std::shared_ptr<Scene> scene);
         AsyncPtr<Mesh> LoadMesh(const ecs::Renderable &renderable);
+        AsyncPtr<Mesh> LoadMesh(const ecs::VoxelData &voxelData);
+        AsyncPtr<Gltf> GenerateGltf(const ecs::VoxelData &voxelData);
 
         struct DrawBufferIDs {
             rg::ResourceID drawCommandsBuffer = rg::InvalidResource; // first 4 bytes are the number of draws
@@ -162,7 +173,10 @@ namespace sp::vulkan {
             AssetName renderableModelName;
             RenderableIndex renderableIndex = std::numeric_limits<RenderableIndex>::max();
             MeshIndex renderableMeshIndex = std::numeric_limits<MeshIndex>::max();
-            AsyncPtr<Mesh> renderableMesh;
+            AsyncPtr<Mesh> renderableMesh, voxelDataMesh;
+            HeapString voxelDataAlgorithm;
+            glm::uvec3 voxelDataExtents = glm::uvec3(0);
+            uint64_t voxelDataSeed = 0;
             rg::ResourceName lightFilterName, renderableTextureOverrideName;
             TextureHandle lightFilter, renderableTextureOverride;
 
@@ -173,6 +187,7 @@ namespace sp::vulkan {
 
     private:
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
+        ecs::ComponentModifiedObserver<ecs::VoxelData> voxelDataObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
         void FlushMeshes();
@@ -218,6 +233,53 @@ namespace sp::vulkan {
 
         RenderableIndex AllocateRenderableIndex(ecs::Entity ent);
         void ReleaseRenderable(RenderableIndex index);
+
+        struct VoxelDataKey {
+            sp::InlineString<128> algorithm;
+            glm::uvec3 extents;
+            uint32_t seed;
+        };
+
+        struct VoxelDataKeyView {
+            std::string_view algorithm;
+            glm::uvec3 extents;
+            uint32_t seed;
+        };
+
+        struct VoxelDataKeyHash {
+            using is_transparent = void;
+
+            std::size_t operator()(const VoxelDataKey &key) const {
+                auto h = StringHash{}(key.algorithm);
+                hash_combine(h, key.extents.x);
+                hash_combine(h, key.extents.y);
+                hash_combine(h, key.extents.z);
+                hash_combine(h, key.seed);
+                return h;
+            }
+            std::size_t operator()(const VoxelDataKeyView &key) const {
+                auto h = StringHash{}(key.algorithm);
+                hash_combine(h, key.extents.x);
+                hash_combine(h, key.extents.y);
+                hash_combine(h, key.extents.z);
+                hash_combine(h, key.seed);
+                return h;
+            }
+        };
+
+        struct VoxelDataKeyEqual {
+            using is_transparent = void;
+
+            bool operator()(const VoxelDataKeyView &lhs, const VoxelDataKey &rhs) const {
+                const std::string_view view = rhs.algorithm;
+                return lhs.algorithm == view && lhs.extents == rhs.extents && lhs.seed == rhs.seed;
+            }
+            bool operator()(const VoxelDataKey &lhs, const VoxelDataKey &rhs) const {
+                return lhs.algorithm == rhs.algorithm && lhs.extents == rhs.extents && lhs.seed == rhs.seed;
+            }
+        };
+
+        PreservingMap<VoxelDataKey, Async<Mesh>, 10000, VoxelDataKeyHash, VoxelDataKeyEqual> activeVoxelData;
 
         HeapVector<GPURenderableEntity> gpuRenderables;
         HeapVector<ecs::Entity> gpuRenderableEntities; // Indexes match 1-to-t with gpuRenderables

@@ -73,3 +73,6 @@
 [submodule "ext/dynalo"]
 	path = ext/dynalo
 	url = https://github.com/maddouri/dynalo.git
+[submodule "ext/base64"]
+	path = ext/base64
+	url = https://github.com/aklomp/base64

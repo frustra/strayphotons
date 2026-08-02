@@ -716,7 +716,43 @@ SP_EXPORT sp_ecs_voxel_area_t *sp_entity_get_voxel_area(tecs_lock_t *dynLockPtr,
 SP_EXPORT const sp_ecs_voxel_area_t *sp_entity_get_const_voxel_area(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_voxel_area(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_XR_VIEW = 157;
+const uint32_t SP_TYPE_INDEX_ECS_VOXEL_DATA = 157;
+const uint32_t SP_TYPE_INDEX_STRING = 7;
+typedef struct string_t { const uint8_t _unknown[24]; } string_t;
+SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
+SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
+SP_EXPORT size_t sp_string_get_size(const string_t *str);
+SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
+SP_EXPORT char *sp_string_get_data(string_t *str);
+SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
+
+const uint32_t SP_TYPE_INDEX_UVEC3 = 35;
+typedef struct uvec3_t { uint32_t v[3]; } uvec3_t;
+const uint32_t SP_TYPE_INDEX_UINT8_VECTOR = 64;
+const uint32_t SP_TYPE_INDEX_UINT8 = 21;
+typedef struct sp_uint8_vector_t {
+    const uint8_t _unknown[24];
+} sp_uint8_vector_t;
+SP_EXPORT size_t sp_uint8_vector_get_size(const sp_uint8_vector_t *v);
+SP_EXPORT const uint8_t *sp_uint8_vector_get_const_data(const sp_uint8_vector_t *v);
+SP_EXPORT uint8_t *sp_uint8_vector_get_data(sp_uint8_vector_t *v);
+SP_EXPORT uint8_t *sp_uint8_vector_resize(sp_uint8_vector_t *v, size_t new_size);
+
+// Component: voxel_data
+typedef struct sp_ecs_voxel_data_t {
+    string_t algorithm; // 24 bytes
+    uvec3_t extents; // 12 bytes
+    uint32_t seed; // 4 bytes
+    sp_uint8_vector_t data; // 24 bytes
+} sp_ecs_voxel_data_t; // 64 bytes
+const uint64_t SP_VOXEL_DATA_INDEX = 28;
+const uint64_t SP_ACCESS_VOXEL_DATA = 2ull << 28;
+SP_EXPORT sp_ecs_voxel_data_t *sp_entity_set_voxel_data(tecs_lock_t *dynLockPtr, sp_entity_t ent);
+SP_EXPORT sp_ecs_voxel_data_t *sp_entity_get_voxel_data(tecs_lock_t *dynLockPtr, sp_entity_t ent);
+SP_EXPORT const sp_ecs_voxel_data_t *sp_entity_get_const_voxel_data(tecs_lock_t *dynLockPtr, sp_entity_t ent);
+SP_EXPORT void sp_entity_unset_voxel_data(tecs_lock_t *dynLockPtr, sp_entity_t ent);
+
+const uint32_t SP_TYPE_INDEX_ECS_XR_VIEW = 158;
 const uint32_t SP_TYPE_INDEX_XR_EYE = 109;
 // Enum: ecs::XrEye
 typedef enum sp_xr_eye_t {
@@ -727,24 +763,24 @@ typedef enum sp_xr_eye_t {
 typedef struct sp_ecs_xr_view_t {
     sp_xr_eye_t xr_eye; // 4 bytes
 } sp_ecs_xr_view_t; // 4 bytes
-const uint64_t SP_XR_VIEW_INDEX = 28;
-const uint64_t SP_ACCESS_XR_VIEW = 2ull << 28;
+const uint64_t SP_XR_VIEW_INDEX = 29;
+const uint64_t SP_ACCESS_XR_VIEW = 2ull << 29;
 SP_EXPORT sp_ecs_xr_view_t *sp_entity_set_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_xr_view_t *sp_entity_get_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_xr_view_t *sp_entity_get_const_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_xr_view(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_EVENT_INPUT = 158;
+const uint32_t SP_TYPE_INDEX_ECS_EVENT_INPUT = 159;
 // Component: event_input
 typedef void sp_ecs_event_input_t; // unknown size
-const uint64_t SP_EVENT_INPUT_INDEX = 29;
-const uint64_t SP_ACCESS_EVENT_INPUT = 2ull << 29;
+const uint64_t SP_EVENT_INPUT_INDEX = 30;
+const uint64_t SP_ACCESS_EVENT_INPUT = 2ull << 30;
 SP_EXPORT sp_ecs_event_input_t *sp_entity_set_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_event_input_t *sp_entity_get_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_event_input_t *sp_entity_get_const_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_event_input(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_EVENT_BINDINGS = 159;
+const uint32_t SP_TYPE_INDEX_ECS_EVENT_BINDINGS = 160;
 const uint32_t SP_TYPE_INDEX_EVENT_NAME_EVENT_BINDING_VECTOR_MAP = 97;
 const uint32_t SP_TYPE_INDEX_EVENT_BINDING_VECTOR = 72;
 const uint32_t SP_TYPE_INDEX_EVENT_BINDING = 43;
@@ -854,63 +890,54 @@ SP_EXPORT sp_event_binding_t *sp_event_binding_vector_resize(sp_event_binding_ve
 typedef void sp_event_name_event_binding_vector_map_t;
 // Component: event_bindings
 typedef void sp_ecs_event_bindings_t; // unknown size
-const uint64_t SP_EVENT_BINDINGS_INDEX = 30;
-const uint64_t SP_ACCESS_EVENT_BINDINGS = 2ull << 30;
+const uint64_t SP_EVENT_BINDINGS_INDEX = 31;
+const uint64_t SP_ACCESS_EVENT_BINDINGS = 2ull << 31;
 SP_EXPORT sp_ecs_event_bindings_t *sp_entity_set_event_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_event_bindings_t *sp_entity_get_event_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_event_bindings_t *sp_entity_get_const_event_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_event_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_SIGNALS = 160;
+const uint32_t SP_TYPE_INDEX_ECS_SIGNALS = 161;
 // Component: signals
 typedef void sp_ecs_signals_t; // unknown size
-const uint64_t SP_SIGNALS_INDEX = 31;
-const uint64_t SP_ACCESS_SIGNALS = 2ull << 31;
+const uint64_t SP_SIGNALS_INDEX = 32;
+const uint64_t SP_ACCESS_SIGNALS = 2ull << 32;
 SP_EXPORT sp_ecs_signals_t *sp_ecs_set_signals(tecs_lock_t *dynLockPtr);
 SP_EXPORT sp_ecs_signals_t *sp_ecs_get_signals(tecs_lock_t *dynLockPtr);
 SP_EXPORT const sp_ecs_signals_t *sp_ecs_get_const_signals(tecs_lock_t *dynLockPtr);
 SP_EXPORT void sp_ecs_unset_signals(tecs_lock_t *dynLockPtr);
 
-const uint32_t SP_TYPE_INDEX_ECS_SIGNAL_OUTPUT = 161;
+const uint32_t SP_TYPE_INDEX_ECS_SIGNAL_OUTPUT = 162;
 const uint32_t SP_TYPE_INDEX_EVENT_NAME_DOUBLE_MAP = 91;
 typedef void sp_event_name_double_map_t;
 // Component: signal_output
 typedef void sp_ecs_signal_output_t; // unknown size
-const uint64_t SP_SIGNAL_OUTPUT_INDEX = 32;
-const uint64_t SP_ACCESS_SIGNAL_OUTPUT = 2ull << 32;
+const uint64_t SP_SIGNAL_OUTPUT_INDEX = 33;
+const uint64_t SP_ACCESS_SIGNAL_OUTPUT = 2ull << 33;
 SP_EXPORT sp_ecs_signal_output_t *sp_entity_set_signal_output(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_signal_output_t *sp_entity_get_signal_output(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_signal_output_t *sp_entity_get_const_signal_output(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_signal_output(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_SIGNAL_BINDINGS = 162;
+const uint32_t SP_TYPE_INDEX_ECS_SIGNAL_BINDINGS = 163;
 const uint32_t SP_TYPE_INDEX_EVENT_NAME_SIGNAL_EXPRESSION_MAP = 93;
 typedef void sp_event_name_signal_expression_map_t;
 // Component: signal_bindings
 typedef void sp_ecs_signal_bindings_t; // unknown size
-const uint64_t SP_SIGNAL_BINDINGS_INDEX = 33;
-const uint64_t SP_ACCESS_SIGNAL_BINDINGS = 2ull << 33;
+const uint64_t SP_SIGNAL_BINDINGS_INDEX = 34;
+const uint64_t SP_ACCESS_SIGNAL_BINDINGS = 2ull << 34;
 SP_EXPORT sp_ecs_signal_bindings_t *sp_entity_set_signal_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_signal_bindings_t *sp_entity_get_signal_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_signal_bindings_t *sp_entity_get_const_signal_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_signal_bindings(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_ECS_SCRIPTS = 163;
+const uint32_t SP_TYPE_INDEX_ECS_SCRIPTS = 164;
 const uint32_t SP_TYPE_INDEX_SCRIPT_INSTANCE_VECTOR = 79;
 const uint32_t SP_TYPE_INDEX_SCRIPT_INSTANCE = 51;
 // Type: ecs::ScriptInstance
 typedef void sp_script_instance_t; // unknown size
 const uint32_t SP_TYPE_INDEX_SCRIPT_STATE = 52;
 const uint32_t SP_TYPE_INDEX_SCRIPT_DEFINITION = 49;
-const uint32_t SP_TYPE_INDEX_STRING = 7;
-typedef struct string_t { const uint8_t _unknown[24]; } string_t;
-SP_EXPORT void sp_string_set(string_t *str, const char *new_str);
-SP_EXPORT int sp_string_compare(const string_t *str, const char *other_str);
-SP_EXPORT size_t sp_string_get_size(const string_t *str);
-SP_EXPORT const char *sp_string_get_c_str(const string_t *str);
-SP_EXPORT char *sp_string_get_data(string_t *str);
-SP_EXPORT char *sp_string_resize(string_t *str, size_t new_size, char fill_char);
-
 const uint32_t SP_TYPE_INDEX_SCRIPT_TYPE = 106;
 // Enum: ecs::ScriptType
 typedef enum sp_script_type_t {
@@ -972,14 +999,13 @@ SP_EXPORT sp_script_instance_t *sp_script_instance_vector_resize(sp_script_insta
 typedef struct sp_ecs_scripts_t {
     sp_script_instance_vector_t script_instances; // 24 bytes
 } sp_ecs_scripts_t; // 24 bytes
-const uint64_t SP_SCRIPTS_INDEX = 34;
-const uint64_t SP_ACCESS_SCRIPTS = 2ull << 34;
+const uint64_t SP_SCRIPTS_INDEX = 35;
+const uint64_t SP_ACCESS_SCRIPTS = 2ull << 35;
 SP_EXPORT sp_ecs_scripts_t *sp_entity_set_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT sp_ecs_scripts_t *sp_entity_get_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT const sp_ecs_scripts_t *sp_entity_get_const_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 SP_EXPORT void sp_entity_unset_scripts(tecs_lock_t *dynLockPtr, sp_entity_t ent);
 
-const uint32_t SP_TYPE_INDEX_UINT8 = 21;
 const uint32_t SP_TYPE_INDEX_UINT16 = 22;
 const uint32_t SP_TYPE_INDEX_DVEC2 = 28;
 typedef struct dvec2_t { double v[2]; } dvec2_t;
@@ -991,8 +1017,6 @@ const uint32_t SP_TYPE_INDEX_IVEC4 = 33;
 typedef struct ivec4_t { int32_t v[4]; } ivec4_t;
 const uint32_t SP_TYPE_INDEX_UVEC2 = 34;
 typedef struct uvec2_t { uint32_t v[2]; } uvec2_t;
-const uint32_t SP_TYPE_INDEX_UVEC3 = 35;
-typedef struct uvec3_t { uint32_t v[3]; } uvec3_t;
 const uint32_t SP_TYPE_INDEX_UVEC4 = 36;
 typedef struct uvec4_t { uint32_t v[4]; } uvec4_t;
 const uint32_t SP_TYPE_INDEX_DYNAMIC_SCRIPT_DEFINITION = 41;
@@ -1148,15 +1172,6 @@ SP_EXPORT void sp_signal_ref_clear(sp_signal_ref_t *self);
 
 const uint32_t SP_TYPE_INDEX_STRING_2 = 63;
 typedef char string_2_t[3];
-const uint32_t SP_TYPE_INDEX_UINT8_VECTOR = 64;
-typedef struct sp_uint8_vector_t {
-    const uint8_t _unknown[24];
-} sp_uint8_vector_t;
-SP_EXPORT size_t sp_uint8_vector_get_size(const sp_uint8_vector_t *v);
-SP_EXPORT const uint8_t *sp_uint8_vector_get_const_data(const sp_uint8_vector_t *v);
-SP_EXPORT uint8_t *sp_uint8_vector_get_data(sp_uint8_vector_t *v);
-SP_EXPORT uint8_t *sp_uint8_vector_resize(sp_uint8_vector_t *v, size_t new_size);
-
 const uint32_t SP_TYPE_INDEX_FLOAT_VECTOR = 65;
 typedef struct sp_float_vector_t {
     const uint8_t _unknown[24];

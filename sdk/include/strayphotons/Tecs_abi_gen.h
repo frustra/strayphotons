@@ -202,6 +202,12 @@ TECS_EXPORT bool Tecs_lock_is_read_voxel_area_allowed(tecs_lock_t *dynLockPtr);
 TECS_EXPORT uint64_t Tecs_previous_entities_with_voxel_area(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 TECS_EXPORT uint64_t Tecs_entities_with_voxel_area(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 
+TECS_EXPORT bool Tecs_lock_is_write_voxel_data_allowed(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_lock_is_read_voxel_data_allowed(tecs_lock_t *dynLockPtr);
+
+TECS_EXPORT uint64_t Tecs_previous_entities_with_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
+TECS_EXPORT uint64_t Tecs_entities_with_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
+
 TECS_EXPORT bool Tecs_lock_is_write_xr_view_allowed(tecs_lock_t *dynLockPtr);
 TECS_EXPORT bool Tecs_lock_is_read_xr_view_allowed(tecs_lock_t *dynLockPtr);
 
@@ -508,6 +514,16 @@ TECS_EXPORT sp_ecs_voxel_area_t *Tecs_entity_get_voxel_area(tecs_lock_t *dynLock
 TECS_EXPORT const sp_ecs_voxel_area_t *Tecs_entity_get_previous_voxel_area(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
 TECS_EXPORT sp_ecs_voxel_area_t *Tecs_entity_set_voxel_area(tecs_lock_t *dynLockPtr, tecs_entity_t entity, const sp_ecs_voxel_area_t *value);
 TECS_EXPORT void Tecs_entity_unset_voxel_area(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+
+TECS_EXPORT const sp_ecs_voxel_data_t *Tecs_get_entity_voxel_data_storage(tecs_lock_t *dynLockPtr);
+TECS_EXPORT const sp_ecs_voxel_data_t *Tecs_get_previous_entity_voxel_data_storage(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_entity_has_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT bool Tecs_entity_had_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT const sp_ecs_voxel_data_t *Tecs_entity_const_get_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT sp_ecs_voxel_data_t *Tecs_entity_get_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT const sp_ecs_voxel_data_t *Tecs_entity_get_previous_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT sp_ecs_voxel_data_t *Tecs_entity_set_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity, const sp_ecs_voxel_data_t *value);
+TECS_EXPORT void Tecs_entity_unset_voxel_data(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
 
 TECS_EXPORT const sp_ecs_xr_view_t *Tecs_get_entity_xr_view_storage(tecs_lock_t *dynLockPtr);
 TECS_EXPORT const sp_ecs_xr_view_t *Tecs_get_previous_entity_xr_view_storage(tecs_lock_t *dynLockPtr);
