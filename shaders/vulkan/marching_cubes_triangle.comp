@@ -13,53 +13,51 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 #include "../lib/voxel_shared.glsl"
 #include "lib/scene.glsl"
 
-layout(binding = 0) uniform VoxelStateUniform {
-    VoxelState voxelInfo;
-};
-
-layout(binding = 1) uniform sampler3D voxelRadiance;
-
-layout(std430, binding = 2) buffer IndexLookupBuffer {
-    uint time;
+layout(std430, binding = 0) buffer IndexLookupBuffer {
+    uint seed;
     uint vertexCount;
     uint indexLookup[];
 };
 
-layout(std430, binding = 3) buffer IndexBuffer {
-    VkDrawIndexedIndirectCommand drawCmd;
+layout(std430, binding = 1) buffer IndexBuffer {
+    uint indexCount;
     uint indices[];
 };
 
 #include "lib/marching_cubes.glsl"
 
-layout(constant_id = 0) const int CUBE_LAYER = 0;
+layout(constant_id = 0) const uint GRID_SIZE_X = 32;
+layout(constant_id = 1) const uint GRID_SIZE_Y = 32;
+layout(constant_id = 2) const uint GRID_SIZE_Z = 32;
+
+const ivec3 voxelGridSize = ivec3(GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z);
 
 void main() {
     ivec3 position = ivec3(gl_GlobalInvocationID);
-    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 2))) return;
+    if (any(greaterThanEqual(position, voxelGridSize - 1))) return;
 
-    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
-        sampleGrid(voxelRadiance, position + vertexOffset[1]),
-        sampleGrid(voxelRadiance, position + vertexOffset[2]),
-        sampleGrid(voxelRadiance, position + vertexOffset[3]),
-        sampleGrid(voxelRadiance, position + vertexOffset[4]),
-        sampleGrid(voxelRadiance, position + vertexOffset[5]),
-        sampleGrid(voxelRadiance, position + vertexOffset[6]),
-        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+    float[8] cornerData = float[](sampleGrid(voxelGridSize, position + vertexOffset[0]),
+        sampleGrid(voxelGridSize, position + vertexOffset[1]),
+        sampleGrid(voxelGridSize, position + vertexOffset[2]),
+        sampleGrid(voxelGridSize, position + vertexOffset[3]),
+        sampleGrid(voxelGridSize, position + vertexOffset[4]),
+        sampleGrid(voxelGridSize, position + vertexOffset[5]),
+        sampleGrid(voxelGridSize, position + vertexOffset[6]),
+        sampleGrid(voxelGridSize, position + vertexOffset[7]));
 
     uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[2] > 0) << 1 | uint(cornerData[7] > 0) << 2 |
                    uint(cornerData[1] > 0) << 3 | uint(cornerData[3] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
                    uint(cornerData[4] > 0) << 6 | uint(cornerData[6] > 0) << 7;
     if (caseNum == 0 || caseNum == 255) return;
 
-    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
+    ivec3 cubeGridSize = max(ivec3(1), voxelGridSize - 1);
     uint posIndex = FlattenIndex(position, cubeGridSize);
 
     int count = caseTriangleCount[caseNum];
     for (int triangle = 0; triangle < count; triangle++) {
         ivec3 edgeNums = caseTriangles[caseNum][triangle];
 
-        uint triangleOffset = atomicAdd(drawCmd.indexCount, 3);
+        uint triangleOffset = atomicAdd(indexCount, 3);
         for (int vertex = 0; vertex < 3; vertex++) {
             uint edge = edgeNums[vertex];
             ivec4 edgeInfo = edgeLookup[edge];

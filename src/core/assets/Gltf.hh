@@ -11,6 +11,7 @@
 #include "ecs/components/Transform.h"
 
 #include <glm/glm.hpp>
+#include <initializer_list>
 #include <optional>
 #include <vector>
 
@@ -43,6 +44,11 @@ namespace sp {
             Accessor() {}
             Accessor(const tinygltf::Model &model, int accessorIndex);
             Accessor(const Gltf &model, int accessorIndex);
+            Accessor(std::type_index type,
+                size_t count,
+                const std::vector<unsigned char> &buffer,
+                size_t byteStride,
+                size_t byteOffset = 0);
 
             explicit operator bool() const {
                 return buffer && typeIndex >= 0;
@@ -53,10 +59,9 @@ namespace sp {
             ReadT Read(size_t i) const;
 
         private:
-            const tinygltf::Buffer *buffer = nullptr;
+            const std::vector<unsigned char> *buffer;
             int typeIndex = -1;
             size_t count = 0;
-            size_t componentCount = 0;
             size_t byteOffset = 0;
             size_t byteStride = 0;
         };
@@ -73,11 +78,15 @@ namespace sp {
             };
 
             struct Primitive {
+                Primitive(DrawMode drawMode,
+                    const Accessor<uint32_t, uint16_t, uint8_t> &indexBuffer,
+                    const Accessor<glm::vec3> &vertexBuffer)
+                    : drawMode(drawMode), indexBuffer(indexBuffer), positionBuffer(vertexBuffer) {}
                 Primitive(const tinygltf::Model &model, const tinygltf::Primitive &primitive);
 
                 DrawMode drawMode;
                 Accessor<uint32_t, uint16_t, uint8_t> indexBuffer;
-                int materialIndex;
+                int materialIndex = -1;
                 Accessor<glm::vec3> positionBuffer;
                 Accessor<glm::vec3> normalBuffer;
                 Accessor<glm::vec2 /*, glm::u16vec2, glm::u8vec2, glm::i16vec2, glm::i8vec2*/> texcoordBuffer;
@@ -85,6 +94,7 @@ namespace sp {
                 Accessor<glm::vec4 /*, glm::u16vec4, glm::u8vec4*/> weightsBuffer;
             };
 
+            Mesh(std::initializer_list<Primitive> primitives) : primitives(primitives) {}
             Mesh(const tinygltf::Model &model, const tinygltf::Mesh &mesh);
 
             std::vector<Primitive> primitives;
@@ -119,6 +129,7 @@ namespace sp {
 
     class Gltf : public NonCopyable {
     public:
+        Gltf(std::string_view name) : name(name) {}
         Gltf(std::string_view name, std::shared_ptr<const Asset> asset);
 
         const AssetName name;

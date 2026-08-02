@@ -10,6 +10,7 @@
 #include "common/RegisteredThread.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "graphics/MeshGenerator.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -34,7 +35,7 @@ namespace sp {
     class GuiContext;
     class ProfilerGui;
 
-    class GraphicsManager : public RegisteredThread {
+    class GraphicsManager final : public RegisteredThread, MeshGenerator {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:
@@ -52,6 +53,8 @@ namespace sp {
         bool InputFrame();
 
         GenericCompositor &GetCompositor();
+
+        AsyncPtr<Gltf> GenerateMesh(const ecs::VoxelData &voxelData) override;
 
         sp_window_handlers_t windowHandlers = {0};
 

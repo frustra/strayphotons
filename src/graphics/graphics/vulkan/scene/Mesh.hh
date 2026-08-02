@@ -11,6 +11,8 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 #include "strayphotons/Async.hh"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/Utility.hh"
 
 #include <glm/glm.hpp>
 #include <memory>
@@ -32,8 +34,9 @@ namespace sp::vulkan {
             glm::vec3 center = glm::vec3(0);
         };
 
-        Mesh(std::shared_ptr<const Gltf> source = nullptr);
-        Mesh(std::shared_ptr<const Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
+        Mesh(std::shared_ptr<Gltf> source = nullptr);
+        Mesh(std::shared_ptr<Gltf> source, size_t meshIndex, GPUScene &scene, DeviceContext &device);
+        Mesh(std::string_view algorithm, glm::uvec3 extents, uint32_t seed, GPUScene &scene, DeviceContext &device);
         ~Mesh();
 
         uint32_t SceneIndex() const;
@@ -55,7 +58,7 @@ namespace sp::vulkan {
                 if (!prim.metallicRoughness.Ready()) return false;
             }
 
-            if (!staging.transferComplete->Ready()) return false;
+            if (!staging.transferComplete || !staging.transferComplete->Ready()) return false;
 
             ready = true;
             staging.indexBuffer.reset();
@@ -63,6 +66,8 @@ namespace sp::vulkan {
             staging.jointsBuffer.reset();
             staging.primitiveList.reset();
             staging.modelEntry.reset();
+            staging.lookupBuffer.reset();
+            staging.readbackBuffer.reset();
             return true;
         }
 
@@ -70,17 +75,29 @@ namespace sp::vulkan {
             return !modelName.empty() && staging.transferComplete != nullptr;
         }
 
+        std::shared_ptr<Gltf> Model() const {
+            return asset;
+        }
+
     private:
         AssetName modelName;
-        std::shared_ptr<const sp::Gltf> asset;
+        std::shared_ptr<Gltf> asset;
 
         std::vector<Primitive> primitives;
 
         uint32_t vertexCount = 0, indexCount = 0, jointsCount = 0;
         struct {
             BufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
+            BufferPtr lookupBuffer, readbackBuffer;
             AsyncPtr<void> transferComplete;
-        } staging;
+        } staging = {};
+
+        struct ConstantBuffers {
+            BufferPtr triangleIndexBuffer, caseInteriorEdges, triangleCaseOffsets, caseTests;
+        };
+        static ConstantBuffers &GetConstantBuffers();
+        static const ConstantBuffers &LoadConstantBuffers(DeviceContext &device);
+        static void UnloadConstantBuffers();
 
         SubBufferPtr indexBuffer, vertexBuffer, jointsBuffer, primitiveList, modelEntry;
 

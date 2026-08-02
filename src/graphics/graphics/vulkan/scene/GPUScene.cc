@@ -21,6 +21,7 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
@@ -56,7 +57,12 @@ namespace sp::vulkan {
 
         auto lock = ecs::StartTransaction<ecs::AddRemove>();
         renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
+        voxelDataObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::VoxelData>>();
         lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
+    }
+
+    GPUScene::~GPUScene() {
+        Mesh::UnloadConstantBuffers();
     }
 
     GPUScene::OpticInstance::OpticInstance(ecs::Entity ent, const ecs::OpticalElement &optic) : ent(ent) {
@@ -97,8 +103,12 @@ namespace sp::vulkan {
     }
 
     void GPUScene::LoadState(rg::RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Renderable, ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot, ecs::Name>>
-            lock) {
+        ecs::Lock<ecs::Read<ecs::Renderable,
+            ecs::VoxelData,
+            ecs::Light,
+            ecs::OpticalElement,
+            ecs::TransformSnapshot,
+            ecs::Name>> lock) {
         ZoneScoped;
         DebugAssertf(ecs::IsLive(lock), "GPUScene::LoadState expects live ecs lock");
         opticEntities.clear();
@@ -108,6 +118,30 @@ namespace sp::vulkan {
 
         {
             ZoneScopedN("UpdateModified");
+            ecs::ComponentModifiedEvent<ecs::VoxelData> voxelDataModifiedEvent;
+            while (voxelDataObserver.Poll(lock, voxelDataModifiedEvent)) {
+                if (!voxelDataModifiedEvent.Exists(lock)) entitiesPendingDelete.emplace_back(voxelDataModifiedEvent);
+                if (voxelDataModifiedEvent.Has<ecs::VoxelData>(lock)) {
+                    auto &state = liveEntityState[voxelDataModifiedEvent];
+                    auto &voxelData = voxelDataModifiedEvent.Get<const ecs::VoxelData>(lock);
+                    if (voxelData.algorithm != state.voxelDataAlgorithm ||
+                        voxelData.extents != state.voxelDataExtents || voxelData.seed != state.voxelDataSeed) {
+                        state.voxelDataAlgorithm = voxelData.algorithm;
+                        state.voxelDataExtents = voxelData.extents;
+                        state.voxelDataSeed = voxelData.seed;
+                        bool isActive = state.renderableMesh == state.voxelDataMesh;
+                        state.voxelDataMesh = LoadMesh(voxelData);
+                        if (isActive) state.renderableMesh = state.voxelDataMesh;
+                    }
+                } else if (liveEntityState.count(voxelDataModifiedEvent) > 0) {
+                    auto &state = liveEntityState[voxelDataModifiedEvent];
+                    state.voxelDataAlgorithm = "";
+                    state.voxelDataExtents = glm::uvec3(0);
+                    state.voxelDataSeed = 0;
+                    if (state.renderableMesh == state.voxelDataMesh) state.renderableMesh.reset();
+                    state.voxelDataMesh.reset();
+                }
+            }
             ecs::ComponentModifiedEvent<ecs::Renderable> renderableModifiedEvent;
             while (renderableObserver.Poll(lock, renderableModifiedEvent)) {
                 if (!renderableModifiedEvent.Exists(lock)) entitiesPendingDelete.emplace_back(renderableModifiedEvent);
@@ -120,7 +154,8 @@ namespace sp::vulkan {
                         state.renderableMeshIndex = renderable.meshIndex;
                         if (!renderable.modelName.empty()) {
                             state.renderableMesh = LoadMesh(renderable);
-                            if (state.renderableMesh) {
+                            if (state.renderableMesh &&
+                                (!state.renderableMesh->Ready() || state.renderableMesh->Get())) {
                                 if (state.renderableIndex < gpuRenderables.size()) {
                                     // Reuse existing index
                                     renderablesToFlush.emplace_back(state.renderableIndex);
@@ -134,7 +169,16 @@ namespace sp::vulkan {
                                 ReleaseRenderable(state.renderableIndex);
                                 state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
                             }
+                        } else if (state.voxelDataMesh) {
+                            state.renderableMesh = state.voxelDataMesh;
+                            if (state.renderableIndex < gpuRenderables.size()) {
+                                // Reuse existing index
+                                renderablesToFlush.emplace_back(state.renderableIndex);
+                            } else {
+                                state.renderableIndex = AllocateRenderableIndex(renderableModifiedEvent);
+                            }
                         } else {
+                            state.renderableMesh.reset();
                             ReleaseRenderable(state.renderableIndex);
                             state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
                         }
@@ -184,13 +228,15 @@ namespace sp::vulkan {
                 const EntityState &state = pair.second;
                 if (!ent.Has<ecs::Renderable, ecs::TransformSnapshot>(lock)) continue;
                 if (state.renderableIndex >= gpuRenderables.size()) continue;
+                GPURenderableEntity &gpuRenderable = gpuRenderables[state.renderableIndex];
+                gpuRenderable = {};
+
                 if (!state.renderableMesh || !state.renderableMesh->Ready()) continue;
                 std::shared_ptr<Mesh> vkMesh = state.renderableMesh->Get();
                 if (!vkMesh || !vkMesh->Valid() || !vkMesh->CheckReady()) continue;
 
                 auto &renderable = ent.Get<ecs::Renderable>(lock);
                 auto &transform = ent.Get<ecs::TransformSnapshot>(lock).globalPose;
-                GPURenderableEntity &gpuRenderable = gpuRenderables[state.renderableIndex];
                 gpuRenderable.modelToWorld = transform.GetMatrix();
                 gpuRenderable.visibilityMask = (uint32_t)renderable.visibility;
                 gpuRenderable.meshIndex = vkMesh->SceneIndex();
@@ -264,9 +310,13 @@ namespace sp::vulkan {
             });
     }
 
-    bool GPUScene::PreloadScene(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::SceneInfo, ecs::Renderable, ecs::Light, ecs::RenderOutput, ecs::Screen>>
-            lock,
+    bool GPUScene::PreloadScene(ecs::Lock<ecs::Read<ecs::Name,
+                                    ecs::SceneInfo,
+                                    ecs::Renderable,
+                                    ecs::VoxelData,
+                                    ecs::Light,
+                                    ecs::RenderOutput,
+                                    ecs::Screen>> lock,
         std::shared_ptr<Scene> scene) {
         ZoneScoped;
         Assertf(ecs::IsStaging(lock), "GPUScene::PreloadScene expects staging ecs lock");
@@ -304,6 +354,21 @@ namespace sp::vulkan {
                 state.renderableMesh.reset();
                 state.renderableTextureOverrideName = "";
                 state.renderableTextureOverride = {};
+            }
+            if (pair.first.Has<ecs::VoxelData>(lock)) {
+                auto &voxelData = pair.first.Get<const ecs::VoxelData>(lock);
+                if (voxelData.algorithm != state.voxelDataAlgorithm || voxelData.extents != state.voxelDataExtents ||
+                    voxelData.seed != state.voxelDataSeed) {
+                    state.voxelDataAlgorithm = voxelData.algorithm;
+                    state.voxelDataExtents = voxelData.extents;
+                    state.voxelDataSeed = voxelData.seed;
+                    state.voxelDataMesh = LoadMesh(voxelData);
+                }
+            } else {
+                state.voxelDataAlgorithm = "";
+                state.voxelDataExtents = glm::uvec3(0);
+                state.voxelDataSeed = 0;
+                state.voxelDataMesh.reset();
             }
             if (pair.first.Has<ecs::Light>(lock)) {
                 auto &light = pair.first.Get<const ecs::Light>(lock);
@@ -408,6 +473,33 @@ namespace sp::vulkan {
             activeMeshes.Register(MeshKey{rg::ResourceName{renderable.modelName}, renderable.meshIndex}, asyncMesh);
         }
         return asyncMesh;
+    }
+
+    AsyncPtr<Mesh> GPUScene::LoadMesh(const ecs::VoxelData &voxelData) {
+        if (voxelData.algorithm.empty() || voxelData.extents == glm::uvec3(0)) return nullptr;
+        ZoneScoped;
+        ZoneStr(voxelData.algorithm);
+
+        AsyncPtr<Mesh> asyncMesh = activeVoxelData.Load(
+            VoxelDataKeyView{voxelData.algorithm, voxelData.extents, voxelData.seed});
+        if (!asyncMesh) {
+            asyncMesh = workQueue.Dispatch<Mesh>(NewDispatchSource,
+                [this, algorithm = voxelData.algorithm, extents = voxelData.extents, seed = voxelData.seed] {
+                    return std::make_shared<Mesh>(algorithm, extents, seed, *this, device);
+                });
+            activeVoxelData.Register(
+                VoxelDataKey{InlineString<128>{voxelData.algorithm}, voxelData.extents, voxelData.seed},
+                asyncMesh);
+        }
+        return asyncMesh;
+    }
+
+    AsyncPtr<Gltf> GPUScene::GenerateGltf(const ecs::VoxelData &voxelData) {
+        AsyncPtr<Mesh> asyncMesh = LoadMesh(voxelData);
+        return workQueue.Dispatch<Gltf>(NewDispatchSource, asyncMesh, [](std::shared_ptr<Mesh> mesh) {
+            if (!mesh) return std::shared_ptr<Gltf>();
+            return mesh->asset;
+        });
     }
 
     void GPUScene::FlushMeshes() {
@@ -515,10 +607,13 @@ namespace sp::vulkan {
                     DebugAssertf(liveEntityState[ent].renderableMesh,
                         "GPURenderableEntity %s has null mesh",
                         ecs::EntityRef(ent).Name().String());
-                    auto mesh = liveEntityState[ent].renderableMesh->Get();
+                    auto &asyncMesh = liveEntityState[ent].renderableMesh;
+                    if (!asyncMesh || !asyncMesh->Ready()) continue;
+                    auto mesh = asyncMesh->Get();
                     if (!mesh || !mesh->CheckReady()) continue;
 
                     for (auto &primitive : mesh->primitives) {
+                        if (primitive.vertexCount == 0 || primitive.indexCount == 0) continue;
                         auto &drawCmd = drawCommands.emplace_back();
 
                         drawCmd.indexCount = primitive.indexCount;

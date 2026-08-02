@@ -119,17 +119,46 @@ namespace sp::gltf {
         count = accessor.count;
 
         if (count > 0) {
-            auto maxOffset = (count - 1) * byteStride + typeSize;
-            if (maxOffset > bufferView.byteLength) {
+            auto maxOffset = (count - 1) * byteStride + typeSize - 1;
+            if (maxOffset >= bufferView.byteLength) {
                 Errorf("gltf::Accessor overflows bufferView");
                 return;
-            } else if (byteOffset + maxOffset > model.buffers[bufferView.buffer].data.size()) {
+            } else if (byteOffset + maxOffset >= model.buffers[bufferView.buffer].data.size()) {
                 Errorf("gltf::Accessor overflows buffer");
                 return;
             }
         }
 
-        buffer = &model.buffers[bufferView.buffer];
+        buffer = &model.buffers[bufferView.buffer].data;
+    }
+
+    template<typename ReadT, typename... Tn>
+    Accessor<ReadT, Tn...>::Accessor(std::type_index type,
+        size_t count,
+        const std::vector<unsigned char> &buffer,
+        size_t byteStride,
+        size_t byteOffset)
+        : buffer(&buffer), count(count), byteOffset(byteOffset), byteStride(byteStride) {
+
+        int counter = 0;
+        size_t typeSize = 0;
+        (
+            [&] {
+                counter++;
+                if (typeid(Tn) == type) {
+                    typeIndex = counter;
+                    typeSize = sizeof(Tn);
+                }
+            }(),
+            ...);
+
+        if (count > 0) {
+            auto maxOffset = (count - 1) * byteStride + typeSize;
+            if (byteOffset + maxOffset >= buffer.size()) {
+                Errorf("gltf::Accessor overflows buffer");
+                return;
+            }
+        }
     }
 
     template<typename ReadT, typename... Tn>
@@ -151,7 +180,7 @@ namespace sp::gltf {
                 // TODO: Handle normalized int/uint -> float conversion
                 return static_cast<ReadT>(reinterpret_cast<const Tn &>(data));
             }...};
-        const auto &data = buffer->data[byteOffset + (i * byteStride)];
+        const auto &data = (*buffer)[byteOffset + (i * byteStride)];
         return convertFuncs[typeIndex](data);
     }
 } // namespace sp::gltf

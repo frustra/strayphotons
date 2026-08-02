@@ -12,11 +12,11 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <string>
 #include <vector>
 
 namespace sp {
     class Game;
+    class Gltf;
     class GenericCompositor;
     class GpuTexture;
     class GuiContext;
@@ -47,6 +47,8 @@ namespace sp {
         virtual void Shutdown() {}
 
         virtual GenericCompositor &GetCompositor() = 0;
+
+        virtual AsyncPtr<Gltf> GenerateMesh(const ecs::VoxelData &voxelData) = 0;
 
         virtual void RenderFrame(chrono_clock::duration elapsedTime) = 0;
 

@@ -40,6 +40,8 @@ void main() {
     if (gl_GlobalInvocationID.x >= renderableCount) return;
 
     RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
+    if (renderable.modelIndex == 0xFFFFFFFF) return;
+
     MeshModel model = models[renderable.modelIndex];
     uint primitiveEnd = model.primitiveOffset + model.primitiveCount;
 

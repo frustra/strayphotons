@@ -281,6 +281,30 @@ namespace sp::vulkan {
             options);
     }
 
+    void CommandContext::BufferBarrier(const BufferPtr &buffer,
+        vk::PipelineStageFlags srcStages,
+        vk::AccessFlags srcAccess,
+        vk::PipelineStageFlags dstStages,
+        vk::AccessFlags dstAccess,
+        const BufferBarrierInfo &options) {
+        vk::BufferMemoryBarrier barrier;
+        barrier.buffer = *buffer;
+        barrier.srcAccessMask = srcAccess;
+        barrier.dstAccessMask = dstAccess;
+        barrier.srcQueueFamilyIndex = options.srcQueueFamilyIndex;
+        barrier.dstQueueFamilyIndex = options.dstQueueFamilyIndex;
+        cmd->pipelineBarrier(srcStages, dstStages, {}, {}, {barrier}, {});
+    }
+
+    void CommandContext::BufferBarrier(const BufferPtr &buffer,
+        vk::PipelineStageFlags dstStages,
+        vk::AccessFlags dstAccess,
+        const BufferBarrierInfo &options) {
+        auto last = GetAccessInfo(buffer->LastAccess());
+        if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
+        BufferBarrier(buffer, last.stageMask, last.accessMask, dstStages, dstAccess, options);
+    }
+
     void CommandContext::SetShaders(std::initializer_list<std::pair<ShaderStage, std::string_view>> shaders) {
         pipelineInput.state.shaders = {};
         for (auto &s : shaders) {

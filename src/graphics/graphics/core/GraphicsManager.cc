@@ -163,6 +163,10 @@ namespace sp {
         return context->GetCompositor();
     }
 
+    AsyncPtr<Gltf> GraphicsManager::GenerateMesh(const ecs::VoxelData &voxelData) {
+        return context->GenerateMesh(voxelData);
+    }
+
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;

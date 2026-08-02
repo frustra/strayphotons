@@ -1072,6 +1072,50 @@
 						},
 						"type": "object"
 					},
+					"voxel_data": {
+						"properties": {
+							"algorithm": {
+								"default": "",
+								"description": "No description",
+								"type": "string"
+							},
+							"data": {
+								"anyOf": [
+									{
+										"minimum": 0,
+										"type": "integer"
+									},
+									{
+										"items": {
+											"minimum": 0,
+											"type": "integer"
+										},
+										"type": "array"
+									}
+								],
+								"default": [],
+								"description": "No description"
+							},
+							"extents": {
+								"default": [32, 32, 32],
+								"description": "No description",
+								"items": {
+									"minimum": 0,
+									"type": "integer"
+								},
+								"maxItems": 3,
+								"minItems": 3,
+								"type": "array"
+							},
+							"seed": {
+								"default": 0,
+								"description": "No description",
+								"minimum": 0,
+								"type": "integer"
+							}
+						},
+						"type": "object"
+					},
 					"xr_view": {
 						"enum": [
 							"Left",

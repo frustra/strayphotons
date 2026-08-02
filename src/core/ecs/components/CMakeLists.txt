@@ -26,4 +26,5 @@ target_sources(${PROJECT_CORE_LIB} PRIVATE
     Signals.cc
     Transform.cc
     View.cc
+    VoxelData.cc
 )

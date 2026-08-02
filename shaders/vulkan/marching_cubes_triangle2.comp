@@ -13,39 +13,37 @@ layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 #include "../lib/voxel_shared.glsl"
 #include "lib/scene.glsl"
 
-layout(binding = 0) uniform VoxelStateUniform {
-    VoxelState voxelInfo;
-};
-
-layout(binding = 1) uniform sampler3D voxelRadiance;
-
-layout(std430, binding = 2) buffer IndexLookupBuffer {
-    uint time;
+layout(std430, binding = 0) readonly buffer IndexLookupBuffer {
+    uint seed;
     uint vertexCount;
     uint indexLookup[];
 };
 
-layout(std430, binding = 3) buffer IndexBuffer {
-    VkDrawIndexedIndirectCommand drawCmd;
+layout(std430, binding = 1) buffer IndexBuffer {
+    uint indexCount;
     uint indices[];
 };
 
-layout(std430, binding = 4) readonly buffer TriangleIndexBuffer {
+layout(std430, binding = 2) readonly buffer TriangleIndexBuffer {
     uint triangleIndexBuffer[];
 };
-layout(std430, binding = 5) readonly buffer CaseInteriorEdges {
+layout(std430, binding = 3) readonly buffer CaseInteriorEdges {
     int caseInteriorEdge[];
 };
-layout(std430, binding = 6) readonly buffer TriangleCaseOffsets {
+layout(std430, binding = 4) readonly buffer TriangleCaseOffsets {
     uint triangleCaseOffset[];
 };
-layout(std430, binding = 7) readonly buffer CaseTests {
+layout(std430, binding = 5) readonly buffer CaseTests {
     int caseTests[];
 };
 
 #include "lib/marching_cubes2.glsl"
 
-layout(constant_id = 0) const int CUBE_LAYER = 0;
+layout(constant_id = 0) const uint GRID_SIZE_X = 32;
+layout(constant_id = 1) const uint GRID_SIZE_Y = 32;
+layout(constant_id = 2) const uint GRID_SIZE_Z = 32;
+
+const ivec3 voxelGridSize = ivec3(GRID_SIZE_X, GRID_SIZE_Y, GRID_SIZE_Z);
 
 // Implemented using reference algorithm: https://thomas.lewiner.org/pdfs/marching_cubes_jgt.pdf
 bool testInterior(float[8] cornerData, uint caseNum, int edge, int s) {
@@ -200,24 +198,23 @@ bool testFace(float[8] cornerData, int face) {
 
 void main() {
     ivec3 position = ivec3(gl_GlobalInvocationID);
-    if (any(greaterThanEqual(position, (voxelInfo.gridSize >> CUBE_LAYER) - 2))) return;
+    if (any(greaterThanEqual(position, voxelGridSize - 1))) return;
 
-    float[8] cornerData = float[](sampleGrid(voxelRadiance, position + vertexOffset[0]),
-        sampleGrid(voxelRadiance, position + vertexOffset[1]),
-        sampleGrid(voxelRadiance, position + vertexOffset[2]),
-        sampleGrid(voxelRadiance, position + vertexOffset[3]),
-        sampleGrid(voxelRadiance, position + vertexOffset[4]),
-        sampleGrid(voxelRadiance, position + vertexOffset[5]),
-        sampleGrid(voxelRadiance, position + vertexOffset[6]),
-        sampleGrid(voxelRadiance, position + vertexOffset[7]));
+    float[8] cornerData = float[](sampleGrid(voxelGridSize, position + vertexOffset[0]),
+        sampleGrid(voxelGridSize, position + vertexOffset[1]),
+        sampleGrid(voxelGridSize, position + vertexOffset[2]),
+        sampleGrid(voxelGridSize, position + vertexOffset[3]),
+        sampleGrid(voxelGridSize, position + vertexOffset[4]),
+        sampleGrid(voxelGridSize, position + vertexOffset[5]),
+        sampleGrid(voxelGridSize, position + vertexOffset[6]),
+        sampleGrid(voxelGridSize, position + vertexOffset[7]));
 
     uint caseNum = uint(cornerData[0] > 0) | uint(cornerData[1] > 0) << 1 | uint(cornerData[2] > 0) << 2 |
                    uint(cornerData[3] > 0) << 3 | uint(cornerData[4] > 0) << 4 | uint(cornerData[5] > 0) << 5 |
                    uint(cornerData[6] > 0) << 6 | uint(cornerData[7] > 0) << 7;
     if (caseNum == 0 || caseNum == 255) return;
 
-    ivec3 cubeGridSize = max(ivec3(1), (voxelInfo.gridSize >> CUBE_LAYER) - 1);
-    uint posIndex = FlattenIndex(position, cubeGridSize);
+    ivec3 cubeGridSize = max(ivec3(1), voxelGridSize - 1);
 
     uint testResult = 0;
     for (int t = 0; t < 7; t++) {
@@ -233,14 +230,14 @@ void main() {
     }
 
     uint bufferOffset = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2];
-    uint indexCount = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2 + 1];
-    for (int i = 0; i < indexCount; i += 3) {
-        if (i + 2 >= indexCount) break;
+    uint caseIndexCount = triangleCaseOffset[caseNum * 128 * 2 + testResult * 2 + 1];
+    for (int i = 0; i < caseIndexCount; i += 3) {
+        if (i + 2 >= caseIndexCount) break;
         uvec3 edgeNums = uvec3(triangleIndexBuffer[bufferOffset + i],
             triangleIndexBuffer[bufferOffset + i + 1],
             triangleIndexBuffer[bufferOffset + i + 2]);
 
-        uint triangleOffset = atomicAdd(drawCmd.indexCount, 3);
+        uint triangleOffset = atomicAdd(indexCount, 3);
         for (int vertex = 0; vertex < 3; vertex++) {
             uint edge = edgeNums[vertex];
             ivec4 edgeInfo = edgeLookup[edge];

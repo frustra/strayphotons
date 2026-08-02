@@ -42,6 +42,7 @@ void main() {
     if (gl_GlobalInvocationID.x >= renderableCount) return;
 
     RenderableEntity renderable = renderables[gl_GlobalInvocationID.x];
+    if (renderable.modelIndex == 0xFFFFFFFF) return;
 
     uint entityVisibility = renderable.visibilityMask;
     entityVisibility &= visibilityMask;

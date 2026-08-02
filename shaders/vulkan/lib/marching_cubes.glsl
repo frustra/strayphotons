@@ -303,10 +303,14 @@ const ivec3[256][5] caseTriangles = ivec3[][](
 );
 
 #include "../../lib/perlin.glsl"
-float sampleGrid(sampler3D voxelRadiance, ivec3 position) {
-    // return texelFetch(voxelRadiance, position, 0).a * 2 - 1;
-    ivec3 gridSize = textureSize(voxelRadiance, 0);
-    float sphere = 0.1 - length(vec3(position - gridSize / 2) / gridSize);
-    return PerlinNoise3D(vec3(position) * 0.1 + vec3(time * 0.01, 0, 0)) * 0.15 -
-           PerlinNoise3D(vec3(position) * 0.1 - vec3(0, time * 0.01, 0)) * 0.13 + sphere;
+float sampleGrid(uvec3 gridSize, vec3 position) {
+    vec3 cubeVec = (0.5 - 2.0 / gridSize) - abs(vec3(position - gridSize / 2) / gridSize);
+    float cube = min(cubeVec.x, min(cubeVec.y, cubeVec.z));
+    float sphere = (0.4 - 2.0 / max(gridSize.x, max(gridSize.y, gridSize.z))) -
+                   length((vec3(position) - vec3(gridSize) / 2) / gridSize);
+    float result = min(cube, sphere - PerlinNoise3D(vec3(position / gridSize) * 3.0 + vec3(seed * 1000, 0, 0)) * 0.1);
+    return result;
+    // result = clamp(result * 50, -1, 1);
+    // float scale = 256;
+    // return round(result * scale) / scale;
 }

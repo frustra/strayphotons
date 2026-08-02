@@ -17,6 +17,7 @@ target_link_libraries(${PROJECT_CORE_LIB}
         ${PROJECT_COMMON_LIB}
         Tecs
         glm
+        base64
         picojson
         magic_enum
         robin_hood

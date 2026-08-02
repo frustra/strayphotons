@@ -52,7 +52,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([readbackID, callback = std::move(callback)](rg::Resources &resources, DeviceContext &device) {
                 auto buffer = resources.GetBuffer(readbackID);
-                device.ExecuteAfterFrameFence([callback = std::move(callback), buffer]() {
+                device.ExecuteAfterFrameFence(NewDispatchSource, [callback = std::move(callback), buffer]() {
                     callback(buffer);
                 });
             });
@@ -120,7 +120,7 @@ namespace sp::vulkan::renderer {
             })
             .Execute([readbackID, callback = std::move(callback)](rg::Resources &resources, DeviceContext &device) {
                 auto buffer = resources.GetBuffer(readbackID);
-                device.ExecuteAfterFrameFence([callback = std::move(callback), buffer]() {
+                device.ExecuteAfterFrameFence(NewDispatchSource, [callback = std::move(callback), buffer]() {
                     callback(buffer);
                 });
             });

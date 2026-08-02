@@ -46,6 +46,8 @@ namespace sp::vulkan {
 
         void AttachWindow(const std::shared_ptr<GuiContext> &context);
 
+        AsyncPtr<Gltf> GenerateMesh(const ecs::VoxelData &voxelData);
+
         void RenderFrame(chrono_clock::duration elapsedTime);
         void EndFrame();
 
