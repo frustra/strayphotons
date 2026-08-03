@@ -280,6 +280,7 @@ namespace sp::vulkan {
         };
 
         PreservingMap<VoxelDataKey, Async<Mesh>, 10000, VoxelDataKeyHash, VoxelDataKeyEqual> activeVoxelData;
+        std::vector<std::pair<AsyncPtr<Mesh>, AsyncPtr<Mesh>>> pendingMeshes; // pair<proxy, input>
 
         HeapVector<GPURenderableEntity> gpuRenderables;
         HeapVector<ecs::Entity> gpuRenderableEntities; // Indexes match 1-to-t with gpuRenderables

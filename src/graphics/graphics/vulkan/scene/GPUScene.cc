@@ -62,6 +62,9 @@ namespace sp::vulkan {
     }
 
     GPUScene::~GPUScene() {
+        activeVoxelData.DropAll();
+        activeMeshes.DropAll();
+        activeModels.DropAll();
         Mesh::UnloadConstantBuffers();
     }
 
@@ -483,10 +486,12 @@ namespace sp::vulkan {
         AsyncPtr<Mesh> asyncMesh = activeVoxelData.Load(
             VoxelDataKeyView{voxelData.algorithm, voxelData.extents, voxelData.seed});
         if (!asyncMesh) {
-            asyncMesh = workQueue.Dispatch<Mesh>(NewDispatchSource,
+            asyncMesh = std::make_shared<Async<Mesh>>();
+            auto inputMesh = workQueue.Dispatch<Mesh>(NewDispatchSource,
                 [this, algorithm = voxelData.algorithm, extents = voxelData.extents, seed = voxelData.seed] {
                     return std::make_shared<Mesh>(algorithm, extents, seed, *this, device);
                 });
+            pendingMeshes.emplace_back(asyncMesh, inputMesh);
             activeVoxelData.Register(
                 VoxelDataKey{InlineString<128>{voxelData.algorithm}, voxelData.extents, voxelData.seed},
                 asyncMesh);
@@ -498,12 +503,31 @@ namespace sp::vulkan {
         AsyncPtr<Mesh> asyncMesh = LoadMesh(voxelData);
         return workQueue.Dispatch<Gltf>(NewDispatchSource, asyncMesh, [](std::shared_ptr<Mesh> mesh) {
             if (!mesh) return std::shared_ptr<Gltf>();
+            Assertf(mesh->asset && mesh->asset->meshes.size() > 0, "GPUScene::LoadMesh returned no meshes");
             return mesh->asset;
         });
     }
 
     void GPUScene::FlushMeshes() {
         ZoneScoped;
+        erase_if(pendingMeshes, [](auto &pair) {
+            if (!pair.first || pair.first->Ready()) {
+                return true;
+            } else if (!pair.second) {
+                pair.first->Set(nullptr);
+                return true;
+            } else if (pair.second->Ready()) {
+                std::shared_ptr<Mesh> mesh = pair.second->Get();
+                if (!mesh || mesh->CheckReady()) {
+                    pair.first->Set(mesh);
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        });
         workQueue.Flush(false, std::chrono::milliseconds(5));
         activeModels.Tick(std::chrono::milliseconds(33));
         activeMeshes.Tick(std::chrono::milliseconds(33));

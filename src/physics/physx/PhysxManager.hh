@@ -28,6 +28,7 @@
 #include "strayphotons/EntityMap.hh"
 #include "strayphotons/FlatSet.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 
@@ -42,6 +43,7 @@ namespace ecs {
 }
 
 namespace sp {
+    class Game;
     class Gltf;
     struct HullSettings;
     class SceneManager;
@@ -118,7 +120,7 @@ namespace sp {
 
     class PhysxManager : public RegisteredThread {
     public:
-        PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue);
+        PhysxManager(Game &game);
         virtual ~PhysxManager() override;
 
         void StartThread(bool startPaused = false);
@@ -127,14 +129,17 @@ namespace sp {
         bool PreFrame() override;
         void Frame() override;
 
-        physx::PxRigidActor *CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+        physx::PxRigidActor *CreateActor(
+            ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::VoxelData>> lock,
             const ecs::Entity &e);
-        size_t UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics>> lock,
+        size_t UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics, ecs::VoxelData>> lock,
             const ecs::Entity &owner,
             const ecs::Entity &actorEnt,
             physx::PxRigidActor *actor,
             const ecs::Transform &offset);
-        void UpdateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
+        void UpdateActor(
+            ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::VoxelData, ecs::SceneProperties>>
+                lock,
             const ecs::Entity &e);
         void RemoveActor(physx::PxRigidActor *actor);
         void SetCollisionGroup(physx::PxRigidActor *actor, ecs::PhysicsGroup group);
@@ -146,9 +151,14 @@ namespace sp {
         void RegisterDebugCommands();
 
         AsyncPtr<ConvexHullSet> LoadConvexHullSet(AsyncPtr<Gltf> model, AsyncPtr<HullSettings> settings);
+        AsyncPtr<HullSettings> LoadHullSettings(std::string_view fullMeshName);
+        AsyncPtr<HullSettings> LoadHullSettings(std::string_view modelName, std::string_view meshName);
+        AsyncPtr<Gltf> LoadModel(std::string_view modelName);
 
         physx::PxGeometryHolder GeometryFromShape(const ecs::PhysicsShape &shape,
             glm::vec3 parentScale = glm::vec3(1)) const;
+
+        Game &game;
 
         std::atomic_bool simulate = false;
         std::atomic_bool exiting = false;
@@ -193,7 +203,9 @@ namespace sp {
         EntityMap<HeapVector<JointState>> joints;
 
         std::mutex cacheMutex;
-        PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> cache;
+        PreservingMap<AssetName, Async<ConvexHullSet>, 10000, StringHash, StringEqual> activeConvexHulls;
+        PreservingMap<HeapString, Async<HullSettings>, 10000, StringHash, StringEqual> activeHullSettings;
+        PreservingMap<AssetName, Async<Gltf>, 10000, StringHash, StringEqual> activeModels;
         DispatchQueue workQueue;
 
         friend class CharacterControlSystem;

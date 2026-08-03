@@ -27,6 +27,7 @@ namespace sp {
     class ConsoleScript;
     struct CGameContext;
 
+    class MeshGenerator;
     class GraphicsManager;
     class PhysxManager;
     class AudioManager;
@@ -59,6 +60,7 @@ namespace sp {
         bool enableXrSystem = false;
 
         std::shared_ptr<GraphicsManager> graphics;
+        MeshGenerator *meshGenerator = nullptr;
         std::shared_ptr<PhysxManager> physics;
         std::shared_ptr<AudioManager> audio;
 

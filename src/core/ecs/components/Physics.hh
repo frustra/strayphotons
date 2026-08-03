@@ -144,8 +144,6 @@ namespace ecs {
 
         struct ConvexMesh {
             sp::AssetName modelName, meshName;
-            sp::AsyncPtr<sp::Gltf> model;
-            sp::AsyncPtr<sp::HullSettings> hullSettings;
 
             ConvexMesh() {}
             ConvexMesh(std::string_view fullMeshName);

@@ -206,7 +206,7 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_GPU_ONLY);
         staging.readbackBuffer = device.AllocateBuffer(
             {sizeof(uint32_t),
-                2 + staging.indexBuffer->ArraySize() + staging.vertexBuffer->ArraySize() / sizeof(uint32_t)},
+                2 + staging.indexBuffer->ArraySize() + staging.vertexBuffer->ByteSize() / sizeof(uint32_t)},
             vk::BufferUsageFlagBits::eTransferDst,
             VMA_MEMORY_USAGE_GPU_TO_CPU);
         static_assert(sizeof(SceneVertex) % sizeof(uint32_t) == 0, "SceneVertex size not multiple of uint32_t");
@@ -362,27 +362,27 @@ namespace sp::vulkan {
         }
         asset = std::make_shared<Gltf>(modelName);
         staging.transferComplete = device.ExecuteAfterFence(NewDispatchSource, readbackFence, [this, &scene, &device] {
-            const uint32_t *readbackData = (const uint32_t *)staging.readbackBuffer->Mapped();
-            vertexCount = readbackData[0];
-            indexCount = readbackData[1];
+            const uint8_t *readbackData = (const uint8_t *)staging.readbackBuffer->Mapped();
+            vertexCount = *reinterpret_cast<const uint32_t *>(readbackData);
+            indexCount = *reinterpret_cast<const uint32_t *>(readbackData + sizeof(uint32_t));
             Logf("Vertex count: %u, Index count: %u, Model name: %s", vertexCount, indexCount, modelName);
             if (vertexCount == 0 || indexCount == 0) return;
 
-            std::vector<uint8_t> buffer(readbackData, readbackData + staging.readbackBuffer->ByteSize());
+            std::vector<uint8_t> buf(readbackData, readbackData + staging.readbackBuffer->ByteSize());
+            asset->asset = std::make_shared<Asset>(std::move(buf));
             gltf::Mesh generatedMesh({
                 gltf::Mesh::Primitive(gltf::Mesh::DrawMode::Triangles,
                     gltf::Accessor<uint32_t, uint16_t, uint8_t>(typeid(uint32_t),
                         indexCount,
-                        buffer,
+                        asset->asset->Buffer(),
                         sizeof(uint32_t),
-                        sizeof(uint32_t) * 2 + vertexCount * sizeof(SceneVertex)),
+                        sizeof(uint32_t) * 2 + staging.vertexBuffer->ByteSize()),
                     gltf::Accessor<glm::vec3>(typeid(glm::vec3),
                         vertexCount,
-                        buffer,
+                        asset->asset->Buffer(),
                         sizeof(SceneVertex),
                         sizeof(uint32_t) * 2)),
             });
-            asset->asset = std::make_shared<Asset>(buffer);
             asset->meshes.emplace_back(generatedMesh);
 
             indexBuffer = scene.indexBuffer->ArrayAllocate(indexCount);

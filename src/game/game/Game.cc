@@ -15,6 +15,7 @@
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
 #include "game/SceneManager.hh"
+#include "graphics/MeshGenerator.hh"
 #include "strayphotons/Logging.hh"
 
 #include <atomic>

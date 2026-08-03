@@ -26,6 +26,7 @@ namespace sp {
     public:
         Asset(std::string_view path = "") : path(path), extension(parseFileExtension(path)) {}
         Asset(const std::vector<uint8_t> &buffer) : buffer(buffer) {}
+        Asset(std::vector<uint8_t> &&buffer) : buffer(std::move(buffer)) {}
 
         std::string String() const {
             return std::string((char *)buffer.data(), buffer.size());

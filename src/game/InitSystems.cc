@@ -6,6 +6,7 @@
  */
 
 #include "game/Game.hh"
+#include "graphics/MeshGenerator.hh"
 
 #include <memory>
 
@@ -42,6 +43,7 @@ namespace sp {
 #ifdef SP_GRAPHICS_SUPPORT
         if (!game.options.count("headless")) {
             game.graphics = std::make_shared<GraphicsManager>(game);
+            game.meshGenerator = dynamic_cast<MeshGenerator *>(game.graphics.get());
         }
 #endif
     }
@@ -61,7 +63,7 @@ namespace sp {
 
     void InitPhysicsManager(Game &game) {
 #ifdef SP_PHYSICS_SUPPORT_PHYSX
-        game.physics = std::make_shared<PhysxManager>(game.inputEventQueue);
+        game.physics = std::make_shared<PhysxManager>(game);
 #endif
     }
 

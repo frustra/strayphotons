@@ -189,18 +189,8 @@ namespace ecs {
             modelName = fullMeshName;
             meshName = "convex0";
         }
-
-        Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
-        Assertf(!meshName.empty(), "ConvexMesh created with empty mesh name");
-        model = sp::Assets().LoadGltf(modelName);
-        hullSettings = sp::Assets().LoadHullSettings(modelName, meshName);
     }
 
     PhysicsShape::ConvexMesh::ConvexMesh(std::string_view modelName, std::string_view meshName)
-        : modelName(modelName), meshName(meshName) {
-        Assertf(!modelName.empty(), "ConvexMesh created with empty model name");
-        Assertf(!meshName.empty(), "ConvexMesh created with empty mesh name");
-        model = sp::Assets().LoadGltf(modelName);
-        hullSettings = sp::Assets().LoadHullSettings(modelName, meshName);
-    }
+        : modelName(modelName), meshName(meshName) {}
 } // namespace ecs
