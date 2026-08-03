@@ -35,7 +35,7 @@ namespace sp {
     class GuiContext;
     class ProfilerGui;
 
-    class GraphicsManager final : public RegisteredThread, MeshGenerator {
+    class GraphicsManager final : public RegisteredThread, public MeshGenerator {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
     public:

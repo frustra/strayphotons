@@ -140,24 +140,34 @@ namespace sp::gltf {
         size_t byteOffset)
         : buffer(&buffer), count(count), byteOffset(byteOffset), byteStride(byteStride) {
 
-        int counter = 0;
         size_t typeSize = 0;
-        (
-            [&] {
-                counter++;
-                if (typeid(Tn) == type) {
-                    typeIndex = counter;
-                    typeSize = sizeof(Tn);
-                }
-            }(),
-            ...);
+        if (typeid(ReadT) == type) {
+            typeIndex = 0;
+            typeSize = sizeof(ReadT);
+        } else {
+            int counter = 0;
+            (
+                [&] {
+                    counter++;
+                    if (typeid(Tn) == type) {
+                        typeIndex = counter;
+                        typeSize = sizeof(Tn);
+                    }
+                }(),
+                ...);
+        }
+        Assertf(typeIndex >= 0 && (size_t)typeIndex <= sizeof...(Tn),
+            "Created invalid gltf::Accessor type: %s",
+            type.name());
 
         if (count > 0) {
             auto maxOffset = (count - 1) * byteStride + typeSize;
-            if (byteOffset + maxOffset >= buffer.size()) {
-                Errorf("gltf::Accessor overflows buffer");
-                return;
-            }
+            Assertf(byteOffset + maxOffset < buffer.size(),
+                "gltf::Accessor overflows buffer: byteOffset %llu + count %llu * stride %llu >= %llu",
+                byteOffset,
+                count,
+                byteStride,
+                buffer.size());
         }
     }
 

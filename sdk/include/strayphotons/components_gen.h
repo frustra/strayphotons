@@ -216,10 +216,10 @@ typedef struct sp_physics_material_t {
 
 // Type: ecs::PhysicsShape
 typedef struct sp_physics_shape_t {
-    const uint8_t _unknown0[552];
+    const uint8_t _unknown0[516];
     sp_transform_t transform; // 60 bytes
     sp_physics_material_t physics_material; // 12 bytes
-} sp_physics_shape_t; // 624 bytes
+} sp_physics_shape_t; // 588 bytes
 
 typedef struct sp_physics_shape_vector_t {
     const uint8_t _unknown[24];
