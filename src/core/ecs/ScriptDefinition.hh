@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Tecs_permissions.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
@@ -14,7 +15,6 @@
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
 
-#include <functional>
 #include <map>
 #include <variant>
 
@@ -90,6 +90,7 @@ namespace ecs {
     struct ScriptDefinition {
         sp::HeapString name;
         ScriptType type;
+        PermissionBitset readPermissions, writePermissions;
         sp::HeapVector<EventName> events;
         bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;

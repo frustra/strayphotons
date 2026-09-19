@@ -22,6 +22,64 @@ void camera_view_init(void *context, sp_script_state_t *state) {
     ctx->started = false;
 }
 
+void camera_view_on_event(void *context,
+    sp_script_state_t *state,
+    tecs_lock_t *lock,
+    tecs_entity_t ent,
+    sp_event_t *event) {
+    script_camera_view_t *ctx = context;
+    if (!Tecs_entity_has_transform_tree(lock, ent)) return;
+
+    if (strcmp(event->name, "/script/camera_rotate") != 0) return;
+    if (event->data.type != SP_EVENT_DATA_TYPE_VEC2) return;
+
+    const vec2_t *angleDiff = &event->data.vec2;
+    // Apply pitch/yaw rotations
+    sp_ecs_transform_tree_t *transform = Tecs_entity_get_transform_tree(lock, ent);
+
+    // char buffer[256] = {0};
+    // snprintf(buffer, 255, "[camera_view] Mouse input: (%.3f, %.3f)\n", angleDiff->v[0], angleDiff->v[1]);
+    // sp_log_message(SP_LOG_LEVEL_LOG, buffer);
+
+    if (!transform) return;
+
+    quat_t originalRotation = {};
+    sp_transform_get_rotation(&transform->transform, &originalRotation);
+    quat_t rotateY = {}, rotateX = {};
+    glm_quatv(rotateY.q, -angleDiff->v[0] * 1.0, (vec3){0, 1, 0});
+    glm_quatv(rotateX.q, -angleDiff->v[1] * 1.0, (vec3){1, 0, 0});
+    quat_t rotation = {};
+    glm_quat_mul(rotateY.q, originalRotation.q, rotation.q);
+    glm_quat_mul(rotation.q, rotateX.q, rotation.q);
+
+    vec3_t up = {};
+    glm_quat_rotatev(rotation.q, (vec3){0, 1, 0}, up.v);
+    if (up.v[1] < 0) {
+        // Camera is turning upside-down, reset it
+        vec3_t right = {};
+        glm_quat_rotatev(rotation.q, (vec3){1, 0, 0}, right.v);
+        right.v[1] = 0;
+        up.v[1] = 0;
+
+        vec3_t forward = {};
+        glm_cross(right.v, up.v, forward.v);
+
+        glm_normalize(right.v);
+        glm_normalize(up.v);
+        glm_normalize(forward.v);
+
+        glm_vec3_copy(right.v, transform->transform.rotate.m[0]);
+        glm_vec3_copy(up.v, transform->transform.rotate.m[1]);
+        glm_vec3_copy(forward.v, transform->transform.rotate.m[2]);
+
+        // char buffer[256] = {0};
+        // snprintf(buffer, 255, "[camera_view] Looking %s\n", forward.v[1] < 0 ? "up" : "down");
+        // sp_log_message(SP_LOG_LEVEL_LOG, buffer);
+    } else {
+        sp_transform_set_rotation(&transform->transform, &rotation);
+    }
+}
+
 void camera_view_on_tick(void *context,
     sp_script_state_t *state,
     tecs_lock_t *lock,
@@ -37,7 +95,7 @@ void camera_view_on_tick(void *context,
         ctx->started = true;
     }
 
-    sp_event_t *event;
+    sp_event_t *event = NULL;
     while ((event = sp_script_state_poll_event(state, lock))) {
         if (strcmp(event->name, "/script/camera_rotate") != 0) continue;
         if (event->data.type != SP_EVENT_DATA_TYPE_VEC2) continue;
@@ -50,25 +108,25 @@ void camera_view_on_tick(void *context,
         // snprintf(buffer, 255, "[camera_view] Mouse input: (%.3f, %.3f)\n", angleDiff->v[0], angleDiff->v[1]);
         // sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 
-        quat_t originalRotation;
+        quat_t originalRotation = {};
         sp_transform_get_rotation(&transform->transform, &originalRotation);
-        quat_t rotateY, rotateX;
+        quat_t rotateY = {}, rotateX = {};
         glm_quatv(rotateY.q, -angleDiff->v[0] * 1.0, (vec3){0, 1, 0});
         glm_quatv(rotateX.q, -angleDiff->v[1] * 1.0, (vec3){1, 0, 0});
-        quat_t rotation;
+        quat_t rotation = {};
         glm_quat_mul(rotateY.q, originalRotation.q, rotation.q);
         glm_quat_mul(rotation.q, rotateX.q, rotation.q);
 
-        vec3_t up;
+        vec3_t up = {};
         glm_quat_rotatev(rotation.q, (vec3){0, 1, 0}, up.v);
         if (up.v[1] < 0) {
             // Camera is turning upside-down, reset it
-            vec3_t right;
+            vec3_t right = {};
             glm_quat_rotatev(rotation.q, (vec3){1, 0, 0}, right.v);
             right.v[1] = 0;
             up.v[1] = 0;
 
-            vec3_t forward;
+            vec3_t forward = {};
             glm_cross(right.v, up.v, forward.v);
 
             glm_normalize(right.v);
@@ -85,11 +143,14 @@ void camera_view_on_tick(void *context,
         } else {
             sp_transform_set_rotation(&transform->transform, &rotation);
         }
+
+        sp_ecs_transform_snapshot_t *snapshot = Tecs_entity_get_transform_snapshot(lock, ent);
+        sp_ecs_transform_tree_get_global_transform(transform, lock, &snapshot->transform);
     }
 }
 
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
-    if (output_size >= 1 && output != NULL) {
+    if (output_size >= 2 && output != NULL) {
         sp_string_set(&output[0].name, "camera_view2");
         output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].context_size = sizeof(script_camera_view_t);
@@ -108,6 +169,14 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
             SP_TYPE_INDEX_BOOL,
             sizeof(bool),
             offsetof(script_camera_view_t, started));
+
+        sp_string_set(&output[1].name, "async_camera_view");
+        output[1].type = SP_SCRIPT_TYPE_EVENT_SCRIPT;
+        output[1].read_permissions = 1 | SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
+        output[1].write_permissions = SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
+        output[1].context_size = 0;
+        output[1].on_event_func = &camera_view_on_event;
+        sp_dynamic_script_definition_add_event(&output[1], "/script/camera_rotate");
     }
-    return 1;
+    return 2;
 }

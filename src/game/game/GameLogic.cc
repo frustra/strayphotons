@@ -11,6 +11,7 @@
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
+#include "ecs/components/Events.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 #include "strayphotons/input/BindingNames.hh"
 #include "strayphotons/input/KeyCodes.hh"
@@ -52,15 +53,19 @@ namespace sp {
         ZoneScoped;
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
         static const ecs::EntityRef mouseEntity = ecs::Name("input", "mouse");
+        static const ecs::EntityRef joystickEntity = ecs::Name("input", "joystick0");
 
         auto keyboard = keyboardEntity.Get(lock);
         auto mouse = mouseEntity.Get(lock);
+        auto joystick = joystickEntity.Get(lock);
 
         inputQueue.PollEvents([&](const ecs::Event &event) {
             if (event.source == keyboard) {
                 ecs::EventBindings::SendEvent(lock, keyboardEntity, event);
             } else if (event.source == mouse) {
                 ecs::EventBindings::SendEvent(lock, mouseEntity, event);
+            } else if (event.source == joystick) {
+                ecs::EventBindings::SendEvent(lock, joystickEntity, event);
             }
 
             if (event.name == INPUT_EVENT_KEYBOARD_KEY_DOWN) {

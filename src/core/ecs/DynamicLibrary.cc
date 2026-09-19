@@ -288,6 +288,8 @@ namespace ecs {
 #endif
         definition.name = dynamicDefinition.name;
         definition.type = dynamicDefinition.type;
+        definition.readPermissions = dynamicDefinition.readPermissions;
+        definition.writePermissions = dynamicDefinition.writePermissions;
         definition.events = dynamicDefinition.events;
         definition.filterOnEvent = dynamicDefinition.filterOnEvent;
         metadata.fields.assign(dynamicDefinition.fields.begin(), dynamicDefinition.fields.end());

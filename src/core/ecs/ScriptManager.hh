@@ -197,6 +197,7 @@ namespace ecs {
         void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock, const Entity &ent);
         void RunLogicUpdate(const LogicUpdateLock &Lock, const chrono_clock::duration &interval);
         void RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
+        size_t RunEventHandlers(const DynamicLock<SendEventsLock> &lock, Entity ent, const Event &event);
 
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);

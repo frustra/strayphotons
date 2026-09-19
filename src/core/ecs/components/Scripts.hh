@@ -13,6 +13,9 @@
 #include "strayphotons/HeapVector.hh"
 
 namespace ecs {
+    class ScriptState;
+    struct ScriptDefinition;
+
     class ScriptInstance {
     public:
         ScriptInstance() {}

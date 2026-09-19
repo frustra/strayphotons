@@ -20,17 +20,56 @@ namespace sp {
 
 namespace ecs {
     static inline ScriptDefinition CreateLogicScript(LogicTickFunc &&callback) {
-        return ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, callback};
+        return ScriptDefinition{"",
+            ScriptType::LogicScript,
+            LogicUpdateLock::GetReadPermissions(),
+            LogicUpdateLock::GetWritePermissions(),
+            {},
+            false,
+            {},
+            {},
+            {},
+            callback};
     }
     static inline ScriptDefinition CreatePhysicsScript(PhysicsTickFunc &&callback) {
-        return ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, callback};
+        return ScriptDefinition{"",
+            ScriptType::PhysicsScript,
+            PhysicsUpdateLock::GetReadPermissions(),
+            PhysicsUpdateLock::GetWritePermissions(),
+            {},
+            false,
+            {},
+            {},
+            {},
+            callback};
     }
     template<typename... Events>
-    static inline ScriptDefinition CreateEventScript(OnEventFunc &&callback, Events... events) {
-        return ScriptDefinition{"", ScriptType::EventScript, {events...}, true, {}, {}, {}, callback};
+    static inline ScriptDefinition CreateEventScript(PermissionBitset readPermissions,
+        PermissionBitset writePermissions,
+        OnEventFunc &&callback,
+        Events... events) {
+        return ScriptDefinition{"",
+            ScriptType::EventScript,
+            readPermissions,
+            writePermissions,
+            {events...},
+            true,
+            {},
+            {},
+            {},
+            callback};
     }
     static inline ScriptDefinition CreatePrefabScript(PrefabFunc &&callback) {
-        return ScriptDefinition{"", ScriptType::PrefabScript, {}, false, {}, {}, {}, callback};
+        return ScriptDefinition{"",
+            ScriptType::PrefabScript,
+            Lock<AddRemove>::GetReadPermissions(),
+            Lock<AddRemove>::GetWritePermissions(),
+            {},
+            false,
+            {},
+            {},
+            {},
+            callback};
     }
 
     // Checks if the script has an Init(ScriptState &state) function
@@ -103,6 +142,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::LogicScript,
+                LogicUpdateLock::GetReadPermissions(),
+                LogicUpdateLock::GetWritePermissions(),
                 {},
                 false,
                 savedPtr,
@@ -117,6 +158,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::LogicScript,
+                LogicUpdateLock::GetReadPermissions(),
+                LogicUpdateLock::GetWritePermissions(),
                 {events...},
                 filterOnEvent,
                 savedPtr,
@@ -171,6 +214,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::PhysicsScript,
+                PhysicsUpdateLock::GetReadPermissions(),
+                PhysicsUpdateLock::GetWritePermissions(),
                 {},
                 false,
                 savedPtr,
@@ -185,6 +230,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::PhysicsScript,
+                PhysicsUpdateLock::GetReadPermissions(),
+                PhysicsUpdateLock::GetWritePermissions(),
                 {events...},
                 filterOnEvent,
                 savedPtr,
@@ -233,8 +280,16 @@ namespace ecs {
 
         OnEventScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::EventScript, {}, true, savedPtr, ScriptInitFunc(&Init), {}, OnEventFunc(&OnEvent)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::EventScript,
+                PermissionBitset(),
+                PermissionBitset(),
+                {},
+                true,
+                savedPtr,
+                ScriptInitFunc(&Init),
+                {},
+                OnEventFunc(&OnEvent)});
         }
 
         template<typename... Events>
@@ -243,6 +298,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::EventScript,
+                PermissionBitset(),
+                PermissionBitset(),
                 {events...},
                 true,
                 savedPtr,
@@ -280,8 +337,16 @@ namespace ecs {
 
         PrefabScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript(
-                {name, ScriptType::PrefabScript, {}, false, savedPtr, {}, {}, PrefabFunc(&Prefab)});
+            GetScriptDefinitions().RegisterScript({name,
+                ScriptType::PrefabScript,
+                Lock<AddRemove>::GetReadPermissions(),
+                Lock<AddRemove>::GetWritePermissions(),
+                {},
+                false,
+                savedPtr,
+                {},
+                {},
+                PrefabFunc(&Prefab)});
         }
     };
 
@@ -370,6 +435,8 @@ namespace ecs {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::GuiScript,
+                PermissionBitset(),
+                PermissionBitset(),
                 {},
                 false,
                 savedPtr,

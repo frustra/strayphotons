@@ -14,8 +14,8 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/CGameContext.hh"
+#include "game/EventScriptManager.hh"
 #include "game/SceneManager.hh"
-#include "graphics/MeshGenerator.hh"
 #include "strayphotons/Logging.hh"
 
 #include <atomic>
@@ -24,7 +24,8 @@
 
 namespace sp {
 
-    Game::Game(CGameContext &ctx) : gameContext(ctx), options(ctx.options), logic(inputEventQueue) {
+    Game::Game(CGameContext &ctx)
+        : gameContext(ctx), options(ctx.options), logic(inputEventQueue), eventScripts(inputEventQueue) {
         funcs.Register<int>("exit", "Quits the game", [this](int arg) {
             Tracef("Exit triggered via console command");
             this->exitCode = arg;

@@ -8,10 +8,14 @@
 #include "Events.hh"
 
 #include "assets/JsonHelpers.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/ScriptManager.hh"
+#include "ecs/components/Scripts.hh"
 #include "strayphotons/Logging.hh"
 
 #include <optional>
 #include <picojson.h>
+#include <variant>
 
 namespace ecs {
     template<>
@@ -277,10 +281,6 @@ namespace ecs {
         const EventBinding &binding) {
         Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
 
-        if (binding.actions.setValue) {
-            asyncOutput = sp::make_async<EventData>(*binding.actions.setValue);
-        }
-
         if (binding.actions.filterExpr) {
             if (binding.actions.filterExpr->CanEvaluate(lock) && asyncInput->Ready()) {
                 auto input = asyncInput->Get();
@@ -304,6 +304,10 @@ namespace ecs {
                 //             }
                 //         });
             }
+        }
+
+        if (binding.actions.setValue) {
+            asyncOutput = sp::make_async<EventData>(*binding.actions.setValue);
         }
 
         if (!binding.actions.modifyExprs.empty()) {
@@ -363,10 +367,23 @@ namespace ecs {
         uint64_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<const EventInput>(lock);
-            size_t count = eventInput.Add(event);
-            eventsSent += count;
-            if (count > 0 && event.trace) event.trace->emplace_back(ent);
+            eventsSent += eventInput.Add(event);
         }
+        if (ent.Has<Scripts>(lock)) {
+            if (event.data && event.data->Ready()) {
+                auto eventData = event.data->Get();
+                if (eventData) {
+                    Event completeEvent(event.name, event.source, *eventData);
+                    eventsSent += GetScriptManager().RunEventHandlers(lock, ent, completeEvent);
+                } else {
+                    // Event filtered asynchronously
+                }
+            } else if (event.data) {
+                // TODO: Queue event with EventScriptManager
+                Abortf("Not implemented");
+            }
+        }
+        if (eventsSent > 0 && event.trace) event.trace->emplace_back(ent);
         if (ent.Has<EventBindings>(lock)) {
             auto &bindings = ent.Get<const EventBindings>(lock);
             auto list = bindings.sourceToDest.find(event.name);
@@ -376,6 +393,15 @@ namespace ecs {
                     return eventsSent;
                 }
                 for (auto &binding : list->second) {
+                    if (binding.actions.printDebug) {
+                        Assertf(event.data->Ready(), "Event debug print expected data to be ready");
+                        auto input = event.data->Get();
+                        if (!input) return false; // Event filtered asynchronously
+                        std::stringstream ss;
+                        ss << *input;
+                        Logf("Event %s%s = %s", target.Name().String(), event.name, ss.str());
+                    }
+
                     // Execute event modifiers before submitting to the destination queue
                     AsyncEvent outputEvent = event;
                     if (!filterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;

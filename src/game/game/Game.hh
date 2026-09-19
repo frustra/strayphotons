@@ -10,6 +10,7 @@
 #include "console/CFunc.hh"
 #include "console/ConsoleBindingManager.hh"
 #include "editor/EditorSystem.hh"
+#include "game/EventScriptManager.hh"
 #include "game/GameLogic.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 
@@ -67,6 +68,7 @@ namespace sp {
         ConsoleBindingManager consoleBinding;
         EditorSystem editor;
         GameLogic logic;
+        EventScriptManager eventScripts;
     };
 
     void RegisterDebugCFuncs(CFuncCollection &funcs);
