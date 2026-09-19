@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Tecs_permissions.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 
@@ -111,6 +112,7 @@ namespace ecs {
     using Write = Tecs::Write<Components...>;
     using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
+    using PermissionBitset = Tecs::Lock<ECS>::PermissionBitset;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
     template<typename T>
@@ -200,6 +202,23 @@ namespace ecs {
                 return std::make_shared<ReturnType>(callback(lock));
             }
         });
+    }
+
+    template<typename Fn>
+    inline auto QueueTransaction(const sp::DispatchSourceInfo &sourceInfo,
+        PermissionBitset readPermissions,
+        PermissionBitset writePermissions,
+        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const DynamicLock<> &>> {
+        using ReturnType = std::invoke_result_t<Fn, const DynamicLock<> &>;
+        return TransactionQueue().Dispatch<ReturnType>(sourceInfo,
+            [callback = std::move(callback), readPermissions, writePermissions]() {
+                DynamicLock<> dynamicLock(World(), readPermissions, writePermissions);
+                if constexpr (std::is_void_v<ReturnType>) {
+                    callback(dynamicLock);
+                } else {
+                    return std::make_shared<ReturnType>(callback(dynamicLock));
+                }
+            });
     }
 
     static inline bool IsLive(const Entity &e) noexcept {

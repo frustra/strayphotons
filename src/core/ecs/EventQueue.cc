@@ -182,7 +182,7 @@ namespace ecs {
 
     std::string Event::ToString() const {
         std::stringstream ss;
-        ss << std::string_view(this->name) << ":" << this->data;
+        ss << std::string_view(this->name) << ": " << this->data;
         return ss.str();
     }
 

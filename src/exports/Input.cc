@@ -55,6 +55,12 @@ SP_EXPORT void sp_send_input_uint(sp_game_t *ctx,
     ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, value});
 }
 
+SP_EXPORT void sp_send_input_float(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, float value) {
+    Assertf(ctx != nullptr, "sp_send_input_float called with null game ctx");
+    if (ctx->disableInput) return;
+    ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, value});
+}
+
 SP_EXPORT void sp_send_input_vec2(sp_game_t *ctx,
     sp_entity_t input_device,
     const char *event_name,

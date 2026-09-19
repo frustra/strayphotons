@@ -193,6 +193,46 @@
             }
         }
     },
+    "input:joystick0": {
+        "event_bindings": {
+            "/joystick/axis0": {
+                "outputs": "input:gamepad/gamepad/left_joystick/x"
+            },
+            "/joystick/axis1": {
+                "outputs": "input:gamepad/gamepad/left_joystick/y"
+            },
+            "/joystick/axis2": {
+                "outputs": "input:gamepad/gamepad/right_joystick/x"
+            },
+            "/joystick/axis3": {
+                "outputs": "input:gamepad/gamepad/right_joystick/y"
+            },
+            "/joystick/axis4": {
+                "outputs": "input:gamepad/gamepad/right_trigger"
+            },
+            "/joystick/axis5": {
+                "outputs": "input:gamepad/gamepad/left_trigger"
+            },
+            "/joystick/button0": {
+                "outputs": "input:gamepad/gamepad/a"
+            },
+            "/joystick/button1": {
+                "outputs": "input:gamepad/gamepad/b"
+            },
+            "/joystick/button3": {
+                "outputs": "input:gamepad/gamepad/x"
+            },
+            "/joystick/button4": {
+                "outputs": "input:gamepad/gamepad/y"
+            },
+            "/joystick/button6": {
+                "outputs": "input:gamepad/gamepad/left_bumper"
+            },
+            "/joystick/button7": {
+                "outputs": "input:gamepad/gamepad/right_bumper"
+            }
+        }
+    },
     "vr:origin": {
         "signal_output": {
             "rotation_rpm": 40

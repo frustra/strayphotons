@@ -68,6 +68,8 @@ namespace ecs {
         char *desc = nullptr;
         ScriptType type;
         bool filterOnEvent = false;
+        uint64_t readPermissions = 0;
+        uint64_t writePermissions = 0;
         sp::HeapVector<EventName> events;
         sp::HeapVector<StructField> fields;
 
@@ -93,6 +95,8 @@ namespace ecs {
         StructField &AddField(const char *name, uint32_t typeIndex, uint64_t size, uint64_t offset);
     };
 
+    static_assert(sizeof(PermissionBitset) <= sizeof(uint64_t), "ecs::PermissionBitset overflows uint64_t");
+
     static StructMetadata MetadataDynamicScriptDefinition(typeid(DynamicScriptDefinition),
         sizeof(DynamicScriptDefinition),
         "DynamicScriptDefinition",
@@ -100,6 +104,12 @@ namespace ecs {
         StructField::New("name", "The name of the script", &DynamicScriptDefinition::name),
         StructField::New("desc", "A description of how to use the script", &DynamicScriptDefinition::desc),
         StructField::New("type", "The type of the script", &DynamicScriptDefinition::type),
+        StructField::New("read_permissions",
+            "A bitset representing which components will be locked for reading (bit 0 = reading entity Exists/Has)",
+            &DynamicScriptDefinition::readPermissions),
+        StructField::New("write_permissions",
+            "A bitset representing which components will be locked for writing (bit 0 = AddRemove)",
+            &DynamicScriptDefinition::writePermissions),
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",
             &DynamicScriptDefinition::filterOnEvent),

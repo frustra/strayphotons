@@ -871,13 +871,15 @@ typedef struct sp_event_binding_actions_t {
     sp_optional_signal_expression_t filter; // 176 bytes
     sp_signal_expression_vector_t modify; // 24 bytes
     sp_optional_event_data_t set_value; // 272 bytes
-} sp_event_binding_actions_t; // 472 bytes
+    bool print; // 1 bytes
+    const uint8_t _unknown473[7];
+} sp_event_binding_actions_t; // 480 bytes
 
 // Type: ecs::EventBinding
 typedef struct sp_event_binding_t {
     sp_event_dest_vector_t outputs; // 24 bytes
-    sp_event_binding_actions_t event_binding_actions; // 472 bytes
-} sp_event_binding_t; // 496 bytes
+    sp_event_binding_actions_t event_binding_actions; // 480 bytes
+} sp_event_binding_t; // 504 bytes
 
 typedef struct sp_event_binding_vector_t {
     const uint8_t _unknown[24];
@@ -960,18 +962,18 @@ SP_EXPORT event_name_t *sp_event_name_vector_resize(sp_event_name_vector_t *v, s
 typedef struct sp_script_definition_t {
     string_t name; // 24 bytes
     sp_script_type_t type; // 4 bytes
-    const uint8_t _unknown28[4];
+    const uint8_t _unknown28[20];
     sp_event_name_vector_t events; // 24 bytes
     bool filter_on_event; // 1 bytes
-    const uint8_t _unknown57[79];
-} sp_script_definition_t; // 136 bytes
+    const uint8_t _unknown73[79];
+} sp_script_definition_t; // 152 bytes
 
 // Type: ecs::ScriptState
 typedef struct sp_script_state_t {
     sp_ecs_name_t scope; // 128 bytes
-    sp_script_definition_t definition; // 136 bytes
-    const uint8_t _unknown264[472];
-} sp_script_state_t; // 736 bytes
+    sp_script_definition_t definition; // 152 bytes
+    const uint8_t _unknown280[472];
+} sp_script_state_t; // 752 bytes
 const uint32_t SP_TYPE_INDEX_EVENT = 42;
 // Type: ecs::Event
 typedef struct sp_event_t {
@@ -1124,6 +1126,8 @@ typedef struct sp_dynamic_script_definition_t {
     sp_script_type_t type; // 4 bytes
     bool filter_on_event; // 1 bytes
     const uint8_t _unknown37[3];
+    uint64_t read_permissions; // 8 bytes
+    uint64_t write_permissions; // 8 bytes
     sp_event_name_vector_t events; // 24 bytes
     sp_struct_field_vector_t fields; // 24 bytes
     uint64_t context_size; // 8 bytes
@@ -1136,7 +1140,7 @@ typedef struct sp_dynamic_script_definition_t {
     void(*prefab_func)(const sp_script_state_t *, tecs_lock_t *, tecs_entity_t, const sp_scene_ref_t *); // 8 bytes
     bool(*before_frame_func)(void *, sp_compositor_ctx_t *, sp_script_state_t *, tecs_entity_t); // 8 bytes
     void(*render_gui_func)(void *, sp_compositor_ctx_t *, sp_script_state_t *, tecs_entity_t, vec2_t, vec2_t, float, sp_gui_draw_data_t *); // 8 bytes
-} sp_dynamic_script_definition_t; // 168 bytes
+} sp_dynamic_script_definition_t; // 184 bytes
 SP_EXPORT void sp_dynamic_script_definition_add_event(sp_dynamic_script_definition_t *self, const char * name);
 SP_EXPORT sp_struct_field_t * sp_dynamic_script_definition_add_field(sp_dynamic_script_definition_t *self, const char * name, uint32_t typeIndex, uint64_t size, uint64_t offset);
 

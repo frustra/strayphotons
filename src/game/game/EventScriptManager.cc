@@ -1,54 +1,26 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "GameLogic.hh"
+#include "EventScriptManager.hh"
 
 #include "common/Tracing.hh"
-#include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
-#include "ecs/ScriptManager.hh"
 #include "ecs/components/Events.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
 #include "strayphotons/input/BindingNames.hh"
 #include "strayphotons/input/KeyCodes.hh"
 
 namespace sp {
-    static CVar<uint32_t> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
-
-    GameLogic::GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("GameLogic", CVarLogicFPS.Get(), true), windowInputQueue(windowInputQueue) {
-        funcs.Register<unsigned int>("steplogic",
-            "Advance the game logic by N frames, default is 1",
-            [this](unsigned int arg) {
-                this->Step(std::max(1u, arg));
-            });
-        funcs.Register("pauselogic", "Pause the game logic thread (See also: resumelogic)", [this] {
-            this->Pause(true);
-        });
-        funcs.Register("resumelogic", "Pause the game logic thread (See also: pauselogic)", [this] {
-            this->Pause(false);
-        });
+    EventScriptManager::EventScriptManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
+        : windowInputQueue(windowInputQueue), workQueue("EventWorkQueue", 2, std::chrono::milliseconds(1)) {
+        (void)this->windowInputQueue;
     }
 
-    void GameLogic::StartThread(bool startPaused) {
-        RegisteredThread::StartThread(startPaused);
-    }
-
-    bool GameLogic::PreFrame() {
-        auto targetFPS = CVarLogicFPS.Get();
-        if (targetFPS > 0) {
-            interval = std::chrono::nanoseconds((int64_t)(1e9 / targetFPS));
-        } else {
-            interval = std::chrono::nanoseconds(0);
-        }
-        return true;
-    }
-
-    void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
+    void EventScriptManager::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
         LockFreeEventQueue<ecs::Event> &inputQueue) {
         ZoneScoped;
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");
@@ -119,22 +91,15 @@ namespace sp {
         });
     }
 
-    void GameLogic::Frame() {
-        ZoneScoped;
-        {
-            ZoneScopedN("RunLogicUpdate");
-            auto lock = ecs::StartTransaction<ecs::LogicUpdateLock>();
-            UpdateInputEvents(lock, windowInputQueue);
-            ecs::GetScriptManager().RunLogicUpdate(lock, interval);
-        }
-        {
-            ZoneScopedN("UpdateSignals");
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();
-            auto &signals = lock.Get<const ecs::Signals>().signals;
-            for (size_t index = 0; index < signals.size(); index++) {
-                auto &signal = signals[index];
-                if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
-            }
-        }
-    }
+    // void EventScriptManager::Frame() {
+    //     ZoneScoped;
+    //     auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();
+    //     UpdateInputEvents(lock, windowInputQueue);
+
+    //     auto &signals = lock.Get<const ecs::Signals>().signals;
+    //     for (size_t index = 0; index < signals.size(); index++) {
+    //         auto &signal = signals[index];
+    //         if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
+    //     }
+    // }
 } // namespace sp

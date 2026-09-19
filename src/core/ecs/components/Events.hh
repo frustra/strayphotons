@@ -15,11 +15,15 @@
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapVector.hh"
 
+#include <memory>
 #include <optional>
 #include <robin_hood.h>
 #include <string>
+#include <variant>
 
 namespace ecs {
+    class ScriptInstance;
+
     static const size_t MAX_EVENT_BINDING_DEPTH = 10;
 
     struct EventInput {
@@ -78,9 +82,10 @@ their own event queues as needed.
         std::optional<SignalExpression> filterExpr;
         sp::HeapVector<SignalExpression> modifyExprs;
         std::optional<EventData> setValue;
+        bool printDebug = false;
 
         explicit operator bool() const {
-            return filterExpr.has_value() || !modifyExprs.empty() || setValue.has_value();
+            return filterExpr.has_value() || !modifyExprs.empty() || setValue.has_value() || printDebug;
         }
 
         bool operator==(const EventBindingActions &) const = default;
@@ -107,7 +112,10 @@ their own event queues as needed.
             "new event data.  "
             "As an example, the following `modify` expression will scale an input vec3 event by 2 on all axes: "
             "`[\"event.x * 2\", \"event.y * 2\", \"event.z * 2\"]`.",
-            &EventBindingActions::modifyExprs));
+            &EventBindingActions::modifyExprs),
+        StructField::New("print",
+            "It `print` is set to true, all events flowing through this binding will be logged to the console",
+            &EventBindingActions::printDebug));
 
     struct EventBinding {
         sp::HeapVector<EventDest> outputs;

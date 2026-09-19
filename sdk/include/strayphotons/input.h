@@ -22,6 +22,7 @@ SP_EXPORT void sp_send_input_bool(sp_game_t *ctx, sp_entity_t input_device, cons
 SP_EXPORT void sp_send_input_str(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, const char *value);
 SP_EXPORT void sp_send_input_int(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, int value);
 SP_EXPORT void sp_send_input_uint(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, unsigned int value);
+SP_EXPORT void sp_send_input_float(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, float value);
 SP_EXPORT void sp_send_input_vec2(sp_game_t *ctx,
     sp_entity_t input_device,
     const char *event_name,

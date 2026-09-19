@@ -9,9 +9,15 @@
 
 #include "console/CVar.hh"
 #include "ecs/DynamicLibrary.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptGuiDefinition.hh"
 #include "strayphotons/Defer.hh"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <shared_mutex>
 
@@ -206,7 +212,9 @@ namespace ecs {
             auto &newState = scriptSet.scripts[newIndex].second;
             newState.index = newIndex;
             if (runInit) {
-                newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
+                if (state.definition.type != ScriptType::EventScript) {
+                    newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
+                }
                 if (newState.definition.initFunc) (*newState.definition.initFunc)(newState);
                 newState.initialized = true;
             }
@@ -339,22 +347,24 @@ namespace ecs {
 
         auto &entry = scriptSet.scripts[state.index];
         if (!entry.first) {
-            if (ent.Has<EventInput>(lock)) {
-                auto &eventInput = ent.Get<EventInput>(lock);
-                for (auto &event : state.definition.events) {
-                    if (!state.eventQueue) state.eventQueue = EventQueue::New();
-                    eventInput.Register(lock, state.eventQueue, event);
+            if (state.definition.type != ScriptType::EventScript) {
+                if (ent.Has<EventInput>(lock)) {
+                    auto &eventInput = ent.Get<EventInput>(lock);
+                    for (auto &event : state.definition.events) {
+                        if (!state.eventQueue) state.eventQueue = EventQueue::New();
+                        eventInput.Register(lock, state.eventQueue, event);
+                    }
+                } else if (!state.definition.events.empty()) {
+                    Warnf("Script %s has events but %s has no EventInput component",
+                        state.definition.name,
+                        ecs::ToString(lock, ent));
+                    return;
                 }
-            } else if (!state.definition.events.empty()) {
-                Warnf("Script %s has events but %s has no EventInput component",
-                    state.definition.name,
-                    ecs::ToString(lock, ent));
-                return;
-            }
-            if (state.definition.type == ScriptType::GuiScript && ent.Has<GuiElement>(lock)) {
-                auto &guiElement = ent.Get<GuiElement>(lock);
-                if (!guiElement.definition) {
-                    guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance, ent);
+                if (state.definition.type == ScriptType::GuiScript && ent.Has<GuiElement>(lock)) {
+                    auto &guiElement = ent.Get<GuiElement>(lock);
+                    if (!guiElement.definition) {
+                        guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance, ent);
+                    }
                 }
             }
             entry.first = ent;
@@ -428,6 +438,70 @@ namespace ecs {
             callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
+    }
+
+    size_t ScriptManager::RunEventHandlers(const DynamicLock<SendEventsLock> &lock, Entity ent, const Event &event) {
+        ZoneScoped;
+        DebugZoneStr(ecs::ToString(lock, ent));
+
+        auto &scriptSet = scripts[ScriptType::EventScript];
+        std::shared_lock l1(dynamicLibraryMutex);
+        std::shared_lock l2(scriptSet.mutex);
+
+        size_t eventCount = 0;
+        auto &scripts = ent.Get<const Scripts>(lock);
+        for (auto &instance : scripts.scripts) {
+            if (!instance) continue;
+            auto &state = *instance.state;
+            auto *callbackPtr = std::get_if<OnEventFunc>(&state.definition.callback);
+            if (!callbackPtr) continue;
+            auto callback = *callbackPtr;
+            if (!callback) continue;
+            if (!sp::contains(state.definition.events, event.name)) continue;
+            if ((state.definition.readPermissions & lock.GetReadPermissions()) == state.definition.readPermissions &&
+                (state.definition.writePermissions & lock.GetWritePermissions()) == state.definition.writePermissions) {
+                callback(state, lock, ent, event);
+                state.lastEvent = {};
+            } else {
+                // Not all lock permissions available, queue event async
+                QueueTransaction(NewDispatchSource,
+                    state.definition.readPermissions | SendEventsLock::GetReadPermissions(),
+                    state.definition.writePermissions,
+                    [this, ent, event, instanceId = instance.GetInstanceId()](const DynamicLock<> &dynamicLock) {
+                        ZoneScopedN("RunEventHandlersAsync");
+                        auto tryLock = dynamicLock.TryLock<SendEventsLock>();
+                        Assertf(tryLock.has_value(), "QueueTransaction returned dynamic lock with missing permissions");
+                        DebugZoneStr(ecs::ToString(*tryLock, ent));
+
+                        auto &scriptSet = this->scripts[ScriptType::EventScript];
+                        std::shared_lock l1(dynamicLibraryMutex);
+                        std::shared_lock l2(scriptSet.mutex);
+
+                        auto &scripts = ent.Get<const Scripts>(*tryLock);
+                        for (auto &instance : scripts.scripts) {
+                            if (!instance) continue;
+                            if (instance.GetInstanceId() == instanceId) {
+                                auto &state = *instance.state;
+                                Assertf((state.definition.readPermissions & dynamicLock.GetReadPermissions()) ==
+                                                state.definition.readPermissions &&
+                                            (state.definition.writePermissions & dynamicLock.GetWritePermissions()) ==
+                                                state.definition.writePermissions,
+                                    "Async event permissions did not match");
+                                auto *callbackPtr = std::get_if<OnEventFunc>(&state.definition.callback);
+                                if (!callbackPtr) continue;
+                                auto callback = *callbackPtr;
+                                if (!callback) continue;
+                                if (!sp::contains(state.definition.events, event.name)) continue;
+                                callback(state, *tryLock, ent, event);
+                                state.lastEvent = {};
+                                break;
+                            }
+                        }
+                    });
+            }
+            eventCount++;
+        }
+        return eventCount;
     }
 
     // RunPrefabs should only be run from the SceneManager thread

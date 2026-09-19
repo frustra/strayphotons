@@ -10,9 +10,11 @@
 #include "EditorControls.hh"
 #include "assets/JsonHelpers.hh"
 #include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/EntityReferenceManager.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructFieldTypes.hh"
@@ -564,28 +566,64 @@ namespace sp {
             if (ImGui::Button("Add Prefab")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PrefabScript, {}, false, {}, {}, {}, PrefabFunc()});
+                    ScriptDefinition{"",
+                        ScriptType::PrefabScript,
+                        ecs::Lock<ecs::AddRemove>::GetReadPermissions(),
+                        ecs::Lock<ecs::AddRemove>::GetWritePermissions(),
+                        {},
+                        false,
+                        {},
+                        {},
+                        {},
+                        PrefabFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add LogicScript")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::LogicScript, {}, false, {}, {}, {}, LogicTickFunc()});
+                    ScriptDefinition{"",
+                        ScriptType::LogicScript,
+                        ecs::LogicUpdateLock::GetReadPermissions(),
+                        ecs::LogicUpdateLock::GetWritePermissions(),
+                        {},
+                        false,
+                        {},
+                        {},
+                        {},
+                        LogicTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Physics Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::PhysicsScript, {}, false, {}, {}, {}, PhysicsTickFunc()});
+                    ScriptDefinition{"",
+                        ScriptType::PhysicsScript,
+                        ecs::PhysicsUpdateLock::GetReadPermissions(),
+                        ecs::PhysicsUpdateLock::GetWritePermissions(),
+                        {},
+                        false,
+                        {},
+                        {},
+                        {},
+                        PhysicsTickFunc()});
                 changed = true;
             }
             ImGui::SameLine();
             if (ImGui::Button("Add Event Script")) {
                 EntityScope scope = Name(scene.data->name, "");
                 value.emplace_back(scope,
-                    ScriptDefinition{"", ScriptType::EventScript, {}, true, {}, {}, {}, OnEventFunc()});
+                    ScriptDefinition{"",
+                        ScriptType::EventScript,
+                        ecs::PermissionBitset(),
+                        ecs::PermissionBitset(),
+                        {},
+                        true,
+                        {},
+                        {},
+                        {},
+                        OnEventFunc()});
                 changed = true;
             }
         }
