@@ -62,6 +62,7 @@ namespace sp {
     }
 
     Game::ShutdownManagers::~ShutdownManagers() {
+        { LogOnExit logOnExit = "Running shutdown managers... =========================================="; }
         GetConsoleManager().Shutdown();
         GetSceneManager().Shutdown();
         Assets().Shutdown();

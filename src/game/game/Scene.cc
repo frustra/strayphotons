@@ -196,6 +196,9 @@ namespace sp {
         ent.Destroy(stagingLock);
     }
 
+    // TODO (perf): This initializes a new instance of all scripts in the scene, even if they will be discarded.
+    // TODO: Only build new / modified entities for applying, maybe tracking a dirty flag with SceneInfo?
+    // Re-applying a scene should be a no-op
     void Scene::ApplyScene(bool resetLive, SceneApplyCallback callback) {
         ZoneScoped;
         ZoneStr(data->name);

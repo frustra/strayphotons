@@ -170,7 +170,7 @@
                 },
                 {
                     "outputs": "player:pointer/interact/grab",
-                    "filter": "is_primary_focus(Game) && event"
+                    "filter": "0 && is_primary_focus(Game) && event"
                 }
             ],
             "/keyboard/key/q": {
@@ -308,7 +308,9 @@
     },
     "player:pointer": {
         "signal_bindings": {
-            "interact_rotate": "if_primary_focus(Game, input:keyboard/key_r)"
+            "interact_rotate": "if_primary_focus(Game, input:keyboard/key_r)",
+            "interact_pull": "if_primary_focus(Game, input:keyboard/key_r - input:keyboard/key_t)",
+            "interact_grab": "if_primary_focus(Game, input:keyboard/key_e)"
         }
     },
     "player:flathead": {

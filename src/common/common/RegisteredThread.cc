@@ -39,12 +39,12 @@ namespace sp {
         getRegisteredThreads().erase(std::string(threadName));
     }
 
-    RegisteredThread::RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames)
+    RegisteredThread::RegisteredThread(const char *threadName, chrono_clock::duration interval, bool traceFrames)
         : threadName(threadName), interval(interval), traceFrames(traceFrames), state(ThreadState::Stopped) {
         registerThread(*this);
     }
 
-    RegisteredThread::RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames)
+    RegisteredThread::RegisteredThread(const char *threadName, double framesPerSecond, bool traceFrames)
         : threadName(threadName), interval(0), traceFrames(traceFrames), state(ThreadState::Stopped) {
         if (framesPerSecond > 0.0) {
             interval = std::chrono::nanoseconds((int64_t)(1e9 / framesPerSecond));
@@ -68,7 +68,7 @@ namespace sp {
         if (startPaused) this->Pause();
 
         thread = std::thread([this] {
-            tracy::SetThreadName(threadName.c_str());
+            tracy::SetThreadName(threadName);
             Tracef("RegisteredThread Started %s", threadName);
             Defer exit([this] {
                 Tracef("Thread stopping: %s", threadName);
@@ -94,17 +94,17 @@ namespace sp {
                     if (this->PreFrame()) {
                         if (this->stepMode) {
                             while (stepCount < maxStepCount) {
-                                if (traceFrames) FrameMarkStart(threadName.c_str());
+                                if (traceFrames) FrameMarkStart(threadName);
                                 this->Frame();
-                                if (traceFrames) FrameMarkEnd(threadName.c_str());
+                                if (traceFrames) FrameMarkEnd(threadName);
                                 stepCount++;
                             }
                             stepCount.notify_all();
                             this->PostFrame(true);
                         } else {
-                            if (traceFrames) FrameMarkStart(threadName.c_str());
+                            if (traceFrames) FrameMarkStart(threadName);
                             this->Frame();
-                            if (traceFrames) FrameMarkEnd(threadName.c_str());
+                            if (traceFrames) FrameMarkEnd(threadName);
                             this->PostFrame(false);
                         }
                         // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());fpsMeasuredTime

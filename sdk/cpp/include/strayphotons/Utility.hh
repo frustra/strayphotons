@@ -213,6 +213,8 @@ namespace sp {
     class HeapVector;
     template<typename, typename, typename>
     class FlatSet;
+    template<typename>
+    class EntityMap;
 
     template<typename T>
     struct is_vector : std::false_type {};
@@ -253,6 +255,11 @@ namespace sp {
     struct is_flat_set : std::false_type {};
     template<typename T, typename Compare, typename ContainerT>
     struct is_flat_set<FlatSet<T, Compare, ContainerT>> : std::true_type {};
+
+    template<typename T>
+    struct is_entity_map : std::false_type {};
+    template<typename T>
+    struct is_entity_map<EntityMap<T>> : std::true_type {};
 
     template<typename T>
     struct is_unordered_flat_map : std::false_type {};

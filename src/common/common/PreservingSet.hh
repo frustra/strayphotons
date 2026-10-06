@@ -84,9 +84,8 @@ namespace sp {
         LockFreeMutex mutex;
         chrono_clock::time_point last_tick;
         std::deque<TimedValue> storage;
-        std::unordered_set<std::shared_ptr<T>, PtrHash, PtrEqual> handles;
 
-        robin_hood::unordered_flat_map<T *, size_t> indexLookup;
+        robin_hood::unordered_flat_map<std::shared_ptr<T>, size_t, PtrHash, PtrEqual> handleLookup;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeList;
 
     public:
@@ -122,8 +121,7 @@ namespace sp {
                         auto &timed = storage[i];
                         if (timed.ptr.use_count() == 1) {
                             std::shared_ptr<T> handle = timed.ptr.lock();
-                            handles.erase(handle);
-                            indexLookup.erase(handle.get());
+                            handleLookup.erase(handle);
                             handle.reset();
                             timed.value.reset();
                             Assertf(timed.ptr.use_count() == 0, "PreservingSet handle delete failed");
@@ -137,10 +135,10 @@ namespace sp {
         std::shared_ptr<T> LoadOrInsert(const T &value) {
             std::unique_lock lock(mutex);
 
-            auto it = handles.find(value);
-            if (it != handles.end()) {
-                std::shared_ptr<T> ptr = *it;
-                size_t i = indexLookup.at(ptr.get());
+            auto it = handleLookup.find(value);
+            if (it != handleLookup.end()) {
+                std::shared_ptr<T> ptr = it->first;
+                size_t i = it->second;
                 Assertf(i < storage.size(), "PreservingSet index out of bounds");
                 storage[i].last_use = 0;
                 return ptr;
@@ -157,8 +155,7 @@ namespace sp {
                 Assertf(i < storage.size(), "PreservingSet index out of bounds");
                 std::shared_ptr<T> ptr(&storage[i].value.value(), [](auto *) {});
                 storage[i].ptr = std::weak_ptr<T>(ptr);
-                indexLookup.emplace(ptr.get(), i);
-                handles.emplace(ptr);
+                handleLookup.emplace(ptr, i);
                 return ptr;
             }
         }
@@ -166,10 +163,10 @@ namespace sp {
         std::shared_ptr<T> Find(const T &value) {
             std::shared_lock lock(mutex);
 
-            auto it = handles.find(value);
-            if (it != handles.end()) {
-                std::shared_ptr<T> ptr = *it;
-                size_t i = indexLookup.at(ptr.get());
+            auto it = handleLookup.find(value);
+            if (it != handleLookup.end()) {
+                std::shared_ptr<T> ptr = it->first;
+                size_t i = it->second;
                 Assertf(i < storage.size(), "PreservingSet index out of bounds");
                 storage[i].last_use = 0;
                 return ptr;
@@ -191,8 +188,7 @@ namespace sp {
                 if (timed.ptr.use_count() == 1) {
                     std::shared_ptr<T> handle = timed.ptr.lock();
                     if (destroyCallback) destroyCallback(handle);
-                    handles.erase(handle);
-                    indexLookup.erase(handle.get());
+                    handleLookup.erase(handle);
                     handle.reset();
                     timed.value.reset();
                     Assertf(timed.ptr.use_count() == 0, "PreservingSet handle delete failed");

@@ -53,6 +53,7 @@ namespace sp {
     static const std::string INTERACT_EVENT_INTERACT_POINT = "/interact/point"; // ecs::Transform, vec2 or false
     static const std::string INTERACT_EVENT_INTERACT_PRESS = "/interact/press"; // bool
     static const std::string INTERACT_EVENT_INTERACT_GRAB = "/interact/grab"; // ecs::Transform or false
+    static const std::string INTERACT_EVENT_INTERACT_PUSH = "/interact/push"; // glm::vec3
     static const std::string INTERACT_EVENT_INTERACT_ROTATE = "/interact/rotate"; // glm::vec2
 
     // Physics

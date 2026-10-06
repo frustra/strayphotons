@@ -34,6 +34,8 @@ namespace nqr {
 
 namespace sp {
     class AudioManager : public RegisteredThread {
+        LogOnExit logOnExit = "Audio shut down =======================================================";
+
     public:
         AudioManager();
         ~AudioManager();

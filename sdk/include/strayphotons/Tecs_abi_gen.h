@@ -136,6 +136,12 @@ TECS_EXPORT bool Tecs_lock_is_read_light_allowed(tecs_lock_t *dynLockPtr);
 TECS_EXPORT uint64_t Tecs_previous_entities_with_light(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 TECS_EXPORT uint64_t Tecs_entities_with_light(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
 
+TECS_EXPORT bool Tecs_lock_is_write_light_cast_allowed(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_lock_is_read_light_cast_allowed(tecs_lock_t *dynLockPtr);
+
+TECS_EXPORT uint64_t Tecs_previous_entities_with_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
+TECS_EXPORT uint64_t Tecs_entities_with_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_view_t *output);
+
 TECS_EXPORT bool Tecs_lock_is_write_light_sensor_allowed(tecs_lock_t *dynLockPtr);
 TECS_EXPORT bool Tecs_lock_is_read_light_sensor_allowed(tecs_lock_t *dynLockPtr);
 
@@ -404,6 +410,16 @@ TECS_EXPORT sp_ecs_light_t *Tecs_entity_get_light(tecs_lock_t *dynLockPtr, tecs_
 TECS_EXPORT const sp_ecs_light_t *Tecs_entity_get_previous_light(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
 TECS_EXPORT sp_ecs_light_t *Tecs_entity_set_light(tecs_lock_t *dynLockPtr, tecs_entity_t entity, const sp_ecs_light_t *value);
 TECS_EXPORT void Tecs_entity_unset_light(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+
+TECS_EXPORT const sp_ecs_light_cast_t *Tecs_get_entity_light_cast_storage(tecs_lock_t *dynLockPtr);
+TECS_EXPORT const sp_ecs_light_cast_t *Tecs_get_previous_entity_light_cast_storage(tecs_lock_t *dynLockPtr);
+TECS_EXPORT bool Tecs_entity_has_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT bool Tecs_entity_had_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT const sp_ecs_light_cast_t *Tecs_entity_const_get_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT sp_ecs_light_cast_t *Tecs_entity_get_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT const sp_ecs_light_cast_t *Tecs_entity_get_previous_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
+TECS_EXPORT sp_ecs_light_cast_t *Tecs_entity_set_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity, const sp_ecs_light_cast_t *value);
+TECS_EXPORT void Tecs_entity_unset_light_cast(tecs_lock_t *dynLockPtr, tecs_entity_t entity);
 
 TECS_EXPORT const sp_ecs_light_sensor_t *Tecs_get_entity_light_sensor_storage(tecs_lock_t *dynLockPtr);
 TECS_EXPORT const sp_ecs_light_sensor_t *Tecs_get_previous_entity_light_sensor_storage(tecs_lock_t *dynLockPtr);

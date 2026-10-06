@@ -148,7 +148,7 @@ namespace ecs {
                 false,
                 savedPtr,
                 ScriptInitFunc(&Init),
-                {},
+                ScriptDestroyFunc(&Destroy),
                 LogicTickFunc(&OnTick)});
         }
 
@@ -220,7 +220,7 @@ namespace ecs {
                 false,
                 savedPtr,
                 ScriptInitFunc(&Init),
-                {},
+                ScriptDestroyFunc(&Destroy),
                 PhysicsTickFunc(&OnTick)});
         }
 
@@ -242,7 +242,17 @@ namespace ecs {
     };
 
     template<typename T>
-    struct OnEventScript final : public ScriptDefinitionBase {
+    struct script_onevent_lock_t {
+        template<typename LockType>
+        static inline consteval LockType *ptrLookup(void (T::*F)(ScriptState &, LockType, Entity, Event)) {
+            return nullptr;
+        }
+
+        using LockType = std::remove_pointer_t<decltype(ptrLookup(&T::OnEvent))>;
+    };
+
+    template<typename T>
+    struct EventScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
 
         const void *GetDefault() const override {
@@ -275,31 +285,21 @@ namespace ecs {
         static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
             T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
-            ptr->OnEvent(state, lock, ent, event);
-        }
-
-        OnEventScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::EventScript,
-                PermissionBitset(),
-                PermissionBitset(),
-                {},
-                true,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                {},
-                OnEventFunc(&OnEvent)});
+            using LockType = script_onevent_lock_t<T>::LockType;
+            auto dynamicLock = lock.TryLock<LockType>();
+            Assertf(dynamicLock.has_value(), "OnEvent script failed to obtain dynamic lock");
+            ptr->OnEvent(state, (LockType)dynamicLock.value(), ent, event);
         }
 
         template<typename... Events>
-        OnEventScript(const std::string &name, const StructMetadata &metadata, Events... events)
+        EventScript(const std::string &name, const StructMetadata &metadata, Events... events)
             : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
+            using LockType = script_onevent_lock_t<T>::LockType;
             GetScriptDefinitions().RegisterScript({name,
                 ScriptType::EventScript,
-                PermissionBitset(),
-                PermissionBitset(),
+                LockType::GetReadPermissions(),
+                LockType::GetWritePermissions(),
                 {events...},
                 true,
                 savedPtr,

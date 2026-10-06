@@ -10,7 +10,7 @@
 #include "../lib/util.glsl"
 
 layout(location = 0) in vec2 inTexCoord;
-layout(location = 0) out vec4 outLinearDepth;
+layout(location = 0) out float outLinearDepth;
 
 layout(binding = 0) uniform sampler2D shadowMap;
 
@@ -37,7 +37,7 @@ void main() {
 
     if (lights[lightIndex].previousIndex >= previousLightCount) {
         // This is the first frame this light exists, mask it off until it is included in the shadowmap
-        outLinearDepth = vec4(0);
+        outLinearDepth = 0;
         return;
     }
 
@@ -58,7 +58,7 @@ void main() {
 
     float occlusion = SimpleOcclusion(info);
     if (occlusion < 0.5) {
-        outLinearDepth = vec4(0);
+        outLinearDepth = 0;
     } else {
         discard;
     }

@@ -6,10 +6,14 @@
  */
 
 #include "console/CVar.hh"
+#include "ecs/DynamicLibrary.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/components/Transform.h"
+#include "glm/geometric.hpp"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 #include "strayphotons/input/BindingNames.hh"
 
 #include <glm/glm.hpp>
@@ -33,6 +37,136 @@ namespace sp::scripts {
         HeapVector<EntityRef> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
+
+        void OnEvent(ScriptState &state,
+            Lock<ReadSignalsLock,
+                Read<TransformTree, TransformSnapshot>,
+                Write<Renderable, Physics, PhysicsQuery, PhysicsJoints, Signals>> lock,
+            Entity ent,
+            Event event) {
+            if (!ent.Has<TransformSnapshot>(lock)) return;
+
+            bool enableInteraction = !highlightOnly && !disabled;
+            if (ent.Has<Physics, PhysicsJoints>(lock)) {
+                auto &ph = ent.Get<const Physics>(lock);
+                enableInteraction &= ph.type == PhysicsActorType::Dynamic;
+            }
+
+            if (event.name == INTERACT_EVENT_INTERACT_POINT) {
+                auto *pointTransform = EventData::TryGet<Transform>(event.data);
+                if (pointTransform) {
+                    if (!sp::contains(pointEntities, event.source)) {
+                        pointEntities.emplace_back(event.source);
+                    }
+                } else if (event.data.type == EventDataType::Bool) {
+                    sp::erase(pointEntities, event.source);
+                } else {
+                    Errorf("Unsupported point event type: %s", event.ToString());
+                }
+            } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                if (event.data.type == EventDataType::Bool) {
+                    // Grab(false) = Drop
+                    EntityRef secondary;
+                    for (auto &[a, b] : grabEntities) {
+                        if (a == event.source) {
+                            secondary = b;
+                            break;
+                        }
+                    }
+                    sp::erase_if(grabEntities, [&](auto &arg) {
+                        return arg.first == event.source;
+                    });
+                    if (ent.Has<PhysicsJoints>(lock)) {
+                        auto &joints = ent.Get<PhysicsJoints>(lock);
+                        sp::erase_if(joints.joints, [&](auto &&joint) {
+                            return joint.target == event.source || (secondary && joint.target == secondary);
+                        });
+                    }
+                } else if (event.data.type == EventDataType::Transform) {
+                    if (!enableInteraction) return;
+
+                    auto &parentTransform = event.data.transform;
+                    auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
+                    auto invParentRotate = glm::inverse(parentTransform.GetRotation());
+
+                    EntityRef secondary;
+                    if (ent.Has<PhysicsJoints>(lock)) {
+                        auto &joints = ent.Get<PhysicsJoints>(lock);
+                        if (event.source.Has<PhysicsJoints>(lock)) {
+                            auto &targetJoints = event.source.Get<const PhysicsJoints>(lock);
+                            for (auto &joint : targetJoints.joints) {
+                                if (joint.type != PhysicsJointType::Force) continue;
+                                auto target = joint.target.Get(lock);
+                                if (target.Has<TransformSnapshot>(lock) && !target.Has<Physics>(lock)) {
+                                    secondary = target;
+
+                                    PhysicsJoint newJoint = joint;
+                                    newJoint.remoteOffset.Translate(
+                                        invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
+                                    newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
+                                    // Logf("Adding secondary joint: %s / %s",
+                                    //     newJoint.type,
+                                    //     newJoint.target.Name().String());
+                                    joints.Add(newJoint);
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        PhysicsJoint joint;
+                        joint.target = event.source;
+                        if (secondary) {
+                            joint.type = PhysicsJointType::Fixed;
+                        } else {
+                            joint.type = PhysicsJointType::Force;
+                            // TODO: Read this property from player
+                            joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
+                        }
+                        joint.remoteOffset.SetPosition(
+                            invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
+                        joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
+                        joints.Add(joint);
+                    }
+
+                    grabEntities.emplace_back(event.source, secondary);
+                } else {
+                    Errorf("Unsupported grab event type: %s", event.ToString());
+                }
+            } else if (event.name == INTERACT_EVENT_INTERACT_PUSH) {
+                if (!ent.Has<Physics>(lock) || !enableInteraction) return;
+
+                if (event.data.type == EventDataType::Vec3) {
+                    auto &force = event.data.vec3;
+
+                    auto &physics = ent.Get<Physics>(lock);
+                    physics.constantForce = force;
+                }
+                // } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
+                //     if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) return;
+
+                //     if (event.data.type == EventDataType::Vec2) {
+                //         if (!event.source.Has<TransformSnapshot>(lock)) return;
+
+                //         auto &input = event.data.vec2;
+                //         auto &transform = event.source.Get<TransformSnapshot>(lock).globalPose;
+
+                //         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                //         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * glm::angleAxis(input.x,
+                //         upAxis);
+
+                //         auto &joints = ent.Get<PhysicsJoints>(lock);
+                //         for (auto &joint : joints.joints) {
+                //             if (joint.target == event.source) {
+                //                 // Move the objects origin so it rotates around its center of mass
+                //                 auto center = joint.remoteOffset.GetRotation() * centerOfMass;
+                //                 joint.remoteOffset.Translate(center - (deltaRotate * center));
+                //                 joint.remoteOffset.SetRotation(deltaRotate * joint.remoteOffset.GetRotation());
+                //             }
+                //         }
+                //     }
+            }
+        }
 
         void OnTick(ScriptState &state,
             Lock<ReadSignalsLock,
@@ -64,114 +198,7 @@ namespace sp::scripts {
             }
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name == INTERACT_EVENT_INTERACT_POINT) {
-                    auto *pointTransform = EventData::TryGet<Transform>(event.data);
-                    if (pointTransform) {
-                        if (!sp::contains(pointEntities, event.source)) {
-                            pointEntities.emplace_back(event.source);
-                        }
-                    } else if (event.data.type == EventDataType::Bool) {
-                        sp::erase(pointEntities, event.source);
-                    } else {
-                        Errorf("Unsupported point event type: %s", event.ToString());
-                    }
-                } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                    if (event.data.type == EventDataType::Bool) {
-                        // Grab(false) = Drop
-                        EntityRef secondary;
-                        for (auto &[a, b] : grabEntities) {
-                            if (a == event.source) {
-                                secondary = b;
-                                break;
-                            }
-                        }
-                        sp::erase_if(grabEntities, [&](auto &arg) {
-                            return arg.first == event.source;
-                        });
-                        if (ent.Has<PhysicsJoints>(lock)) {
-                            auto &joints = ent.Get<PhysicsJoints>(lock);
-                            sp::erase_if(joints.joints, [&](auto &&joint) {
-                                return joint.target == event.source || (secondary && joint.target == secondary);
-                            });
-                        }
-                    } else if (event.data.type == EventDataType::Transform) {
-                        if (!enableInteraction) continue;
-
-                        auto &parentTransform = event.data.transform;
-                        auto &transform = ent.Get<TransformSnapshot>(lock).globalPose;
-                        auto invParentRotate = glm::inverse(parentTransform.GetRotation());
-
-                        EntityRef secondary;
-                        if (ent.Has<PhysicsJoints>(lock)) {
-                            auto &joints = ent.Get<PhysicsJoints>(lock);
-                            if (event.source.Has<PhysicsJoints>(lock)) {
-                                auto &targetJoints = event.source.Get<const PhysicsJoints>(lock);
-                                for (auto &joint : targetJoints.joints) {
-                                    if (joint.type != PhysicsJointType::Force) continue;
-                                    auto target = joint.target.Get(lock);
-                                    if (target.Has<TransformSnapshot>(lock) && !target.Has<Physics>(lock)) {
-                                        secondary = target;
-
-                                        PhysicsJoint newJoint = joint;
-                                        newJoint.remoteOffset.Translate(
-                                            invParentRotate *
-                                            (transform.GetPosition() - parentTransform.GetPosition()));
-                                        newJoint.remoteOffset.Rotate(invParentRotate * transform.GetRotation());
-                                        // Logf("Adding secondary joint: %s / %s",
-                                        //     newJoint.type,
-                                        //     newJoint.target.Name().String());
-                                        joints.Add(newJoint);
-
-                                        break;
-                                    }
-                                }
-                            }
-
-                            PhysicsJoint joint;
-                            joint.target = event.source;
-                            if (secondary) {
-                                joint.type = PhysicsJointType::Fixed;
-                            } else {
-                                joint.type = PhysicsJointType::Force;
-                                // TODO: Read this property from player
-                                joint.limit = glm::vec2(CVarMaxGrabForce.Get(), CVarMaxGrabTorque.Get());
-                            }
-                            joint.remoteOffset.SetPosition(
-                                invParentRotate * (transform.GetPosition() - parentTransform.GetPosition()));
-                            joint.remoteOffset.SetRotation(invParentRotate * transform.GetRotation());
-                            joints.Add(joint);
-                        }
-
-                        grabEntities.emplace_back(event.source, secondary);
-                    } else {
-                        Errorf("Unsupported grab event type: %s", event.ToString());
-                    }
-                } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
-                    if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) continue;
-
-                    if (event.data.type == EventDataType::Vec2) {
-                        if (!event.source.Has<TransformSnapshot>(lock)) continue;
-
-                        auto &input = event.data.vec2;
-                        auto &transform = event.source.Get<TransformSnapshot>(lock).globalPose;
-
-                        auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
-                        auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) *
-                                           glm::angleAxis(input.x, upAxis);
-
-                        auto &joints = ent.Get<PhysicsJoints>(lock);
-                        for (auto &joint : joints.joints) {
-                            if (joint.target == event.source) {
-                                // Move the objects origin so it rotates around its center of mass
-                                auto center = joint.remoteOffset.GetRotation() * centerOfMass;
-                                joint.remoteOffset.Translate(center - (deltaRotate * center));
-                                joint.remoteOffset.SetRotation(deltaRotate * joint.remoteOffset.GetRotation());
-                            }
-                        }
-                    }
-                }
-            }
+            while (EventInput::Poll(lock, state.eventQueue, event)) {}
 
             if (ent.Has<Physics>(lock)) {
                 auto &ph = ent.Get<const Physics>(lock);
@@ -220,11 +247,11 @@ namespace sp::scripts {
         StructField::New("_grab_entities", &InteractiveObject::grabEntities),
         StructField::New("_point_entities", &InteractiveObject::pointEntities),
         StructField::New("_render_outline", &InteractiveObject::renderOutline));
-    LogicScript<InteractiveObject> interactiveObject("interactive_object",
+    EventScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
-        true,
         INTERACT_EVENT_INTERACT_POINT,
         INTERACT_EVENT_INTERACT_GRAB,
+        INTERACT_EVENT_INTERACT_PUSH,
         INTERACT_EVENT_INTERACT_ROTATE);
 
     struct InteractHandler {
@@ -367,4 +394,83 @@ namespace sp::scripts {
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PRESS,
         INTERACT_EVENT_INTERACT_ROTATE);
+
+    struct MultiInteractHandler {
+        EntityRef jointEntity;
+        HeapVector<EntityRef> grabEntities;
+
+        void OnTick(ScriptState &state,
+            DynamicLock<SendEventsLock, Read<TransformSnapshot, LightCast>, Write<PhysicsJoints>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            if (ent.Has<TransformSnapshot, LightCast>(lock)) {
+                const LightCast &cast = ent.Get<LightCast>(lock);
+                const Transform &transform = ent.Get<TransformSnapshot>(lock).globalPose;
+
+                // bool grabbing = !grabEntities.empty();
+                // Event event;
+                // while (EventInput::Poll(lock, state.eventQueue, event)) {
+                //     if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
+                //         if (event.data.type == EventDataType::Bool) {
+                //             auto &grabEvent = event.data.b;
+                //             grabbing = grabEvent && !grabbing;
+                //         } else {
+                //             Errorf("Unsupported grab event type: %s", event.ToString());
+                //         }
+                //     }
+                // }
+                bool grabbing = SignalRef(ent, "interact_grab").GetSignal(lock) > 0.5;
+                float pullSpeed = SignalRef(ent, "interact_pull").GetSignal(lock);
+                if (pullSpeed != 0.0f) grabbing = true;
+
+                if (!grabbing && !grabEntities.empty()) {
+                    // Drop the currently held entities
+                    for (const EntityRef &ref : grabEntities) {
+                        EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                    }
+                    grabEntities.clear();
+                } else if (grabbing) {
+                    if (pullSpeed != 0.0f) {
+                        // Temporarily drop any entities from last frame
+                        for (const EntityRef &ref : grabEntities) {
+                            EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                        }
+                        grabEntities.clear();
+                    } else {
+                        // Drop any entities that are no longer visible
+                        sp::erase_if(grabEntities, [&](auto &ref) {
+                            if (cast.visibleEntities.count(ref.Get(lock)) == 0) {
+                                EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
+                                return true;
+                            }
+                            return false;
+                        });
+                    }
+                    // Grab any new entities being looked at
+                    for (auto &pair : cast.visibleEntities) {
+                        Entity target = pair.first;
+                        if (pullSpeed == 0.0f && sp::contains(grabEntities, target)) continue;
+                        Transform offset = transform;
+                        if (pullSpeed != 0.0f) {
+                            offset.Translate(transform.GetForward() * pullSpeed);
+                        }
+                        if (EventBindings::SendEvent(lock, target, Event{INTERACT_EVENT_INTERACT_GRAB, ent, offset}) >
+                            0) {
+                            grabEntities.emplace_back(pair.first);
+                        }
+                    }
+                }
+            }
+        }
+    };
+    StructMetadata MetadataMultiInteractHandler(typeid(MultiInteractHandler),
+        sizeof(MultiInteractHandler),
+        "MultiInteractHandler",
+        "",
+        StructField::New("joint_entity", &MultiInteractHandler::jointEntity),
+        StructField::New("_grab_entities", &MultiInteractHandler::grabEntities));
+    LogicScript<MultiInteractHandler> multiInteractHandler("multi_interact_handler",
+        MetadataMultiInteractHandler,
+        false,
+        INTERACT_EVENT_INTERACT_GRAB);
 } // namespace sp::scripts
