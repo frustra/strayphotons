@@ -83,6 +83,7 @@ namespace sp::vulkan {
             "GPURenderableEntity %s already exists",
             ecs::EntityRef(ent).Name().String());
         RenderableIndex index = gpuRenderables.size();
+        Assertf(index < std::numeric_limits<RenderableIndex>::max(), "GPUScene::AllocateRenderableIndex overflow");
         gpuRenderables.emplace_back();
         gpuRenderableEntities.emplace_back(ent);
         renderablesToFlush.emplace_back(index);
@@ -620,7 +621,7 @@ namespace sp::vulkan {
                 drawParams.clear();
                 primitiveDepth.clear();
 
-                for (size_t i = 0; i < gpuRenderables.size(); i++) {
+                for (RenderableIndex i = 0; i < gpuRenderables.size(); i++) {
                     auto &renderable = gpuRenderables[i];
                     if (((ecs::VisibilityMask)renderable.visibilityMask & viewMask) != viewMask) continue;
 
@@ -648,6 +649,7 @@ namespace sp::vulkan {
                         drawCmd.firstInstance = drawParams.size();
                         auto &drawParam = drawParams.emplace_back();
 
+                        drawParam.renderableIndex = i;
                         drawParam.baseColorTexID = renderable.baseColorOverrideID >= 0 ? renderable.baseColorOverrideID
                                                                                        : primitive.baseColor.index;
                         drawParam.metallicRoughnessTexID = renderable.metallicRoughnessOverrideID >= 0
@@ -786,6 +788,10 @@ namespace sp::vulkan {
                 cmd.DrawIndirect(cmdBuffer, sizeof(uint32_t), primitiveCount);
                 cmd.EndRenderPass();
             });
+    }
+
+    const HeapVector<ecs::Entity> &GPUScene::GetRenderableEntities() const {
+        return gpuRenderableEntities;
     }
 
 } // namespace sp::vulkan

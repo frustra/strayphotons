@@ -32,7 +32,7 @@
 namespace sp {
     static CVar<float> CVarVolume("s.Volume", 1.0f, "Global volume control");
     static CVar<int> CVarAudioBackend("s.AudioBackend",
-        0,
+        1,
         "Audio backend (0: JACK, 1: PulseAudio, 2: ALSA, 3: CoreAudio: 4: Wasapi)");
 
     AudioManager::AudioManager()

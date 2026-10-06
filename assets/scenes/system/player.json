@@ -47,13 +47,28 @@
 			"physics_query": {},
 			"event_input": {},
 			"signal_output": {},
-			"script": {
-				"name": "interact_handler",
-				"parameters": {
-					"noclip_entity": "player",
-					"grab_distance": 2
+			"light_cast": {},
+			"light": {
+				"illuminance": 1,
+				"spot_angle": 10,
+				"on": true
+			},
+			"script": [
+				{
+					"name": "multi_interact_handler",
+					"parameters": {
+						"joint_entity": "player"
+					}
+				},
+				{
+					"name": "component_from_signal",
+					"parameters": {
+						"light.tint.r": "(pointer/interact_grab || pointer/interact_pull != 0) + min(0, pointer/interact_pull)",
+						"light.tint.g": "(pointer/interact_grab || pointer/interact_pull != 0) - max(0, pointer/interact_pull) + min(0, pointer/interact_pull)",
+						"light.tint.b": "(pointer/interact_grab || pointer/interact_pull != 0) - max(0, pointer/interact_pull)"
+					}
 				}
-			}
+			]
 		},
 		{
 			"name": "flathead",
@@ -89,6 +104,7 @@
 				"shadow_map_size": 11,
 				"tint": [1, 1, 1]
 			},
+			"light_cast": {},
 			"event_input": {},
 			"signal_output": {
 				"angle": 30,

@@ -9,6 +9,7 @@
 
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "vulkan/vulkan.hpp"
 
 namespace sp::vulkan::renderer {
     static CVar<uint32_t> CVarWindowViewChannel("r.WindowViewChannel",
@@ -33,15 +34,20 @@ namespace sp::vulkan::renderer {
                     source = resources.GetImageMipView(sourceID, arrayLayer);
                 }
 
-                if (source->ViewType() == vk::ImageViewType::e2DArray) {
-                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d_array.frag");
+                if (source->Format() == vk::Format::eR32Uint) {
+                    Assertf(source->ViewType() != vk::ImageViewType::e2DArray,
+                        "Visualizing r32 image array unsupported: %s",
+                        resources.GetName(sourceID));
+                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_uimage2D.frag");
+                } else if (source->ViewType() == vk::ImageViewType::e2DArray) {
+                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_sampler2DArray.frag");
 
                     struct {
                         float layer = 0;
                     } push;
                     cmd.PushConstants(push);
                 } else {
-                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_2d.frag");
+                    cmd.SetShaders("screen_cover.vert", "visualize_buffer_sampler2D.frag");
                 }
 
                 auto format = source->Format();

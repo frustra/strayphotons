@@ -29,7 +29,7 @@
 #include <memory>
 
 namespace sp::vulkan {
-    typedef uint64_t RenderableIndex;
+    typedef uint32_t RenderableIndex;
     typedef uint32_t MeshIndex;
     class Mesh;
 
@@ -83,6 +83,7 @@ namespace sp::vulkan {
     static_assert(sizeof(GPURenderableEntity) % sizeof(glm::vec4) == 0, "std430 alignment");
 
     struct GPUDrawParams {
+        uint32_t renderableIndex;
         uint16_t baseColorTexID;
         uint16_t metallicRoughnessTexID;
         uint16_t opticID = 0;
@@ -144,6 +145,8 @@ namespace sp::vulkan {
 
         void AddGeometryWarp(rg::RenderGraph &graph);
 
+        const HeapVector<ecs::Entity> &GetRenderableEntities() const;
+
         BufferPtr indexBuffer;
         BufferPtr vertexBuffer;
         BufferPtr jointsBuffer;
@@ -186,6 +189,8 @@ namespace sp::vulkan {
         EntityMap<EntityState> liveEntityState, stagingEntityState;
 
     private:
+        HeapVector<ecs::Entity> entitiesPendingDelete; // Entities index into liveEntityState
+
         ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
         ecs::ComponentModifiedObserver<ecs::VoxelData> voxelDataObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
@@ -284,7 +289,6 @@ namespace sp::vulkan {
 
         HeapVector<GPURenderableEntity> gpuRenderables;
         HeapVector<ecs::Entity> gpuRenderableEntities; // Indexes match 1-to-t with gpuRenderables
-        HeapVector<ecs::Entity> entitiesPendingDelete; // Entities index into liveEntityState
         HeapVector<RenderableIndex> renderablesToFlush;
         DispatchQueue workQueue;
     };

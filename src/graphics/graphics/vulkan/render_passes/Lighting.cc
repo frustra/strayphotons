@@ -9,20 +9,30 @@
 
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "game/Scene.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Image.hh"
+#include "graphics/vulkan/core/Shader.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
+#include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdint>
 #include <glm/gtx/vector_angle.hpp>
+#include <limits>
+#include <queue>
+#include <unordered_map>
 
 namespace sp::vulkan::renderer {
     CVar<int> CVarShadowMapSampleCount("r.ShadowMapSampleCount", 9, "Number of samples to use in shadow filtering");
@@ -67,7 +77,7 @@ namespace sp::vulkan::renderer {
     Lighting::Lighting(GPUScene &scene, Voxels &voxels) : scene(scene), voxels(voxels) {}
 
     void Lighting::LoadState(RenderGraph &graph,
-        ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
+        ecs::Lock<ecs::Read<ecs::Light, ecs::LightCast, ecs::OpticalElement, ecs::TransformSnapshot>> lock) {
         ZoneScoped;
         Assertf(ecs::IsLive(lock), "Lighting::LoadState expects live ecs lock");
         lights.clear();
@@ -86,10 +96,28 @@ namespace sp::vulkan::renderer {
                 }
             }
 
-            if (!light.on) continue;
+            if (!light.on) {
+                if (entity.Has<ecs::LightCast>(lock)) {
+                    auto &cast = entity.Get<ecs::LightCast>(lock);
+                    if (!cast.visibleEntities.empty()) {
+                        ecs::QueueTransaction<ecs::Write<ecs::LightCast>>(NewDispatchSource, [entity](auto &lock) {
+                            ZoneScopedN("ClearLightCastVisibility");
+                            if (entity.Has<ecs::LightCast>(lock)) {
+                                auto &cast = entity.Get<ecs::LightCast>(lock);
+                                cast.visibleEntities.clear();
+                            }
+                        });
+                    }
+                }
+                continue;
+            }
 
             auto &vLight = lights.emplace_back();
             vLight.source = entity;
+
+            if (entity.Has<ecs::LightCast>(lock)) {
+                vLight.trackEntities = true;
+            }
 
             int mapSize = std::clamp((int)light.shadowMapSize + CVarShadowMapSizeOffset.Get(), 0, 16);
             int extent = 1 << mapSize; // 2^N map size
@@ -351,9 +379,28 @@ namespace sp::vulkan::renderer {
                 });
         }
 
+        auto &renderableEntities = scene.GetRenderableEntities();
+        size_t renderableCount = renderableEntities.size();
+        size_t trackedLightCount = 0;
+        for (auto &vLight : lights) {
+            if (vLight.trackEntities) trackedLightCount++;
+        }
+        graph.AddPass("InitIndexBuffer")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateBuffer("RenderableVisibility",
+                    {sizeof(uint32_t), 1 + trackedLightCount * renderableCount},
+                    Residency::GPU_ONLY,
+                    Access::TransferWrite);
+            })
+            .Execute([renderableCount, trackedLightCount](rg::Resources &resources, CommandContext &cmd) {
+                auto indexBuffer = resources.GetBuffer("RenderableVisibility");
+                cmd.Raw().fillBuffer(*indexBuffer, 0, sizeof(uint32_t), renderableCount);
+                if (trackedLightCount > 0) cmd.Raw().fillBuffer(*indexBuffer, sizeof(uint32_t), vk::WholeSize, 0);
+            });
+
         graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
-                ImageDesc desc;
+                ImageDesc desc = {};
                 auto extent = glm::max(glm::ivec2(1), shadowAtlasSize);
                 desc.extent = vk::Extent3D(extent.x, extent.y, 1);
 
@@ -419,6 +466,9 @@ namespace sp::vulkan::renderer {
                 builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndexBuffer);
                 builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
 
+                builder.Read("RenderableVisibility", Access::FragmentShaderReadStorage);
+                builder.Write("RenderableVisibility", Access::FragmentShaderWrite);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
@@ -426,7 +476,12 @@ namespace sp::vulkan::renderer {
             .Execute([this, drawAllIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("shadow_map.vert", "shadow_map.frag");
 
+                cmd.SetStorageBuffer("RenderableVisibility", "RenderableVisibility");
+
+                uint32_t trackedLightIndex = 0;
                 for (uint32_t i = 0; i < lights.size(); i++) {
+                    cmd.SetShaderConstant(ShaderStage::Fragment, "TRACKED_LIGHT_INDEX", ~0u);
+
                     GPUViewState lightViews[] = {{views[i]}, {}};
                     cmd.UploadUniformData("ViewStates", lightViews, 2);
 
@@ -435,6 +490,7 @@ namespace sp::vulkan::renderer {
                     viewport.offset = vk::Offset2D(views[i].offset.x, views[i].offset.y);
                     cmd.SetViewport(viewport);
                     cmd.SetYDirection(YDirection::Down);
+                    cmd.SetDepthCompareOp(vk::CompareOp::eLess);
 
                     scene.DrawSceneIndirect(cmd,
                         resources.GetBuffer("WarpedVertexBuffer"),
@@ -451,6 +507,15 @@ namespace sp::vulkan::renderer {
                             vk::IndexType::eUint32);
                         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                         cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
+                    }
+                    if (lights[i].trackEntities) {
+                        cmd.SetShaderConstant(ShaderStage::Fragment, "TRACKED_LIGHT_INDEX", trackedLightIndex);
+                        cmd.SetDepthCompareOp(vk::CompareOp::eEqual);
+                        scene.DrawSceneIndirect(cmd,
+                            resources.GetBuffer("WarpedVertexBuffer"),
+                            resources.GetBuffer(drawAllIDs.drawCommandsBuffer),
+                            resources.GetBuffer(drawAllIDs.drawParamsBuffer));
+                        trackedLightIndex++;
                     }
                 }
             });
@@ -497,6 +562,59 @@ namespace sp::vulkan::renderer {
                             resources.GetBuffer(drawOpticIDs.drawParamsBuffer));
                     }
                 });
+
+            if (trackedLightCount > 0) {
+                AddBufferReadback(graph,
+                    "RenderableVisibility",
+                    0,
+                    0,
+                    [renderableEntities = renderableEntities, views = views, lights = lights](BufferPtr buffer) {
+                        ecs::QueueTransaction<ecs::Write<ecs::LightCast>>(NewDispatchSource,
+                            [buffer = std::move(buffer),
+                                lights = std::move(lights),
+                                views = std::move(views),
+                                renderableEntities = std::move(renderableEntities)](auto &lock) {
+                                ZoneScopedN("ShadowRenderableVisibilityReadback");
+                                auto cells = (const uint32_t *)buffer->Mapped();
+                                uint32_t trackedLightIndex = 0;
+                                for (size_t light = 0; light < lights.size(); light++) {
+                                    if (!lights[light].trackEntities) continue;
+
+                                    if (!lights[light].source.Has<ecs::LightCast>(lock)) continue;
+                                    ecs::LightCast &lightCast = lights[light].source.Get<ecs::LightCast>(lock);
+
+                                    if (!lights[light].parentIndex.has_value()) {
+                                        // Clear visibility count only on the root so bounces sum to the parent
+                                        lightCast.visibleEntities.clear();
+                                        // size_t count = 0;
+                                        // Assertf(
+                                        //     renderableEntities.size() * (trackedLightIndex + 1) <
+                                        //     buffer->ArraySize(), "RenderableVisibility overflow");
+                                        // for (size_t i = 0; i < renderableEntities.size(); i++) {
+                                        //     if (cells[1 + renderableEntities.size() * trackedLightIndex + i] > 0) {
+                                        //         count++;
+                                        //     }
+                                        // }
+                                        // Logf("Tracked light %s sees %llu renderables:",
+                                        //     ecs::EntityRef(lights[light].source).Name().String(),
+                                        //     count);
+                                    }
+                                    for (size_t i = 0; i < renderableEntities.size(); i++) {
+                                        uint32_t count = cells[1 + renderableEntities.size() * trackedLightIndex + i];
+                                        if (count > 0) {
+                                            auto &cast = lightCast.visibleEntities[renderableEntities[i]];
+                                            // Logf("  %s: %.2f%%",
+                                            //     ecs::EntityRef(renderableEntities[i]).Name().String(),
+                                            //     (float)count * 100.0 / views[light].extents.x /
+                                            //         views[light].extents.y);
+                                            cast += (float)count / views[light].extents.x / views[light].extents.y;
+                                        }
+                                    }
+                                    trackedLightIndex++;
+                                }
+                            });
+                    });
+            }
 
             AddBufferReadback(graph,
                 "OpticVisibility",

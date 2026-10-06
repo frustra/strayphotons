@@ -8,6 +8,7 @@
 #include "Renderer.hh"
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
 #include "ecs/components/VoxelData.hh"
 #include "game/Game.hh"
@@ -140,6 +141,7 @@ namespace sp::vulkan {
                 ecs::GuiElement,
                 ecs::LaserLine,
                 ecs::Light,
+                ecs::LightCast,
                 ecs::LightSensor,
                 ecs::OpticalElement,
                 ecs::Renderable,

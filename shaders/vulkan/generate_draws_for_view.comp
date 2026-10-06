@@ -62,6 +62,7 @@ void main() {
         draw.firstInstance = drawIndex;
         drawCommands[drawIndex] = draw;
 
+        drawParams[drawIndex].renderableIndex = gl_GlobalInvocationID.x;
         drawParams[drawIndex].baseColorTexID = renderable.baseColorOverrideID >= 0
                                                    ? uint16_t(renderable.baseColorOverrideID)
                                                    : uint16_t(prim.baseColorTexID);

@@ -10,6 +10,7 @@
 #include "Common.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
 
 namespace sp::vulkan::renderer {
     /**
@@ -37,7 +38,15 @@ namespace sp::vulkan::renderer {
                 builder.Read(resource.id, Access::TransferRead);
 
                 if (region.size == 0) region.size = resource.BufferSize() - region.srcOffset;
-                readbackID = builder.CreateBuffer(region.size, Residency::GPU_TO_CPU, Access::TransferWrite).id;
+                const BufferLayout &srcLayout = resource.BufferLayout();
+                BufferLayout dstLayout(region.size);
+                if (region.srcOffset % srcLayout.arrayStride == 0) {
+                    dstLayout.arrayStride = srcLayout.arrayStride;
+                }
+                if (dstLayout.arrayStride > 0 && region.size % dstLayout.arrayStride == 0) {
+                    dstLayout.arrayCount = std::min(srcLayout.arrayCount, region.size / dstLayout.arrayStride);
+                }
+                readbackID = builder.CreateBuffer(dstLayout, Residency::GPU_TO_CPU, Access::TransferWrite).id;
             })
             .Execute([resourceID, readbackID, region](rg::Resources &resources, CommandContext &cmd) {
                 auto srcBuffer = resources.GetBuffer(resourceID);

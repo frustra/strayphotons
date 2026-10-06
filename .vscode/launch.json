@@ -58,7 +58,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/bin/sp-vk",
-            "args": ["--assets", "../assets/", "--no-vr"],
+            "args": ["--assets", "../assets/", "--no-vr", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],

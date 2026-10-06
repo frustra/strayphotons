@@ -224,6 +224,21 @@ The `magnetic_socket` script has no configurable parameters
 
 <div class="component_definition">
 
+## `multi_interact_handler` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **joint_entity** | [EntityRef](#EntityRef-type) | "" | No description |
+| **_grab_entities** | vector&lt;[EntityRef](#EntityRef-type)&gt; | [] | No description |
+
+**See Also:**
+[EntityRef](#EntityRef-type)
+
+</div>
+
+
+<div class="component_definition">
+
 ## `physics_collapse_events` Script
 
 The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;

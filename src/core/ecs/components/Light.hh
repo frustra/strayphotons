@@ -9,11 +9,24 @@
 
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/StructMetadata.hh"
+#include "strayphotons/EntityMap.hh"
 #include "strayphotons/InlineString.hh"
 
 #include <glm/glm.hpp>
 
 namespace ecs {
+    struct LightCast {
+        sp::EntityMap<float> visibleEntities;
+    };
+
+    static EntityComponent<LightCast> ComponentLightCast("light_cast",
+        "A component for tracking entities receiving light from this entity",
+        StructField::New("visible_entities",
+            "The list of entities paired with the amount of light they are receiving",
+            &LightCast::visibleEntities,
+            FieldAction::None));
+
     struct Light {
         float intensity = 0;
         float illuminance = 0;

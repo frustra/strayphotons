@@ -14,6 +14,7 @@
 
 layout(location = 0) in vec3 inPos;
 layout(location = 0) out vec3 outViewPos;
+layout(location = 1) flat out uint outRenderableIndex;
 
 #include "lib/draw_params.glsl"
 
@@ -26,5 +27,6 @@ layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
 
 void main() {
     outViewPos = vec3(views[0].viewMat * vec4(inPos, 1.0));
+    outRenderableIndex = uint(drawParams[gl_BaseInstance].renderableIndex);
     gl_Position = views[0].projMat * vec4(outViewPos, 1.0);
 }

@@ -29,7 +29,7 @@ namespace sp::vulkan::renderer {
     public:
         Lighting(GPUScene &scene, Voxels &voxels);
         void LoadState(RenderGraph &graph,
-            ecs::Lock<ecs::Read<ecs::Light, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
+            ecs::Lock<ecs::Read<ecs::Light, ecs::LightCast, ecs::OpticalElement, ecs::TransformSnapshot>> lock);
 
         void AddShadowPasses(RenderGraph &graph);
         void AddLightingPass(RenderGraph &graph);
@@ -59,15 +59,16 @@ namespace sp::vulkan::renderer {
             InlineVector<LightPathEntry, MAX_LIGHTS> lightPath; // A Light followed by N OpticalElement's
             std::optional<uint32_t> parentIndex;
             std::optional<uint32_t> opticIndex;
+            bool trackEntities = false;
 
             bool operator==(const VirtualLight &) const;
         };
 
         std::array<ecs::View, MAX_LIGHTS> views;
-        std::vector<VirtualLight> lights; // Current frame shadowmap lights
-        std::vector<VirtualLight> previousLights; // Previous frame shadowmap lights
-        std::vector<VirtualLight> readbackLights; // Optic visibility readback
-        std::vector<std::pair<glm::ivec2, glm::ivec2>> freeRectangles;
+        HeapVector<VirtualLight> lights; // Current frame shadowmap lights
+        HeapVector<VirtualLight> previousLights; // Previous frame shadowmap lights
+        HeapVector<VirtualLight> readbackLights; // Optic visibility readback
+        HeapVector<std::pair<glm::ivec2, glm::ivec2>> freeRectangles;
 
         struct GPULight {
             glm::vec3 position;

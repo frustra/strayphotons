@@ -12,6 +12,7 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/InlineVector.hh"
 
+#include <cstdint>
 #include <string_view>
 #include <variant>
 
@@ -42,6 +43,16 @@ namespace sp::vulkan::render_graph {
 
         void SetClearColor(glm::vec4 clear) {
             std::array<float, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
+            clearColor = {clearValues};
+        }
+
+        void SetClearColor(glm::ivec4 clear) {
+            std::array<int32_t, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
+            clearColor = {clearValues};
+        }
+
+        void SetClearColor(glm::uvec4 clear) {
+            std::array<uint32_t, 4> clearValues = {clear.r, clear.g, clear.b, clear.a};
             clearColor = {clearValues};
         }
 

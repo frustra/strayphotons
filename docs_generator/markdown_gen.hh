@@ -86,7 +86,8 @@ private:
                    fieldTypeName<typename T::first_type>() + "&gt;";
         } else if constexpr (sp::is_flat_set<T>()) {
             return "set&lt;" + fieldTypeName<typename T::key_type>() + "&gt;";
-        } else if constexpr (sp::is_unordered_flat_map<T>() || sp::is_unordered_node_map<T>()) {
+        } else if constexpr (sp::is_entity_map<T>() || sp::is_unordered_flat_map<T>() ||
+                             sp::is_unordered_node_map<T>()) {
             return "map&lt;" + fieldTypeName<typename T::key_type>() + ", " + fieldTypeName<typename T::mapped_type>() +
                    "&gt;";
         } else if constexpr (sp::is_optional<T>()) {

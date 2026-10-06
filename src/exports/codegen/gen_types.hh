@@ -173,6 +173,9 @@ std::string LookupCTypeName(std::type_index type) {
         } else if constexpr (sp::is_flat_set<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             return "sp_" + subtype + "_flatset_t";
+        } else if constexpr (sp::is_entity_map<T>()) {
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
+            return "sp_" + subtype + "_entitymap_t";
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::key_type)));
             subtype += "_" + StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
@@ -783,6 +786,13 @@ void GenerateCTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT size_t sp_" << subtype << "_flatset_erase(sp_" << subtype << "_flatset_t *s, const "
                 << fullSubtype << " *v);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_entity_map<T>()) {
+            GenerateCTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
+            std::string subtype = StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
+            out << "typedef struct sp_" << subtype << "_entitymap_t {" << std::endl;
+            out << "    const uint8_t _unknown[" << sizeof(T) << "];" << std::endl;
+            out << "} sp_" << subtype << "_entitymap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             GenerateCTypeDefinition(out, typeid(typename T::key_type));
             GenerateCTypeDefinition(out, typeid(typename T::mapped_type));
@@ -1048,6 +1058,13 @@ void GenerateCppTypeDefinition(S &out, std::type_index type) {
             out << "SP_EXPORT size_t sp_" << subCType << "_flatset_erase(sp_" << subCType << "_flatset_t *s, const "
                 << fullCSubtype << " *v);" << std::endl;
             out << std::endl;
+        } else if constexpr (sp::is_entity_map<T>()) {
+            GenerateCppTypeDefinition(out, typeid(typename T::key_type));
+            GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));
+            std::string subCType = StripTypeDecorators(LookupCTypeName(typeid(typename T::mapped_type)));
+            std::string fullCSubtype = LookupCTypeName(typeid(typename T::mapped_type));
+
+            out << "typedef sp::EntityMap<" << fullCSubtype << "> sp_" << subCType << "_entitymap_t;" << std::endl;
         } else if constexpr (sp::is_unordered_flat_map<T>()) {
             GenerateCppTypeDefinition(out, typeid(typename T::key_type));
             GenerateCppTypeDefinition(out, typeid(typename T::mapped_type));

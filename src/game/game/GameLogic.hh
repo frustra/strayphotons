@@ -17,6 +17,8 @@
 namespace sp {
 
     class GameLogic : public RegisteredThread {
+        LogOnExit logOnExit = "GameLogic shut down ===================================================";
+
     public:
         GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue);
 

@@ -36,6 +36,7 @@ namespace ecs {
     struct LaserLine;
     struct LaserSensor;
     struct Light;
+    struct LightCast;
     class LightSensor;
     struct OpticalElement;
     struct Physics;
@@ -79,6 +80,7 @@ namespace ecs {
         LaserLine,
         LaserSensor,
         Light,
+        LightCast,
         LightSensor,
         OpticalElement,
         PhysicsJoints,
@@ -251,6 +253,7 @@ TECS_NAME_COMPONENT(ecs::LaserEmitter, "LaserEmitter");
 TECS_NAME_COMPONENT(ecs::LaserLine, "LaserLine");
 TECS_NAME_COMPONENT(ecs::LaserSensor, "LaserSensor");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
+TECS_NAME_COMPONENT(ecs::LightCast, "LightCast");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::OpticalElement, "OpticalElement");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");

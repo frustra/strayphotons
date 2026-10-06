@@ -596,6 +596,15 @@
 						},
 						"type": "object"
 					},
+					"light_cast": {
+						"properties": {
+							"visible_entities": {
+								"default": {},
+								"description": "The list of entities paired with the amount of light they are receiving"
+							}
+						},
+						"type": "object"
+					},
 					"light_sensor": {
 						"properties": {
 							"color_value": {

@@ -138,6 +138,7 @@ namespace ecs {
     ScriptManager::~ScriptManager() {
         // Remove any ScriptStates and EventQueues that are still in use
         {
+            // TODO: Remove or fix this, there are no script instances stored in staging
             auto lock = StartStagingTransaction<Write<Scripts>>();
             for (const Entity &ent : lock.EntitiesWith<Scripts>()) {
                 auto &scripts = ent.Get<Scripts>(lock).scripts;
@@ -464,6 +465,8 @@ namespace ecs {
                 state.lastEvent = {};
             } else {
                 // Not all lock permissions available, queue event async
+                // TODO: Sending multiple events can bottleneck here, need a better system to group async events into
+                // batched transactions
                 QueueTransaction(NewDispatchSource,
                     state.definition.readPermissions | SendEventsLock::GetReadPermissions(),
                     state.definition.writePermissions,

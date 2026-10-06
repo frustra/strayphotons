@@ -119,6 +119,8 @@ namespace sp {
     extern CVar<uint32_t> CVarPhysicsFPS;
 
     class PhysxManager : public RegisteredThread {
+        LogOnExit logOnExit = "Physics shut down =====================================================";
+
     public:
         PhysxManager(Game &game);
         virtual ~PhysxManager() override;
