@@ -10,6 +10,7 @@
 #include "ecs/Components.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
+#include "ecs/ScriptDefinition.hh"
 #include "game/SceneRef.hh"
 #include "strayphotons/LockFreeMutex.hh"
 
@@ -28,6 +29,7 @@ namespace sp {
         const ecs::ComponentBase *selectedComponent = nullptr;
         SceneRef scene;
         ecs::SignalRef selectedSignal;
+        const ecs::ScriptDefinition *selectedScript = nullptr;
         ecs::Entity target;
         std::string followFocus;
         int followFocusPos;

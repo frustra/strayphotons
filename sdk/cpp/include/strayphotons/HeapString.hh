@@ -248,17 +248,19 @@ namespace sp {
             return std::string_view(*this) < other;
         }
 
-        template<typename StringT>
-        HeapString &operator+=(const StringT &str) {
+        HeapString &operator+=(const char *str) {
             size_t oldSize = size();
-            if constexpr (std::is_same<StringT, const char *>()) {
-                size_type count = str ? traits_type::length(str) : 0;
-                resize(oldSize + count);
-                traits_type::copy(data() + oldSize, str, count);
-            } else {
-                resize(oldSize + str.size());
-                traits_type::copy(data() + oldSize, str.data(), str.size());
-            }
+            size_type count = traits_type::length(str);
+            resize(oldSize + count);
+            traits_type::copy(data() + oldSize, str, count);
+            return *this;
+        }
+
+        template<typename StringViewLike>
+        HeapString &operator+=(const StringViewLike &str) {
+            size_t oldSize = size();
+            resize(oldSize + str.size());
+            traits_type::copy(data() + oldSize, str.data(), str.size());
             return *this;
         }
 

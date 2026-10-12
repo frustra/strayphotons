@@ -13,8 +13,11 @@
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/Events.hh"
 #include "strayphotons/LockFreeEventQueue.hh"
+#include "strayphotons/Utility.hh"
 #include "strayphotons/input/BindingNames.hh"
 #include "strayphotons/input/KeyCodes.hh"
+
+#include <chrono>
 
 namespace sp {
     static CVar<uint32_t> CVarLogicFPS("g.LogicFPS", 144, "Target frame rate for game logic scripts (0 for unlimited)");
@@ -48,7 +51,7 @@ namespace sp {
         return true;
     }
 
-    void GameLogic::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
+    void GameLogic::UpdateInputEvents(const ecs::DynamicLock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
         LockFreeEventQueue<ecs::Event> &inputQueue) {
         ZoneScoped;
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");

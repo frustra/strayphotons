@@ -57,17 +57,6 @@ namespace ecs {
     using BeforeFrameFunc = bool (*)(sp::GenericCompositor &, ScriptState &, Entity);
     using RenderGuiFunc =
         void (*)(sp::GenericCompositor &, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &);
-    using GuiRenderFuncs = std::pair<BeforeFrameFunc, RenderGuiFunc>;
-    using ScriptCallback = std::
-        variant<std::monostate, LogicTickFunc, PhysicsTickFunc, OnEventFunc, PrefabFunc, GuiRenderFuncs>;
-
-    enum class ScriptType {
-        LogicScript,
-        PhysicsScript,
-        EventScript,
-        PrefabScript,
-        GuiScript,
-    };
 
     struct ScriptDefinitionBase {
         const StructMetadata &metadata;
@@ -87,16 +76,39 @@ namespace ecs {
             "Return a const pointer to the script state data",
             &ScriptDefinitionBase::Access));
 
+    template<typename Func>
+    struct LockedFunction {
+        Func callback = nullptr;
+        PermissionBitset readPermissions, writePermissions;
+
+        bool operator==(const LockedFunction<Func> &other) const = default;
+
+        explicit operator bool() const {
+            return callback;
+        }
+    };
+
     struct ScriptDefinition {
         sp::HeapString name;
-        ScriptType type;
-        PermissionBitset readPermissions, writePermissions;
         sp::HeapVector<EventName> events;
         bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;
-        std::optional<ScriptInitFunc> initFunc;
-        std::optional<ScriptDestroyFunc> destroyFunc;
-        ScriptCallback callback;
+        ScriptInitFunc initFunc = nullptr;
+        ScriptDestroyFunc destroyFunc = nullptr;
+        LockedFunction<LogicTickFunc> logicTickFunc = {};
+        LockedFunction<PhysicsTickFunc> physicsTickFunc = {};
+        LockedFunction<OnEventFunc> onEventFunc = {};
+        PrefabFunc prefabFunc = nullptr;
+        BeforeFrameFunc beforeFrameFunc = nullptr;
+        RenderGuiFunc renderGuiFunc = nullptr;
+
+        bool NeedsEventQueue() const {
+            return logicTickFunc || physicsTickFunc || beforeFrameFunc || renderGuiFunc;
+        }
+        explicit operator bool() const {
+            return context.use_count() > 0 || initFunc || destroyFunc || logicTickFunc || physicsTickFunc ||
+                   onEventFunc || prefabFunc || beforeFrameFunc || renderGuiFunc;
+        }
     };
 
     static StructMetadata MetadataScriptDefinition(typeid(ScriptDefinition),
@@ -104,7 +116,6 @@ namespace ecs {
         "ScriptDefinition",
         "A definition describing the name, type, and functions of a script",
         StructField::New("name", "The name of the script", &ScriptDefinition::name),
-        StructField::New("type", "The type of the script", &ScriptDefinition::type),
         StructField::New("events", "A list of the names of events this script can receive", &ScriptDefinition::events),
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",

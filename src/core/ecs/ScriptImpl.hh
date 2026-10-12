@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
+#include "ecs/EventQueue.hh"
 #include "ecs/ScriptDefinition.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/RenderOutput.hh"
@@ -20,226 +21,108 @@ namespace sp {
 
 namespace ecs {
     static inline ScriptDefinition CreateLogicScript(LogicTickFunc &&callback) {
-        return ScriptDefinition{"",
-            ScriptType::LogicScript,
-            LogicUpdateLock::GetReadPermissions(),
-            LogicUpdateLock::GetWritePermissions(),
-            {},
-            false,
-            {},
-            {},
-            {},
-            callback};
+        return ScriptDefinition{
+            .logicTickFunc =
+                {
+                    callback,
+                    LogicUpdateLock::GetReadPermissions(),
+                    LogicUpdateLock::GetWritePermissions(),
+                },
+        };
     }
     static inline ScriptDefinition CreatePhysicsScript(PhysicsTickFunc &&callback) {
-        return ScriptDefinition{"",
-            ScriptType::PhysicsScript,
-            PhysicsUpdateLock::GetReadPermissions(),
-            PhysicsUpdateLock::GetWritePermissions(),
-            {},
-            false,
-            {},
-            {},
-            {},
-            callback};
+        return ScriptDefinition{
+            .physicsTickFunc =
+                {
+                    callback,
+                    PhysicsUpdateLock::GetReadPermissions(),
+                    PhysicsUpdateLock::GetWritePermissions(),
+                },
+        };
     }
     template<typename... Events>
     static inline ScriptDefinition CreateEventScript(PermissionBitset readPermissions,
         PermissionBitset writePermissions,
         OnEventFunc &&callback,
         Events... events) {
-        return ScriptDefinition{"",
-            ScriptType::EventScript,
-            readPermissions,
-            writePermissions,
-            {events...},
-            true,
-            {},
-            {},
-            {},
-            callback};
-    }
+        return ScriptDefinition{
+            .events = {events...},
+            .filterOnEvent = true,
+            .onEventFunc = {callback, readPermissions, writePermissions},
+        };
+    };
+
     static inline ScriptDefinition CreatePrefabScript(PrefabFunc &&callback) {
-        return ScriptDefinition{"",
-            ScriptType::PrefabScript,
-            Lock<AddRemove>::GetReadPermissions(),
-            Lock<AddRemove>::GetWritePermissions(),
-            {},
-            false,
-            {},
-            {},
-            {},
-            callback};
+        return ScriptDefinition{
+            .prefabFunc = callback,
+        };
     }
 
-    // Checks if the script has an Init(ScriptState &state) function
+    // Checks if the script has an Init(ScriptState &) function
     template<typename T, typename = void>
     struct script_has_init_func : std::false_type {};
     template<typename T>
     struct script_has_init_func<T, std::void_t<decltype(std::declval<T>().Init(std::declval<ScriptState &>()))>>
         : std::true_type {};
 
-    // Checks if the script has an Destroy(ScriptState &state) function
+    // Checks if the script has an Destroy(ScriptState &) function
     template<typename T, typename = void>
     struct script_has_destroy_func : std::false_type {};
     template<typename T>
     struct script_has_destroy_func<T, std::void_t<decltype(std::declval<T>().Destroy(std::declval<ScriptState &>()))>>
         : std::true_type {};
 
+    // Checks if the script has an OnLogicTick(...) function
+    template<typename T, typename = void>
+    struct script_has_logic_tick_func : std::false_type {};
     template<typename T>
-    struct script_ontick_lock_t {
+    struct script_has_logic_tick_func<T,
+        std::void_t<decltype(std::declval<T>().OnLogicTick(std::declval<ScriptState &>(),
+            std::declval<const LogicUpdateLock &>(),
+            std::declval<Entity>(),
+            std::declval<chrono_clock::duration>()))>> : std::true_type {};
+
+    template<typename T>
+    struct script_logic_tick_lock_t {
         template<typename LockType>
         static inline consteval LockType *ptrLookup(
             void (T::*F)(ScriptState &, LockType, Entity, chrono_clock::duration)) {
             return nullptr;
         }
 
-        using LockType = std::remove_pointer_t<decltype(ptrLookup(&T::OnTick))>;
+        using LockType = std::remove_pointer_t<decltype(ptrLookup(&T::OnLogicTick))>;
     };
+
+    // Checks if the script has an OnPhysicsTick(...) function
+    template<typename T, typename = void>
+    struct script_has_physics_tick_func : std::false_type {};
+    template<typename T>
+    struct script_has_physics_tick_func<T,
+        std::void_t<decltype(std::declval<T>().OnPhysicsTick(std::declval<ScriptState &>(),
+            std::declval<const PhysicsUpdateLock &>(),
+            std::declval<Entity>(),
+            std::declval<chrono_clock::duration>()))>> : std::true_type {};
 
     template<typename T>
-    struct LogicScript final : public ScriptDefinitionBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
+    struct script_physics_tick_lock_t {
+        template<typename LockType>
+        static inline consteval LockType *ptrLookup(
+            void (T::*F)(ScriptState &, LockType, Entity, chrono_clock::duration)) {
+            return nullptr;
         }
 
-        void *AccessMut(ScriptState &state) const override {
-            void *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = state.Get<T>();
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Init(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            if constexpr (script_has_init_func<T>()) ptr->Init(state);
-        }
-
-        static void Destroy(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) return;
-            if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
-        }
-
-        static void OnTick(ScriptState &state,
-            const LogicUpdateLock &lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            using LockType = script_ontick_lock_t<T>::LockType;
-            ptr->OnTick(state, (LockType)lock, ent, interval);
-        }
-
-        LogicScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::LogicScript,
-                LogicUpdateLock::GetReadPermissions(),
-                LogicUpdateLock::GetWritePermissions(),
-                {},
-                false,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                LogicTickFunc(&OnTick)});
-        }
-
-        template<typename... Events>
-        LogicScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
-            : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::LogicScript,
-                LogicUpdateLock::GetReadPermissions(),
-                LogicUpdateLock::GetWritePermissions(),
-                {events...},
-                filterOnEvent,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                LogicTickFunc(&OnTick)});
-        }
+        using LockType = std::remove_pointer_t<decltype(ptrLookup(&T::OnPhysicsTick))>;
     };
 
+    // Checks if the script has an OnEvent(...) function
+    template<typename T, typename = void>
+    struct script_has_onevent_func : std::false_type {};
     template<typename T>
-    struct PhysicsScript final : public ScriptDefinitionBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *AccessMut(ScriptState &state) const override {
-            void *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = state.Get<T>();
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Init(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            if constexpr (script_has_init_func<T>()) ptr->Init(state);
-        }
-
-        static void Destroy(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) return;
-            if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
-        }
-
-        static void OnTick(ScriptState &state,
-            const PhysicsUpdateLock &lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            using LockType = script_ontick_lock_t<T>::LockType;
-            ptr->OnTick(state, (LockType)lock, ent, interval);
-        }
-
-        PhysicsScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::PhysicsScript,
-                PhysicsUpdateLock::GetReadPermissions(),
-                PhysicsUpdateLock::GetWritePermissions(),
-                {},
-                false,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                PhysicsTickFunc(&OnTick)});
-        }
-
-        template<typename... Events>
-        PhysicsScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
-            : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::PhysicsScript,
-                PhysicsUpdateLock::GetReadPermissions(),
-                PhysicsUpdateLock::GetWritePermissions(),
-                {events...},
-                filterOnEvent,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                PhysicsTickFunc(&OnTick)});
-        }
-    };
+    struct script_has_onevent_func<T,
+        std::void_t<decltype(std::declval<T>().OnEvent(std::declval<ScriptState &>(),
+            std::declval<const Lock<AddRemove> &>(),
+            std::declval<Entity>(),
+            std::declval<Event>()))>> : std::true_type {};
 
     template<typename T>
     struct script_onevent_lock_t {
@@ -251,104 +134,15 @@ namespace ecs {
         using LockType = std::remove_pointer_t<decltype(ptrLookup(&T::OnEvent))>;
     };
 
+    // Checks if the script has a Prefab(...) function
+    template<typename T, typename = void>
+    struct script_has_prefab_func : std::false_type {};
     template<typename T>
-    struct EventScript final : public ScriptDefinitionBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *AccessMut(ScriptState &state) const override {
-            void *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = state.Get<T>();
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Init(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            if constexpr (script_has_init_func<T>()) ptr->Init(state);
-        }
-
-        static void Destroy(ScriptState &state) {
-            T *ptr = state.Get<T>();
-            if (!ptr) return;
-            if constexpr (script_has_destroy_func<T>()) ptr->Destroy(state);
-        }
-
-        static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
-            T *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            using LockType = script_onevent_lock_t<T>::LockType;
-            auto dynamicLock = lock.TryLock<LockType>();
-            Assertf(dynamicLock.has_value(), "OnEvent script failed to obtain dynamic lock");
-            ptr->OnEvent(state, (LockType)dynamicLock.value(), ent, event);
-        }
-
-        template<typename... Events>
-        EventScript(const std::string &name, const StructMetadata &metadata, Events... events)
-            : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            using LockType = script_onevent_lock_t<T>::LockType;
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::EventScript,
-                LockType::GetReadPermissions(),
-                LockType::GetWritePermissions(),
-                {events...},
-                true,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                OnEventFunc(&OnEvent)});
-        }
-    };
-
-    template<typename T>
-    struct PrefabScript final : public ScriptDefinitionBase {
-        const T defaultValue = {};
-
-        const void *GetDefault() const override {
-            return &defaultValue;
-        }
-
-        void *AccessMut(ScriptState &state) const override {
-            void *ptr = state.Get<T>();
-            if (!ptr) ptr = state.Set<T>();
-            return ptr;
-        }
-
-        const void *Access(const ScriptState &state) const override {
-            const void *ptr = state.Get<T>();
-            return ptr ? ptr : &defaultValue;
-        }
-
-        static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
-            const T *ptr = state.Get<T>();
-            T data;
-            if (ptr) data = *ptr;
-            data.Prefab(state, scene.Lock(), lock, ent);
-        }
-
-        PrefabScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::PrefabScript,
-                Lock<AddRemove>::GetReadPermissions(),
-                Lock<AddRemove>::GetWritePermissions(),
-                {},
-                false,
-                savedPtr,
-                {},
-                {},
-                PrefabFunc(&Prefab)});
-        }
-    };
+    struct script_has_prefab_func<T,
+        std::void_t<decltype(std::declval<T>().Prefab(std::declval<const ScriptState &>(),
+            std::declval<const std::shared_ptr<sp::Scene> &>(),
+            std::declval<Lock<AddRemove>>(),
+            std::declval<Entity>()))>> : std::true_type {};
 
     // Checks if the script has an BeforeFrame() function
     template<typename T, typename = void>
@@ -373,35 +167,78 @@ namespace ecs {
             std::declval<sp::GuiDrawData &>()))>> : std::true_type {};
 
     template<typename T>
-    struct GuiScript final : public ScriptDefinitionBase {
+    struct BuiltInScript final : public ScriptDefinitionBase {
         const T defaultValue = {};
+
+        static_assert(script_has_logic_tick_func<T>() || script_has_physics_tick_func<T>() ||
+                          script_has_prefab_func<T>() || script_has_onevent_func<T>() ||
+                          script_has_before_frame_func<T>() || script_has_render_gui_func<T>(),
+            "BuiltInScript is missing function definitions");
 
         const void *GetDefault() const override {
             return &defaultValue;
         }
 
         void *AccessMut(ScriptState &state) const override {
-            auto *ptr = state.Get<T>();
+            void *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             return ptr;
         }
 
         const void *Access(const ScriptState &state) const override {
-            const auto *ptr = state.Get<T>();
+            const void *ptr = state.Get<T>();
             return ptr ? ptr : &defaultValue;
         }
 
         static void Init(ScriptState &state) {
-            auto *ptr = state.Get<T>();
+            T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
-        static void Destroy([[maybe_unused]] ScriptState &state) {
+        static void Destroy(ScriptState &state) {
+            T *ptr = state.Get<T>();
+            if (!ptr) return;
             if constexpr (script_has_destroy_func<T>()) {
-                auto *ptr = state.Get<T>();
-                if (ptr) ptr->Destroy(state);
+                ptr->Destroy(state);
             }
+            state.Reset();
+        }
+
+        static void OnLogicTick(ScriptState &state,
+            const LogicUpdateLock &lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
+            using LockType = script_logic_tick_lock_t<T>::LockType;
+            ptr->OnLogicTick(state, (LockType)lock, ent, interval);
+        }
+
+        static void OnPhysicsTick(ScriptState &state,
+            const PhysicsUpdateLock &lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
+            using LockType = script_physics_tick_lock_t<T>::LockType;
+            ptr->OnPhysicsTick(state, (LockType)lock, ent, interval);
+        }
+
+        static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
+            T *ptr = state.Get<T>();
+            if (!ptr) ptr = state.Set<T>();
+            using LockType = script_onevent_lock_t<T>::LockType;
+            auto dynamicLock = lock.TryLock<LockType>();
+            Assertf(dynamicLock.has_value(), "OnEvent script failed to obtain dynamic lock");
+            ptr->OnEvent(state, (LockType)dynamicLock.value(), ent, event);
+        }
+
+        static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
+            const T *ptr = state.Get<T>();
+            T data;
+            if (ptr) data = *ptr;
+            data.Prefab(state, scene.Lock(), lock, ent);
         }
 
         static bool BeforeFrame([[maybe_unused]] sp::GenericCompositor &compositor,
@@ -431,18 +268,96 @@ namespace ecs {
             }
         }
 
-        GuiScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
+        BuiltInScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            GetScriptDefinitions().RegisterScript({name,
-                ScriptType::GuiScript,
-                PermissionBitset(),
-                PermissionBitset(),
-                {},
-                false,
-                savedPtr,
-                ScriptInitFunc(&Init),
-                ScriptDestroyFunc(&Destroy),
-                GuiRenderFuncs(&BeforeFrame, &RenderGui)});
+            ScriptDefinition definition{
+                .name = name,
+                .context = savedPtr,
+                .initFunc = ScriptInitFunc(&Init),
+                .destroyFunc = ScriptDestroyFunc(&Destroy),
+            };
+            if constexpr (script_has_logic_tick_func<T>()) {
+                using LockType = script_logic_tick_lock_t<T>::LockType;
+                definition.logicTickFunc = {
+                    LogicTickFunc(&OnLogicTick),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_physics_tick_func<T>()) {
+                using LockType = script_physics_tick_lock_t<T>::LockType;
+                definition.physicsTickFunc = {
+                    PhysicsTickFunc(&OnPhysicsTick),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_onevent_func<T>()) {
+                using LockType = script_onevent_lock_t<T>::LockType;
+                definition.onEventFunc = {
+                    OnEventFunc(&OnEvent),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_prefab_func<T>()) {
+                definition.prefabFunc = PrefabFunc(&Prefab);
+            }
+            if constexpr (script_has_before_frame_func<T>()) {
+                definition.beforeFrameFunc = BeforeFrameFunc(&BeforeFrame);
+            }
+            if constexpr (script_has_render_gui_func<T>()) {
+                definition.renderGuiFunc = RenderGuiFunc(&RenderGui);
+            }
+            GetScriptDefinitions().RegisterScript(std::move(definition));
+        }
+
+        template<typename... Events>
+        BuiltInScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
+            : ScriptDefinitionBase(metadata) {
+            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
+            ScriptDefinition definition{
+                .name = name,
+                .events = {events...},
+                .filterOnEvent = filterOnEvent,
+                .context = savedPtr,
+                .initFunc = ScriptInitFunc(&Init),
+                .destroyFunc = ScriptDestroyFunc(&Destroy),
+            };
+            if constexpr (script_has_logic_tick_func<T>()) {
+                using LockType = script_logic_tick_lock_t<T>::LockType;
+                definition.logicTickFunc = {
+                    LogicTickFunc(&OnLogicTick),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_physics_tick_func<T>()) {
+                using LockType = script_physics_tick_lock_t<T>::LockType;
+                definition.physicsTickFunc = {
+                    PhysicsTickFunc(&OnPhysicsTick),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_onevent_func<T>()) {
+                using LockType = script_onevent_lock_t<T>::LockType;
+                definition.onEventFunc = {
+                    OnEventFunc(&OnEvent),
+                    LockType::GetReadPermissions(),
+                    LockType::GetWritePermissions(),
+                };
+            }
+            if constexpr (script_has_prefab_func<T>()) {
+                definition.prefabFunc = PrefabFunc(&Prefab);
+            }
+            if constexpr (script_has_before_frame_func<T>()) {
+                definition.beforeFrameFunc = BeforeFrameFunc(&BeforeFrame);
+            }
+            if constexpr (script_has_render_gui_func<T>()) {
+                definition.renderGuiFunc = RenderGuiFunc(&RenderGui);
+            }
+            GetScriptDefinitions().RegisterScript(std::move(definition));
         }
     };
 } // namespace ecs

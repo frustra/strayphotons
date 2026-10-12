@@ -55,6 +55,13 @@
 			},
 			"script": [
 				{
+					"name": "interact_handler",
+					"parameters": {
+						"grab_distance": 1,
+						"noclip_entity": "player"
+					}
+				},
+				{
 					"name": "multi_interact_handler",
 					"parameters": {
 						"joint_entity": "player"

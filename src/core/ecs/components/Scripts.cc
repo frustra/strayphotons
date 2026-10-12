@@ -11,6 +11,9 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptManager.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
+
+#include <memory>
 
 namespace ecs {
     template<>
@@ -66,31 +69,30 @@ namespace ecs {
         const auto &state = *src.state;
         if (state.definition.name.empty()) {
             dst = picojson::value("inline C++ lambda");
-        } else if (!std::holds_alternative<std::monostate>(state.definition.callback)) {
+        } else if (state.definition) {
             if (!dst.is<picojson::object>()) dst.set<picojson::object>({});
             auto &obj = dst.get<picojson::object>();
             obj["name"] = picojson::value(state.definition.name.str());
 
             auto ctx = state.definition.context.lock();
             if (ctx) {
-                std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
-                std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
-
-                const void *dataPtr = ctx->Access(state);
-                if (!dataPtr) return;
-                const void *defaultPtr = ctx->GetDefault();
-                bool changed = false;
-                for (auto &field : ctx->metadata.fields) {
-                    if (!field.Compare(dataPtr, defaultPtr)) {
-                        changed = true;
-                        break;
-                    }
-                }
-                if (changed) {
+                GetScriptManager().WithScriptLock(state.definition, false, [&] {
+                    const void *dataPtr = ctx->Access(state);
+                    if (!dataPtr) return;
+                    const void *defaultPtr = ctx->GetDefault();
+                    bool changed = false;
                     for (auto &field : ctx->metadata.fields) {
-                        field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                        if (!field.Compare(dataPtr, defaultPtr)) {
+                            changed = true;
+                            break;
+                        }
                     }
-                }
+                    if (changed) {
+                        for (auto &field : ctx->metadata.fields) {
+                            field.Save(scope, obj["parameters"], dataPtr, defaultPtr);
+                        }
+                    }
+                });
             }
         }
     }
@@ -101,7 +103,10 @@ namespace ecs {
         if (dst.state->scope != scope) {
             auto &oldState = *dst.state;
             // Create a new script instance so references to the old scope remain valid.
-            auto newState = GetScriptManager().NewScriptInstance(scope, oldState.definition);
+            std::shared_ptr<ScriptState> newState;
+            Assertf(!oldState.IsActive(), "Unexpected active script changing scope");
+            // This script is still in staging only, don't allocate an active script index yet
+            newState = std::make_shared<ScriptState>(oldState.definition, scope);
 
             auto oldCtx = oldState.definition.context.lock();
             auto newCtx = newState->definition.context.lock();
@@ -154,8 +159,13 @@ namespace ecs {
     bool ScriptState::CompareOverride(const ScriptState &other) const {
         if (instanceId == other.instanceId) return true;
         if (definition.name != other.definition.name) return false;
-        if (definition.callback.index() != other.definition.callback.index()) return false;
-        if (std::holds_alternative<PrefabFunc>(definition.callback)) {
+        if (definition.logicTickFunc != other.definition.logicTickFunc) return false;
+        if (definition.physicsTickFunc != other.definition.physicsTickFunc) return false;
+        if (definition.onEventFunc != other.definition.onEventFunc) return false;
+        if (definition.prefabFunc != other.definition.prefabFunc) return false;
+        if (definition.beforeFrameFunc != other.definition.beforeFrameFunc) return false;
+        if (definition.renderGuiFunc != other.definition.renderGuiFunc) return false;
+        if (definition.prefabFunc) {
             if (definition.name == "prefab_gltf") {
                 return GetParam<sp::AssetName>("model") == other.GetParam<sp::AssetName>("model");
             } else if (definition.name == "prefab_template") {
@@ -167,6 +177,7 @@ namespace ecs {
 
     template<>
     void EntityComponent<Scripts>::Apply(Scripts &dst, const Scripts &src, bool liveTarget) {
+        std::vector<bool> scriptFound(dst.scripts.size());
         for (auto &instance : src.scripts) {
             if (!instance) continue;
             auto existing = std::find_if(dst.scripts.begin(), dst.scripts.end(), [&](auto &arg) {
@@ -174,9 +185,23 @@ namespace ecs {
             });
             if (existing == dst.scripts.end()) {
                 dst.scripts.emplace_back(instance);
-            } else if (liveTarget && existing->GetInstanceId() != instance.GetInstanceId()) {
-                *existing = instance;
+                scriptFound.emplace_back(true);
+            } else if (liveTarget) {
+                size_t i = existing - dst.scripts.begin();
+                scriptFound[i] = true;
+                if (existing->GetInstanceId() != instance.GetInstanceId()) *existing = instance;
             }
+        }
+        if (liveTarget) {
+            size_t i = 0;
+            sp::erase_if(dst.scripts, [&](const ScriptInstance &instance) {
+                bool remove = !scriptFound[i++];
+                if (remove && instance.state) {
+                    Logf("Removing script %s", instance.state->definition.name);
+                    GetScriptManager().RemoveScriptInstance(*instance.state);
+                }
+                return remove;
+            });
         }
     }
 

@@ -15,6 +15,7 @@
 #include "ecs/EntityRef.hh"
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptDefinition.hh"
+#include "ecs/ScriptManager.hh"
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructFieldTypes.hh"
@@ -432,52 +433,28 @@ namespace sp {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
             std::string rowId = fieldId + "." + std::to_string(state.GetInstanceId());
-            std::string scriptLabel;
-            switch (state.definition.type) {
-            case ScriptType::LogicScript:
-                if (state.definition.filterOnEvent) {
-                    scriptLabel = "OnTick(filtered): " + state.definition.name;
-                } else {
-                    scriptLabel = "OnTick: " + state.definition.name;
-                }
-                break;
-            case ScriptType::PhysicsScript:
-                if (state.definition.filterOnEvent) {
-                    scriptLabel = "OnPhysicsUpdateEvent: " + state.definition.name;
-                } else {
-                    scriptLabel = "OnPhysicsUpdate: " + state.definition.name;
-                }
-                break;
-            case ScriptType::EventScript:
-                scriptLabel = "OnEvent: " + state.definition.name;
-                break;
-            case ScriptType::PrefabScript:
+            HeapString scriptLabel = state.definition.name;
+            if (state.definition.logicTickFunc) scriptLabel += " OnLogicTick";
+            if (state.definition.physicsTickFunc) scriptLabel += " OnPhysicsTick";
+            if (state.definition.onEventFunc) scriptLabel += " OnEvent";
+            if (state.definition.prefabFunc) {
                 if (state.definition.name == "prefab_template") {
-                    scriptLabel = "Template: " + state.GetParam<sp::HeapString>("source");
+                    scriptLabel += " Template(" + state.GetParam<sp::HeapString>("source") + ")";
                 } else if (state.definition.name == "prefab_gltf") {
-                    scriptLabel = "Gltf: " + state.GetParam<sp::AssetName>("model");
+                    scriptLabel += " Gltf(" + state.GetParam<sp::AssetName>("model") + ")";
                 } else {
-                    scriptLabel = "Prefab: " + state.definition.name;
+                    scriptLabel += " Prefab";
                 }
-                break;
-            case ScriptType::GuiScript:
-                scriptLabel = "Gui: " + state.definition.name;
-                break;
-            default:
-                scriptLabel = "Invalid script: " + state.definition.name;
-                break;
             }
+            if (state.definition.beforeFrameFunc) scriptLabel += " BeforeFrame";
+            if (state.definition.renderGuiFunc) scriptLabel += " RenderGui";
+            if (state.definition.filterOnEvent) scriptLabel += " (event filtered)";
             if (state.definition.name.empty()) {
                 scriptLabel += "(inline C++ lambda)";
             }
 
-            auto scriptType = std::string(magic_enum::enum_name(state.definition.type));
-            if (ImGui::TreeNodeEx(rowId.c_str(),
-                    ImGuiTreeNodeFlags_DefaultOpen,
-                    "%s %s",
-                    scriptType.c_str(),
-                    scriptLabel.c_str())) {
-                if (IsLive(target) && state.definition.type == ScriptType::PrefabScript) {
+            if (ImGui::TreeNodeEx(rowId.c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", scriptLabel.c_str())) {
+                if (IsLive(target) && state.definition.prefabFunc) {
                     ImGui::BeginDisabled();
                 } else if (IsStaging(target)) {
                     if (ImGui::Button("-", ImVec2(20, 0))) {
@@ -485,60 +462,44 @@ namespace sp {
                     }
                     ImGui::SameLine();
                 }
-                ImGui::SetNextItemWidth(-FLT_MIN);
-                if (ImGui::BeginCombo(rowId.c_str(), state.definition.name.c_str())) {
-                    const auto &scripts = GetScriptDefinitions().scripts;
-                    for (auto &[scriptName, definition] : scripts) {
-                        if (IsLive(target) && definition.type != state.definition.type) {
-                            // Don't allow change script types in the live ECS
-                            continue;
-                        }
-                        bool isSelected = state.definition.name == scriptName;
-                        if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
-                            if (!isSelected) changeList.emplace(state.GetInstanceId(), scriptName);
-                            changed = true;
-                        }
-                        if (isSelected) ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
+                ImGui::TextUnformatted(state.definition.name.c_str());
 
                 auto ctx = state.definition.context.lock();
                 if (ctx) {
-                    std::shared_lock l1(GetScriptManager().dynamicLibraryMutex);
-                    std::lock_guard l2(GetScriptManager().scripts[state.definition.type].mutex);
-                    void *dataPtr = ctx->AccessMut(state);
-                    auto &fields = ctx->metadata.fields;
-                    if (dataPtr && !fields.empty()) {
-                        ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
-                                                ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
-                        if (ImGui::BeginTable(rowId.c_str(), 2, flags)) {
-                            ImGui::TableSetupColumn("Parameter");
-                            ImGui::TableSetupColumn("Value");
-                            ImGui::TableHeadersRow();
+                    ecs::GetScriptManager().WithScriptLock(state.definition, true, [&] {
+                        void *dataPtr = ctx->AccessMut(state);
+                        auto &fields = ctx->metadata.fields;
+                        if (dataPtr && !fields.empty()) {
+                            ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders |
+                                                    ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame;
+                            if (ImGui::BeginTable(rowId.c_str(), 2, flags)) {
+                                ImGui::TableSetupColumn("Parameter");
+                                ImGui::TableSetupColumn("Value");
+                                ImGui::TableHeadersRow();
 
-                            for (auto &field : fields) {
-                                if (!field.name.empty()) {
-                                    ImGui::TableNextRow();
-                                    ImGui::TableSetColumnIndex(0);
-                                    ImGui::TextUnformatted(field.name.c_str());
-                                    ImGui::TableSetColumnIndex(1);
-                                    GetFieldType(field.type, field.AccessMut(dataPtr), [&](auto &fieldValue) {
-                                        auto parentFieldName = fieldName;
-                                        fieldName = "";
-                                        ImGui::SetNextItemWidth(-FLT_MIN);
-                                        if (AddImGuiElement(rowId + "."s + field.name, fieldValue)) {
-                                            changed = true;
-                                        }
-                                        fieldName = parentFieldName;
-                                    });
+                                for (auto &field : fields) {
+                                    if (!field.name.empty()) {
+                                        ImGui::TableNextRow();
+                                        ImGui::TableSetColumnIndex(0);
+                                        ImGui::TextUnformatted(field.name.c_str());
+                                        ImGui::TableSetColumnIndex(1);
+                                        GetFieldType(field.type, field.AccessMut(dataPtr), [&](auto &fieldValue) {
+                                            auto parentFieldName = fieldName;
+                                            fieldName = "";
+                                            ImGui::SetNextItemWidth(-FLT_MIN);
+                                            if (AddImGuiElement(rowId + "."s + field.name, fieldValue)) {
+                                                changed = true;
+                                            }
+                                            fieldName = parentFieldName;
+                                        });
+                                    }
                                 }
                             }
+                            ImGui::EndTable();
                         }
-                        ImGui::EndTable();
-                    }
+                    });
                 }
-                if (IsLive(target) && state.definition.type == ScriptType::PrefabScript) {
+                if (IsLive(target) && state.definition.prefabFunc) {
                     ImGui::EndDisabled();
                 }
 
@@ -549,9 +510,11 @@ namespace sp {
             const auto &definition = GetScriptDefinitions().scripts.at(scriptName);
             for (auto &instance : value) {
                 if (instance.GetInstanceId() == instanceId) {
-                    instance = GetScriptManager().NewScriptInstance(instance.GetState().scope,
-                        definition,
-                        IsLive(target));
+                    if (IsLive(target)) {
+                        instance = GetScriptManager().NewScriptInstance(instance.GetState().scope, definition, true);
+                    } else {
+                        instance = std::make_shared<ScriptState>(definition, instance.GetState().scope);
+                    }
                     break;
                 }
             }
@@ -563,68 +526,28 @@ namespace sp {
                 });
                 changed = true;
             }
-            if (ImGui::Button("Add Prefab")) {
-                EntityScope scope = Name(scene.data->name, "");
-                value.emplace_back(scope,
-                    ScriptDefinition{"",
-                        ScriptType::PrefabScript,
-                        ecs::Lock<ecs::AddRemove>::GetReadPermissions(),
-                        ecs::Lock<ecs::AddRemove>::GetWritePermissions(),
-                        {},
-                        false,
-                        {},
-                        {},
-                        {},
-                        PrefabFunc()});
+
+            if (!selectedScript) ImGui::BeginDisabled();
+            if (ImGui::Button("Add##addScriptButton") && selectedScript) {
+                EntityScope scope(scene.data->name, "");
+                value.emplace_back(scope, *selectedScript);
                 changed = true;
+                selectedScript = nullptr;
+            } else if (!selectedScript) {
+                ImGui::EndDisabled();
             }
             ImGui::SameLine();
-            if (ImGui::Button("Add LogicScript")) {
-                EntityScope scope = Name(scene.data->name, "");
-                value.emplace_back(scope,
-                    ScriptDefinition{"",
-                        ScriptType::LogicScript,
-                        ecs::LogicUpdateLock::GetReadPermissions(),
-                        ecs::LogicUpdateLock::GetWritePermissions(),
-                        {},
-                        false,
-                        {},
-                        {},
-                        {},
-                        LogicTickFunc()});
-                changed = true;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Add Physics Script")) {
-                EntityScope scope = Name(scene.data->name, "");
-                value.emplace_back(scope,
-                    ScriptDefinition{"",
-                        ScriptType::PhysicsScript,
-                        ecs::PhysicsUpdateLock::GetReadPermissions(),
-                        ecs::PhysicsUpdateLock::GetWritePermissions(),
-                        {},
-                        false,
-                        {},
-                        {},
-                        {},
-                        PhysicsTickFunc()});
-                changed = true;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Add Event Script")) {
-                EntityScope scope = Name(scene.data->name, "");
-                value.emplace_back(scope,
-                    ScriptDefinition{"",
-                        ScriptType::EventScript,
-                        ecs::PermissionBitset(),
-                        ecs::PermissionBitset(),
-                        {},
-                        true,
-                        {},
-                        {},
-                        {},
-                        OnEventFunc()});
-                changed = true;
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::BeginCombo("##scriptSelector", selectedScript ? selectedScript->name.c_str() : "...")) {
+                const auto &scripts = GetScriptDefinitions().scripts;
+                for (auto &[scriptName, definition] : scripts) {
+                    bool isSelected = selectedScript && selectedScript->name == scriptName;
+                    if (ImGui::Selectable(scriptName.c_str(), isSelected)) {
+                        selectedScript = &definition;
+                    }
+                    if (isSelected) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
             }
         }
         return changed;

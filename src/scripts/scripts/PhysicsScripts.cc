@@ -31,7 +31,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true; // Effective next tick, only run when events arrive.
         }
 
-        void OnTick(ScriptState &state,
+        void OnPhysicsTick(ScriptState &state,
             Lock<Write<PhysicsJoints>, Read<TransformSnapshot, EventInput>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -135,6 +135,6 @@ namespace sp::scripts {
         "PhysicsJointFromEvent",
         "",
         StructField::New(&PhysicsJointFromEvent::definedJoints));
-    PhysicsScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
+    BuiltInScript<PhysicsJointFromEvent> physicsJointFromEvent("physics_joint_from_event",
         MetadataPhysicsJointFromEvent);
 } // namespace sp::scripts

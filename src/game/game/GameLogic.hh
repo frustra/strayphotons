@@ -24,7 +24,7 @@ namespace sp {
 
         void StartThread(bool startPaused = false);
 
-        static void UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
+        static void UpdateInputEvents(const ecs::DynamicLock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
             LockFreeEventQueue<ecs::Event> &inputQueue);
 
     private:

@@ -1,6 +1,17 @@
 
 <div class="component_definition">
 
+## `async_signal_from_event` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **outputs** | vector&lt;string&gt; | [] | No description |
+
+</div>
+
+
+<div class="component_definition">
+
 ## `camera_view` Script
 
 The `camera_view` script has no configurable parameters
@@ -242,17 +253,6 @@ The `magnetic_socket` script has no configurable parameters
 ## `physics_collapse_events` Script
 
 The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;
-
-</div>
-
-
-<div class="component_definition">
-
-## `physics_component_from_event` Script
-
-| Parameter Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **outputs** | vector&lt;string&gt; | [] | No description |
 
 </div>
 

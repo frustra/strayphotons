@@ -152,10 +152,9 @@ void camera_view_on_tick(void *context,
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
         sp_string_set(&output[0].name, "camera_view2");
-        output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].context_size = sizeof(script_camera_view_t);
         output[0].init_func = &camera_view_init;
-        output[0].on_tick_func = &camera_view_on_tick;
+        output[0].logic_tick_func = &camera_view_on_tick;
         output[0].filter_on_event = true;
         sp_dynamic_script_definition_add_event(&output[0], "/script/camera_rotate");
 
@@ -171,11 +170,10 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
             offsetof(script_camera_view_t, started));
 
         sp_string_set(&output[1].name, "async_camera_view");
-        output[1].type = SP_SCRIPT_TYPE_EVENT_SCRIPT;
-        output[1].read_permissions = 1 | SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
-        output[1].write_permissions = SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
         output[1].context_size = 0;
         output[1].on_event_func = &camera_view_on_event;
+        output[1].event_read_permissions = 1 | SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
+        output[1].event_write_permissions = SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
         sp_dynamic_script_definition_add_event(&output[1], "/script/camera_rotate");
     }
     return 2;

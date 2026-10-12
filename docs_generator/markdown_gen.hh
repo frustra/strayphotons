@@ -307,18 +307,12 @@ struct MarkdownContext {
                     magic_enum::enum_name(pageType),
                     typeid(ListType).name());
 
-                switch (entry.second.type) {
-                case ecs::ScriptType::PrefabScript:
+                if (entry.second.prefabFunc) {
                     entryType = PageType::Prefab;
-                    break;
-                case ecs::ScriptType::EventScript:
-                case ecs::ScriptType::LogicScript:
-                case ecs::ScriptType::PhysicsScript:
-                    entryType = PageType::Script;
-                    break;
-                case ecs::ScriptType::GuiScript:
+                } else if (entry.second.beforeFrameFunc || entry.second.renderGuiFunc) {
                     entryType = PageType::GUI;
-                    break;
+                } else {
+                    entryType = PageType::Script;
                 }
 
                 auto ctx = entry.second.context.lock();

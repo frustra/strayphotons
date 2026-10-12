@@ -168,7 +168,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock,
                 Read<TransformTree, TransformSnapshot>,
                 Write<Renderable, Physics, PhysicsQuery, PhysicsJoints, Signals>> lock,
@@ -247,8 +247,9 @@ namespace sp::scripts {
         StructField::New("_grab_entities", &InteractiveObject::grabEntities),
         StructField::New("_point_entities", &InteractiveObject::pointEntities),
         StructField::New("_render_outline", &InteractiveObject::renderOutline));
-    EventScript<InteractiveObject> interactiveObject("interactive_object",
+    BuiltInScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
+        true,
         INTERACT_EVENT_INTERACT_POINT,
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PUSH,
@@ -282,8 +283,8 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state,
-            Lock<SendEventsLock, Read<TransformSnapshot>, Write<PhysicsQuery, PhysicsJoints>> lock,
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock, Read<TransformSnapshot>, Write<PhysicsQuery, PhysicsJoints>> lock,
             Entity ent,
             chrono_clock::duration interval) {
             if (ent.Has<TransformSnapshot, PhysicsQuery>(lock)) {
@@ -388,7 +389,7 @@ namespace sp::scripts {
         StructField::New("_grab_entity", &InteractHandler::grabEntity),
         StructField::New("_point_entity", &InteractHandler::pointEntity),
         StructField::New("_press_entity", &InteractHandler::pressEntity));
-    LogicScript<InteractHandler> interactHandler("interact_handler",
+    BuiltInScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
         false,
         INTERACT_EVENT_INTERACT_GRAB,
@@ -399,7 +400,7 @@ namespace sp::scripts {
         EntityRef jointEntity;
         HeapVector<EntityRef> grabEntities;
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             DynamicLock<SendEventsLock, Read<TransformSnapshot, LightCast>, Write<PhysicsJoints>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -469,7 +470,7 @@ namespace sp::scripts {
         "",
         StructField::New("joint_entity", &MultiInteractHandler::jointEntity),
         StructField::New("_grab_entities", &MultiInteractHandler::grabEntities));
-    LogicScript<MultiInteractHandler> multiInteractHandler("multi_interact_handler",
+    BuiltInScript<MultiInteractHandler> multiInteractHandler("multi_interact_handler",
         MetadataMultiInteractHandler,
         false,
         INTERACT_EVENT_INTERACT_GRAB);

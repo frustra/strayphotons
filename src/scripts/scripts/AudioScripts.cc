@@ -17,7 +17,7 @@ namespace sp::scripts {
     struct SoundOcclusion {
         PhysicsQuery::Handle<PhysicsQuery::Raycast> raycastQuery;
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<Read<TransformSnapshot>, Write<Audio, PhysicsQuery>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -55,7 +55,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataSoundOcclusion(typeid(SoundOcclusion), sizeof(SoundOcclusion), "SoundOcclusion", "");
-    LogicScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
+    BuiltInScript<SoundOcclusion> soundOcclusion("sound_occlusion", MetadataSoundOcclusion);
 
     struct VolumeControl {
         SignalExpression volumeInput;
@@ -69,7 +69,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Write<Audio, Signals>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -102,7 +102,7 @@ namespace sp::scripts {
         "VolumeControl",
         "",
         StructField::New("volume", &VolumeControl::volumeInput));
-    LogicScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
+    BuiltInScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
 
     struct SpeedControlledSound {
         bool init = false;
@@ -111,8 +111,8 @@ namespace sp::scripts {
         int frames = 0;
         float avgSpeed = 0.0f;
 
-        void OnTick(ScriptState &state,
-            Lock<Read<TransformSnapshot>, SendEventsLock, Write<Audio>> lock,
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<Read<TransformSnapshot>, SendEventsLock, Write<Audio>> lock,
             Entity ent,
             chrono_clock::duration interval) {
             if (!ent.Has<TransformSnapshot, Audio>(lock)) return;
@@ -146,5 +146,5 @@ namespace sp::scripts {
         sizeof(SpeedControlledSound),
         "SpeedControlledSound",
         "");
-    LogicScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
+    BuiltInScript<SpeedControlledSound> speedControlledSound("speed_controlled_sound", MetadataSpeedControlledSound);
 } // namespace sp::scripts

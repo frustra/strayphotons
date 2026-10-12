@@ -174,5 +174,5 @@ namespace sp::scripts {
         "SignalDisplayGui",
         "",
         StructField::New("suffix", &SignalDisplayGui::suffix));
-    GuiScript<SignalDisplayGui> signalDisplay("signal_display", MetadataSignalDisplay);
+    BuiltInScript<SignalDisplayGui> signalDisplay("signal_display", MetadataSignalDisplay);
 } // namespace sp::scripts

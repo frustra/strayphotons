@@ -181,9 +181,9 @@ namespace ecs {
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
-            if (dynamicScript->dynamicDefinition.onTickFunc) {
+            if (dynamicScript->dynamicDefinition.logicTickFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
+                dynamicScript->dynamicDefinition.logicTickFunc(ptr.context,
                     state,
                     dynLock,
                     ent,
@@ -201,9 +201,9 @@ namespace ecs {
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
-            if (dynamicScript->dynamicDefinition.onTickFunc) {
+            if (dynamicScript->dynamicDefinition.physicsTickFunc) {
                 DynamicLock<> dynLock = lock;
-                dynamicScript->dynamicDefinition.onTickFunc(ptr.context,
+                dynamicScript->dynamicDefinition.physicsTickFunc(ptr.context,
                     state,
                     dynLock,
                     ent,
@@ -287,39 +287,35 @@ namespace ecs {
     #pragma GCC diagnostic pop
 #endif
         definition.name = dynamicDefinition.name;
-        definition.type = dynamicDefinition.type;
-        definition.readPermissions = dynamicDefinition.readPermissions;
-        definition.writePermissions = dynamicDefinition.writePermissions;
         definition.events = dynamicDefinition.events;
         definition.filterOnEvent = dynamicDefinition.filterOnEvent;
         metadata.fields.assign(dynamicDefinition.fields.begin(), dynamicDefinition.fields.end());
-        switch (definition.type) {
-        case ScriptType::LogicScript:
-            definition.initFunc = ScriptInitFunc(&Init);
-            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = LogicTickFunc(&OnLogicTick);
-            break;
-        case ScriptType::PhysicsScript:
-            definition.initFunc = ScriptInitFunc(&Init);
-            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = PhysicsTickFunc(&OnPhysicsTick);
-            break;
-        case ScriptType::EventScript:
-            definition.initFunc = ScriptInitFunc(&Init);
-            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = OnEventFunc(&OnEvent);
-            break;
-        case ScriptType::PrefabScript:
-            definition.callback = PrefabFunc(&Prefab);
-            break;
-        case ScriptType::GuiScript:
-            definition.initFunc = ScriptInitFunc(&Init);
-            definition.destroyFunc = ScriptDestroyFunc(&Destroy);
-            definition.callback = GuiRenderFuncs(&BeforeFrame, &RenderGui);
-            break;
-        default:
-            Abortf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);
+        definition.initFunc = ScriptInitFunc(&Init);
+        definition.destroyFunc = ScriptDestroyFunc(&Destroy);
+        if (dynamicDefinition.logicTickFunc) {
+            definition.logicTickFunc = {
+                LogicTickFunc(&OnLogicTick),
+                dynamicDefinition.logicReadPermissions,
+                dynamicDefinition.logicWritePermissions,
+            };
         }
+        if (dynamicDefinition.physicsTickFunc) {
+            definition.physicsTickFunc = {
+                PhysicsTickFunc(&OnPhysicsTick),
+                dynamicDefinition.physicsReadPermissions,
+                dynamicDefinition.physicsWritePermissions,
+            };
+        }
+        if (dynamicDefinition.onEventFunc) {
+            definition.onEventFunc = {
+                OnEventFunc(&OnEvent),
+                dynamicDefinition.eventReadPermissions,
+                dynamicDefinition.eventWritePermissions,
+            };
+        }
+        if (dynamicDefinition.prefabFunc) definition.prefabFunc = PrefabFunc(&Prefab);
+        if (dynamicDefinition.beforeFrameFunc) definition.beforeFrameFunc = BeforeFrameFunc(&BeforeFrame);
+        if (dynamicDefinition.renderGuiFunc) definition.renderGuiFunc = RenderGuiFunc(&RenderGui);
     }
 
     std::shared_ptr<DynamicScript> DynamicScript::Load(DynamicLibrary &library,
@@ -327,48 +323,10 @@ namespace ecs {
         ZoneScoped;
         ZoneStr(definition.name);
 
-        switch (definition.type) {
-        case ScriptType::LogicScript:
-        case ScriptType::PhysicsScript:
-            if (!definition.onTickFunc) {
-                Errorf("Failed to load %s(%s), %s is missing sp_script_on_tick()",
-                    library.name,
-                    definition.name,
-                    definition.type);
-                return nullptr;
-            }
-            break;
-        case ScriptType::EventScript:
-            if (!definition.onEventFunc) {
-                Errorf("Failed to load %s(%s), EventScript is missing sp_script_on_event()",
-                    library.name,
-                    definition.name);
-                return nullptr;
-            }
-            break;
-        case ScriptType::PrefabScript:
-            if (!definition.prefabFunc) {
-                Errorf("Failed to load %s(%s), PrefabScript is missing sp_script_prefab()",
-                    library.name,
-                    definition.name);
-                return nullptr;
-            }
-            if (definition.initFunc)
-                Warnf("%s(%s) PrefabScript defines unsupported sp_script_init()", library.name, definition.name);
-            if (definition.destroyFunc)
-                Warnf("%s(%s) PrefabScript defines unsupported sp_script_destroy()", library.name, definition.name);
-            break;
-        case ScriptType::GuiScript:
-            if (!definition.renderGuiFunc) {
-                Errorf("Failed to load %s(%s), %s is missing sp_script_render_gui()",
-                    library.name,
-                    definition.name,
-                    definition.type);
-                return nullptr;
-            }
-            break;
-        default:
-            Errorf("DynamicLibrary %s(%s) unexpected script type: %s", library.name, definition.name, definition.type);
+        if (!definition.initFunc && !definition.destroyFunc && !definition.logicTickFunc &&
+            !definition.physicsTickFunc && !definition.onEventFunc && !definition.prefabFunc &&
+            !definition.beforeFrameFunc && !definition.renderGuiFunc) {
+            Errorf("Failed to load %s(%s), script is missing definitions", library.name, definition.name);
             return nullptr;
         }
 

@@ -19,6 +19,8 @@
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 
+#include <limits>
+#include <mutex>
 #include <shared_mutex>
 
 namespace ecs {
@@ -164,56 +166,40 @@ namespace ecs {
 
     std::shared_ptr<ScriptState> ScriptManager::NewScriptInstance(const ScriptState &state, bool runInit) {
         DebugZoneScoped;
-        auto &scriptSet = scripts[state.definition.type];
-        switch (state.definition.type) {
-        case ScriptType::LogicScript:
-            Assertf(std::holds_alternative<LogicTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: LogicScript != LogicTickFunc",
-                state.definition.name);
-            break;
-        case ScriptType::PhysicsScript:
-            Assertf(std::holds_alternative<PhysicsTickFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: PhysicsScript != PhysicsTickFunc",
-                state.definition.name);
-            break;
-        case ScriptType::EventScript:
-            Assertf(std::holds_alternative<OnEventFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: EventScript != OnEvent",
-                state.definition.name);
-            break;
-        case ScriptType::PrefabScript:
-            Assertf(std::holds_alternative<PrefabFunc>(state.definition.callback),
-                "New script %s has mismatched callback type: PrefabScript != Prefab",
-                state.definition.name);
-            break;
-        case ScriptType::GuiScript:
-            Assertf(std::holds_alternative<GuiRenderFuncs>(state.definition.callback),
-                "New script %s has mismatched callback type: GuiScript != GuiRender",
-                state.definition.name);
-            break;
-        default:
-            Abortf("New script %s has invalid script type: %s", state.definition.name, state.definition.type);
-        }
-
         ScriptState *scriptStatePtr = nullptr;
+        size_t newIndex;
         {
-            DebugZoneScopedN("InitScriptState");
-            std::shared_lock l1(dynamicLibraryMutex);
+            DebugZoneScopedN("AllocScriptState");
             std::lock_guard l2(scriptSet.mutex);
-            size_t newIndex;
             if (scriptSet.freeScriptList.empty()) {
                 newIndex = scriptSet.scripts.size();
                 scriptSet.scripts.emplace_back(Entity(), state);
             } else {
                 newIndex = scriptSet.freeScriptList.top();
                 scriptSet.freeScriptList.pop();
+                if (newIndex >= scriptSet.scripts.size()) scriptSet.scripts.resize(newIndex + 1);
                 scriptSet.scripts[newIndex] = {Entity(), state};
             }
-            scriptSet.activeScriptList.emplace_back(newIndex);
+            scriptSet.validScriptList.emplace_back(newIndex);
+            // Debugf("Active scripts %3.1f%% ++ (%llu / %llu)",
+            //     100.0f * scriptSet.validScriptList.size() / scriptSet.scripts.size(),
+            //     scriptSet.validScriptList.size(),
+            //     scriptSet.scripts.size());
             auto &newState = scriptSet.scripts[newIndex].second;
             newState.index = newIndex;
+        }
+        WithScriptLock(state.definition, true, [&] {
+            DebugZoneScopedN("InitScriptState");
+            if (state.definition.logicTickFunc) scriptSet.logicScripts.emplace_back(newIndex);
+            if (state.definition.physicsTickFunc) scriptSet.physicsScripts.emplace_back(newIndex);
+            if (state.definition.onEventFunc) scriptSet.eventScripts.emplace_back(newIndex);
+            if (state.definition.prefabFunc) scriptSet.prefabScripts.emplace_back(newIndex);
+            if (state.definition.beforeFrameFunc || state.definition.renderGuiFunc) {
+                scriptSet.guiScripts.emplace_back(newIndex);
+            }
+            auto &newState = scriptSet.scripts[newIndex].second;
             if (runInit) {
-                if (state.definition.type != ScriptType::EventScript) {
+                if (state.definition.NeedsEventQueue()) {
                     newState.eventQueue = EventQueue::New(CVarMaxScriptQueueSize.Get());
                 }
                 if (newState.definition.initFunc) (*newState.definition.initFunc)(newState);
@@ -221,16 +207,24 @@ namespace ecs {
             }
 
             scriptStatePtr = &newState;
-        }
-        return std::shared_ptr<ScriptState>(scriptStatePtr, [this, &scriptSet](ScriptState *state) {
-            std::shared_lock l1(dynamicLibraryMutex);
-            std::lock_guard l2(scriptSet.mutex);
-            if (state->index < scriptSet.scripts.size()) {
-                // TODO: unregister event queue if applicable
-                if (state->initialized && state->definition.destroyFunc) (*state->definition.destroyFunc)(*state);
-                sp::erase(scriptSet.activeScriptList, state->index);
+        });
+        return std::shared_ptr<ScriptState>(scriptStatePtr, [this](ScriptState *state) {
+            if (state) {
+                RemoveScriptInstance(*state);
+
+                if (state->index == std::numeric_limits<size_t>::max()) return;
+                std::lock_guard l(scriptSet.mutex);
+                if (state->index >= scriptSet.scripts.size()) return;
+                sp::erase(scriptSet.validScriptList, state->index);
                 scriptSet.freeScriptList.push(state->index);
                 scriptSet.scripts[state->index] = {};
+                while (!scriptSet.scripts.empty() && !scriptSet.scripts.back().second) {
+                    scriptSet.scripts.pop_back();
+                }
+                // Debugf("Active scripts %3.1f%% -- (%llu/%llu)",
+                //     100.0f * scriptSet.validScriptList.size() / scriptSet.scripts.size(),
+                //     scriptSet.validScriptList.size(),
+                //     scriptSet.scripts.size());
             }
         });
     }
@@ -239,6 +233,24 @@ namespace ecs {
         const ScriptDefinition &definition,
         bool runInit) {
         return NewScriptInstance(ScriptState(definition, scope), runInit);
+    }
+
+    void ScriptManager::RemoveScriptInstance(ScriptState &state) {
+        if (state.index == std::numeric_limits<size_t>::max()) return;
+        WithScriptLock(state.definition, true, [&] {
+            // TODO: unregister event queue if applicable
+            if (state.initialized) {
+                if (state.definition.destroyFunc) (*state.definition.destroyFunc)(state);
+                state.initialized = false;
+            }
+            if (state.definition.logicTickFunc) sp::erase(scriptSet.logicScripts, state.index);
+            if (state.definition.physicsTickFunc) sp::erase(scriptSet.physicsScripts, state.index);
+            if (state.definition.onEventFunc) sp::erase(scriptSet.eventScripts, state.index);
+            if (state.definition.prefabFunc) sp::erase(scriptSet.prefabScripts, state.index);
+            if (state.definition.beforeFrameFunc || state.definition.renderGuiFunc) {
+                sp::erase(scriptSet.guiScripts, state.index);
+            }
+        });
     }
 
     std::shared_ptr<DynamicLibrary> ScriptManager::LoadDynamicLibrary(const std::string &name) {
@@ -259,28 +271,28 @@ namespace ecs {
 
     void ScriptManager::ReloadDynamicLibraries() {
         Logf("Reloading DynamicLibraries");
-        std::lock_guard l(dynamicLibraryMutex);
-        for (size_t i = 0; i < scripts.size(); i++) {
-            scripts.at(i).mutex.lock();
-        }
+        std::lock_guard l1(dynamicLibraryMutex);
+        std::lock_guard l2(scriptSet.mutex);
+        std::lock_guard l3(scriptSet.logicScriptMutex);
+        std::lock_guard l4(scriptSet.physicsScriptMutex);
+        std::lock_guard l5(scriptSet.eventScriptMutex);
+        std::lock_guard l6(scriptSet.prefabScriptMutex);
+        std::lock_guard l7(scriptSet.guiScriptMutex);
         for (auto &[libraryName, dynamicLibrary] : dynamicLibraries) {
             std::vector<ScriptDefinition> previousList;
             // Destroy existing script contexts before reloading
-            for (auto &scriptSet : scripts) {
-                for (size_t i : scriptSet.activeScriptList) {
-                    auto &script = scriptSet.scripts[i];
-                    auto &scriptCtx = script.second.definition.context;
-                    if (scriptCtx.expired()) continue;
-                    for (auto &dynamicScript : dynamicLibrary->scripts) {
-                        auto &reloadingCtx = dynamicScript->definition.context;
-                        if (!reloadingCtx.owner_before(scriptCtx) && !scriptCtx.owner_before(reloadingCtx)) {
-                            script.second.Reset();
-                            script.second.definition = ScriptDefinition{
-                                .name = script.second.definition.name,
-                                .type = script.second.definition.type,
-                                .context = script.second.definition.context,
-                            };
-                        }
+            for (size_t i : scriptSet.validScriptList) {
+                auto &script = scriptSet.scripts[i];
+                auto &scriptCtx = script.second.definition.context;
+                if (scriptCtx.expired()) continue;
+                for (auto &dynamicScript : dynamicLibrary->scripts) {
+                    auto &reloadingCtx = dynamicScript->definition.context;
+                    if (!reloadingCtx.owner_before(scriptCtx) && !scriptCtx.owner_before(reloadingCtx)) {
+                        script.second.Reset();
+                        script.second.definition = ScriptDefinition{
+                            .name = script.second.definition.name,
+                            .context = script.second.definition.context,
+                        };
                     }
                 }
             }
@@ -290,41 +302,33 @@ namespace ecs {
             }
             dynamicLibrary->ReloadLibrary();
             for (auto &dynamicScript : dynamicLibrary->scripts) {
-                Logf("%s::%s type: %s",
-                    dynamicScript->library->name,
-                    dynamicScript->definition.name,
-                    dynamicScript->definition.type);
+                Logf("%s::%s", dynamicScript->library->name, dynamicScript->definition.name);
                 GetScriptDefinitions().RegisterScript(ScriptDefinition{dynamicScript->definition});
 
                 // Match the new script with the old definition
                 auto &newDefinition = dynamicScript->definition;
                 const ScriptDefinition *oldDefinition = nullptr;
                 for (auto &previous : previousList) {
-                    if (previous.name == newDefinition.name && previous.type == newDefinition.type) {
+                    if (previous.name == newDefinition.name) {
                         oldDefinition = &previous;
                         break;
                     }
                 }
                 if (oldDefinition) {
                     // Replace instance definitions and reinit
-                    for (auto &scriptSet : scripts) {
-                        for (size_t i : scriptSet.activeScriptList) {
-                            auto &script = scriptSet.scripts[i];
-                            auto &scriptCtx = script.second.definition.context;
-                            if (!oldDefinition->context.owner_before(scriptCtx) &&
-                                !scriptCtx.owner_before(oldDefinition->context)) {
-                                script.second.definition = newDefinition;
-                                if (script.second.initialized && newDefinition.initFunc) {
-                                    (*newDefinition.initFunc)(script.second);
-                                }
+                    for (size_t i : scriptSet.validScriptList) {
+                        auto &script = scriptSet.scripts[i];
+                        auto &scriptCtx = script.second.definition.context;
+                        if (!oldDefinition->context.owner_before(scriptCtx) &&
+                            !scriptCtx.owner_before(oldDefinition->context)) {
+                            script.second.definition = newDefinition;
+                            if (script.second.initialized && newDefinition.initFunc) {
+                                (*newDefinition.initFunc)(script.second);
                             }
                         }
                     }
                 }
             }
-        }
-        for (size_t i = 0; i < scripts.size(); i++) {
-            scripts.at(scripts.size() - i - 1).mutex.unlock();
         }
     }
 
@@ -343,12 +347,11 @@ namespace ecs {
         std::shared_ptr<ScriptState> instance) {
         Assertf(instance, "ScriptManager::internalRegisterActive called with null instance");
         ScriptState &state = *instance;
-        auto &scriptSet = scripts[state.definition.type];
         Assertf(state.index < scriptSet.scripts.size(), "Invalid script index: %s", state.definition.name);
 
         auto &entry = scriptSet.scripts[state.index];
         if (!entry.first) {
-            if (state.definition.type != ScriptType::EventScript) {
+            if (state.definition.NeedsEventQueue()) {
                 if (ent.Has<EventInput>(lock)) {
                     auto &eventInput = ent.Get<EventInput>(lock);
                     for (auto &event : state.definition.events) {
@@ -361,7 +364,7 @@ namespace ecs {
                         ecs::ToString(lock, ent));
                     return;
                 }
-                if (state.definition.type == ScriptType::GuiScript && ent.Has<GuiElement>(lock)) {
+                if ((state.definition.beforeFrameFunc || state.definition.renderGuiFunc) && ent.Has<GuiElement>(lock)) {
                     auto &guiElement = ent.Get<GuiElement>(lock);
                     if (!guiElement.definition) {
                         guiElement.definition = std::make_shared<ScriptGuiDefinition>(instance, ent);
@@ -374,18 +377,17 @@ namespace ecs {
 
     void ScriptManager::RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock) {
         ZoneScoped;
-        for (size_t i = 0; i < scripts.size(); i++) {
-            scripts.at(i).mutex.lock_shared();
-        }
+        std::shared_lock l1(scriptSet.logicScriptMutex);
+        std::shared_lock l2(scriptSet.physicsScriptMutex);
+        std::shared_lock l3(scriptSet.eventScriptMutex);
+        std::shared_lock l4(scriptSet.prefabScriptMutex);
+        std::shared_lock l5(scriptSet.guiScriptMutex);
         for (const Entity &ent : lock.EntitiesWith<Scripts>()) {
             if (!ent.Has<Scripts>(lock)) continue;
             for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
                 if (!instance) continue;
                 internalRegisterActive(lock, ent, instance.state);
             }
-        }
-        for (size_t i = 0; i < scripts.size(); i++) {
-            scripts.at(scripts.size() - i - 1).mutex.unlock_shared();
         }
     }
 
@@ -395,48 +397,40 @@ namespace ecs {
         if (!ent.Has<Scripts>(lock)) return;
         for (auto &instance : ent.Get<const Scripts>(lock).scripts) {
             if (!instance) continue;
-            std::shared_lock l1(dynamicLibraryMutex);
-            std::shared_lock l2(scripts[instance.state->definition.type].mutex);
-            internalRegisterActive(lock, ent, instance.state);
+            WithScriptLock(instance.state->definition, false, [&] {
+                internalRegisterActive(lock, ent, instance.state);
+            });
         }
     }
 
     void ScriptManager::RunLogicUpdate(const LogicUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
-        auto &scriptSet = scripts[ScriptType::LogicScript];
         std::shared_lock l1(dynamicLibraryMutex);
-        std::shared_lock l2(scriptSet.mutex);
-        for (size_t i : scriptSet.activeScriptList) {
+        std::shared_lock l2(scriptSet.logicScriptMutex);
+        for (size_t i : scriptSet.logicScripts) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callbackPtr = std::get_if<LogicTickFunc>(&state.definition.callback);
-            if (!callbackPtr) continue;
-            auto callback = *callbackPtr;
-            if (!callback) continue;
+            if (!state.definition.logicTickFunc) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            DebugZoneScopedN("OnTick");
+            DebugZoneScopedN("OnLogicTick");
             DebugZoneStr(ecs::ToString(lock, ent));
-            callback(state, lock, ent, interval);
+            state.definition.logicTickFunc.callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
 
     void ScriptManager::RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval) {
         ZoneScoped;
-        auto &scriptSet = scripts[ScriptType::PhysicsScript];
         std::shared_lock l1(dynamicLibraryMutex);
-        std::shared_lock l2(scriptSet.mutex);
-        for (size_t i : scriptSet.activeScriptList) {
+        std::shared_lock l2(scriptSet.physicsScriptMutex);
+        for (size_t i : scriptSet.physicsScripts) {
             auto &[ent, state] = scriptSet.scripts[i];
             if (!ent.Has<Scripts>(lock)) continue;
-            auto *callbackPtr = std::get_if<PhysicsTickFunc>(&state.definition.callback);
-            if (!callbackPtr) continue;
-            auto callback = *callbackPtr;
-            if (!callback) continue;
+            if (!state.definition.physicsTickFunc) continue;
             if (state.definition.filterOnEvent && state.eventQueue && state.eventQueue->Empty()) continue;
-            DebugZoneScopedN("OnPhysicsUpdate");
+            DebugZoneScopedN("OnPhysicsTick");
             DebugZoneStr(ecs::ToString(lock, ent));
-            callback(state, lock, ent, interval);
+            state.definition.physicsTickFunc.callback(state, lock, ent, interval);
             state.lastEvent = {};
         }
     }
@@ -445,57 +439,51 @@ namespace ecs {
         ZoneScoped;
         DebugZoneStr(ecs::ToString(lock, ent));
 
-        auto &scriptSet = scripts[ScriptType::EventScript];
         std::shared_lock l1(dynamicLibraryMutex);
-        std::shared_lock l2(scriptSet.mutex);
+        std::shared_lock l2(scriptSet.eventScriptMutex);
 
         size_t eventCount = 0;
         auto &scripts = ent.Get<const Scripts>(lock);
         for (auto &instance : scripts.scripts) {
             if (!instance) continue;
             auto &state = *instance.state;
-            auto *callbackPtr = std::get_if<OnEventFunc>(&state.definition.callback);
-            if (!callbackPtr) continue;
-            auto callback = *callbackPtr;
-            if (!callback) continue;
+            auto &eventFunc = state.definition.onEventFunc;
+            if (!eventFunc) continue;
             if (!sp::contains(state.definition.events, event.name)) continue;
-            if ((state.definition.readPermissions & lock.GetReadPermissions()) == state.definition.readPermissions &&
-                (state.definition.writePermissions & lock.GetWritePermissions()) == state.definition.writePermissions) {
-                callback(state, lock, ent, event);
+            if ((eventFunc.readPermissions & lock.GetDynamicReadPermissions()) == eventFunc.readPermissions &&
+                (eventFunc.writePermissions & lock.GetDynamicWritePermissions()) == eventFunc.writePermissions) {
+                eventFunc.callback(state, lock, ent, event);
                 state.lastEvent = {};
             } else {
                 // Not all lock permissions available, queue event async
                 // TODO: Sending multiple events can bottleneck here, need a better system to group async events into
                 // batched transactions
                 QueueTransaction(NewDispatchSource,
-                    state.definition.readPermissions | SendEventsLock::GetReadPermissions(),
-                    state.definition.writePermissions,
+                    eventFunc.readPermissions | SendEventsLock::GetReadPermissions(),
+                    eventFunc.writePermissions,
                     [this, ent, event, instanceId = instance.GetInstanceId()](const DynamicLock<> &dynamicLock) {
                         ZoneScopedN("RunEventHandlersAsync");
                         auto tryLock = dynamicLock.TryLock<SendEventsLock>();
                         Assertf(tryLock.has_value(), "QueueTransaction returned dynamic lock with missing permissions");
                         DebugZoneStr(ecs::ToString(*tryLock, ent));
 
-                        auto &scriptSet = this->scripts[ScriptType::EventScript];
                         std::shared_lock l1(dynamicLibraryMutex);
-                        std::shared_lock l2(scriptSet.mutex);
+                        std::shared_lock l2(scriptSet.eventScriptMutex);
 
                         auto &scripts = ent.Get<const Scripts>(*tryLock);
                         for (auto &instance : scripts.scripts) {
                             if (!instance) continue;
                             if (instance.GetInstanceId() == instanceId) {
                                 auto &state = *instance.state;
-                                Assertf((state.definition.readPermissions & dynamicLock.GetReadPermissions()) ==
-                                                state.definition.readPermissions &&
-                                            (state.definition.writePermissions & dynamicLock.GetWritePermissions()) ==
-                                                state.definition.writePermissions,
+                                auto &eventFunc = state.definition.onEventFunc;
+                                Assertf((eventFunc.readPermissions & dynamicLock.GetDynamicReadPermissions()) ==
+                                                eventFunc.readPermissions &&
+                                            (eventFunc.writePermissions & dynamicLock.GetDynamicWritePermissions()) ==
+                                                eventFunc.writePermissions,
                                     "Async event permissions did not match");
-                                auto *callbackPtr = std::get_if<OnEventFunc>(&state.definition.callback);
-                                if (!callbackPtr) continue;
-                                auto callback = *callbackPtr;
-                                if (!callback) continue;
+                                if (!eventFunc) continue;
                                 if (!sp::contains(state.definition.events, event.name)) continue;
-                                callback(state, *tryLock, ent, event);
+                                eventFunc.callback(state, *tryLock, ent, event);
                                 state.lastEvent = {};
                                 break;
                             }
@@ -522,9 +510,9 @@ namespace ecs {
         static thread_local size_t recursionDepth = 0;
         std::optional<sp::Defer<std::function<void()>>> l;
         if (++recursionDepth == 1) {
-            scripts[ScriptType::PrefabScript].mutex.lock();
+            scriptSet.prefabScriptMutex.lock();
             l.emplace([this]() {
-                scripts[ScriptType::PrefabScript].mutex.unlock();
+                scriptSet.prefabScriptMutex.unlock();
             });
         }
 
@@ -535,11 +523,8 @@ namespace ecs {
             auto instance = ent.Get<const Scripts>(lock).scripts[i];
             if (!instance) continue;
             auto &state = *instance.state;
-            auto *callbackPtr = std::get_if<PrefabFunc>(&state.definition.callback);
-            if (!callbackPtr) continue;
-            auto callback = *callbackPtr;
-            if (!callback) continue;
-            callback(state, scene, lock, ent);
+            if (!state.definition.prefabFunc) continue;
+            state.definition.prefabFunc(state, scene, lock, ent);
         }
     }
 } // namespace ecs
