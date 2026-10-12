@@ -33,12 +33,10 @@ namespace ecs {
             if (!activeState) return false;
             ecs::ScriptState &state = *activeState;
 
-            Assertf(state.definition.type == ScriptType::GuiScript,
-                "ScriptGuiDefinition %s is wrong type: %s",
-                state.definition.name,
-                state.definition.type);
-            Assertf(std::holds_alternative<GuiRenderFuncs>(state.definition.callback),
-                "ScriptGuiDefinition %s has invalid callback type",
+            auto &beforeFrame = state.definition.beforeFrameFunc;
+            auto &renderGui = state.definition.renderGuiFunc;
+            Assertf(beforeFrame || renderGui,
+                "ScriptGuiDefinition %s is missing gui callback definitions",
                 state.definition.name);
 
             {
@@ -54,8 +52,8 @@ namespace ecs {
                 }
             }
 
-            auto &[beforeFrame, renderGui] = std::get<ecs::GuiRenderFuncs>(state.definition.callback);
-            if (beforeFrame && renderGui && beforeFrame(compositor, state, ent)) {
+            if (beforeFrame && !beforeFrame(compositor, state, ent)) return false;
+            if (renderGui) {
                 auto &io = ImGui::GetIO();
                 ImGuiViewport *imguiViewport = ImGui::GetMainViewport();
                 Assertf(imguiViewport != nullptr, "ImGui::GetMainViewport() returned null");

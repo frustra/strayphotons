@@ -19,7 +19,7 @@ namespace sp::scripts {
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Read<TransformTree>, Write<Signals>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -72,13 +72,13 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &RelativeMovement::targetEntity),
         StructField::New("up_reference", &RelativeMovement::referenceEntity));
-    LogicScript<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
+    BuiltInScript<RelativeMovement> relativeMovement("relative_movement", MetadataRelativeMovement);
 
     struct PlayerRotation {
         EntityRef targetEntity;
         bool enableSmoothRotation = false;
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Write<TransformTree>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -130,10 +130,13 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &PlayerRotation::targetEntity),
         StructField::New("smooth_rotation", &PlayerRotation::enableSmoothRotation));
-    LogicScript<PlayerRotation> playerRotation("player_rotation", MetadataPlayerRotation, false, "/action/snap_rotate");
+    BuiltInScript<PlayerRotation> playerRotation("player_rotation",
+        MetadataPlayerRotation,
+        false,
+        "/action/snap_rotate");
 
     struct CameraView {
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<Write<TransformTree>, Read<EventInput>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -168,5 +171,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
-    LogicScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
+    BuiltInScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
 } // namespace sp::scripts

@@ -3,7 +3,7 @@
 		"signal_output": {},
 		"event_input": {},
 		"script": {
-			"name": "signal_from_event",
+			"name": "async_signal_from_event",
 			"parameters": {
 				"outputs": "door_open"
 			}

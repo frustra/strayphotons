@@ -460,7 +460,7 @@ namespace sp {
             ImGui::Separator();
             ImGui::Dummy(ImVec2(0, 6));
             if (!selectedComponent) ImGui::BeginDisabled();
-            if (ImGui::Button("Add") && selectedComponent) {
+            if (ImGui::Button("Add##addComponentButton") && selectedComponent) {
                 ecs::EntityScope scope(scene.data->name, "");
                 if (target.Has<ecs::SceneInfo>(lock)) {
                     auto &targetSceneInfo = target.Get<ecs::SceneInfo>(lock);
@@ -552,7 +552,7 @@ namespace sp {
                 &sceneEntry,
                 ImGuiInputTextFlags_EnterReturnsTrue);
             ImGui::SameLine();
-            if (ImGui::Button("Add") || submit) {
+            if (ImGui::Button("Add##addSceneButton") || submit) {
                 GetSceneManager().QueueAction(NewDispatchSource, SceneAction::AddScene, sceneEntry);
                 sceneEntry.clear();
                 ImGui::CloseCurrentPopup();

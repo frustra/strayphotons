@@ -403,6 +403,7 @@ namespace ecs {
                     }
 
                     // Execute event modifiers before submitting to the destination queue
+                    // Note: event scripts could have modified signals that the filters depend on
                     AsyncEvent outputEvent = event;
                     if (!filterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
 

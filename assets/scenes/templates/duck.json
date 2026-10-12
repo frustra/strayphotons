@@ -39,7 +39,7 @@
 				}
 			},
 			{
-				"name": "signal_from_event",
+				"name": "async_signal_from_event",
 				"parameters": {
 					"outputs": "last_play"
 				}

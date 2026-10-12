@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapVector.hh"
 
 #include <cstdint>
 #include <memory>

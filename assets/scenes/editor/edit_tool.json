@@ -38,7 +38,7 @@
                     "name": "edit_tool"
                 },
                 {
-                    "name": "signal_from_event",
+                    "name": "async_signal_from_event",
                     "parameters": {
                         "outputs": "edit_mode"
                     }

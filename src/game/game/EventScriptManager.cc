@@ -20,7 +20,8 @@ namespace sp {
         (void)this->windowInputQueue;
     }
 
-    void EventScriptManager::UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
+    void EventScriptManager::UpdateInputEvents(
+        const ecs::DynamicLock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
         LockFreeEventQueue<ecs::Event> &inputQueue) {
         ZoneScoped;
         static const ecs::EntityRef keyboardEntity = ecs::Name("input", "keyboard");

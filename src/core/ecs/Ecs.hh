@@ -151,6 +151,8 @@ namespace ecs {
     ECS &StagingWorld();
     sp::DispatchQueue &TransactionQueue();
 
+    class ComponentBase;
+    int GetComponentIndex(const ComponentBase &component);
     int GetComponentIndex(const std::string &componentName);
 
     template<typename... Permissions>

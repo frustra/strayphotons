@@ -55,7 +55,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
     if (output_size >= 1 && output != NULL) {
         sp_string_set(&output[0].name, "life_cell");
         output[0].desc = "An event handling script to notify neighboring cells when state changes";
-        output[0].type = SP_SCRIPT_TYPE_LOGIC_SCRIPT;
         output[0].filter_on_event = false;
         sp_dynamic_script_definition_add_event(&output[0], "/life/neighbor_alive");
         sp_dynamic_script_definition_add_event(&output[0], "/life/toggle_alive");
@@ -80,11 +79,10 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
             offsetof(script_life_cell_t, neighborCount));
 
         output[0].context_size = sizeof(script_life_cell_t);
-        output[0].on_tick_func = &life_cell_on_tick;
+        output[0].logic_tick_func = &life_cell_on_tick;
 
         // sp_string_set(&output[1].name, "prefab_life");
-        // output[1].type = SP_SCRIPT_TYPE_PREFAB_SCRIPT;
-        // output[1].on_tick_func = &sun_on_tick;
+        // output[1].logic_tick_func = &sun_on_tick;
     }
     return 1;
 }

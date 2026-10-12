@@ -288,7 +288,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<Write<Physics, PhysicsJoints, PhysicsQuery, LaserLine, TransformTree>,
                 Read<TransformSnapshot>,
                 SendEventsLock> lock,
@@ -458,7 +458,7 @@ namespace sp::scripts {
         StructField::New("force_limit", &VrHandScript::forceLimit),
         StructField::New("torque_limit", &VrHandScript::torqueLimit),
         StructField::New("noclip_entity", &VrHandScript::noclipEntity));
-    LogicScript<VrHandScript> vrHandScript("vr_hand",
+    BuiltInScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
         false,
         INTERACT_EVENT_INTERACT_GRAB,

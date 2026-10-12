@@ -35,8 +35,8 @@ namespace sp::scripts {
         HeapString templateSource;
         bool resetScale = false;
 
-        void OnTick(ScriptState &state,
-            Lock<Write<ActiveScene>,
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<Write<ActiveScene>,
                 Read<TransformTree, TransformSnapshot, SceneInfo, SceneProperties>,
                 ReadSignalsLock> lock,
             Entity ent,
@@ -149,7 +149,7 @@ namespace sp::scripts {
         "",
         StructField::New("source", &TraySpawner::templateSource),
         StructField::New("reset_scale", &TraySpawner::resetScale));
-    LogicScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+    BuiltInScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {
         Entity selectedEntity;
@@ -214,7 +214,7 @@ namespace sp::scripts {
             // selectedEntity.Get<TransformSnapshot>(lock).globalPose = targetTree.GetGlobalTransform(lock);
         }
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Read<TransformSnapshot>, Write<LaserLine, TransformTree, PhysicsQuery, Signals>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -318,5 +318,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEditTool(typeid(EditTool), sizeof(EditTool), "EditTool", "");
-    LogicScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
+    BuiltInScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

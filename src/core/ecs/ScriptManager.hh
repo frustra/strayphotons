@@ -11,6 +11,7 @@
 #include "console/CFunc.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptDefinition.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Logging.hh"
 
@@ -124,7 +125,7 @@ namespace ecs {
         Event *PollEvent(const Lock<Read<EventInput>> &lock);
 
         explicit operator bool() const {
-            return !std::holds_alternative<std::monostate>(definition.callback);
+            return (bool)definition;
         }
 
         // Compare script definition and parameters
@@ -135,6 +136,10 @@ namespace ecs {
 
         size_t GetInstanceId() const {
             return instanceId;
+        }
+
+        bool IsActive() const {
+            return index < std::numeric_limits<size_t>::max();
         }
 
         EntityScope scope;
@@ -172,9 +177,11 @@ namespace ecs {
 
     struct ScriptSet {
         std::deque<std::pair<Entity, ScriptState>> scripts;
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeScriptList;
-        std::vector<size_t> activeScriptList;
-        mutable sp::LockFreeMutex mutex;
+        sp::HeapVector<size_t> validScriptList;
+        std::priority_queue<size_t, sp::HeapVector<size_t>, std::greater<size_t>> freeScriptList;
+        sp::LockFreeMutex mutex;
+        sp::HeapVector<size_t> logicScripts, physicsScripts, eventScripts, prefabScripts, guiScripts;
+        sp::LockFreeMutex logicScriptMutex, physicsScriptMutex, eventScriptMutex, prefabScriptMutex, guiScriptMutex;
     };
 
     class ScriptManager {
@@ -188,6 +195,7 @@ namespace ecs {
         std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope,
             const ScriptDefinition &definition,
             bool runInit = false);
+        void RemoveScriptInstance(ScriptState &state);
 
         std::shared_ptr<DynamicLibrary> LoadDynamicLibrary(const std::string &name);
         void ReloadDynamicLibraries();
@@ -205,10 +213,42 @@ namespace ecs {
         template<typename Fn>
         auto WithGuiScriptLock(Fn &&callback) {
             ZoneScoped;
-            auto &scriptSet = scripts[ScriptType::GuiScript];
             std::shared_lock l1(dynamicLibraryMutex);
-            std::shared_lock l2(scriptSet.mutex);
+            std::shared_lock l2(scriptSet.guiScriptMutex);
             return callback();
+        }
+
+        template<typename Fn>
+        void WithScriptLock(const ScriptDefinition &definition, bool exclusive, Fn &&callback) {
+            ZoneScoped;
+            std::shared_lock l1(dynamicLibraryMutex);
+            if (exclusive) {
+                if (definition.logicTickFunc) scriptSet.logicScriptMutex.lock();
+                if (definition.physicsTickFunc) scriptSet.physicsScriptMutex.lock();
+                if (definition.onEventFunc) scriptSet.eventScriptMutex.lock();
+                if (definition.prefabFunc) scriptSet.eventScriptMutex.lock();
+                if (definition.beforeFrameFunc || definition.renderGuiFunc) scriptSet.guiScriptMutex.lock();
+            } else {
+                if (definition.logicTickFunc) scriptSet.logicScriptMutex.lock_shared();
+                if (definition.physicsTickFunc) scriptSet.physicsScriptMutex.lock_shared();
+                if (definition.onEventFunc) scriptSet.eventScriptMutex.lock_shared();
+                if (definition.prefabFunc) scriptSet.eventScriptMutex.lock_shared();
+                if (definition.beforeFrameFunc || definition.renderGuiFunc) scriptSet.guiScriptMutex.lock_shared();
+            }
+            callback();
+            if (exclusive) {
+                if (definition.logicTickFunc) scriptSet.logicScriptMutex.unlock();
+                if (definition.physicsTickFunc) scriptSet.physicsScriptMutex.unlock();
+                if (definition.onEventFunc) scriptSet.eventScriptMutex.unlock();
+                if (definition.prefabFunc) scriptSet.eventScriptMutex.unlock();
+                if (definition.beforeFrameFunc || definition.renderGuiFunc) scriptSet.guiScriptMutex.unlock();
+            } else {
+                if (definition.logicTickFunc) scriptSet.logicScriptMutex.unlock_shared();
+                if (definition.physicsTickFunc) scriptSet.physicsScriptMutex.unlock_shared();
+                if (definition.onEventFunc) scriptSet.eventScriptMutex.unlock_shared();
+                if (definition.prefabFunc) scriptSet.eventScriptMutex.unlock_shared();
+                if (definition.beforeFrameFunc || definition.renderGuiFunc) scriptSet.guiScriptMutex.unlock_shared();
+            }
         }
 
     private:
@@ -217,7 +257,7 @@ namespace ecs {
             std::shared_ptr<ScriptState> instance);
 
         sp::CFuncCollection funcs;
-        sp::EnumArray<ScriptSet, ScriptType> scripts = {};
+        ScriptSet scriptSet = {};
 
         mutable sp::LockFreeMutex dynamicLibraryMutex;
         robin_hood::unordered_map<std::string, std::shared_ptr<DynamicLibrary>> dynamicLibraries;

@@ -14,7 +14,7 @@ Script Example Definition
         // Internal script state
         bool init = false;
 
-        void OnTick(ScriptState &state, Lock<Read<Name, EventInput>> lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state, Lock<Read<Name, EventInput>> lock, Entity ent, chrono_clock::duration interval) {
             if (!init) {
                 // First run only
                 Logf("Example script added to %s", ToString(lock, ent));
@@ -41,6 +41,6 @@ Script Example Definition
         StructField::New("input_expression", &Example::expr));
 
     // Scripts self-registered using an instance of the LogicScript template.
-    // A script's input events are defined here, as well as if OnTick should be called every logic frame, or only if events are available.
-    LogicScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
+    // A script's input events are defined here, as well as if OnLogicTick should be called every logic frame, or only if events are available.
+    BuiltInScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
 ```

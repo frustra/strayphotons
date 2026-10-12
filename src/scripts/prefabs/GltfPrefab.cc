@@ -142,5 +142,5 @@ namespace ecs {
         StructField::New("render", &GltfPrefab::render),
         StructField::New("physics", &GltfPrefab::physicsType),
         StructField::New("interactive", &GltfPrefab::interactive));
-    PrefabScript<GltfPrefab> gltfPrefab("prefab_gltf", MetadataGltfPrefab);
+    BuiltInScript<GltfPrefab> gltfPrefab("prefab_gltf", MetadataGltfPrefab);
 } // namespace ecs

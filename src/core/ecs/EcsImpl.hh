@@ -13,6 +13,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/EventQueue.hh"
 #include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Logging.hh"
 
 // Components
@@ -51,7 +52,7 @@
 namespace ecs {
     struct EventQueuePool : public sp::NonMoveable {
         sp::LogOnExit logOnExit = "EventQueuePool shut down ==============================================";
-        std::mutex mutex;
+        sp::LockFreeMutex mutex;
         std::deque<EventQueue> pool;
         std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeList;
     };

@@ -66,10 +66,7 @@ namespace ecs {
     struct DynamicScriptDefinition {
         sp::HeapString name;
         char *desc = nullptr;
-        ScriptType type;
         bool filterOnEvent = false;
-        uint64_t readPermissions = 0;
-        uint64_t writePermissions = 0;
         sp::HeapVector<EventName> events;
         sp::HeapVector<StructField> fields;
 
@@ -78,8 +75,15 @@ namespace ecs {
         void (*defaultFreeFunc)(void *) = nullptr;
         void (*initFunc)(void *, ScriptState &) = nullptr;
         void (*destroyFunc)(void *, ScriptState &) = nullptr;
-        void (*onTickFunc)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t) = nullptr;
+        void (*logicTickFunc)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t) = nullptr;
+        uint64_t logicReadPermissions = 0;
+        uint64_t logicWritePermissions = 0;
+        void (*physicsTickFunc)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t) = nullptr;
+        uint64_t physicsReadPermissions = 0;
+        uint64_t physicsWritePermissions = 0;
         void (*onEventFunc)(void *, ScriptState &, DynamicLock<> &, Entity, Event &) = nullptr;
+        uint64_t eventReadPermissions = 0;
+        uint64_t eventWritePermissions = 0;
         void (*prefabFunc)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &) = nullptr;
         bool (*beforeFrameFunc)(void *, sp::GenericCompositor &, ScriptState &, Entity) = nullptr;
         void (*renderGuiFunc)(void *,
@@ -103,13 +107,6 @@ namespace ecs {
         "A definition describing the name, type, and functions of a script",
         StructField::New("name", "The name of the script", &DynamicScriptDefinition::name),
         StructField::New("desc", "A description of how to use the script", &DynamicScriptDefinition::desc),
-        StructField::New("type", "The type of the script", &DynamicScriptDefinition::type),
-        StructField::New("read_permissions",
-            "A bitset representing which components will be locked for reading (bit 0 = reading entity Exists/Has)",
-            &DynamicScriptDefinition::readPermissions),
-        StructField::New("write_permissions",
-            "A bitset representing which components will be locked for writing (bit 0 = AddRemove)",
-            &DynamicScriptDefinition::writePermissions),
         StructField::New("filter_on_event",
             "True if this script should only run if new events are received",
             &DynamicScriptDefinition::filterOnEvent),
@@ -122,8 +119,32 @@ namespace ecs {
         StructField::New("default_free_func", &DynamicScriptDefinition::defaultFreeFunc),
         StructField::New("init_func", &DynamicScriptDefinition::initFunc),
         StructField::New("destroy_func", &DynamicScriptDefinition::destroyFunc),
-        StructField::New("on_tick_func", &DynamicScriptDefinition::onTickFunc),
+        StructField::New("logic_tick_func", &DynamicScriptDefinition::logicTickFunc),
+        StructField::New("logic_read_permissions",
+            "A bitset representing which components logic_tick_func requires locked for reading (bit 0 = reading "
+            "entity Exists/Has)",
+            &DynamicScriptDefinition::logicReadPermissions),
+        StructField::New("logic_write_permissions",
+            "A bitset representing which components logic_tick_func requires locked for writing (bit 0 = AddRemove)",
+            &DynamicScriptDefinition::logicWritePermissions),
+        StructField::New("physics_tick_func", &DynamicScriptDefinition::physicsTickFunc),
+        StructField::New("physics_read_permissions",
+            "A bitset representing which components physics_tick_func requires locked for reading (bit 0 = reading "
+            "entity Exists/Has)",
+            &DynamicScriptDefinition::physicsReadPermissions),
+        StructField::New("physics_write_permissions",
+            "A bitset representing which components physics_tick_func requires locked for writing (bit 0 = AddRemove)",
+            &DynamicScriptDefinition::physicsWritePermissions),
         StructField::New("on_event_func", &DynamicScriptDefinition::onEventFunc),
+        StructField::New("event_read_permissions",
+            "A bitset representing which components event_read_permissions requires locked for reading (bit 0 = "
+            "reading "
+            "entity Exists/Has)",
+            &DynamicScriptDefinition::eventReadPermissions),
+        StructField::New("event_write_permissions",
+            "A bitset representing which components event_read_permissions requires locked for writing (bit 0 = "
+            "AddRemove)",
+            &DynamicScriptDefinition::eventWritePermissions),
         StructField::New("prefab_func", &DynamicScriptDefinition::prefabFunc),
         StructField::New("before_frame_func", &DynamicScriptDefinition::beforeFrameFunc),
         StructField::New("render_gui_func", &DynamicScriptDefinition::renderGuiFunc),

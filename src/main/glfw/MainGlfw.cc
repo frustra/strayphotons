@@ -436,13 +436,13 @@ int main(int argc, char **argv) {
             FrameMarkStart(frameName);
             if (scriptMode) {
                 while (GraphicsStepCount < GraphicsMaxStepCount) {
-                    GameInputHandler->Frame();
+                    if (GameInputHandler) GameInputHandler->Frame();
                     sp_graphics_handle_input_frame(GameGraphics);
                     GraphicsStepCount++;
                 }
                 GraphicsStepCount.notify_all();
             } else {
-                GameInputHandler->Frame();
+                if (GameInputHandler) GameInputHandler->Frame();
                 if (!sp_graphics_handle_input_frame(GameGraphics)) {
                     Tracef("Exit triggered via window manager");
                     break;

@@ -5,6 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
@@ -20,7 +21,10 @@ namespace sp::scripts {
     struct InitEvent {
         HeapVector<EventName> outputs;
 
-        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             state.definition.events.clear();
             state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
 
@@ -34,7 +38,7 @@ namespace sp::scripts {
         "InitEvent",
         "",
         StructField::New(&InitEvent::outputs));
-    LogicScript<InitEvent> initEvent("init_event", MetadataInitEvent);
+    BuiltInScript<InitEvent> initEvent("init_event", MetadataInitEvent);
 
     struct EventGateBySignal {
         EventName inputEvent, outputEvent;
@@ -49,7 +53,10 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
                 if (outputEvent.empty()) continue;
@@ -68,7 +75,7 @@ namespace sp::scripts {
         StructField::New("input_event", &EventGateBySignal::inputEvent),
         StructField::New("output_event", &EventGateBySignal::outputEvent),
         StructField::New("gate_expr", &EventGateBySignal::gateExpression));
-    LogicScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
+    BuiltInScript<EventGateBySignal> eventGateBySignal("event_gate_by_signal", MetadataEventGateBySignal);
 
     struct CollapseEvents {
         robin_hood::unordered_map<EventName, EventName, StringHash, StringEqual> mapping;
@@ -82,7 +89,7 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, DynamicLock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
             robin_hood::unordered_map<EventName, std::optional<Event>, StringHash, StringEqual> outputEvents;
             Event event;
             while (EventInput::Poll(lock, state.eventQueue, event)) {
@@ -101,8 +108,24 @@ namespace sp::scripts {
         "CollapseEvents",
         "",
         StructField::New(&CollapseEvents::mapping));
-    LogicScript<CollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
-    PhysicsScript<CollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
+    struct LogicCollapseEvents : public CollapseEvents {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            OnTick(state, lock, ent, interval);
+        }
+    };
+    BuiltInScript<LogicCollapseEvents> collapseEvents("collapse_events", MetadataCollapseEvents);
+    struct PhysicsCollapseEvents : public CollapseEvents {
+        void OnPhysicsTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            OnTick(state, lock, ent, interval);
+        }
+    };
+    BuiltInScript<PhysicsCollapseEvents> physicsCollapseEvents("physics_collapse_events", MetadataCollapseEvents);
 
     struct SignalFromEvent {
         HeapVector<HeapString> outputs;
@@ -119,49 +142,43 @@ namespace sp::scripts {
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state,
-            Lock<Read<EventInput>, Write<Signals>> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
-                double eventValue = EventData::Visit(event.data, [](auto &data) {
-                    using T = std::decay_t<decltype(data)>;
+        void ProcessEvent(Lock<Write<Signals>> lock, Entity ent, Event event) {
+            Assertf(sp::starts_with(event.name, "/signal/"), "Event name should be /signal/<action>/<signal>");
+            double eventValue = EventData::Visit(event.data, [](auto &data) {
+                using T = std::decay_t<decltype(data)>;
 
-                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                        return (double)data;
-                    } else if constexpr (std::is_convertible_v<T, bool>) {
-                        return (double)(bool)data;
-                    } else {
-                        return 1.0;
-                    }
-                });
-
-                auto eventName = std::string_view(event.name).substr("/signal/"s.size());
-                auto delimiter = eventName.find('/');
-                Assertf(delimiter != std::string_view::npos, "Event name should be /signal/<action>/<signal>");
-                auto action = eventName.substr(0, delimiter);
-                std::string signalName(eventName.substr(delimiter + 1));
-                if (signalName.empty()) continue;
-
-                SignalRef ref(ent, signalName);
-                if (action == "toggle") {
-                    auto &currentValue = ref.GetValue(lock);
-                    if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
-                        ref.SetValue(lock, 0);
-                    } else {
-                        ref.SetValue(lock, eventValue);
-                    }
-                } else if (action == "set") {
-                    ref.SetValue(lock, eventValue);
-                } else if (action == "add") {
-                    ref.SetValue(lock, ref.GetValue(lock) + eventValue);
-                } else if (action == "clear") {
-                    ref.ClearValue(lock);
+                if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                    return (double)data;
+                } else if constexpr (std::is_convertible_v<T, bool>) {
+                    return (double)(bool)data;
                 } else {
-                    Errorf("Unknown signal action: '%s'", std::string(action));
+                    return 1.0;
                 }
+            });
+
+            auto eventName = std::string_view(event.name).substr("/signal/"s.size());
+            auto delimiter = eventName.find('/');
+            Assertf(delimiter != std::string_view::npos, "Event name should be /signal/<action>/<signal>");
+            auto action = eventName.substr(0, delimiter);
+            std::string signalName(eventName.substr(delimiter + 1));
+            if (signalName.empty()) return;
+
+            SignalRef ref(ent, signalName);
+            if (action == "toggle") {
+                auto &currentValue = ref.GetValue(lock);
+                if (glm::epsilonEqual(currentValue, eventValue, (double)std::numeric_limits<float>::epsilon())) {
+                    ref.SetValue(lock, 0);
+                } else {
+                    ref.SetValue(lock, eventValue);
+                }
+            } else if (action == "set") {
+                ref.SetValue(lock, eventValue);
+            } else if (action == "add") {
+                ref.SetValue(lock, ref.GetValue(lock) + eventValue);
+            } else if (action == "clear") {
+                ref.ClearValue(lock);
+            } else {
+                Errorf("Unknown signal action: '%s'", std::string(action));
             }
         }
     };
@@ -170,12 +187,29 @@ namespace sp::scripts {
         "SignalFromEvent",
         "",
         StructField::New("outputs", &SignalFromEvent::outputs));
-    LogicScript<SignalFromEvent> signalFromEvent("signal_from_event", MetadataSignalFromEvent);
+    struct AsyncSignalFromEvent : public SignalFromEvent {
+        void OnEvent(ScriptState &state, Lock<Write<Signals>> lock, Entity ent, Event event) {
+            ProcessEvent(lock, ent, event);
+        }
+    };
+    BuiltInScript<AsyncSignalFromEvent> asyncSignalFromEvent("async_signal_from_event", MetadataSignalFromEvent);
+    struct LogicSignalFromEvent : public SignalFromEvent {
+        void OnLogicTick(ScriptState &state,
+            Lock<Read<EventInput>, Write<Signals>> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            Event event;
+            while (EventInput::Poll(lock, state.eventQueue, event)) {
+                ProcessEvent(lock, ent, event);
+            }
+        }
+    };
+    BuiltInScript<LogicSignalFromEvent> logicSignalFromEvent("signal_from_event", MetadataSignalFromEvent);
 
     struct EventFromSignal {
         robin_hood::unordered_map<EventName, SignalExpression, StringHash, StringEqual> outputs;
 
-        void OnTick(ScriptState &state, SendEventsLock lock, Entity ent, chrono_clock::duration interval) {
+        void OnTick(ScriptState &state, DynamicLock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
             for (auto &[name, expr] : outputs) {
                 ZoneScopedN("EventFromSignal::sendOutputEvents");
                 auto value = expr.Evaluate(lock);
@@ -191,8 +225,24 @@ namespace sp::scripts {
         "EventFromSignal",
         "",
         StructField::New(&EventFromSignal::outputs));
-    LogicScript<EventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
-    PhysicsScript<EventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
+    struct LogicEventFromSignal : public EventFromSignal {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            OnTick(state, lock, ent, interval);
+        }
+    };
+    BuiltInScript<LogicEventFromSignal> eventFromSignal("event_from_signal", MetadataEventFromSignal);
+    struct PhysicsEventFromSignal : public EventFromSignal {
+        void OnPhysicsTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
+            OnTick(state, lock, ent, interval);
+        }
+    };
+    BuiltInScript<PhysicsEventFromSignal> physicsEventFromSignal("physics_event_from_signal", MetadataEventFromSignal);
 
     struct ComponentFromEvent {
         HeapVector<HeapString> outputs;
@@ -212,94 +262,79 @@ namespace sp::scripts {
                 auto fieldName = fieldPath.substr(delimiter + 1);
                 if (componentName.empty() || fieldName.empty()) continue;
 
+                const ecs::ComponentBase *comp = LookupComponent(componentName);
+                if (!comp) {
+                    Errorf("ComponentFromEvent unknown component: %s", componentName);
+                    continue;
+                }
+
+                std::optional<StructField> field = ecs::GetStructField(comp->metadata.type, fieldPath);
+                if (!field) {
+                    Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
+                    continue;
+                }
+
+                componentCache.emplace(fieldPath, std::pair{comp, field});
+                uint64_t componentPermission = 2 << (ecs::GetComponentIndex(*comp));
+                state.definition.onEventFunc.readPermissions |= componentPermission;
+                state.definition.onEventFunc.writePermissions |= componentPermission;
+
                 state.definition.events.emplace_back("/set/" + fieldPath);
             }
             state.definition.filterOnEvent = true;
         }
 
-        void OnTick(ScriptState &state,
-            DynamicLock<Read<Name, EventInput>> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (!sp::starts_with(event.name, "/set/")) {
-                    Errorf("Unexpected event received by component_from_event: %s", event.name);
-                    continue;
-                }
+        void OnEvent(ScriptState &state, DynamicLock<Read<Name>> lock, Entity ent, Event event) {
+            if (!sp::starts_with(event.name, "/set/")) {
+                Errorf("Unexpected event received by component_from_event: %s", event.name);
+                return;
+            }
 
-                auto fieldPath = std::string_view(event.name).substr("/set/"s.size());
-                size_t delimiter = fieldPath.find('.');
-                if (delimiter == std::string_view::npos) {
-                    Errorf("Unexpected event received by component_from_event: %s", event.name);
-                    continue;
-                }
-                std::string componentName(fieldPath.substr(0, delimiter));
+            auto fieldPath = std::string_view(event.name).substr("/set/"s.size());
+            auto it = componentCache.find(fieldPath);
+            if (it == componentCache.end()) return;
+            const ecs::ComponentBase *comp = it->second.first;
+            std::optional<StructField> field = it->second.second;
+            if (!comp->HasComponent(lock, ent)) return;
 
-                const ecs::ComponentBase *comp;
-                std::optional<StructField> field;
-                auto existing = componentCache.find(fieldPath);
-                if (existing != componentCache.end()) {
-                    std::tie(comp, field) = existing->second;
-                } else {
-                    comp = LookupComponent(componentName);
-                    if (!comp) {
-                        Errorf("ComponentFromEvent unknown component: %s", componentName);
-                        continue;
-                    }
-                    if (!comp->HasComponent(lock, ent)) continue;
+            void *compPtr = comp->AccessMut(lock, ent);
+            if (!compPtr) {
+                Errorf("ComponentFromEvent %s access returned null data: %s", comp->name, ecs::ToString(lock, ent));
+                return;
+            }
+            EventData::Visit(event.data, [&](auto &data) {
+                using T = std::decay_t<decltype(data)>;
 
-                    field = ecs::GetStructField(comp->metadata.type, fieldPath);
-                    if (!field) {
-                        Errorf("ComponentFromEvent unknown component field: %s", fieldPath);
-                        continue;
-                    }
-
-                    componentCache.emplace(fieldPath, std::pair{comp, field});
-                }
-                if (!comp->HasComponent(lock, ent)) continue;
-
-                void *compPtr = comp->AccessMut(lock, ent);
-                if (!compPtr) {
-                    Errorf("ComponentFromEvent %s access returned null data: %s",
-                        componentName,
-                        ecs::ToString(lock, ent));
-                    continue;
-                }
-                EventData::Visit(event.data, [&](auto &data) {
-                    using T = std::decay_t<decltype(data)>;
-
-                    if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
-                        ecs::WriteStructField(compPtr, *field, [&data](double &value) {
-                            value = (double)data;
+                if constexpr (std::is_convertible_v<double, T> && std::is_convertible_v<T, double>) {
+                    ecs::WriteStructField(compPtr, *field, [&data](double &value) {
+                        value = (double)data;
+                    });
+                } else if constexpr (sp::is_glm_vec<T>()) {
+                    if constexpr (T::length() == 2) {
+                        ecs::WriteStructField(compPtr, *field, [&data](glm::dvec2 &value) {
+                            value = (glm::dvec2)data;
                         });
-                    } else if constexpr (sp::is_glm_vec<T>()) {
-                        if constexpr (T::length() == 2) {
-                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec2 &value) {
-                                value = (glm::dvec2)data;
-                            });
-                        } else if constexpr (T::length() == 3) {
-                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec3 &value) {
-                                value = (glm::dvec3)data;
-                            });
-                        } else if constexpr (T::length() == 4) {
-                            ecs::WriteStructField(compPtr, *field, [&data](glm::dvec4 &value) {
-                                value = (glm::dvec4)data;
-                            });
-                        } else {
-                            Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
-                                event.name,
-                                typeid(T).name(),
-                                comp->metadata.type.name());
-                        }
+                    } else if constexpr (T::length() == 3) {
+                        ecs::WriteStructField(compPtr, *field, [&data](glm::dvec3 &value) {
+                            value = (glm::dvec3)data;
+                        });
+                    } else if constexpr (T::length() == 4) {
+                        ecs::WriteStructField(compPtr, *field, [&data](glm::dvec4 &value) {
+                            value = (glm::dvec4)data;
+                        });
                     } else {
-                        Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                        Errorf("ComponentFromEvent '%s' incompatible vector type: setting %s to %s",
                             event.name,
                             typeid(T).name(),
                             comp->metadata.type.name());
                     }
-                });
-            }
+                } else {
+                    Errorf("ComponentFromEvent '%s' incompatible type: setting %s to %s",
+                        event.name,
+                        typeid(T).name(),
+                        comp->metadata.type.name());
+                }
+            });
         }
     };
     StructMetadata MetadataComponentFromEvent(typeid(ComponentFromEvent),
@@ -307,7 +342,5 @@ namespace sp::scripts {
         "ComponentFromEvent",
         "",
         StructField::New("outputs", &ComponentFromEvent::outputs));
-    LogicScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
-    PhysicsScript<ComponentFromEvent> physicsComponentFromEvent("physics_component_from_event",
-        MetadataComponentFromEvent);
+    BuiltInScript<ComponentFromEvent> componentFromEvent("component_from_event", MetadataComponentFromEvent);
 } // namespace sp::scripts
