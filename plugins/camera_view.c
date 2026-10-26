@@ -42,25 +42,25 @@ void camera_view_on_event(void *context,
 
     if (!transform) return;
 
-    quat_t originalRotation = {};
+    quat_t originalRotation = {0};
     sp_transform_get_rotation(&transform->transform, &originalRotation);
-    quat_t rotateY = {}, rotateX = {};
+    quat_t rotateY = {0}, rotateX = {0};
     glm_quatv(rotateY.q, -angleDiff->v[0] * 1.0, (vec3){0, 1, 0});
     glm_quatv(rotateX.q, -angleDiff->v[1] * 1.0, (vec3){1, 0, 0});
-    quat_t rotation = {};
+    quat_t rotation = {0};
     glm_quat_mul(rotateY.q, originalRotation.q, rotation.q);
     glm_quat_mul(rotation.q, rotateX.q, rotation.q);
 
-    vec3_t up = {};
+    vec3_t up = {0};
     glm_quat_rotatev(rotation.q, (vec3){0, 1, 0}, up.v);
     if (up.v[1] < 0) {
         // Camera is turning upside-down, reset it
-        vec3_t right = {};
+        vec3_t right = {0};
         glm_quat_rotatev(rotation.q, (vec3){1, 0, 0}, right.v);
         right.v[1] = 0;
         up.v[1] = 0;
 
-        vec3_t forward = {};
+        vec3_t forward = {0};
         glm_cross(right.v, up.v, forward.v);
 
         glm_normalize(right.v);
@@ -108,25 +108,25 @@ void camera_view_on_tick(void *context,
         // snprintf(buffer, 255, "[camera_view] Mouse input: (%.3f, %.3f)\n", angleDiff->v[0], angleDiff->v[1]);
         // sp_log_message(SP_LOG_LEVEL_LOG, buffer);
 
-        quat_t originalRotation = {};
+        quat_t originalRotation = {0};
         sp_transform_get_rotation(&transform->transform, &originalRotation);
-        quat_t rotateY = {}, rotateX = {};
+        quat_t rotateY = {0}, rotateX = {0};
         glm_quatv(rotateY.q, -angleDiff->v[0] * 1.0, (vec3){0, 1, 0});
         glm_quatv(rotateX.q, -angleDiff->v[1] * 1.0, (vec3){1, 0, 0});
-        quat_t rotation = {};
+        quat_t rotation = {0};
         glm_quat_mul(rotateY.q, originalRotation.q, rotation.q);
         glm_quat_mul(rotation.q, rotateX.q, rotation.q);
 
-        vec3_t up = {};
+        vec3_t up = {0};
         glm_quat_rotatev(rotation.q, (vec3){0, 1, 0}, up.v);
         if (up.v[1] < 0) {
             // Camera is turning upside-down, reset it
-            vec3_t right = {};
+            vec3_t right = {0};
             glm_quat_rotatev(rotation.q, (vec3){1, 0, 0}, right.v);
             right.v[1] = 0;
             up.v[1] = 0;
 
-            vec3_t forward = {};
+            vec3_t forward = {0};
             glm_cross(right.v, up.v, forward.v);
 
             glm_normalize(right.v);

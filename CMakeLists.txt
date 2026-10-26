@@ -41,8 +41,8 @@ if(SP_PACKAGE_RELEASE)
 endif()
 add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS=1)
 
-# Tell cmake we need C23
-set(CMAKE_C_STANDARD 23)
+# Tell cmake we need C17
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Tell cmake we need C++20
