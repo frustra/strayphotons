@@ -27,6 +27,17 @@ using namespace testing;
 int main(int argc, char **argv) {
     std::cout << "Running " << registeredTests.size() << " " << TEST_TYPE << " tests" << std::endl;
 
+    ecs::World().SetBeforeCommitCallback([](const ecs::DynamicLock<> &dynamicLock) {
+        ecs::GetEventScriptManager().FlushEventScripts(dynamicLock);
+        auto tryLock = dynamicLock.TryLock<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>();
+        if (tryLock.has_value()) ecs::Signals::BeforeCommit(*tryLock);
+    });
+    ecs::World().SetOnCommitCallback([](ecs::ECS &, [[maybe_unused]] uint64_t transactionId, uint64_t commitId) {
+        ecs::EventQueue::CommitPendingEvents(commitId);
+    });
+    ecs::World().SetAfterCommitCallback([](ecs::ECS &, [[maybe_unused]] uint64_t transactionId, uint64_t commitId) {
+        ecs::Signals::AfterCommit();
+    });
     sp::Assets().StartThread("../assets/");
     {
         auto stagingLock = ecs::StartStagingTransaction<ecs::AddRemove>();
