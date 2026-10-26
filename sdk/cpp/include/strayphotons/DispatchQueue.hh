@@ -148,10 +148,10 @@ namespace sp {
 
     class DispatchQueue : public NonCopyable {
     public:
-        DispatchQueue(std::string name,
+        DispatchQueue(std::string_view name,
             size_t threadCount = 1,
             chrono_clock::duration futuresPollInterval = std::chrono::milliseconds(5))
-            : name(std::move(name)), threads(threadCount), flushSleepInterval(futuresPollInterval) {
+            : name(std::move(name)), flushSleepInterval(futuresPollInterval), threads(threadCount) {
             for (auto &thread : threads) {
                 thread = std::thread(&DispatchQueue::ThreadMain, this);
             }
@@ -217,14 +217,15 @@ namespace sp {
             return item->returnValue;
         }
 
+        const HeapString name;
+        const chrono_clock::duration flushSleepInterval;
+
     private:
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);
         void ThreadMain();
 
         std::mutex mutex;
-        std::string name;
         std::vector<std::thread> threads;
-        chrono_clock::duration flushSleepInterval;
 
         std::queue<std::shared_ptr<DispatchQueueWorkItemBase>> workQueue;
         std::condition_variable workReady;

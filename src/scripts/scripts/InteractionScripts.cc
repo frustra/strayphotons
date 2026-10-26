@@ -67,6 +67,10 @@ namespace sp::scripts {
                 }
             } else if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                 if (event.data.type == EventDataType::Bool) {
+                    if (event.data.b) {
+                        // Grab(false) = Ping / Noop
+                        return;
+                    }
                     // Grab(false) = Drop
                     EntityRef secondary;
                     for (auto &[a, b] : grabEntities) {
@@ -196,9 +200,6 @@ namespace sp::scripts {
                 }
             }
 
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {}
-
             if (ent.Has<Physics>(lock)) {
                 auto &ph = ent.Get<const Physics>(lock);
                 if (grabEntities.empty() && ph.group == PhysicsGroup::HeldObject) {
@@ -248,7 +249,6 @@ namespace sp::scripts {
         StructField::New("_render_outline", &InteractiveObject::renderOutline));
     BuiltInScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
-        false,
         INTERACT_EVENT_INTERACT_POINT,
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PUSH,
@@ -303,7 +303,7 @@ namespace sp::scripts {
                 bool rotating = SignalRef(ent, "interact_rotate").GetSignal(lock) >= 0.5;
 
                 Event event;
-                while (EventInput::Poll(lock, state.eventQueue, event)) {
+                while (state.eventQueue.Poll(event)) {
                     if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
                         auto justDropped = grabEntity;
                         if (grabEntity) {
@@ -390,7 +390,6 @@ namespace sp::scripts {
         StructField::New("_press_entity", &InteractHandler::pressEntity));
     BuiltInScript<InteractHandler> interactHandler("interact_handler",
         MetadataInteractHandler,
-        false,
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PRESS,
         INTERACT_EVENT_INTERACT_ROTATE);
@@ -398,6 +397,7 @@ namespace sp::scripts {
     struct MultiInteractHandler {
         EntityRef jointEntity;
         HeapVector<EntityRef> grabEntities;
+        HeapVector<std::pair<Entity, EntityRef>> visibilityMap;
 
         void OnLogicTick(ScriptState &state,
             DynamicLock<SendEventsLock, Read<TransformSnapshot, LightCast>, Write<PhysicsJoints>> lock,
@@ -407,18 +407,6 @@ namespace sp::scripts {
                 const LightCast &cast = ent.Get<LightCast>(lock);
                 const Transform &transform = ent.Get<TransformSnapshot>(lock).globalPose;
 
-                // bool grabbing = !grabEntities.empty();
-                // Event event;
-                // while (EventInput::Poll(lock, state.eventQueue, event)) {
-                //     if (event.name == INTERACT_EVENT_INTERACT_GRAB) {
-                //         if (event.data.type == EventDataType::Bool) {
-                //             auto &grabEvent = event.data.b;
-                //             grabbing = grabEvent && !grabbing;
-                //         } else {
-                //             Errorf("Unsupported grab event type: %s", event.ToString());
-                //         }
-                //     }
-                // }
                 bool grabbing = SignalRef(ent, "interact_grab").GetSignal(lock) > 0.5;
                 float pullSpeed = SignalRef(ent, "interact_pull").GetSignal(lock);
                 if (pullSpeed != 0.0f) grabbing = true;
@@ -429,6 +417,7 @@ namespace sp::scripts {
                         EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                     }
                     grabEntities.clear();
+                    visibilityMap.clear();
                 } else if (grabbing) {
                     if (pullSpeed != 0.0f) {
                         // Temporarily drop any entities from last frame
@@ -436,10 +425,17 @@ namespace sp::scripts {
                             EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                         }
                         grabEntities.clear();
+                        visibilityMap.clear();
                     } else {
                         // Drop any entities that are no longer visible
+                        sp::erase_if(visibilityMap, [&](auto &entry) {
+                            return cast.visibleEntities.count(entry.first) == 0;
+                        });
                         sp::erase_if(grabEntities, [&](auto &ref) {
-                            if (cast.visibleEntities.count(ref.Get(lock)) == 0) {
+                            auto existing = std::find_if(visibilityMap.begin(), visibilityMap.end(), [&](auto &entry) {
+                                return entry.second == ref;
+                            });
+                            if (existing == visibilityMap.end()) {
                                 EventBindings::SendEvent(lock, ref, Event{INTERACT_EVENT_INTERACT_GRAB, ent, false});
                                 return true;
                             }
@@ -448,15 +444,30 @@ namespace sp::scripts {
                     }
                     // Grab any new entities being looked at
                     for (auto &pair : cast.visibleEntities) {
-                        Entity target = pair.first;
-                        if (pullSpeed == 0.0f && sp::contains(grabEntities, target)) continue;
+                        Entity visibleEnt = pair.first;
+                        if (pullSpeed == 0.0f) {
+                            auto existing = std::find_if(visibilityMap.begin(), visibilityMap.end(), [&](auto &entry) {
+                                return entry.first == visibleEnt;
+                            });
+                            if (existing != visibilityMap.end()) continue;
+                        }
                         Transform offset = transform;
                         if (pullSpeed != 0.0f) {
                             offset.Translate(transform.GetForward() * pullSpeed);
                         }
-                        if (EventBindings::SendEvent(lock, target, Event{INTERACT_EVENT_INTERACT_GRAB, ent, offset}) >
-                            0) {
-                            grabEntities.emplace_back(pair.first);
+                        EventTrace trace;
+                        EventBindings::SendEvent(lock,
+                            visibleEnt,
+                            Event{INTERACT_EVENT_INTERACT_GRAB, ent, true}, // Ping
+                            0,
+                            &trace);
+
+                        for (Entity e : trace) {
+                            visibilityMap.emplace_back(visibleEnt, e);
+                            if (!sp::contains(grabEntities, e)) {
+                                EventBindings::SendEvent(lock, e, Event{INTERACT_EVENT_INTERACT_GRAB, ent, offset});
+                                grabEntities.emplace_back(e);
+                            }
                         }
                     }
                 }
@@ -471,6 +482,5 @@ namespace sp::scripts {
         StructField::New("_grab_entities", &MultiInteractHandler::grabEntities));
     BuiltInScript<MultiInteractHandler> multiInteractHandler("multi_interact_handler",
         MetadataMultiInteractHandler,
-        false,
         INTERACT_EVENT_INTERACT_GRAB);
 } // namespace sp::scripts

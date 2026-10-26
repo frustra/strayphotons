@@ -169,14 +169,14 @@ namespace sp {
             if (!readController.eventQueue) {
                 auto &writeController = ent.Get<ecs::CharacterController>(lock);
                 auto &eventInput = ent.Get<ecs::EventInput>(lock);
-                writeController.eventQueue = ecs::EventQueue::New();
+                writeController.eventQueue = std::make_shared<ecs::EventQueue>();
                 eventInput.Register(lock, writeController.eventQueue, "/action/jump");
             }
         }
     }
 
     void CharacterControlSystem::Frame(ecs::Lock<ecs::ReadSignalsLock,
-        ecs::Read<ecs::EventInput, ecs::SceneProperties>,
+        ecs::Read<ecs::SceneProperties>,
         ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock) {
         // Update PhysX with any added or removed CharacterControllers
         ecs::ComponentAddRemoveEvent<ecs::CharacterController> controllerEvent;
@@ -437,7 +437,7 @@ namespace sp {
 
             bool jump = false;
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, controller.eventQueue, event)) {
+            while (controller.eventQueue && controller.eventQueue->Poll(event)) {
                 if (event.name != "/action/jump") continue;
                 jump = true;
             }

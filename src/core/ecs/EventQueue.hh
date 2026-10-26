@@ -13,17 +13,23 @@
 #include "strayphotons/Async.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/InlineVector.hh"
+#include "strayphotons/LockFreeMutex.hh"
+#include "strayphotons/Utility.hh"
 
 #include <array>
 #include <atomic>
+#include <forward_list>
 #include <glm/glm.hpp>
 #include <iostream>
+#include <memory>
 #include <string>
+#include <string_view>
 #include <variant>
 
 namespace ecs {
-    using SendEventsLock = Lock<
-        Read<Name, FocusLock, EventBindings, EventInput, Scripts, Signals, SignalBindings, SignalOutput>>;
+    // using SendEventsLock = Lock<
+    //     Read<Name, FocusLock, EventBindings, EventInput, Scripts, Signals, SignalBindings, SignalOutput>>;
+    using SendEventsLock = Lock<ReadAll>;
 
     using EventName = sp::InlineString<127>;
     using EventString = sp::InlineString<255>;
@@ -199,7 +205,7 @@ namespace ecs {
         StructField::New("vec3", &EventData::vec3, FieldAction::None),
         StructField::New("vec4", &EventData::vec4, FieldAction::None),
         StructField::New("transform", &EventData::transform, FieldAction::None),
-        StructField::New("namedEntity", &EventData::namedEntity, FieldAction::None),
+        StructField::New("named_entity", &EventData::namedEntity, FieldAction::None),
         StructField::New("ent", &EventData::ent, FieldAction::None),
         StructField::New("str", &EventData::str, FieldAction::None),
         StructField::New("bytes", &EventData::bytes, FieldAction::None));
@@ -219,8 +225,8 @@ namespace ecs {
         EventData data;
 
         Event() {}
-        template<typename T>
-        Event(std::string_view name, const Entity &source, const T &data) : name(name), source(source), data(data) {}
+        Event(std::string_view name, const Entity &source, const EventData &data)
+            : name(name), source(source), data(data) {}
 
         static uint64_t Send(const DynamicLock<SendEventsLock> &lock, Entity target, const Event &event);
         static uint64_t SendNamed(const DynamicLock<SendEventsLock> &lock,
@@ -246,77 +252,54 @@ namespace ecs {
             ArgDesc("target", ""),
             ArgDesc("event", "")));
 
-    struct AsyncEvent {
-        EventName name;
-        Entity source;
-        sp::AsyncPtr<EventData> data;
-
-        uint64_t transactionId = 0;
-        std::shared_ptr<sp::InlineVector<Entity, 64>> trace;
-
-        AsyncEvent() {}
-        AsyncEvent(std::string_view name, const Entity &source, const sp::AsyncPtr<EventData> &data)
-            : name(name), source(source), data(data) {}
-
-        template<typename T>
-        AsyncEvent(std::string_view name, const Entity &source, T data)
-            : AsyncEvent(name, source, sp::make_async<EventData>(data)) {}
-    };
-
     std::ostream &operator<<(std::ostream &out, const EventData &v);
 
     /**
      * A lock-free event queue that is thread-safe for a single reader and multiple writers.
-     *
-     * Event availability is synchronized with transactions by providing the current transaction's id.
      */
-    class EventQueue {
+    class EventQueue : public sp::NonMoveable {
     public:
-        static const size_t MAX_QUEUE_SIZE = 1000;
-        static const size_t QUEUE_POOL_BLOCK_SIZE = 1024;
-
-        using Ref = std::shared_ptr<EventQueue>;
-        using WeakRef = std::weak_ptr<EventQueue>;
+        EventQueue(uint32_t maxQueueSize = 1000);
+        ~EventQueue();
 
         // Returns false if the queue is full
-        bool Add(const AsyncEvent &event);
-        // Returns false if the queue is full
-        bool Add(const Event &event, uint64_t transactionId = 0);
+        bool Add(Lock<> lock, const Event &event);
 
         // Returns false if the queue is empty
-        bool Poll(Event &eventOut, uint64_t transactionId = 0);
+        bool Poll(Event &eventOut);
 
-        bool Empty();
+        bool Empty() const;
         void Clear();
-        uint32_t Size();
+        uint32_t Size() const;
+        uint32_t Capacity() const;
 
-        uint32_t Capacity() const {
-            return events.size();
-        }
+        static void CommitPendingEvents(uint64_t commitId);
 
-        static Ref New(uint32_t maxQueueSize = EventQueue::MAX_QUEUE_SIZE);
+        struct AsyncEvent : public Event {
+            AsyncEvent() {}
+            AsyncEvent(const Event &event) : Event(event) {}
+            AsyncEvent(const AsyncEvent &other) : Event(other) {
+                commitId.store(other.commitId);
+            }
+            AsyncEvent(AsyncEvent &&other) : Event(std::move(other)) {
+                commitId.exchange(other.commitId);
+            }
 
-        EventQueue() : events(0), state({0, 0}) {}
-
-        size_t QueueIndex() const {
-            return poolIndex;
-        }
-
-    private:
-        struct State {
-            // Workaround for Clang so that std::atomic<State> operations can be inlined as if uint64. See issue:
-            // https://stackoverflow.com/questions/60445848/clang-doesnt-inline-stdatomicload-for-loading-64-bit-structs
-            alignas(std::atomic_uint64_t) uint32_t head;
-            uint32_t tail;
+            std::atomic_uint64_t commitId;
         };
 
-        sp::InlineVector<AsyncEvent, MAX_QUEUE_SIZE> events;
-        std::atomic<State> state;
-        size_t poolIndex;
+        std::weak_ptr<EventQueue> handle;
+
+    private:
+        mutable sp::LockFreeMutex mutex;
+        std::pmr::forward_list<AsyncEvent> storage;
+        std::pmr::forward_list<AsyncEvent>::iterator last;
+        uint32_t count = 0;
+        uint32_t capacity;
     };
 
-    using EventQueueRef = EventQueue::Ref;
-    using EventQueueWeakRef = EventQueue::WeakRef;
+    using EventQueueRef = std::shared_ptr<EventQueue>;
+    using EventQueueWeakRef = std::weak_ptr<EventQueue>;
 } // namespace ecs
 
 namespace std {

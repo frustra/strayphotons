@@ -87,7 +87,7 @@ namespace sp::scene_util {
                             // Create a new script instance for each staging definition
                             for (ScriptInstance &instance : scripts.scripts) {
                                 if (!instance.state) continue;
-                                instance.state = GetScriptManager().NewScriptInstance(*instance.state, true);
+                                instance.state = instance.state->CloneInstance(true);
                             }
 
                             LookupComponent<Scripts>().ApplyComponent(*component, scripts, false);
@@ -133,8 +133,8 @@ namespace sp::scene_util {
         }
     }
 
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> &live,
+    template<typename... AllComponentTypes, template<typename...> typename ECSType, typename... Permissions>
+    void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, Permissions...> &live,
         const Entity &liveId,
         const FlatEntity &flatEntity,
         bool resetLive) {
@@ -196,9 +196,12 @@ namespace sp::scene_util {
             }
         }
 
-        if (liveId.Has<Scripts>(live) && !liveId.Has<EventInput>(live)) {
-            auto &scripts = liveId.Get<const Scripts>(live);
-            if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
+        if (liveId.Has<Scripts>(live)) {
+            if (!liveId.Has<EventInput>(live)) {
+                auto &scripts = liveId.Get<const Scripts>(live);
+                if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
+            }
+            ecs::GetScriptManager().RegisterActive(live, liveId);
         }
 
         if (liveId.Has<RenderOutput>(live) && !liveId.Has<EventInput>(live)) {

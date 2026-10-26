@@ -7,6 +7,7 @@
 
 #include "SignalRef.hh"
 
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
 #include "strayphotons/HeapString.hh"
@@ -96,16 +97,16 @@ namespace ecs {
             sp::erase_if(signal.subscribers, [](auto &weakPtr) {
                 return weakPtr.expired();
             });
-            if (!sp::contains(signal.subscribers, subscriber.ptr)) {
-                signal.subscribers.emplace_back(subscriber.ptr);
+            auto [_, inserted] = signal.subscribers.emplace(subscriber.ptr);
+            if (inserted) {
                 signals.MarkStorageDirty(lock, index);
-                signals.signals[subIndex].dependencies.emplace_back(ptr);
+                signals.signals[subIndex].dependencies.emplace(ptr);
                 signals.MarkStorageDirty(lock, subIndex);
                 subscriber.MarkDirty(lock);
             }
         } else {
             index = signals.NewSignal(lock, *this, subscriber);
-            signals.signals[subIndex].dependencies.emplace_back(ptr);
+            signals.signals[subIndex].dependencies.emplace(ptr);
             signals.MarkStorageDirty(lock, subIndex);
             subscriber.MarkDirty(lock);
         }
@@ -128,7 +129,7 @@ namespace ecs {
             const size_t &depIndex = dependency.GetIndex();
             if (depIndex >= signals.signals.size()) continue;
             auto &depSignal = signals.signals[depIndex];
-            sp::erase(depSignal.subscribers, ptr);
+            depSignal.subscribers.erase(ptr);
             signals.MarkStorageDirty(lock, depIndex);
         }
         if (!signal.dependencies.empty()) signals.MarkStorageDirty(lock, index);

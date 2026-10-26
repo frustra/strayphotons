@@ -35,112 +35,109 @@ namespace sp::scripts {
         HeapString templateSource;
         bool resetScale = false;
 
-        void OnLogicTick(ScriptState &state,
+        void OnEvent(ScriptState &state,
             DynamicLock<Write<ActiveScene>,
                 Read<TransformTree, TransformSnapshot, SceneInfo, SceneProperties>,
                 ReadSignalsLock> lock,
             Entity ent,
-            chrono_clock::duration interval) {
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != INTERACT_EVENT_INTERACT_GRAB) continue;
+            Event event) {
+            if (event.name != INTERACT_EVENT_INTERACT_GRAB) return;
 
-                // Ignore drop events
-                if (event.data.type != ecs::EventDataType::Transform) continue;
+            // Ignore drop events
+            if (event.data.type != ecs::EventDataType::Transform) return;
 
-                if (templateSource.empty()) {
-                    Errorf("TraySpawner missing source parameter");
-                    continue;
-                }
-
-                if (!ent.Has<Name, TransformTree>(lock)) continue;
-                auto &sourceName = ent.Get<const Name>(lock);
-                auto transform = ent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
-                if (resetScale) {
-                    const Transform &sourceTransform = event.source.Get<const TransformSnapshot>(lock).globalPose;
-                    glm::vec3 grabDir = glm::normalize(transform.GetPosition() - sourceTransform.GetPosition());
-                    transform.Translate(grabDir * (1.0f - transform.GetScale()));
-                    transform.SetScale(glm::vec3(1));
-                }
-
-                std::optional<SignalOutput> signalOutputs;
-                std::optional<SignalBindings> signalBindings;
-                auto signals = GetSignalManager().GetSignals(ent);
-                for (auto &signal : signals) {
-                    SignalRef dstRef(ent, signal.GetSignalName());
-                    if (signal.HasValue(lock)) {
-                        if (!signalOutputs) signalOutputs = SignalOutput();
-                        signalOutputs->signals[signal.GetSignalName()] = signal.GetValue(lock);
-                    }
-                    if (signal.HasBinding(lock)) {
-                        if (!signalBindings) signalBindings = SignalBindings();
-                        signalBindings->bindings[signal.GetSignalName()] = signal.GetBinding(lock);
-                    }
-                }
-
-                SceneRef scene;
-                if (lock.Has<ActiveScene>()) {
-                    auto &active = lock.Get<ActiveScene>();
-                    if (active.scene && active.scene.data->sceneEntity.Get(lock).Exists(lock)) {
-                        scene = active.scene;
-                    }
-                    if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
-                }
-                if (!scene) {
-                    const auto &spawnInfo = entities::Spawn.Get(lock).Get<const ecs::SceneInfo>(lock);
-                    scene = spawnInfo.scene;
-                    if (scene) Logf("TraySpawner using spawn scene: %s", scene.data->path);
-                }
-                if (!scene) {
-                    Errorf("TraySpawner has no active scene");
-                    continue;
-                }
-
-                auto spawnSceneProperties = scene.data->GetProperties(lock);
-
-                auto sharedEntity = std::make_shared<EntityRef>();
-                GetSceneManager().QueueAction(NewDispatchSource,
-                    SceneAction::EditStagingScene,
-                    scene.data->name,
-                    [source = templateSource,
-                        transform,
-                        spawnSceneProperties,
-                        signalOutputs,
-                        signalBindings,
-                        baseName = sourceName.entity,
-                        sharedEntity](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                        Name name(scene->data->name, "");
-                        EntityScope scope = name;
-                        for (size_t i = 0;; i++) {
-                            name.entity = baseName + "_" + std::to_string(i);
-                            if (!scene->GetStagingEntity(name)) break;
-                        }
-                        Logf("TraySpawner new entity: %s", name.String());
-
-                        auto newEntity = scene->NewRootEntity(lock, scene, name);
-                        newEntity.Set<TransformTree>(lock, spawnSceneProperties.rootTransform.GetInverse() * transform);
-                        if (signalOutputs) {
-                            newEntity.Set<SignalOutput>(lock, *signalOutputs);
-                        }
-                        if (signalBindings) {
-                            newEntity.Set<SignalBindings>(lock, *signalBindings);
-                        }
-                        auto &scripts = newEntity.Set<Scripts>(lock);
-                        auto &prefab = scripts.AddScript(scope, "prefab_template");
-                        prefab.SetParam("source", source);
-                        ecs::GetScriptManager().RunPrefabs(lock, newEntity);
-
-                        *sharedEntity = newEntity;
-                    });
-                GetSceneManager().QueueAction(NewDispatchSource,
-                    SceneAction::ApplyStagingScene,
-                    scene.data->name,
-                    [ent, target = event.source, sharedEntity](ecs::Lock<ecs::AddRemove> lock) {
-                        ecs::EventBindings::SendEvent(lock,
-                            target,
-                            ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
-                    });
+            if (templateSource.empty()) {
+                Errorf("TraySpawner missing source parameter");
+                return;
             }
+
+            if (!ent.Has<Name, TransformTree>(lock)) return;
+            auto &sourceName = ent.Get<const Name>(lock);
+            auto transform = ent.Get<const TransformTree>(lock).GetGlobalTransform(lock);
+            if (resetScale) {
+                const Transform &sourceTransform = event.source.Get<const TransformSnapshot>(lock).globalPose;
+                glm::vec3 grabDir = glm::normalize(transform.GetPosition() - sourceTransform.GetPosition());
+                transform.Translate(grabDir * (1.0f - transform.GetScale()));
+                transform.SetScale(glm::vec3(1));
+            }
+
+            std::optional<SignalOutput> signalOutputs;
+            std::optional<SignalBindings> signalBindings;
+            auto signals = GetSignalManager().GetSignals(ent);
+            for (auto &signal : signals) {
+                SignalRef dstRef(ent, signal.GetSignalName());
+                if (signal.HasValue(lock)) {
+                    if (!signalOutputs) signalOutputs = SignalOutput();
+                    signalOutputs->signals[signal.GetSignalName()] = signal.GetValue(lock);
+                }
+                if (signal.HasBinding(lock)) {
+                    if (!signalBindings) signalBindings = SignalBindings();
+                    signalBindings->bindings[signal.GetSignalName()] = signal.GetBinding(lock);
+                }
+            }
+
+            SceneRef scene;
+            if (lock.Has<ActiveScene>()) {
+                auto &active = lock.Get<ActiveScene>();
+                if (active.scene && active.scene.data->sceneEntity.Get(lock).Exists(lock)) {
+                    scene = active.scene;
+                }
+                if (scene) Logf("TraySpawner using editor scene: %s", scene.data->path);
+            }
+            if (!scene) {
+                const auto &spawnInfo = entities::Spawn.Get(lock).Get<const ecs::SceneInfo>(lock);
+                scene = spawnInfo.scene;
+                if (scene) Logf("TraySpawner using spawn scene: %s", scene.data->path);
+            }
+            if (!scene) {
+                Errorf("TraySpawner has no active scene");
+                return;
+            }
+
+            auto spawnSceneProperties = scene.data->GetProperties(lock);
+
+            auto sharedEntity = std::make_shared<EntityRef>();
+            GetSceneManager().QueueAction(NewDispatchSource,
+                SceneAction::EditStagingScene,
+                scene.data->name,
+                [source = templateSource,
+                    transform,
+                    spawnSceneProperties,
+                    signalOutputs,
+                    signalBindings,
+                    baseName = sourceName.entity,
+                    sharedEntity](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                    Name name(scene->data->name, "");
+                    EntityScope scope = name;
+                    for (size_t i = 0;; i++) {
+                        name.entity = baseName + "_" + std::to_string(i);
+                        if (!scene->GetStagingEntity(name)) break;
+                    }
+                    Logf("TraySpawner new entity: %s", name.String());
+
+                    auto newEntity = scene->NewRootEntity(lock, scene, name);
+                    newEntity.Set<TransformTree>(lock, spawnSceneProperties.rootTransform.GetInverse() * transform);
+                    if (signalOutputs) {
+                        newEntity.Set<SignalOutput>(lock, *signalOutputs);
+                    }
+                    if (signalBindings) {
+                        newEntity.Set<SignalBindings>(lock, *signalBindings);
+                    }
+                    auto &scripts = newEntity.Set<Scripts>(lock);
+                    auto &prefab = scripts.AddScript(scope, "prefab_template");
+                    prefab.SetParam("source", source);
+                    ecs::GetScriptManager().RunPrefabs(lock, newEntity);
+
+                    *sharedEntity = newEntity;
+                });
+            GetSceneManager().QueueAction(NewDispatchSource,
+                SceneAction::ApplyStagingScene,
+                scene.data->name,
+                [ent, target = event.source, sharedEntity](ecs::Lock<ecs::AddRemove> lock) {
+                    ecs::EventBindings::SendEvent(lock,
+                        target,
+                        ecs::Event{INTERACT_EVENT_INTERACT_GRAB, ent, sharedEntity->Get(lock)});
+                });
         }
     };
     StructMetadata MetadataTraySpawner(typeid(TraySpawner),
@@ -149,7 +146,7 @@ namespace sp::scripts {
         "",
         StructField::New("source", &TraySpawner::templateSource),
         StructField::New("reset_scale", &TraySpawner::resetScale));
-    BuiltInScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, true, INTERACT_EVENT_INTERACT_GRAB);
+    BuiltInScript<TraySpawner> traySpawner("tray_spawner", MetadataTraySpawner, INTERACT_EVENT_INTERACT_GRAB);
 
     struct EditTool {
         Entity selectedEntity;
@@ -242,7 +239,7 @@ namespace sp::scripts {
             auto snapMode = SignalRef(ent, "snap_mode").GetSignal(lock) >= 0.5;
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
                     if (event.data.type == EventDataType::Bool) {
                         if (event.data.b && raycastResult.subTarget.Has<TransformTree>(lock)) {
@@ -318,5 +315,5 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataEditTool(typeid(EditTool), sizeof(EditTool), "EditTool", "");
-    BuiltInScript<EditTool> editTool("edit_tool", MetadataEditTool, false, INTERACT_EVENT_INTERACT_PRESS);
+    BuiltInScript<EditTool> editTool("edit_tool", MetadataEditTool, INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

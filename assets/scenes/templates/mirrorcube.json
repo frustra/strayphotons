@@ -16,7 +16,8 @@
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "mcube",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			},
 			{
@@ -36,6 +37,9 @@
 			"name": "mirrorface",
 			"transform": {
 				"parent": "scoperoot"
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"script": {
 				"name": "prefab_template",

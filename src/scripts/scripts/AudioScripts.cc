@@ -6,9 +6,11 @@
  */
 
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/ScriptImpl.hh"
 #include "ecs/SignalStructAccess_common.hh"
 #include "game/GameEntities.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
 
 namespace sp::scripts {
@@ -61,40 +63,43 @@ namespace sp::scripts {
         SignalExpression volumeInput;
         SignalRef output;
 
-        void Init(ScriptState &state) {
-            state.definition.events.clear();
-            if (volumeInput.expr.empty()) {
-                state.definition.events.emplace_back("/volume/set");
-                // state.definition.filterOnEvent = true;
-            }
-        }
-
         void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Write<Audio, Signals>> lock,
             Entity ent,
             chrono_clock::duration interval) {
-            if (!ent.Has<Audio>(lock)) return;
-            auto &sounds = ent.Get<Audio>(lock).sounds;
+            if (volumeInput.expr.empty() || !ent.Has<Audio>(lock)) return;
+            HeapVector<Sound> &sounds = ent.Get<Audio>(lock).sounds;
             if (sounds.empty()) return;
 
             if (!output) output = SignalRef(ent, "volume");
 
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name == "/volume/set") {
-                    bool success = ecs::detail::ConvertAccessor<const float>(event.data, [&](const float &value) {
-                        sounds[0].volume = std::max(sounds[0].volume, glm::clamp(value, 0.0f, 1.0f));
-                    });
-                    if (!success) {
-                        Logf("Couldn't convert from %s to float", event.ToString());
-                    }
-                }
-            }
-            // if (!volumeInput.expr.empty()) {
-            sounds[0].volume = std::max(sounds[0].volume * 0.99f,
-                glm::clamp<float>(volumeInput.Evaluate(lock), 0.0f, 1.0f));
-            // }
+            sounds[0].volume = glm::clamp<float>(volumeInput.Evaluate(lock), 0.0f, 1.0f);
             output.SetValue(lock, sounds[0].volume);
+        }
+
+        void OnEvent(ScriptState &state, Lock<Write<Audio, Signals>> lock, Entity ent, Event event) {
+            if (event.name != "/volume/set") return;
+            if (!ent.Has<Audio>(lock)) return;
+            HeapVector<Sound> &sounds = ent.Get<Audio>(lock).sounds;
+            if (sounds.empty()) return;
+
+            if (!output) output = SignalRef(ent, "volume");
+
+            if (!volumeInput.expr.empty()) {
+                Warnf("volume_control script does not support both expression and event input, "
+                      "ignoring volume event for: %s",
+                    EntityRef(ent).Name().String());
+                return;
+            }
+
+            bool success = ecs::detail::ConvertAccessor<const float>(event.data, [&](const float &value) {
+                sounds[0].volume = glm::clamp(value, 0.0f, 1.0f);
+            });
+            if (!success) {
+                Logf("Couldn't convert from %s to float", event.ToString());
+            } else {
+                output.SetValue(lock, sounds[0].volume);
+            }
         }
     };
     StructMetadata MetadataVolumeControl(typeid(VolumeControl),
@@ -102,7 +107,7 @@ namespace sp::scripts {
         "VolumeControl",
         "",
         StructField::New("volume", &VolumeControl::volumeInput));
-    BuiltInScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl);
+    BuiltInScript<VolumeControl> volumeControl("volume_control", MetadataVolumeControl, "/volume/set");
 
     struct SpeedControlledSound {
         bool init = false;

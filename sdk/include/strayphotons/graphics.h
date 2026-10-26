@@ -45,7 +45,7 @@ typedef struct GLFWwindow GLFWwindow;
 
 // The following functions are declared in src/exports/Graphics.cc
 
-SP_EXPORT void *sp_get_vulkan_dispatch_loader();
+SP_EXPORT void *sp_get_vulkan_dispatch_loader(void);
 
 SP_EXPORT sp_graphics_ctx_t *sp_game_get_graphics_context(sp_game_t *ctx);
 

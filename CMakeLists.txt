@@ -41,6 +41,10 @@ if(SP_PACKAGE_RELEASE)
 endif()
 add_compile_definitions(_SILENCE_ALL_CXX20_DEPRECATION_WARNINGS=1)
 
+# Tell cmake we need C23
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 # Tell cmake we need C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -70,7 +74,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
-    set(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} -fPIC")
+    set(CMAKE_C_FLAGS                   "-Wall -Werror -Wpedantic -Wno-missing-braces -fPIC")
+    set(CMAKE_C_FLAGS_RELEASE           "-O3")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO    "-g3 -ggdb3 -Og")
+    set(CMAKE_C_FLAGS_DEBUG             "-g3 -ggdb3 -O0")
     set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wpedantic -Werror=format-security -Wno-volatile -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")
@@ -78,7 +85,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
 
-    set(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} -fPIC")
+    set(CMAKE_C_FLAGS                   "-Wall -Werror -Wpedantic -fPIC")
+    set(CMAKE_C_FLAGS_RELEASE           "-O3")
+    set(CMAKE_C_FLAGS_RELWITHDEBINFO    "-g3 -ggdb3 -Og")
+    set(CMAKE_C_FLAGS_DEBUG             "-g3 -ggdb3 -O0")
     set(CMAKE_CXX_FLAGS                 "-Wall -Werror -Wpedantic -Wformat-security -Wno-deprecated-volatile -fPIC")
     set(CMAKE_CXX_FLAGS_RELEASE         "-O3")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g3 -ggdb3 -Og")

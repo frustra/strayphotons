@@ -21,6 +21,8 @@
 #include "strayphotons/InlineString.hh"
 #include "strayphotons/Utility.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
+#include "strayphotons/gui/GuiInputEvents.hh"
+#include "strayphotons/input/KeyCodes.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -101,6 +103,9 @@ namespace ecs {
         sp::GuiDrawData,
         sp::GuiDrawCommand,
         sp::GuiDrawVertex,
+        sp::GuiInputEvent,
+        sp::GuiInputMouseButtonEvent,
+        sp::GuiInputKeyEvent,
         sp::SceneRef,
         TypeInfo,
         sp::InlineString<2>,
@@ -116,6 +121,7 @@ namespace ecs {
         sp::HeapVector<sp::GuiDrawCommand>,
         sp::HeapVector<sp::GuiDrawIndex>,
         sp::HeapVector<sp::GuiDrawVertex>,
+        sp::HeapVector<sp::GuiInputEvent>,
         sp::HeapVector<AnimationState>,
         sp::HeapVector<PhysicsJoint>,
         sp::HeapVector<PhysicsShape>,
@@ -145,6 +151,12 @@ namespace ecs {
         // Enums
         FieldAction,
         FocusLayer,
+        sp::GuiInputEventType,
+        sp::GuiInputSource,
+        sp::GuiMouseSource,
+        sp::MouseButton,
+        sp::KeyCode,
+        sp::InputAction,
         GuiLayoutAnchor,
         InterpolationMode,
         PhysicsGroup,
@@ -161,7 +173,6 @@ namespace ecs {
         DynamicLock<ReadSignalsLock>,
         DynamicLock<SendEventsLock>,
         Lock<>,
-        Lock<Read<EventInput>>,
         Lock<Read<Signals>>,
         Lock<Read<TransformTree>>,
         Lock<Write<Signals>>,
@@ -177,7 +188,11 @@ namespace ecs {
         void (*)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t), // OnLogicTick/OnPhysicsTick
         void (*)(void *, ScriptState &, DynamicLock<> &, Entity, Event &), // OnEvent
         void (*)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &), // RunPrefab
-        bool (*)(void *, sp::GenericCompositor &, ScriptState &, Entity), // BeforeFrame
+        bool (*)(void *,
+            sp::GenericCompositor &,
+            ScriptState &,
+            Entity,
+            const sp::HeapVector<sp::GuiInputEvent> &), // BeforeFrame
         void (*)(void *,
             sp::GenericCompositor &,
             ScriptState &,

@@ -21,7 +21,11 @@ namespace ecs {
     class ScriptInstance {
     public:
         ScriptInstance() {}
-        ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {}
+        ScriptInstance(const std::shared_ptr<ScriptState> &state) : state(state) {
+            Assertf(state, "ScriptInstance created with null ScriptState");
+            Assertf(!state->handle.owner_before(state) && !state.owner_before(state->handle),
+                "ScriptInstance created with invalid ScriptState handle");
+        }
         ScriptInstance(const EntityScope &scope, const ScriptDefinition &definition)
             : ScriptInstance(GetScriptManager().NewScriptInstance(scope, definition)) {}
 

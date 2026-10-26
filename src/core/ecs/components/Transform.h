@@ -162,8 +162,8 @@ while allowing multiple threads to independantly update entity transforms.
 Snapshots are also useful for reading in scripts to reduce matrix multiplication costs and for similar sychronization benefits.
 )",
             StructField::New(&TransformSnapshot::globalPose, FieldAction::AutoSave),
-            StructField::New("firstParent", &TransformSnapshot::firstParent, FieldAction::None),
-            StructField::New("childEntities", &TransformSnapshot::childEntities, FieldAction::None)},
+            StructField::New("first_parent", &TransformSnapshot::firstParent, FieldAction::None),
+            StructField::New("child_entities", &TransformSnapshot::childEntities, FieldAction::None)},
         "transform_snapshot");
 
     struct TransformTree {

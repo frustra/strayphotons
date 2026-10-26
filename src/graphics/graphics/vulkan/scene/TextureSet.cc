@@ -184,9 +184,9 @@ namespace sp::vulkan {
         if (textureIndex < 0 || (size_t)textureIndex >= gltfModel.textures.size()) {
             if (factor.size() == 0) factor.push_back(1); // default texture is a single white pixel
 
-            auto data = std::make_shared<std::array<uint8_t, 4>>();
+            auto data = std::make_shared<uint8_t[]>(4);
             for (size_t i = 0; i < 4; i++) {
-                (*data)[i] = uint8_t(255.0 * factor.at(std::min(factor.size() - 1, i)));
+                data[i] = uint8_t(255.0 * factor.at(std::min(factor.size() - 1, i)));
             }
 
             // Create a single pixel texture based on the factor data provided
@@ -198,7 +198,7 @@ namespace sp::vulkan {
 
             ImageViewCreateInfo viewInfo = {};
             viewInfo.defaultSampler = device.GetSampler(SamplerType::NearestTiled);
-            auto pending = Add(imageInfo, viewInfo, {data->data(), data->size(), data});
+            auto pending = Add(imageInfo, viewInfo, {data.get(), 4, data});
             textureCache[name] = pending;
             return pending;
         }

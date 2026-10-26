@@ -10,6 +10,8 @@
 #include "assets/JsonHelpers.hh"
 #include "ecs/StructFieldTypes.hh"
 
+#include <type_traits>
+
 namespace ecs {
     uint32_t GetFieldTypeIndex(const std::type_index &idx) {
         if (idx == typeid(void)) return 0;
@@ -213,7 +215,7 @@ namespace ecs {
             auto &srcValue = *reinterpret_cast<const T *>(srcField);
             auto &defaultValue = *reinterpret_cast<const T *>(defaultField);
 
-            if constexpr (std::equality_comparable<T>) {
+            if constexpr (std::equality_comparable<T> && std::is_copy_assignable<T>()) {
                 if (dstValue == defaultValue && !isFieldUndefined(srcValue)) dstValue = srcValue;
             } else {
                 Abortf("StructField::Apply called on unsupported type: %s", type.name());

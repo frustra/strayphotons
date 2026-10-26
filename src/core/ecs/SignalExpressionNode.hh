@@ -142,7 +142,6 @@ namespace ecs {
             CompiledFunc Compile();
             void SubscribeToChildren(const Lock<Write<Signals>> &lock, const SignalRef &subscriber) const;
             double Evaluate(const Context &ctx, uint32_t depth) const;
-            bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const;
             SignalNodePtr SetScope(const EntityScope &scope) const;
             size_t Hash() const;
 

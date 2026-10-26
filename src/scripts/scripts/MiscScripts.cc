@@ -7,6 +7,7 @@
 
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptImpl.hh"
@@ -94,10 +95,8 @@ namespace sp::scripts {
         AssetName modelName;
         HeapVector<HeapString> templates = {"interactive"};
 
-        void OnLogicTick(ScriptState &state,
-            Lock<Read<Name, SceneInfo, EventInput, TransformSnapshot>> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnEvent(ScriptState &state, Lock<Read<Name, SceneInfo, TransformSnapshot>> lock, Entity ent, Event event) {
+            if (event.name != "/script/spawn") return;
             if (!ent.Has<Name, SceneInfo>(lock)) return;
             Transform relativeTransform;
             auto target = targetEntity.Get(lock);
@@ -105,48 +104,43 @@ namespace sp::scripts {
                 relativeTransform = target.Get<TransformSnapshot>(lock);
             }
 
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != "/script/spawn") continue;
+            Transform transform(position);
+            transform = relativeTransform * transform;
 
-                Transform transform(position);
-                transform = relativeTransform * transform;
+            Entity stagingRootId = ent.Get<SceneInfo>(lock).rootStagingId;
 
-                Entity stagingRootId = ent.Get<SceneInfo>(lock).rootStagingId;
+            GetSceneManager().QueueAction(NewDispatchSource,
+                SceneAction::ApplySystemScene,
+                state.scope.scene,
+                [stagingRootId,
+                    transform,
+                    modelName = modelName,
+                    templates = templates,
+                    scriptId = state.GetInstanceId(),
+                    scope = ent.Get<Name>(lock)](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
+                    auto newEntity = scene->NewPrefabEntity(lock, stagingRootId, scriptId, "", scope);
 
-                GetSceneManager().QueueAction(NewDispatchSource,
-                    SceneAction::ApplySystemScene,
-                    state.scope.scene,
-                    [stagingRootId,
-                        transform,
-                        modelName = modelName,
-                        templates = templates,
-                        scriptId = state.GetInstanceId(),
-                        scope = ent.Get<Name>(lock)](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
-                        auto newEntity = scene->NewPrefabEntity(lock, stagingRootId, scriptId, "", scope);
+                    newEntity.Set<TransformTree>(lock, transform);
+                    newEntity.Set<TransformSnapshot>(lock, transform);
+                    if (!modelName.empty()) {
+                        Renderable newRenderable = LookupComponent<Renderable>().StagingDefault();
+                        newRenderable.modelName = modelName;
+                        newRenderable.meshIndex = 0;
+                        newEntity.Set<Renderable>(lock, newRenderable);
 
-                        newEntity.Set<TransformTree>(lock, transform);
-                        newEntity.Set<TransformSnapshot>(lock, transform);
-                        if (!modelName.empty()) {
-                            Renderable newRenderable = LookupComponent<Renderable>().StagingDefault();
-                            newRenderable.modelName = modelName;
-                            newRenderable.meshIndex = 0;
-                            newEntity.Set<Renderable>(lock, newRenderable);
-
-                            Physics newPhysics = LookupComponent<Physics>().StagingDefault();
-                            newPhysics.shapes = {PhysicsShape::ConvexMesh(modelName)};
-                            newEntity.Set<Physics>(lock, newPhysics);
-                        }
-                        for (auto &templateName : templates) {
-                            auto &scripts = newEntity.Get<Scripts>(lock);
-                            auto &prefab = scripts.AddScript(scope, "prefab_template");
-                            prefab.SetParam("source", templateName);
-                        }
-                        if (!templates.empty()) {
-                            ecs::GetScriptManager().RunPrefabs(lock, newEntity);
-                        }
-                    });
-            }
+                        Physics newPhysics = LookupComponent<Physics>().StagingDefault();
+                        newPhysics.shapes = {PhysicsShape::ConvexMesh(modelName)};
+                        newEntity.Set<Physics>(lock, newPhysics);
+                    }
+                    for (auto &templateName : templates) {
+                        auto &scripts = newEntity.Get<Scripts>(lock);
+                        auto &prefab = scripts.AddScript(scope, "prefab_template");
+                        prefab.SetParam("source", templateName);
+                    }
+                    if (!templates.empty()) {
+                        ecs::GetScriptManager().RunPrefabs(lock, newEntity);
+                    }
+                });
         }
     };
     StructMetadata MetadataModelSpawner(typeid(ModelSpawner),
@@ -157,7 +151,7 @@ namespace sp::scripts {
         StructField::New("position", &ModelSpawner::position),
         StructField::New("model", &ModelSpawner::modelName),
         StructField::New("templates", &ModelSpawner::templates));
-    BuiltInScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, true, "/script/spawn");
+    BuiltInScript<ModelSpawner> modelSpawner("model_spawner", MetadataModelSpawner, "/script/spawn");
 
     struct Rotate {
         glm::vec3 rotationAxis = glm::vec3(0);
@@ -385,7 +379,7 @@ namespace sp::scripts {
         }
 
         void OnTick(ScriptState &state,
-            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            DynamicLock<Write<Signals>, ReadSignalsLock, ReadPrevious> lock,
             Entity ent,
             chrono_clock::duration interval) {
             if (refs.size() < mapping.size()) {
@@ -393,7 +387,7 @@ namespace sp::scripts {
                     refs.emplace_back(SignalRef(ent, outputSignal), &signalExpr);
                 }
             }
-            DynamicLock<ReadSignalsLock> readLock = lock.ReadOnlySubset();
+            DynamicLock<ReadSignalsLock> readLock = lock.PreviousLock();
             for (auto &[outputSignal, signalExpr] : refs) {
                 outputSignal.SetValue(lock, signalExpr->Evaluate(readLock));
             }
@@ -406,7 +400,7 @@ namespace sp::scripts {
         StructField::New(&SignalFromSignal::mapping));
     struct LogicSignalFromSignal : public SignalFromSignal {
         void OnLogicTick(ScriptState &state,
-            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            DynamicLock<Write<Signals>, ReadSignalsLock, ReadPrevious> lock,
             Entity ent,
             chrono_clock::duration interval) {
             OnTick(state, lock, ent, interval);
@@ -415,7 +409,7 @@ namespace sp::scripts {
     BuiltInScript<LogicSignalFromSignal> signalFromSignal("signal_from_signal", MetadataSignalFromSignal);
     struct PhysicsSignalFromSignal : public SignalFromSignal {
         void OnPhysicsTick(ScriptState &state,
-            DynamicLock<Write<Signals>, ReadSignalsLock> lock,
+            DynamicLock<Write<Signals>, ReadSignalsLock, ReadPrevious> lock,
             Entity ent,
             chrono_clock::duration interval) {
             OnTick(state, lock, ent, interval);
@@ -509,7 +503,7 @@ namespace sp::scripts {
             }
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 double eventValue = EventData::Visit(event.data, [](auto &data) {
                     using T = std::decay_t<decltype(data)>;
 

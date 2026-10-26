@@ -30,7 +30,7 @@ namespace sp::scripts {
 
             bool forceToggle = false;
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 if (event.name == "/life/neighbor_alive") {
                     auto *neighborAlive = EventData::TryGet<bool>(event.data);
                     if (neighborAlive == nullptr) continue;
@@ -54,6 +54,6 @@ namespace sp::scripts {
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-    // BuiltInScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive",
+    // BuiltInScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, "/life/neighbor_alive",
     // "/life/toggle_alive");
 } // namespace sp::scripts

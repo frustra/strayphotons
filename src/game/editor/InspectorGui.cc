@@ -21,6 +21,7 @@ namespace sp {
     InspectorGui::InspectorGui(const std::string &name)
         : ecs::GuiDefinition(name, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove) {
         context = std::make_shared<EditorContext>();
+        events = std::make_shared<ecs::EventQueue>();
 
         GetSceneManager().QueueAction(NewDispatchSource,
             [inspectorEntity = this->inspectorEntity, events = this->events] {
@@ -48,7 +49,7 @@ namespace sp {
         if (!context) return false;
         ZoneScoped;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock, ecs::ActiveScene>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock, ecs::ActiveScene>>();
 
             auto &focusLock = lock.Get<ecs::FocusLock>();
             if (!focusLock.HasFocus(ecs::FocusLayer::HUD) && inspectorEntity != ent) return false;
@@ -66,7 +67,7 @@ namespace sp {
             }
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, events, event)) {
+            while (events && events->Poll(event)) {
                 if (event.name != EDITOR_EVENT_EDIT_TARGET) continue;
 
                 if (event.data.type == ecs::EventDataType::Entity) {

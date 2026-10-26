@@ -83,6 +83,18 @@ namespace ecs {
     }
 
     template<typename CompType>
+    void EntityComponent<CompType>::MoveComponent(const Lock<AddRemove> &lock,
+        const EntityScope &scope,
+        const Entity &dst,
+        FlatEntity &&src) const {
+        auto &&opt = std::get<std::optional<CompType>>(src);
+        if (opt) {
+            auto &comp = dst.Set<CompType>(lock, std::move(*opt));
+            scope::SetScope(comp, scope);
+        }
+    }
+
+    template<typename CompType>
     void EntityComponent<CompType>::UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const {
         dst.Unset<CompType>(lock);
     }
@@ -167,6 +179,18 @@ namespace ecs {
         auto &opt = std::get<std::optional<CompType>>(src);
         if (opt) {
             auto &comp = lock.Set<CompType>(*opt);
+            scope::SetScope(comp, scope);
+        }
+    }
+
+    template<typename CompType>
+    void GlobalComponent<CompType>::MoveComponent(const Lock<AddRemove> &lock,
+        const EntityScope &scope,
+        const Entity &dst,
+        FlatEntity &&src) const {
+        auto &&opt = std::get<std::optional<CompType>>(src);
+        if (opt) {
+            auto &comp = lock.Set<CompType>(std::move(*opt));
             scope::SetScope(comp, scope);
         }
     }

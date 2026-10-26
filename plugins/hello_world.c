@@ -82,7 +82,6 @@ void hello_world_on_tick_physics(void *context,
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 2 && output != NULL) {
         sp_string_set(&output[0].name, "hello_world");
-        output[0].filter_on_event = false;
         output[0].context_size = sizeof(script_hello_world_t);
         output[0].default_init_func = &hello_world_default_init;
         output[0].init_func = &hello_world_init;
@@ -90,7 +89,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].logic_tick_func = &hello_world_on_tick_logic;
 
         sp_string_set(&output[1].name, "hello_world2");
-        output[1].filter_on_event = false;
         output[1].context_size = sizeof(script_hello_world_t);
         output[1].default_init_func = &hello_world_default_init;
         output[1].init_func = &hello_world_init;

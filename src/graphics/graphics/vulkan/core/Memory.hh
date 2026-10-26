@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapVector.hh"
+#include "strayphotons/Utility.hh"
 
 #include <cstdint>
 #include <memory>
@@ -69,14 +70,15 @@ namespace sp::vulkan {
         InitialData(const uint8_t *data, size_t dataSize, const std::shared_ptr<const void> &dataOwner = nullptr)
             : data(data), dataSize(dataSize), dataOwner(dataOwner) {
             if (!dataOwner) {
-                auto dataVector = std::make_shared<std::vector<uint8_t>>(data, data + dataSize);
-                this->dataOwner = dataVector;
-                this->data = dataVector->data();
+                auto buffer = std::make_shared<uint8_t[]>(dataSize);
+                std::copy_n(data, dataSize, buffer.get());
+                this->dataOwner = buffer;
+                this->data = buffer.get();
             }
         }
     };
 
-    class UniqueMemory : public NonCopyable, public HasUniqueID {
+    class UniqueMemory : public NonMoveable, public HasUniqueID {
     public:
         UniqueMemory() = delete;
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
@@ -138,18 +140,22 @@ namespace sp::vulkan {
         void *persistentMap = nullptr;
     };
 
-    class SubBuffer : public NonCopyable, public HasUniqueID {
+    class SubBuffer : public NonMoveable, public HasUniqueID {
     public:
-        SubBuffer(Buffer *buffer,
+        SubBuffer(BufferPtr buffer,
             VmaVirtualBlock subAllocationBlock,
             vk::DeviceSize offsetBytes,
             vk::DeviceSize size,
             size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
-            size_t arrayCount = 0)
-            : parentBuffer(buffer), subAllocationBlock(subAllocationBlock), offsetBytes(offsetBytes), size(size),
-              arrayOffset(arrayOffset), arrayCount(arrayCount) {}
-
+            size_t arrayCount = 0);
         ~SubBuffer();
+
+        static SubBufferPtr New(BufferPtr buffer,
+            VmaVirtualBlock subAllocationBlock,
+            vk::DeviceSize offsetBytes,
+            vk::DeviceSize size,
+            size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
+            size_t arrayCount = 0);
 
         void *Mapped();
 
@@ -172,7 +178,8 @@ namespace sp::vulkan {
         operator vk::Buffer() const;
 
     private:
-        Buffer *parentBuffer;
+        std::weak_ptr<SubBuffer> handle;
+        BufferPtr parentBuffer;
         VmaVirtualBlock subAllocationBlock;
         vk::DeviceSize offsetBytes, size;
         size_t arrayOffset, arrayCount;
@@ -180,13 +187,18 @@ namespace sp::vulkan {
 
     class Buffer : public UniqueMemory {
     public:
-        Buffer();
         Buffer(vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo,
             VmaAllocator allocator,
             size_t arrayStride = 0,
             size_t arrayCount = 0);
         ~Buffer();
+
+        static BufferPtr New(vk::BufferCreateInfo bufferInfo,
+            VmaAllocationCreateInfo allocInfo,
+            VmaAllocator allocator,
+            size_t arrayStride = 0,
+            size_t arrayCount = 0);
 
         vk::Buffer operator*() const {
             return buffer;
@@ -237,6 +249,7 @@ namespace sp::vulkan {
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
+        std::weak_ptr<Buffer> handle;
         vk::BufferCreateInfo bufferInfo;
         vk::Buffer buffer;
 

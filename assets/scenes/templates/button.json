@@ -132,7 +132,7 @@
 				},
 				"group": "Interactive",
 				"constant_force": [-0.2, 0, 0],
-				"linear_damping": 10,
+				"linear_damping": 5,
 				"angular_damping": 100,
 				"mass": 0.01
 			},

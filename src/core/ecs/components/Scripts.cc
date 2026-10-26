@@ -36,7 +36,7 @@ namespace ecs {
             return false;
         }
 
-        auto newState = std::make_shared<ScriptState>(definitionIt->second);
+        auto newState = GetScriptManager().NewScriptInstance({}, definitionIt->second);
         ScriptState &state = *newState;
         auto ctx = state.definition.context.lock();
         if (ctx) {
@@ -101,28 +101,21 @@ namespace ecs {
     void StructMetadata::SetScope<ScriptInstance>(ScriptInstance &dst, const EntityScope &scope) {
         if (!dst.state) return;
         if (dst.state->scope != scope) {
-            auto &oldState = *dst.state;
-            // Create a new script instance so references to the old scope remain valid.
-            std::shared_ptr<ScriptState> newState;
-            Assertf(!oldState.IsActive(), "Unexpected active script changing scope");
-            // This script is still in staging only, don't allocate an active script index yet
-            newState = std::make_shared<ScriptState>(oldState.definition, scope);
+            Assertf(!dst.state->IsActive(), "Unexpected active script changing scope");
+            if (dst.state.use_count() > 1) {
+                // Create a new script instance so references to the old scope remain valid.
+                dst.state = dst.state->CloneInstance(false);
+            }
 
-            auto oldCtx = oldState.definition.context.lock();
-            auto newCtx = newState->definition.context.lock();
-            if (oldCtx) {
-                const void *defaultPtr = oldCtx->GetDefault();
-                const void *oldPtr = oldCtx->Access(oldState);
-                if (oldPtr) {
-                    void *newPtr = newCtx->AccessMut(*newState);
-                    Assertf(newPtr, "Script definition returned null data: %s", newState->definition.name);
-                    for (auto &field : oldCtx->metadata.fields) {
-                        field.Apply(newPtr, oldPtr, defaultPtr);
+            auto context = dst.state->definition.context.lock();
+            if (context) {
+                void *newPtr = context->AccessMut(*dst.state);
+                if (newPtr) {
+                    for (auto &field : context->metadata.fields) {
                         field.SetScope(newPtr, scope);
                     }
                 }
             }
-            dst.state = std::move(newState);
         }
     }
 
@@ -195,10 +188,12 @@ namespace ecs {
         if (liveTarget) {
             size_t i = 0;
             sp::erase_if(dst.scripts, [&](const ScriptInstance &instance) {
+                if (!instance.state) return true;
                 bool remove = !scriptFound[i++];
-                if (remove && instance.state) {
-                    Logf("Removing script %s", instance.state->definition.name);
-                    GetScriptManager().RemoveScriptInstance(*instance.state);
+                if (remove) {
+                    instance.state->Deactivate();
+                    // } else {
+                    //     GetScriptManager().ActivateScriptInstance(instance.state, ent);
                 }
                 return remove;
             });

@@ -10,16 +10,17 @@
 #include "common/Tracing.hh"
 #include "console/CFunc.hh"
 #include "ecs/EventQueue.hh"
+#include "ecs/EventScriptManager.hh"
 #include "ecs/ScriptDefinition.hh"
+#include "robin_hood.h"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
-#include <deque>
-#include <limits>
 #include <memory>
+#include <memory_resource>
 #include <shared_mutex>
-#include <variant>
 
 namespace sp {
     struct EditorContext;
@@ -29,16 +30,11 @@ namespace ecs {
     class ScriptInstance;
     class DynamicLibrary;
 
-    class ScriptState {
+    class ScriptState : public sp::NonMoveable {
     public:
-        ScriptState();
-        ScriptState(const ScriptState &other);
-        ScriptState(ScriptState &&other);
         ScriptState(const ScriptDefinition &definition, const EntityScope &scope = {});
+        ScriptState(const ScriptState &other);
         ~ScriptState();
-
-        ScriptState &operator=(const ScriptState &other);
-        ScriptState &operator=(ScriptState &&other);
 
         template<typename T>
         T *Get() {
@@ -83,6 +79,13 @@ namespace ecs {
             return ptr;
         }
 
+        // Create a duplicate of this script with a copy of the state, then run the init function
+        std::shared_ptr<ScriptState> CloneInstance(bool runInit) const;
+
+        // Remove this script from the active running script list
+        void Deactivate();
+
+        // Delete the current state for this script
         void Reset();
 
         template<typename T>
@@ -122,7 +125,8 @@ namespace ecs {
         }
 
         // The returned pointer remains valid until the next event is polled, or until the end of the script's onTick.
-        Event *PollEvent(const Lock<Read<EventInput>> &lock);
+        Event *PollEvent();
+        bool HasEvents();
 
         explicit operator bool() const {
             return (bool)definition;
@@ -139,17 +143,25 @@ namespace ecs {
         }
 
         bool IsActive() const {
-            return index < std::numeric_limits<size_t>::max();
+            return !handle.expired() && ent;
         }
 
         EntityScope scope;
         ScriptDefinition definition;
-        EventQueueRef eventQueue;
+        EventQueue eventQueue;
 
     private:
+        std::weak_ptr<ScriptState> handle;
         size_t instanceId;
-        size_t index = std::numeric_limits<size_t>::max();
-        bool initialized = false;
+        Entity ent;
+        bool initialized : 1 = false;
+        bool logicTickActive : 1 = false;
+        bool physicsTickActive : 1 = false;
+        // bool onEventActive : 1 = false;
+        // bool prefabActive : 1 = false;
+        // bool guiActive : 1 = false;
+
+        EventQueueRef eventQueueHandle;
         Event lastEvent;
 
         void *scriptData = nullptr;
@@ -160,6 +172,10 @@ namespace ecs {
         friend class ScriptInstance;
         friend class ScriptManager;
     };
+
+    inline bool operator==(const std::weak_ptr<ScriptState> &a, const std::weak_ptr<ScriptState> &b) {
+        return !a.owner_before(b) && !b.owner_before(a);
+    }
 
     static StructMetadata MetadataScriptState(typeid(ScriptState),
         sizeof(ScriptState),
@@ -172,15 +188,18 @@ namespace ecs {
         StructFunction::New("PollEvent",
             "Read the next available script event if there is one",
             &ScriptState::PollEvent,
-            ArgDesc("lock", ""),
-            ArgDesc("event_out", "")));
+            ArgDesc("event_out", "")),
+        StructFunction::New("HasEvents",
+            "Check if there is at least one script event available to read",
+            &ScriptState::HasEvents));
 
     struct ScriptSet {
-        std::deque<std::pair<Entity, ScriptState>> scripts;
-        sp::HeapVector<size_t> validScriptList;
-        std::priority_queue<size_t, sp::HeapVector<size_t>, std::greater<size_t>> freeScriptList;
         sp::LockFreeMutex mutex;
-        sp::HeapVector<size_t> logicScripts, physicsScripts, eventScripts, prefabScripts, guiScripts;
+        std::pmr::unsynchronized_pool_resource scriptPool;
+        robin_hood::unordered_map<void *, std::weak_ptr<ScriptState>> allScripts;
+        // TODO: Switch to unordered maps but ensure scripts on the same entity run in order
+        sp::HeapVector<std::weak_ptr<ScriptState>> logicScripts, physicsScripts;
+        // sp::HeapVector<std::weak_ptr<ScriptState>> eventScripts, prefabScripts, guiScripts;
         sp::LockFreeMutex logicScriptMutex, physicsScriptMutex, eventScriptMutex, prefabScriptMutex, guiScriptMutex;
     };
 
@@ -191,21 +210,16 @@ namespace ecs {
         ScriptManager();
         ~ScriptManager();
 
-        std::shared_ptr<ScriptState> NewScriptInstance(const ScriptState &state, bool runInit);
-        std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope,
-            const ScriptDefinition &definition,
-            bool runInit = false);
-        void RemoveScriptInstance(ScriptState &state);
+        std::shared_ptr<ScriptState> NewScriptInstance(const EntityScope &scope, const ScriptDefinition &definition);
+        void ActivateScriptInstance(const std::shared_ptr<ScriptState> &instance, Entity ent);
 
         std::shared_ptr<DynamicLibrary> LoadDynamicLibrary(const std::string &name);
         void ReloadDynamicLibraries();
         std::vector<std::string> GetDynamicLibraries() const;
 
-        void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock);
         void RegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock, const Entity &ent);
         void RunLogicUpdate(const LogicUpdateLock &Lock, const chrono_clock::duration &interval);
         void RunPhysicsUpdate(const PhysicsUpdateLock &lock, const chrono_clock::duration &interval);
-        size_t RunEventHandlers(const DynamicLock<SendEventsLock> &lock, Entity ent, const Event &event);
 
         // RunPrefabs should only be run from the SceneManager thread
         void RunPrefabs(const Lock<AddRemove> &lock, Entity ent);
@@ -213,15 +227,13 @@ namespace ecs {
         template<typename Fn>
         auto WithGuiScriptLock(Fn &&callback) {
             ZoneScoped;
-            std::shared_lock l1(dynamicLibraryMutex);
-            std::shared_lock l2(scriptSet.guiScriptMutex);
+            std::shared_lock l(scriptSet.guiScriptMutex);
             return callback();
         }
 
         template<typename Fn>
         void WithScriptLock(const ScriptDefinition &definition, bool exclusive, Fn &&callback) {
             ZoneScoped;
-            std::shared_lock l1(dynamicLibraryMutex);
             if (exclusive) {
                 if (definition.logicTickFunc) scriptSet.logicScriptMutex.lock();
                 if (definition.physicsTickFunc) scriptSet.physicsScriptMutex.lock();
@@ -252,20 +264,22 @@ namespace ecs {
         }
 
     private:
-        void internalRegisterActive(const Lock<Read<Name>, Write<EventInput, GuiElement, Scripts>> &lock,
-            const Entity &ent,
-            std::shared_ptr<ScriptState> instance);
-
         sp::CFuncCollection funcs;
         ScriptSet scriptSet = {};
 
         mutable sp::LockFreeMutex dynamicLibraryMutex;
         robin_hood::unordered_map<std::string, std::shared_ptr<DynamicLibrary>> dynamicLibraries;
 
+        EventScriptManager eventScripts;
+
+        friend class ScriptState;
         friend class StructMetadata;
         friend class ScriptInstance;
         friend struct sp::EditorContext;
+        friend class EventScriptManager;
+        friend EventScriptManager &GetEventScriptManager();
     };
 
     ScriptManager &GetScriptManager();
+    EventScriptManager &GetEventScriptManager();
 } // namespace ecs

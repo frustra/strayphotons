@@ -8,12 +8,18 @@
 #include "EventQueue.hh"
 
 #include "assets/JsonHelpers.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "strayphotons/Logging.hh"
 
+#include <cstdint>
+#include <forward_list>
 #include <glm/gtx/string_cast.hpp>
+#include <memory>
 #include <picojson.h>
+#include <shared_mutex>
 #include <sstream>
+#include <string_view>
 
 namespace ecs {
     const EventData &EventData::operator=(bool newBool) {
@@ -230,107 +236,63 @@ namespace ecs {
         return out;
     }
 
-    bool EventQueue::Add(const AsyncEvent &event) {
-        State s, s2;
-        do {
-            s = state.load();
-            s2 = {s.head, (s.tail + 1) % (uint32_t)events.size()};
-            if (s2.tail == s2.head) {
-                EntityRef ref(event.source);
-                Warnf("Event Queue full! Dropping event %s from %s", event.name, ref.Name().String());
-                return false;
-            }
-        } while (!state.compare_exchange_weak(s, s2, std::memory_order_acquire, std::memory_order_relaxed));
-        events[s.tail] = event;
+    EventQueue::EventQueue(uint32_t maxQueueSize) : capacity(maxQueueSize) {
+        std::pmr::polymorphic_allocator<AsyncEvent> allocator(&GetECSContext().eventPool);
+        storage = std::pmr::forward_list<AsyncEvent>(allocator);
+        last = storage.before_begin();
+    }
+
+    EventQueue::~EventQueue() {
+        Assertf(handle.use_count() == 0, "EventQueue destroyed while referenced");
+    }
+
+    thread_local sp::HeapVector<std::pmr::forward_list<EventQueue::AsyncEvent>::iterator> pendingEvents;
+
+    bool EventQueue::Add(Lock<>, const Event &event) {
+        std::lock_guard l(mutex);
+        if (count >= capacity) return false;
+        last = storage.emplace_after(last, event);
+        count++;
+        pendingEvents.emplace_back(last);
         return true;
     }
 
-    bool EventQueue::Add(const Event &event, uint64_t transactionId) {
-        AsyncEvent asyncEvent(event.name, event.source, event.data);
-        asyncEvent.transactionId = transactionId;
-        return Add(asyncEvent);
-    }
-
-    bool EventQueue::Poll(Event &eventOut, uint64_t transactionId) {
-        bool outputSet = false;
-        while (!outputSet) {
-            State s = state.load();
-            if (s.head == s.tail) break;
-
-            auto &async = events[s.head];
-            // Check if this event should be visible to the current transaction.
-            // Events are not visible to the transaction that emitted them.
-            if (async.transactionId >= transactionId && transactionId > 0) break;
-            if (!async.data || !async.data->Ready()) break;
-
-            auto data = async.data->Get();
-            if (data) {
-                eventOut = Event{
-                    async.name,
-                    async.source,
-                    *data,
-                };
-                outputSet = true;
-            } else {
-                // A null event means it was filtered out asynchronously, skip over it
-            }
-
-            State s2;
-            do {
-                s = state.load();
-                s2 = {(s.head + 1) % (uint32_t)events.size(), s.tail};
-            } while (!state.compare_exchange_weak(s, s2, std::memory_order_release, std::memory_order_relaxed));
-        }
-        if (!outputSet) eventOut = Event();
-        return outputSet;
-    }
-
-    bool EventQueue::Empty() {
-        State s = state.load();
-        return s.head == s.tail;
-    }
-
-    uint32_t EventQueue::Size() {
-        State s = state.load();
-        if (s.head > s.tail) {
-            return s.tail + events.size() - s.head;
-        } else {
-            return s.tail - s.head;
-        }
-    }
-
-    EventQueueRef EventQueue::New(uint32_t maxQueueSize) {
-        ZoneScoped;
-        Assertf(maxQueueSize <= MAX_QUEUE_SIZE, "EventQueue size %u exceeds max size %u", maxQueueSize, MAX_QUEUE_SIZE);
-
-        auto &ctx = GetECSContext();
-
-        std::lock_guard lock(ctx.eventQueues.mutex);
-        if (ctx.eventQueues.freeList.empty()) {
-            size_t offset = ctx.eventQueues.pool.size();
-#define QUEUE_POOL_BLOCK_SIZE 16
-            ctx.eventQueues.pool.resize(offset + QUEUE_POOL_BLOCK_SIZE);
-            for (size_t i = 0; i < QUEUE_POOL_BLOCK_SIZE; i++) {
-                ctx.eventQueues.pool[offset + i].poolIndex = offset + i;
-                ctx.eventQueues.freeList.push(offset + i);
-            }
+    bool EventQueue::Poll(Event &eventOut) {
+        std::lock_guard l(mutex);
+        if (storage.empty() || storage.front().commitId == 0) {
+            eventOut = Event();
+            return false;
         }
 
-        size_t freeIndex = ctx.eventQueues.freeList.top();
-        ctx.eventQueues.freeList.pop();
-        EventQueue *newQueue = &ctx.eventQueues.pool[freeIndex];
-        newQueue->events.resize(maxQueueSize);
-        newQueue->state.store({0, 0});
-        return std::shared_ptr<EventQueue>(newQueue, [&ctx](EventQueue *queuePtr) {
-            if (queuePtr) {
-                Assertf(ctx.eventQueues.pool.size() > 0, "EventQueuePool destroyed before EventQueueRef");
-                queuePtr->state.store({0, 0});
-                queuePtr->events.resize(0);
-                std::lock_guard lock(ctx.eventQueues.mutex);
-                if (queuePtr->poolIndex < ctx.eventQueues.pool.size()) {
-                    ctx.eventQueues.freeList.push(queuePtr->poolIndex);
-                }
-            }
-        });
+        const AsyncEvent &first = storage.front();
+        DebugAssertf(first.commitId != 0, "EventQueue::Poll read a non-ready event");
+        eventOut = first;
+
+        storage.pop_front();
+        if (storage.empty()) last = storage.before_begin();
+        count--;
+        return true;
+    }
+
+    bool EventQueue::Empty() const {
+        std::shared_lock l(mutex);
+        return storage.empty() || storage.front().commitId == 0;
+    }
+
+    uint32_t EventQueue::Size() const {
+        std::shared_lock l(mutex);
+        return count;
+    }
+
+    uint32_t EventQueue::Capacity() const {
+        std::shared_lock l(mutex);
+        return capacity;
+    }
+
+    void EventQueue::CommitPendingEvents(uint64_t commitId) {
+        for (auto &event : pendingEvents) {
+            event->commitId = commitId;
+        }
+        pendingEvents.clear();
     }
 } // namespace ecs

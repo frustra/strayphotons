@@ -5,6 +5,8 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include "graphics/vulkan/core/VkCommon.hh"
+
 #include <string>
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
@@ -54,8 +56,36 @@ namespace sp::vulkan {
         }
     }
 
+    SubBuffer::SubBuffer(BufferPtr buffer,
+        VmaVirtualBlock subAllocationBlock,
+        vk::DeviceSize offsetBytes,
+        vk::DeviceSize size,
+        size_t arrayOffset,
+        size_t arrayCount)
+        : parentBuffer(buffer), subAllocationBlock(subAllocationBlock), offsetBytes(offsetBytes), size(size),
+          arrayOffset(arrayOffset), arrayCount(arrayCount) {
+        Assertf(buffer, "SubBuffer created from null parent bufffer");
+    }
+
     SubBuffer::~SubBuffer() {
+        Assertf(handle.use_count() == 0, "SubBuffer destroyed while referenced");
         vmaVirtualFree(subAllocationBlock, offsetBytes);
+    }
+
+    SubBufferPtr SubBuffer::New(BufferPtr buffer,
+        VmaVirtualBlock subAllocationBlock,
+        vk::DeviceSize offsetBytes,
+        vk::DeviceSize size,
+        size_t arrayOffset,
+        size_t arrayCount) {
+        auto handle = std::make_shared<SubBuffer>(buffer,
+            subAllocationBlock,
+            offsetBytes,
+            size,
+            arrayOffset,
+            arrayCount);
+        handle->handle = handle;
+        return handle;
     }
 
     void *SubBuffer::Mapped() {
@@ -65,8 +95,6 @@ namespace sp::vulkan {
     SubBuffer::operator vk::Buffer() const {
         return (vk::Buffer)*parentBuffer;
     }
-
-    Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::Buffer(vk::BufferCreateInfo bufferInfo,
         VmaAllocationCreateInfo allocInfo,
@@ -88,12 +116,23 @@ namespace sp::vulkan {
     }
 
     Buffer::~Buffer() {
+        Assertf(handle.use_count() == 0, "Buffer destroyed while referenced");
         if (subAllocationBlock != VK_NULL_HANDLE) vmaDestroyVirtualBlock(subAllocationBlock);
 
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
             UnmapPersistent();
             vmaDestroyBuffer(allocator, buffer, allocation);
         }
+    }
+
+    BufferPtr Buffer::New(vk::BufferCreateInfo bufferInfo,
+        VmaAllocationCreateInfo allocInfo,
+        VmaAllocator allocator,
+        size_t arrayStride,
+        size_t arrayCount) {
+        auto handle = std::make_shared<Buffer>(bufferInfo, allocInfo, allocator, arrayStride, arrayCount);
+        handle->handle = handle;
+        return handle;
     }
 
     static char *virtualAllocInfoString(VmaVirtualBlock block) {
@@ -139,7 +178,7 @@ namespace sp::vulkan {
         auto offsetBytes = SubAllocateRaw(size, 1);
         DebugAssert(offsetBytes % arrayStride == 0, "suballocation was not aligned to the array");
         offsetBytes += bufferInfo.size - arrayCount * arrayStride; // align to end
-        return std::make_shared<SubBuffer>(this,
+        return SubBuffer::New(handle.lock(),
             subAllocationBlock,
             offsetBytes,
             size,
@@ -151,7 +190,7 @@ namespace sp::vulkan {
         Assertf(arrayStride == 0, "buffer is an array");
 
         auto offsetBytes = SubAllocateRaw(size, alignment);
-        return std::make_shared<SubBuffer>(this, subAllocationBlock, offsetBytes, size);
+        return SubBuffer::New(handle.lock(), subAllocationBlock, offsetBytes, size);
     }
 
     void Buffer::SetAccess(Access oldAccess, Access newAccess) {
