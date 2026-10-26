@@ -727,7 +727,7 @@ namespace sp {
             }
         }
 
-        std::vector<ecs::FlatEntity> entities;
+        std::deque<ecs::FlatEntity> entities;
         if (sceneObj.count("entities")) {
             auto &entityList = sceneObj["entities"];
             for (auto &value : entityList.get<picojson::array>()) {
@@ -758,7 +758,7 @@ namespace sp {
         auto scene = Scene::New(lock, sceneName, scenePath, sceneType, priority, asset, sceneProperties, libraries);
 
         std::vector<ecs::Entity> scriptEntities;
-        for (auto &flatEnt : entities) {
+        for (auto &&flatEnt : entities) {
             auto &name_ptr = std::get<std::optional<ecs::Name>>(flatEnt);
             auto name = name_ptr ? *name_ptr : ecs::Name();
 
@@ -770,7 +770,7 @@ namespace sp {
             }
 
             ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                comp.SetComponent(lock, scope, entity, flatEnt);
+                comp.MoveComponent(lock, scope, entity, std::move(flatEnt));
             });
 
             if (entity.Has<ecs::Scripts>(lock)) {
@@ -854,7 +854,7 @@ namespace sp {
             ScenePriority::Bindings,
             bindingConfig);
 
-        for (auto &flatEnt : entities) {
+        for (auto &&flatEnt : entities) {
             auto &name = std::get<std::optional<ecs::Name>>(flatEnt);
             if (!name || !*name) continue;
 
@@ -866,7 +866,7 @@ namespace sp {
             }
 
             for (auto *comp : allowedComponents) {
-                if (comp) comp->SetComponent(lock, scope, entity, flatEnt);
+                if (comp) comp->MoveComponent(lock, scope, entity, std::move(flatEnt));
             }
         }
         return scene;

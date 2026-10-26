@@ -5,6 +5,7 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+#include <stdio.h>
 #include <strayphotons/Tecs_abi_gen.h>
 #include <strayphotons/components_gen.h>
 #include <string.h>
@@ -27,13 +28,13 @@ void life_cell_on_tick(void *context,
             sp_event_send(lock, ent, &event);
         }
         ctx->initialized = true;
-        state->definition.filter_on_event = true;
-        return;
     }
+
+    if (!sp_script_state_has_events(state)) return;
 
     bool forceToggle = false;
     sp_event_t *event;
-    while ((event = sp_script_state_poll_event(state, lock))) {
+    while ((event = sp_script_state_poll_event(state))) {
         if (strcmp(event->name, "/life/neighbor_alive") == 0) {
             if (event->data.type != SP_EVENT_DATA_TYPE_BOOL) continue;
             bool neighborAlive = event->data.b;
@@ -55,7 +56,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
     if (output_size >= 1 && output != NULL) {
         sp_string_set(&output[0].name, "life_cell");
         output[0].desc = "An event handling script to notify neighboring cells when state changes";
-        output[0].filter_on_event = false;
         sp_dynamic_script_definition_add_event(&output[0], "/life/neighbor_alive");
         sp_dynamic_script_definition_add_event(&output[0], "/life/toggle_alive");
 

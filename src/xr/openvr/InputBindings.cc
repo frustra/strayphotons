@@ -123,7 +123,7 @@ namespace sp::xr {
                             ecs::Entity ent = scene->NewSystemEntity(lock, scene, action.poseEntity.Name());
                             ent.Set<ecs::TransformTree>(lock);
                         } else if (action.type == Action::DataType::Haptic) {
-                            if (!action.eventQueue) action.eventQueue = ecs::EventQueue::New();
+                            if (!action.eventQueue) action.eventQueue = std::make_shared<ecs::EventQueue>();
                         }
                     }
                 }
@@ -450,7 +450,7 @@ namespace sp::xr {
                     }
                     if (action.type == Action::DataType::Haptic) {
                         ecs::Event event;
-                        while (ecs::EventInput::Poll(lock, action.eventQueue, event)) {
+                        while (action.eventQueue && action.eventQueue->Poll(event)) {
                             if (event.data.type != ecs::EventDataType::Float) continue;
                             float &amplitude = event.data.f;
                             error = vr::VRInput()->TriggerHapticVibrationAction(action.handle,

@@ -120,4 +120,31 @@ namespace sp {
         {KEY_RIGHT_SUPER, ImGuiKey_RightSuper},
         {KEY_CONTEXT_MENU, ImGuiKey_Menu},
     };
+
+    static const robin_hood::unordered_flat_map<ImGuiKey, KeyCode> ImGuiInverseKeyMapping = [] {
+        robin_hood::unordered_flat_map<ImGuiKey, KeyCode> result;
+        result.reserve(ImGuiKeyMapping.size());
+        for (auto &[k, v] : ImGuiKeyMapping) {
+            result[v] = k;
+        }
+        return result;
+    }();
+
+    static const robin_hood::unordered_flat_map<MouseButton, ImGuiMouseButton> ImGuiMouseButtonMapping = {
+        {MouseButton::BUTTON_LEFT, ImGuiMouseButton_Left},
+        {MouseButton::BUTTON_RIGHT, ImGuiMouseButton_Right},
+        {MouseButton::BUTTON_MIDDLE, ImGuiMouseButton_Middle},
+        {MouseButton::BUTTON_4, ImGuiMouseButton_Middle + 1},
+        {MouseButton::BUTTON_5, ImGuiMouseButton_Middle + 2},
+        // ImGuiMouseButton_Count == 5
+    };
+
+    static const robin_hood::unordered_flat_map<ImGuiMouseButton, MouseButton> ImGuiInverseMouseButtonMapping = [] {
+        robin_hood::unordered_flat_map<ImGuiMouseButton, MouseButton> result;
+        result.reserve(ImGuiMouseButtonMapping.size());
+        for (auto &[k, v] : ImGuiMouseButtonMapping) {
+            result[v] = k;
+        }
+        return result;
+    }();
 } // namespace sp

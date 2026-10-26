@@ -1058,11 +1058,11 @@ namespace sp::vulkan {
         bufferInfo.usage = usage;
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
-        return std::make_shared<Buffer>(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
+        return Buffer::New(bufferInfo, allocInfo, allocator.get(), layout.arrayStride, layout.arrayCount);
     }
 
     BufferPtr DeviceContext::AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo) {
-        return std::make_shared<Buffer>(bufferInfo, allocInfo, allocator.get());
+        return Buffer::New(bufferInfo, allocInfo, allocator.get());
     }
 
     BufferPtr DeviceContext::GetBuffer(const BufferDesc &desc) {

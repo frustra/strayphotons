@@ -259,16 +259,13 @@ void sp::ConsoleManager::RegisterCoreCommands() {
             }
 
             auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-            ecs::AsyncEvent asyncEvent = ecs::AsyncEvent(event.name, event.source, event.data);
-            asyncEvent.transactionId = lock.GetTransactionId();
-            auto tracePtr = std::make_shared<sp::InlineVector<ecs::Entity, 64>>();
-            asyncEvent.trace = tracePtr;
-            auto sent = ecs::EventBindings::SendAsyncEvent(lock, entityName, asyncEvent);
+            ecs::EventTrace trace;
+            uint64_t sent = ecs::EventBindings::SendEvent(lock, entityName, event, 0, &trace);
             if (sent == 0) {
                 Warnf("No event target found: %s%s", entityName.String(), eventName);
             } else {
                 Logf("Sent %u events to %s%s", sent, entityName.String(), eventName);
-                for (auto &ent : *tracePtr) {
+                for (const ecs::Entity &ent : trace) {
                     Logf(" received by %s %s", ecs::EntityRef(ent).Name().String(), std::to_string(ent));
                 }
             }

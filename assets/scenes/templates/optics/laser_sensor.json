@@ -15,11 +15,15 @@
 			"transform": {
 				"translate": [0, 0.025, -0.0165]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -30,11 +34,15 @@
 				"rotate": [180, 0, 1, 0],
 				"scale": 0.1
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
+					"interactive": true,
 					"physics": "SubActor"
 				}
 			}
@@ -45,11 +53,15 @@
 				"translate": [0, 0.025, 0],
 				"rotate": [-90, 0, 0, 1]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-3mm-flat-one-side",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},

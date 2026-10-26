@@ -145,7 +145,7 @@ namespace sp::gltf {
             typeIndex = 0;
             typeSize = sizeof(ReadT);
         } else {
-            int counter = 0;
+            [[maybe_unused]] int counter = 0;
             (
                 [&] {
                     counter++;

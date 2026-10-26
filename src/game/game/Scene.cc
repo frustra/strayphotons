@@ -236,7 +236,7 @@ namespace sp {
             scene_util::BuildEntity(ecs::Lock<ecs::ReadAll>(staging), entities[i], components[i]);
         }
 
-        auto live = ecs::StartTransaction<ecs::AddRemove>();
+        auto live = ecs::StartTransaction<ecs::AddRemove, ecs::ReadPrevious>();
 
         auto liveSceneId = data->sceneEntity.Get(live);
         if (!liveSceneId.Exists(live)) {
@@ -307,7 +307,6 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        ecs::GetScriptManager().RegisterActive(live);
         {
             ZoneScopedN("TransformSnapshot");
             for (auto &e : live.EntitiesWith<ecs::TransformTree>()) {
@@ -388,7 +387,10 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        ecs::GetScriptManager().RegisterActive(live);
+        for (const ecs::Entity &ent : live.EntitiesWith<ecs::Scripts>()) {
+            if (!ent.Has<ecs::Scripts>(live)) continue;
+            ecs::GetScriptManager().RegisterActive(live, ent);
+        }
 
         active = false;
     }

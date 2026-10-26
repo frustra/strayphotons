@@ -19,6 +19,10 @@
 #include <memory>
 #include <vector>
 
+namespace sp {
+    struct GuiInputEvent;
+}
+
 namespace dynalo {
     class library;
 }
@@ -65,8 +69,7 @@ namespace ecs {
 
     struct DynamicScriptDefinition {
         sp::HeapString name;
-        char *desc = nullptr;
-        bool filterOnEvent = false;
+        const char *desc = nullptr;
         sp::HeapVector<EventName> events;
         sp::HeapVector<StructField> fields;
 
@@ -85,7 +88,11 @@ namespace ecs {
         uint64_t eventReadPermissions = 0;
         uint64_t eventWritePermissions = 0;
         void (*prefabFunc)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &) = nullptr;
-        bool (*beforeFrameFunc)(void *, sp::GenericCompositor &, ScriptState &, Entity) = nullptr;
+        bool (*beforeFrameFunc)(void *,
+            sp::GenericCompositor &,
+            ScriptState &,
+            Entity,
+            const sp::HeapVector<sp::GuiInputEvent> &) = nullptr;
         void (*renderGuiFunc)(void *,
             sp::GenericCompositor &,
             ScriptState &,
@@ -107,9 +114,6 @@ namespace ecs {
         "A definition describing the name, type, and functions of a script",
         StructField::New("name", "The name of the script", &DynamicScriptDefinition::name),
         StructField::New("desc", "A description of how to use the script", &DynamicScriptDefinition::desc),
-        StructField::New("filter_on_event",
-            "True if this script should only run if new events are received",
-            &DynamicScriptDefinition::filterOnEvent),
         StructField::New("events",
             "A list of the names of events this script can receive",
             &DynamicScriptDefinition::events),
@@ -194,7 +198,10 @@ namespace ecs {
             chrono_clock::duration interval);
         static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event);
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent);
-        static bool BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent);
+        static bool BeforeFrame(sp::GenericCompositor &compositor,
+            ScriptState &state,
+            Entity ent,
+            const sp::HeapVector<sp::GuiInputEvent> &inputEvents);
         static void RenderGui(sp::GenericCompositor &compositor,
             ScriptState &state,
             Entity ent,

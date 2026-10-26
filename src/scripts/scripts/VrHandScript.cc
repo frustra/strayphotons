@@ -301,7 +301,7 @@ namespace sp::scripts {
                 if (!Init(state, lock, ent)) {
                     // Don't run again
                     state.definition.events.clear();
-                    state.definition.filterOnEvent = true;
+                    state.definition.logicTickFunc = {};
                     return;
                 }
                 init = true;
@@ -385,7 +385,7 @@ namespace sp::scripts {
             HandlePointing(state, lock, ent, isPointing);
 
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 if (event.name == INTERACT_EVENT_INTERACT_PRESS) {
                     if (event.data.type == EventDataType::Bool) {
                         if (pressEntity) {
@@ -460,7 +460,6 @@ namespace sp::scripts {
         StructField::New("noclip_entity", &VrHandScript::noclipEntity));
     BuiltInScript<VrHandScript> vrHandScript("vr_hand",
         MetadataVrHandScript,
-        false,
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PRESS);
 } // namespace sp::scripts

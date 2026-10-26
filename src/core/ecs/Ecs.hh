@@ -114,6 +114,7 @@ namespace ecs {
     using Write = Tecs::Write<Components...>;
     using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
+    using ReadPrevious = Tecs::ReadPrevious;
     using PermissionBitset = Tecs::Lock<ECS>::PermissionBitset;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;

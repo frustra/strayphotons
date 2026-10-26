@@ -8,11 +8,10 @@
 #pragma once
 
 #include "ecs/Ecs.hh"
-#include "ecs/SignalExpression.hh"
+#include "ecs/SignalRef.hh"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <string>
 
 namespace sp {
     class PhysxManager;
@@ -24,7 +23,7 @@ namespace sp {
 
         void RegisterEvents();
         void Frame(ecs::Lock<ecs::ReadSignalsLock,
-            ecs::Read<ecs::EventInput, ecs::SceneProperties>,
+            ecs::Read<ecs::SceneProperties>,
             ecs::Write<ecs::TransformTree, ecs::CharacterController>> lock);
 
     private:

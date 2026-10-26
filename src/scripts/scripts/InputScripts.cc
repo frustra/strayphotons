@@ -103,7 +103,7 @@ namespace sp::scripts {
                 }
             } else {
                 Event event;
-                while (EventInput::Poll(lock, state.eventQueue, event)) {
+                while (state.eventQueue.Poll(event)) {
                     if (event.name != "/action/snap_rotate") continue;
 
                     auto *angleDiff = EventData::TryGet<double>(event.data);
@@ -130,46 +130,36 @@ namespace sp::scripts {
         "",
         StructField::New("relative_to", &PlayerRotation::targetEntity),
         StructField::New("smooth_rotation", &PlayerRotation::enableSmoothRotation));
-    BuiltInScript<PlayerRotation> playerRotation("player_rotation",
-        MetadataPlayerRotation,
-        false,
-        "/action/snap_rotate");
+    BuiltInScript<PlayerRotation> playerRotation("player_rotation", MetadataPlayerRotation, "/action/snap_rotate");
 
     struct CameraView {
-        void OnLogicTick(ScriptState &state,
-            Lock<Write<TransformTree>, Read<EventInput>> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnEvent(ScriptState &state, Lock<Write<TransformTree>> lock, Entity ent, Event event) {
+            if (event.name != "/script/camera_rotate") return;
             if (!ent.Has<TransformTree>(lock)) return;
 
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != "/script/camera_rotate") continue;
-
-                auto *angleDiff = EventData::TryGet<glm::vec2>(event.data);
-                if (!angleDiff) {
-                    Errorf("Unsupported /script/camera_rotate event type: %s", event.ToString());
-                    continue;
-                }
-                // Apply pitch/yaw rotations
-                auto &transform = ent.Get<TransformTree>(lock);
-                auto rotation = glm::quat(glm::vec3(0, -angleDiff->x, 0)) * transform.pose.GetRotation() *
-                                glm::quat(glm::vec3(-angleDiff->y, 0, 0));
-
-                auto up = rotation * glm::vec3(0, 1, 0);
-                if (up.y < 0) {
-                    // Camera is turning upside-down, reset it
-                    auto right = rotation * glm::vec3(1, 0, 0);
-                    right.y = 0;
-                    up.y = 0;
-                    glm::vec3 forward = glm::cross(right, up);
-                    rotation = glm::quat_cast(
-                        glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
-                }
-                transform.pose.SetRotation(rotation);
+            auto *angleDiff = EventData::TryGet<glm::vec2>(event.data);
+            if (!angleDiff) {
+                Errorf("Unsupported /script/camera_rotate event type: %s", event.ToString());
+                return;
             }
+            // Apply pitch/yaw rotations
+            auto &transform = ent.Get<TransformTree>(lock);
+            auto rotation = glm::quat(glm::vec3(0, -angleDiff->x, 0)) * transform.pose.GetRotation() *
+                            glm::quat(glm::vec3(-angleDiff->y, 0, 0));
+
+            auto up = rotation * glm::vec3(0, 1, 0);
+            if (up.y < 0) {
+                // Camera is turning upside-down, reset it
+                auto right = rotation * glm::vec3(1, 0, 0);
+                right.y = 0;
+                up.y = 0;
+                glm::vec3 forward = glm::cross(right, up);
+                rotation = glm::quat_cast(
+                    glm::mat3(glm::normalize(right), glm::normalize(up), glm::normalize(forward)));
+            }
+            transform.pose.SetRotation(rotation);
         }
     };
     StructMetadata MetadataCameraView(typeid(CameraView), sizeof(CameraView), "CameraView", "");
-    BuiltInScript<CameraView> cameraView("camera_view", MetadataCameraView, true, "/script/camera_rotate");
+    BuiltInScript<CameraView> cameraView("camera_view", MetadataCameraView, "/script/camera_rotate");
 } // namespace sp::scripts

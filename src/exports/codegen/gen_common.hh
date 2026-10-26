@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "Tecs_permissions.hh"
+
 #include <Tecs.hh>
 #include <cstring>
 #include <ecs/EcsImpl.hh>
@@ -71,12 +73,13 @@ std::string TypeToString() {
     } else if constexpr (std::is_same<T, ecs::Lock<>>()) {
         return "ecs::Lock<>";
     } else if constexpr (Tecs::is_lock<T>()) {
-        auto dummyChar = EmbedTypeIntoSignature<ecs::Lock<unsigned char>>();
+        using FlatPermissions = typename Tecs::FlattenPermissions<T>::type;
+        auto dummyChar = EmbedTypeIntoSignature<Tecs::TransactionPermissions<unsigned char>>();
         auto charStart = dummyChar.find("unsigned char");
         auto tailLength = dummyChar.size() - charStart - "unsigned char"s.size();
 
         auto typeStart = charStart;
-        auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        auto embeddingSignature = EmbedTypeIntoSignature<FlatPermissions>();
         auto structStart = embeddingSignature.find("struct ", charStart);
         if (structStart == charStart) typeStart += "struct "s.size();
 
@@ -85,12 +88,13 @@ std::string TypeToString() {
     } else if constexpr (std::is_same<T, ecs::DynamicLock<>>()) {
         return "ecs::DynamicLock<>";
     } else if constexpr (Tecs::is_dynamic_lock<T>()) {
-        auto dummyChar = EmbedTypeIntoSignature<ecs::DynamicLock<unsigned char>>();
+        using FlatPermissions = typename Tecs::FlattenPermissions<T>::type;
+        auto dummyChar = EmbedTypeIntoSignature<Tecs::TransactionPermissions<unsigned char>>();
         auto charStart = dummyChar.find("unsigned char");
         auto tailLength = dummyChar.size() - charStart - "unsigned char"s.size();
 
         auto typeStart = charStart;
-        auto embeddingSignature = EmbedTypeIntoSignature<T>();
+        auto embeddingSignature = EmbedTypeIntoSignature<FlatPermissions>();
         auto structStart = embeddingSignature.find("struct ", charStart);
         if (structStart == charStart) typeStart += "struct "s.size();
 

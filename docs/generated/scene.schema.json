@@ -995,11 +995,11 @@
 							},
 							{
 								"properties": {
-									"childEntities": {
+									"child_entities": {
 										"default": [],
 										"description": "No description"
 									},
-									"firstParent": {
+									"first_parent": {
 										"default": null,
 										"description": "No description",
 										"type": "string"

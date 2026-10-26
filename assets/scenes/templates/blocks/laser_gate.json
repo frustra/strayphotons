@@ -68,11 +68,15 @@
 				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -82,11 +86,15 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.025, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-3mm-flat-one-side",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -96,11 +104,15 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.025, -0.0165]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -111,11 +123,15 @@
 				"translate": [0.0215, 0.025, 0],
 				"rotate": [270, 0, 1, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -126,11 +142,15 @@
 				"translate": [0, 0.025, 0.0165],
 				"rotate": [180, 0, 1, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -140,11 +160,15 @@
 				"translate": [0, 0.025, 0],
 				"rotate": [-90, 0, 1, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -163,11 +187,15 @@
 				"input_value": "(gate.Icosphere/light_value_r + gate.Icosphere/light_value_g + gate.Icosphere/light_value_b) >= gate/gate_sensitivity",
 				"value": "gate/input_value"
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
+					"interactive": true,
 					"physics": "SubActor"
 				}
 			}
@@ -200,6 +228,9 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.025, 0],
 				"scale": 0.021
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"script": [
 				{
@@ -240,6 +271,9 @@
 				"translate": [0, 0.025, 0],
 				"rotate": [180, 0, 1, 0],
 				"scale": 0.021
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"script": [
 				{

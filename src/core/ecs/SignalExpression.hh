@@ -98,19 +98,7 @@ Signal expressions support the following operations and functions:
         // Called automatically by constructor. Should be called when expression string is changed.
         bool Compile();
 
-        template<typename LockType>
-        bool CanEvaluate(const LockType &lock, uint32_t depth = 0) const {
-            if constexpr (LockType::template has_permissions<ReadAll>()) {
-                return true;
-            } else if constexpr (LockType::template has_permissions<ReadSignalsLock>()) {
-                return CanEvaluate((const DynamicLock<ReadSignalsLock> &)lock, depth);
-            } else {
-                return false;
-            }
-        }
-
         bool IsCacheable() const;
-        bool CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const;
         double Evaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth = 0) const;
         double EvaluateEvent(const DynamicLock<ReadSignalsLock> &lock, const EventData &input) const;
 

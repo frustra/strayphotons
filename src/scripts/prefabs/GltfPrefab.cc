@@ -9,10 +9,12 @@
 #include "assets/Gltf.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/components/Events.hh"
 #include "game/Scene.hh"
 #include "strayphotons/HeapString.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/input/BindingNames.hh"
 
 namespace ecs {
     struct GltfPrefab {
@@ -27,7 +29,8 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("Prefab");
+            ZoneStr(modelName);
             auto asyncGltf = sp::Assets().LoadGltf(modelName);
             auto model = asyncGltf->Get();
             if (!model) {
@@ -114,14 +117,12 @@ namespace ecs {
                     if (physicsType) {
                         PhysicsShape::ConvexMesh mesh(modelName, *node.meshIndex);
                         newEntity.Set<Physics>(lock, mesh, physicsGroup, *physicsType);
+                    }
 
-                        if (interactive) {
-                            newEntity.Set<PhysicsJoints>(lock);
-                            newEntity.Set<PhysicsQuery>(lock);
-                            newEntity.Set<EventInput>(lock);
-                            auto &scripts = newEntity.Set<Scripts>(lock);
-                            scripts.AddScript(prefixName, "interactive_object");
-                        }
+                    if (interactive) {
+                        EventBindings &eventBindings = newEntity.Set<EventBindings>(lock);
+                        eventBindings.Bind(sp::INTERACT_EVENT_INTERACT_GRAB, ent, sp::INTERACT_EVENT_INTERACT_GRAB);
+                        eventBindings.Bind(sp::INTERACT_EVENT_INTERACT_PUSH, ent, sp::INTERACT_EVENT_INTERACT_PUSH);
                     }
                 }
 

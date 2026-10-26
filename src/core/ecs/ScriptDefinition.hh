@@ -14,13 +14,13 @@
 #include "game/SceneRef.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
+#include "strayphotons/gui/GuiInputEvents.hh"
 
 #include <map>
-#include <variant>
 
 namespace sp {
     class GenericCompositor;
-}
+} // namespace sp
 
 namespace ecs {
     class ScriptState;
@@ -39,14 +39,14 @@ namespace ecs {
             Physics,
             PhysicsQuery,
             PhysicsJoints,
-            Signals>>;
+            Signals>,
+        ReadPrevious>;
 
     using PhysicsUpdateLock = Lock<SendEventsLock,
         ReadSignalsLock,
         Read<TransformTree, Physics, SceneInfo>,
-        Write<TransformSnapshot, OpticalElement, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>>;
-
-    using GuiUpdateLock = Lock<ReadSignalsLock, Read<EventInput, RenderOutput, Scripts>>;
+        Write<TransformSnapshot, OpticalElement, PhysicsJoints, PhysicsQuery, Signals, LaserLine, VoxelArea>,
+        ReadPrevious>;
 
     using ScriptInitFunc = void (*)(ScriptState &);
     using ScriptDestroyFunc = void (*)(ScriptState &);
@@ -54,7 +54,10 @@ namespace ecs {
     using PhysicsTickFunc = void (*)(ScriptState &, const PhysicsUpdateLock &, Entity, chrono_clock::duration);
     using OnEventFunc = void (*)(ScriptState &, const DynamicLock<SendEventsLock> &, Entity, Event);
     using PrefabFunc = void (*)(const ScriptState &, const sp::SceneRef &, Lock<AddRemove>, Entity);
-    using BeforeFrameFunc = bool (*)(sp::GenericCompositor &, ScriptState &, Entity);
+    using BeforeFrameFunc = bool (*)(sp::GenericCompositor &,
+        ScriptState &,
+        Entity,
+        const sp::HeapVector<sp::GuiInputEvent> &);
     using RenderGuiFunc =
         void (*)(sp::GenericCompositor &, ScriptState &, Entity, glm::vec2, glm::vec2, float, sp::GuiDrawData &);
 
@@ -91,7 +94,6 @@ namespace ecs {
     struct ScriptDefinition {
         sp::HeapString name;
         sp::HeapVector<EventName> events;
-        bool filterOnEvent = false;
         std::weak_ptr<ScriptDefinitionBase> context;
         ScriptInitFunc initFunc = nullptr;
         ScriptDestroyFunc destroyFunc = nullptr;
@@ -103,7 +105,7 @@ namespace ecs {
         RenderGuiFunc renderGuiFunc = nullptr;
 
         bool NeedsEventQueue() const {
-            return logicTickFunc || physicsTickFunc || beforeFrameFunc || renderGuiFunc;
+            return !onEventFunc && (logicTickFunc || physicsTickFunc || beforeFrameFunc || renderGuiFunc);
         }
         explicit operator bool() const {
             return context.use_count() > 0 || initFunc || destroyFunc || logicTickFunc || physicsTickFunc ||
@@ -116,10 +118,7 @@ namespace ecs {
         "ScriptDefinition",
         "A definition describing the name, type, and functions of a script",
         StructField::New("name", "The name of the script", &ScriptDefinition::name),
-        StructField::New("events", "A list of the names of events this script can receive", &ScriptDefinition::events),
-        StructField::New("filter_on_event",
-            "True if this script should only run if new events are received",
-            &ScriptDefinition::filterOnEvent));
+        StructField::New("events", "A list of the names of events this script can receive", &ScriptDefinition::events));
 
     struct ScriptDefinitions {
         std::map<sp::HeapString, ScriptDefinition> scripts;

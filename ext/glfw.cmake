@@ -1,5 +1,5 @@
 #
-# Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+# Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -20,4 +20,12 @@ else()
     set(GLFW_BUILD_WAYLAND ON CACHE BOOL "" FORCE)
 endif()
 
+set(CMAKE_C_STANDARD 23)
+
 add_subdirectory(glfw ${CMAKE_CURRENT_BINARY_DIR}/glfw)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(glfw PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-pedantic>)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
+    target_compile_options(glfw PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-pedantic>)
+endif()

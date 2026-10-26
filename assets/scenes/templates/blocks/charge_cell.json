@@ -56,11 +56,15 @@
 				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -70,6 +74,9 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.035, 0],
 				"scale": 0.049
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"renderable": {
 				"color_override": [0.03, 0.03, 0.04, 1],
@@ -83,11 +90,15 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.025, -0.0335]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			},
 			"signal_bindings": {
@@ -107,11 +118,15 @@
 				"translate": [0, 0.025, -0.002],
 				"scale": [1, 1, 1.5]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -122,11 +137,15 @@
 				"translate": [0, 0.025, 0.0335],
 				"rotate": [180, 0, 1, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-socket",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -137,11 +156,15 @@
 				"translate": [0, 0.025, 0.0545],
 				"scale": [1, 1, 1.5]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "optic-tube-end-5mm",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -153,11 +176,15 @@
 				"rotate": [180, 0, 1, 0],
 				"scale": 0.1
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "sensor",
 					"render": true,
+					"interactive": true,
 					"physics": "SubActor"
 				}
 			}

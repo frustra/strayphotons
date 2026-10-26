@@ -65,7 +65,7 @@ namespace sp {
 
         ecs::Name guiName;
         ecs::Entity guiEntity;
-        ecs::EventQueueRef events = ecs::EventQueue::New();
+        ecs::EventQueueRef events;
 
         struct GuiElementInfo {
             ecs::Entity ent;

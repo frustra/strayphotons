@@ -13,8 +13,9 @@
 #include "console/Console.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/SignalRef.hh"
 #include "game/CGameContext.hh"
-#include "game/EventScriptManager.hh"
 #include "game/SceneManager.hh"
 #include "strayphotons/Logging.hh"
 
@@ -24,8 +25,7 @@
 
 namespace sp {
 
-    Game::Game(CGameContext &ctx)
-        : gameContext(ctx), options(ctx.options), logic(inputEventQueue), eventScripts(inputEventQueue) {
+    Game::Game(CGameContext &ctx) : gameContext(ctx), options(ctx.options), logic(inputEventQueue) {
         funcs.Register<int>("exit", "Quits the game", [this](int arg) {
             Tracef("Exit triggered via console command");
             this->exitCode = arg;
@@ -45,6 +45,20 @@ namespace sp {
             auto lock = ecs::StartStagingTransaction<ecs::AddRemove>();
             lock.Set<ecs::Signals>();
         }
+
+        ecs::World().SetBeforeCommitCallback([](const ecs::DynamicLock<> &dynamicLock) {
+            ecs::GetEventScriptManager().FlushEventScripts(dynamicLock);
+            auto tryLock = dynamicLock.TryLock<ecs::Write<ecs::Signals>, ecs::ReadSignalsLock>();
+            if (tryLock.has_value()) ecs::Signals::BeforeCommit(*tryLock);
+        });
+
+        ecs::World().SetOnCommitCallback([](ecs::ECS &, [[maybe_unused]] uint64_t transactionId, uint64_t commitId) {
+            ecs::EventQueue::CommitPendingEvents(commitId);
+        });
+
+        ecs::World().SetAfterCommitCallback([](ecs::ECS &, [[maybe_unused]] uint64_t transactionId, uint64_t commitId) {
+            ecs::Signals::AfterCommit();
+        });
 
         std::string assetsPath = "";
         if (options.count("assets")) assetsPath = options["assets"].as<std::string>();
@@ -66,6 +80,9 @@ namespace sp {
         GetConsoleManager().Shutdown();
         GetSceneManager().Shutdown();
         Assets().Shutdown();
+        ecs::World().SetBeforeCommitCallback(nullptr);
+        ecs::World().SetOnCommitCallback(nullptr);
+        ecs::World().SetAfterCommitCallback(nullptr);
     }
 
     int Game::Start() {

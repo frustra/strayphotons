@@ -46,7 +46,7 @@ namespace sp {
         std::weak_ptr<AudioManager> audioPtr;
         std::weak_ptr<GraphicsManager> graphicsPtr;
 
-        ecs::EventQueueRef events = ecs::EventQueue::New();
+        ecs::EventQueueRef events;
 
         MenuScreen selectedScreen = MenuScreen::Main;
         std::vector<std::pair<std::string, std::string>> sceneList;

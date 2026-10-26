@@ -256,7 +256,8 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::Signals>>();
+                    ecs::Signals>,
+                ecs::ReadPrevious>();
 
             GameLogic::UpdateInputEvents(lock, windowInputQueue);
 

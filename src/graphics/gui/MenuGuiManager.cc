@@ -39,7 +39,9 @@ namespace sp {
     static CVar<bool> CVarMenuDebugCursor("g.MenuDebugCursor", false, "Force the cursor to be drawn in menus");
 
     MenuGuiManager::MenuGuiManager(const ecs::Name &guiName, Game &game)
-        : GuiContext(guiName), audioPtr(game.audio), graphicsPtr(game.graphics) {}
+        : GuiContext(guiName), audioPtr(game.audio), graphicsPtr(game.graphics) {
+        events = std::make_shared<ecs::EventQueue>();
+    }
 
     MenuGuiManager::~MenuGuiManager() {
         UnregisterEvents();
@@ -47,7 +49,7 @@ namespace sp {
 
     void MenuGuiManager::RegisterEvents(ecs::Entity guiEntity) {
         GuiContext::RegisterEvents(guiEntity);
-        if (guiEntity) {
+        if (guiEntity && events) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [name = this->guiName, ent = this->guiEntity, events = this->events](auto &lock) {
                     Assertf(ent.Has<ecs::EventInput>(lock),
@@ -62,7 +64,7 @@ namespace sp {
     }
 
     void MenuGuiManager::UnregisterEvents() {
-        if (guiEntity) {
+        if (guiEntity && events) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
@@ -106,10 +108,10 @@ namespace sp {
 
         bool focusChanged = false;
         {
-            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock, ecs::Read<ecs::EventInput>>();
+            auto lock = ecs::StartTransaction<ecs::ReadSignalsLock>();
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, events, event)) {
+            while (events && events->Poll(event)) {
                 if (event.name == INPUT_EVENT_MENU_OPEN) {
                     selectedScreen = MenuScreen::Main;
                     CVarMenuOpen.Set(true);

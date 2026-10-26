@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "common/Tracing.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/ScriptDefinition.hh"
@@ -47,7 +48,6 @@ namespace ecs {
         Events... events) {
         return ScriptDefinition{
             .events = {events...},
-            .filterOnEvent = true,
             .onEventFunc = {callback, readPermissions, writePermissions},
         };
     };
@@ -150,8 +150,9 @@ namespace ecs {
     template<typename T>
     struct script_has_before_frame_func<T,
         std::void_t<decltype(std::declval<T>().BeforeFrame(std::declval<sp::GenericCompositor &>(),
-            std::declval<ScriptState &>(),
-            std::declval<Entity>()))>> : std::true_type {};
+                                 std::declval<ScriptState &>(),
+                                 std::declval<Entity>()),
+            std::declval<const sp::HeapVector<sp::GuiInputEvent> &>())>> : std::true_type {};
 
     // Checks if the script has a RenderGui() function
     template<typename T, typename = void>
@@ -191,12 +192,14 @@ namespace ecs {
         }
 
         static void Init(ScriptState &state) {
+            DebugZoneScoped;
             T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             if constexpr (script_has_init_func<T>()) ptr->Init(state);
         }
 
         static void Destroy(ScriptState &state) {
+            DebugZoneScoped;
             T *ptr = state.Get<T>();
             if (!ptr) return;
             if constexpr (script_has_destroy_func<T>()) {
@@ -209,6 +212,7 @@ namespace ecs {
             const LogicUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
+            DebugZoneScoped;
             T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             using LockType = script_logic_tick_lock_t<T>::LockType;
@@ -219,6 +223,7 @@ namespace ecs {
             const PhysicsUpdateLock &lock,
             Entity ent,
             chrono_clock::duration interval) {
+            DebugZoneScoped;
             T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             using LockType = script_physics_tick_lock_t<T>::LockType;
@@ -226,6 +231,7 @@ namespace ecs {
         }
 
         static void OnEvent(ScriptState &state, const DynamicLock<SendEventsLock> &lock, Entity ent, Event event) {
+            DebugZoneScoped;
             T *ptr = state.Get<T>();
             if (!ptr) ptr = state.Set<T>();
             using LockType = script_onevent_lock_t<T>::LockType;
@@ -235,6 +241,7 @@ namespace ecs {
         }
 
         static void Prefab(const ScriptState &state, const sp::SceneRef &scene, Lock<AddRemove> lock, Entity ent) {
+            DebugZoneScoped;
             const T *ptr = state.Get<T>();
             T data;
             if (ptr) data = *ptr;
@@ -243,11 +250,13 @@ namespace ecs {
 
         static bool BeforeFrame([[maybe_unused]] sp::GenericCompositor &compositor,
             [[maybe_unused]] ScriptState &state,
-            [[maybe_unused]] Entity ent) {
+            [[maybe_unused]] Entity ent,
+            [[maybe_unused]] const sp::HeapVector<sp::GuiInputEvent> &inputEvents) {
+            DebugZoneScoped;
             if constexpr (script_has_before_frame_func<T>()) {
                 auto *ptr = state.Get<T>();
                 if (!ptr) ptr = state.Set<T>();
-                return ptr->BeforeFrame(compositor, state, ent);
+                return ptr->BeforeFrame(compositor, state, ent, inputEvents);
             } else {
                 Warnf("GuiScript %s has no BeforeFrame function", state.definition.name);
                 return false;
@@ -261,6 +270,7 @@ namespace ecs {
             [[maybe_unused]] glm::vec2 scale,
             [[maybe_unused]] float deltaTime,
             [[maybe_unused]] sp::GuiDrawData &result) {
+            DebugZoneScoped;
             if constexpr (script_has_render_gui_func<T>()) {
                 auto *ptr = state.Get<T>();
                 if (!ptr) ptr = state.Set<T>();
@@ -268,58 +278,13 @@ namespace ecs {
             }
         }
 
-        BuiltInScript(const std::string &name, const StructMetadata &metadata) : ScriptDefinitionBase(metadata) {
-            static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
-            ScriptDefinition definition{
-                .name = name,
-                .context = savedPtr,
-                .initFunc = ScriptInitFunc(&Init),
-                .destroyFunc = ScriptDestroyFunc(&Destroy),
-            };
-            if constexpr (script_has_logic_tick_func<T>()) {
-                using LockType = script_logic_tick_lock_t<T>::LockType;
-                definition.logicTickFunc = {
-                    LogicTickFunc(&OnLogicTick),
-                    LockType::GetReadPermissions(),
-                    LockType::GetWritePermissions(),
-                };
-            }
-            if constexpr (script_has_physics_tick_func<T>()) {
-                using LockType = script_physics_tick_lock_t<T>::LockType;
-                definition.physicsTickFunc = {
-                    PhysicsTickFunc(&OnPhysicsTick),
-                    LockType::GetReadPermissions(),
-                    LockType::GetWritePermissions(),
-                };
-            }
-            if constexpr (script_has_onevent_func<T>()) {
-                using LockType = script_onevent_lock_t<T>::LockType;
-                definition.onEventFunc = {
-                    OnEventFunc(&OnEvent),
-                    LockType::GetReadPermissions(),
-                    LockType::GetWritePermissions(),
-                };
-            }
-            if constexpr (script_has_prefab_func<T>()) {
-                definition.prefabFunc = PrefabFunc(&Prefab);
-            }
-            if constexpr (script_has_before_frame_func<T>()) {
-                definition.beforeFrameFunc = BeforeFrameFunc(&BeforeFrame);
-            }
-            if constexpr (script_has_render_gui_func<T>()) {
-                definition.renderGuiFunc = RenderGuiFunc(&RenderGui);
-            }
-            GetScriptDefinitions().RegisterScript(std::move(definition));
-        }
-
         template<typename... Events>
-        BuiltInScript(const std::string &name, const StructMetadata &metadata, bool filterOnEvent, Events... events)
+        BuiltInScript(const std::string &name, const StructMetadata &metadata, Events... events)
             : ScriptDefinitionBase(metadata) {
             static const std::shared_ptr<ScriptDefinitionBase> savedPtr(this, [](auto *) {});
             ScriptDefinition definition{
                 .name = name,
                 .events = {events...},
-                .filterOnEvent = filterOnEvent,
                 .context = savedPtr,
                 .initFunc = ScriptInitFunc(&Init),
                 .destroyFunc = ScriptDestroyFunc(&Destroy),

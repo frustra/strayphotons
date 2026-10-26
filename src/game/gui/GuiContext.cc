@@ -32,6 +32,7 @@ namespace sp {
 
     GuiContext::GuiContext(const ecs::Name &guiName) : guiName(guiName) {
         imCtx = ImGui::CreateContext();
+        events = std::make_shared<ecs::EventQueue>();
     }
 
     GuiContext::GuiContext(GuiContext &&other) {
@@ -53,7 +54,7 @@ namespace sp {
     void GuiContext::RegisterEvents(ecs::Entity guiEntity) {
         UnregisterEvents();
         this->guiEntity = guiEntity;
-        if (guiEntity) {
+        if (guiEntity && events) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [name = this->guiName, guiEntity = this->guiEntity, events = this->events](auto &lock) {
                     ecs::Entity ent = guiEntity;
@@ -61,7 +62,7 @@ namespace sp {
                         ent = ecs::EntityRef(name).Get(lock);
                     }
                     if (ent.Has<ecs::EventInput>(lock)) {
-                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        ecs::EventInput &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Register(lock, events, INPUT_EVENT_MENU_SCROLL);
                         eventInput.Register(lock, events, INPUT_EVENT_MENU_CURSOR);
                         eventInput.Register(lock, events, INPUT_EVENT_MENU_PRIMARY_TRIGGER);
@@ -79,7 +80,7 @@ namespace sp {
     }
 
     void GuiContext::UnregisterEvents() {
-        if (guiEntity) {
+        if (guiEntity && events) {
             ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
@@ -114,7 +115,7 @@ namespace sp {
         io.MouseDrawCursor = false;
 
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::TransformSnapshot>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::TransformSnapshot>>();
 
             ecs::Transform screenInverseTransform;
             if (guiEntity.Has<ecs::TransformSnapshot>(lock)) {
@@ -122,7 +123,7 @@ namespace sp {
             }
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, events, event)) {
+            while (events && events->Poll(event)) {
                 auto existingState = std::find_if(pointingStack.begin(), pointingStack.end(), [&](auto &state) {
                     return state.sourceEntity == event.source;
                 });
@@ -421,7 +422,7 @@ namespace sp {
     }
 
     void GuiContext::GetDrawData(GuiDrawData &output) {
-        ConvertImDrawData(ImGui::GetDrawData(), &output);
+        ConvertImDrawData(ImGui::GetDrawData(), output);
     }
 
     void GuiContext::ClearEntities() {

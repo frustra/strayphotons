@@ -72,8 +72,8 @@ Snapshots are also useful for reading in scripts to reduce matrix multiplication
 | **translate** | vec3 | [0, 0, 0] | Specifies the entity's position in 3D space. The +X direction represents Right, +Y represents Up, and -Z represents Forward. |
 | **rotate** | vec4 (angle_degrees, axis_x, axis_y, axis_z) | [0, 0, 0, 1] | Specifies the entity's orientation in 3D space. Multiple rotations can be combined by specifying an array of rotations: `[[90, 1, 0, 0], [-90, 0, 1, 0]]` is equivalent to `[120, 1, -1, -1]`. The rotation axis is automatically normalized. |
 | **scale** | vec3 | [1, 1, 1] | Specifies the entity's size along each axis. A value of `[1, 1, 1]` leaves the size unchanged. If the scale is the same on all axes, a single scalar can be specified like `"scale": 0.5` |
-| **firstParent** | [Entity](#Entity-type) | "" | No description |
-| **childEntities** | set&lt;[Entity](#Entity-type)&gt; | [] | No description |
+| **first_parent** | [Entity](#Entity-type) | "" | No description |
+| **child_entities** | set&lt;[Entity](#Entity-type)&gt; | [] | No description |
 
 <div class="type_definition">
 
@@ -159,7 +159,7 @@ The `event_bindings` component has type: map&lt;string (max 127 chars), vector&l
 | **vec3** | vec3 | [0, 0, 0] | No description |
 | **vec4** | vec4 | [0, 0, 0, 0] | No description |
 | **transform** | [Transform](#Transform-type) | {"scale":0} | No description |
-| **namedEntity** | [NamedEntity](#NamedEntity-type) | {} | No description |
+| **named_entity** | [NamedEntity](#NamedEntity-type) | {} | No description |
 | **ent** | [Entity](#Entity-type) | "" | No description |
 | **str** | string (max 255 chars) | "" | No description |
 | **bytes** | bytes (max 256) | null | No description |

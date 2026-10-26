@@ -275,11 +275,15 @@
 				"parent": "mcube",
 				"translate": [0, -0.5, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "mcube/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "mcube",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},

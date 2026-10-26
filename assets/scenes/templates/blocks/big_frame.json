@@ -57,11 +57,15 @@
 				"translate": [0, 0.005, 0],
 				"scale": [0.07, 0.01, 0.07]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "octagon",
-					"render": true
+					"render": true,
+					"interactive": true
 				}
 			}
 		},
@@ -71,6 +75,9 @@
 				"parent": "scoperoot",
 				"translate": [0, 0.0125, 0],
 				"scale": [0.05, 0.005, 0.01]
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"renderable": {
 				"model": "box"
@@ -83,6 +90,9 @@
 				"translate": [-0.0225, 0.035, 0],
 				"scale": [0.005, 0.04, 0.01]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"renderable": {
 				"model": "box"
 			}
@@ -93,6 +103,9 @@
 				"parent": "scoperoot",
 				"translate": [0.0225, 0.035, 0],
 				"scale": [0.005, 0.04, 0.01]
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"renderable": {
 				"model": "box"
@@ -105,6 +118,9 @@
 				"translate": [0, 0.0575, 0],
 				"scale": [0.05, 0.005, 0.01]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"renderable": {
 				"model": "box"
 			}
@@ -114,6 +130,9 @@
 			"optic": {
 				"pass_tint": [0.5, 0, 0],
 				"reflect_tint": [0.5, 1, 1]
+			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
 			},
 			"renderable": {
 				"model": "colorfilter",

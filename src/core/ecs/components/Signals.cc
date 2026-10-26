@@ -76,7 +76,7 @@ namespace ecs {
         : value(-std::numeric_limits<double>::infinity()), expr(expr), ref(ref), lastValueDirty(true) {}
     Signals::Signal::Signal(const SignalRef &ref, const SignalRef &subscriber)
         : value(-std::numeric_limits<double>::infinity()), expr(), ref(ref), lastValueDirty(true) {
-        subscribers.emplace_back(subscriber.GetWeakRef());
+        subscribers.emplace(subscriber.GetWeakRef());
     }
 
     double Signals::Signal::Value(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
@@ -206,16 +206,32 @@ namespace ecs {
         }
     }
 
+    thread_local bool signalsModified = false;
+
     void Signals::MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index) {
         DebugZoneScoped;
         auto &signals = lock.Get<Signals>();
-        auto &prevSignals = lock.GetPrevious<Signals>();
-        if (signals.changeCount == prevSignals.changeCount) {
+        if (!signalsModified) {
             signals.dirtyIndices.clear();
+            signalsModified = true;
             signals.changeCount++;
         }
         Assertf(index < signals.signals.size(), "Signals::MarkStorageDirty index out of range");
         signals.dirtyIndices.emplace(index);
+    }
+
+    void Signals::BeforeCommit(const Lock<Write<Signals>, ReadSignalsLock> &lock) {
+        if (!signalsModified) return;
+        ZoneScopedN("UpdateDirtySignals");
+        auto &signals = lock.Get<const ecs::Signals>().signals;
+        for (size_t index = 0; index < signals.size(); index++) {
+            auto &signal = signals[index];
+            if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
+        }
+    }
+
+    void Signals::AfterCommit() {
+        signalsModified = false;
     }
 
     Signals &Signals::operator=(const Signals &other) {

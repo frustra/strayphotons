@@ -7,7 +7,8 @@
 		},
 		"signal_bindings": {
 			"life_eval": "scoperoot/neighbor_count == 3 || (scoperoot/neighbor_count == 2 && scoperoot/alive)",
-			"next_alive": "scoperoot/force_toggle ? !scoperoot/alive : scoperoot/life_eval"
+			"next_alive": "scoperoot/force_toggle ? !scoperoot/alive : scoperoot/life_eval",
+			"should_toggle": "scoperoot/alive != scoperoot/next_alive"
 		},
 		"event_input": {},
 		"event_bindings": {
@@ -55,7 +56,7 @@
 			{
 				"name": "event_from_signal",
 				"parameters": {
-					"/life/toggle_alive": "scoperoot/alive != scoperoot/next_alive"
+					"/life/toggle_alive": "scoperoot/should_toggle"
 				}
 			}
 		]

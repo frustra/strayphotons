@@ -20,6 +20,7 @@
 		{
 			"name": "arm.Ball_0",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"linear_damping": 50,
 				"shapes": {
@@ -31,6 +32,7 @@
 		{
 			"name": "arm.Arm_0",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"linear_damping": 50,
 				"shapes": {
@@ -90,6 +92,7 @@
 		{
 			"name": "arm.Socket_0",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex6"
@@ -146,6 +149,7 @@
 		{
 			"name": "arm.Knob",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 100,
 				"shapes": {
 					"model": "articulating-arm.convex4"
@@ -207,6 +211,7 @@
 		{
 			"name": "arm.Shaft",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex5"
@@ -270,6 +275,7 @@
 		{
 			"name": "arm.Arm_1",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"linear_damping": 50,
 				"shapes": {
@@ -324,6 +330,7 @@
 		{
 			"name": "arm.Socket_1",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 50,
 				"shapes": {
 					"model": "articulating-arm.convex7"
@@ -379,6 +386,7 @@
 		{
 			"name": "arm.Ball_1",
 			"physics": {
+				"density": 3000,
 				"angular_damping": 100,
 				"linear_damping": 100,
 				"shapes": {

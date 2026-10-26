@@ -248,7 +248,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("TemplatePrefab");
             ZoneStr(source);
 
             EntityScope scope = Name(scene->data->name, "");
@@ -281,7 +281,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("TilePrefab");
 
             size_t instanceId = state.GetInstanceId();
 

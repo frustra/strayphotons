@@ -12,6 +12,7 @@
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/Scripts.hh"
 #include "strayphotons/Logging.hh"
+#include "strayphotons/Utility.hh"
 
 #include <optional>
 #include <picojson.h>
@@ -157,7 +158,16 @@ namespace ecs {
         Assertf(queue, "EventInput::Register called with null queue: %s", binding);
 
         auto &queueList = events[binding];
-        if (sp::contains(queueList, queue)) return;
+        // Remove expired event queues before inserting the new queue registration
+        bool exists = false;
+        sp::erase_if(queueList, [&](auto &entry) {
+            if (entry == queue) {
+                exists = true;
+                return false;
+            }
+            return entry.expired();
+        });
+        if (exists) return;
         queueList.emplace_back(queue);
     }
 
@@ -171,27 +181,25 @@ namespace ecs {
         }
     }
 
-    uint64_t EventInput::Add(const Event &event, uint64_t transactionId) const {
-        AsyncEvent asyncEvent(event.name, event.source, event.data);
-        asyncEvent.transactionId = transactionId;
-        return Add(asyncEvent);
-    }
-
-    uint64_t EventInput::Add(const AsyncEvent &event) const {
+    uint64_t EventInput::Add(Lock<> lock, Entity ent, const Event &event) const {
         uint64_t eventsSent = 0;
         auto it = events.find(event.name);
         if (it != events.end()) {
             for (auto &queuePtr : it->second) {
                 auto queue = queuePtr.lock();
-                if (queue && queue->Add(event)) eventsSent++;
+                if (!queue) continue;
+                if (queue->Add(lock, event)) {
+                    eventsSent++;
+                } else {
+                    Warnf("Event queue full! %s (%u events) Dropping event %s from %s",
+                        EntityRef(ent).Name().String(),
+                        queue->Capacity(),
+                        event.name,
+                        EntityRef(event.source).Name().String());
+                }
             }
         }
         return eventsSent;
-    }
-
-    bool EventInput::Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut) {
-        if (!queue) return false;
-        return queue->Poll(eventOut, lock.GetTransactionId());
     }
 
     EventBinding &EventBindings::Bind(std::string_view source, const EventBinding &binding) {
@@ -241,8 +249,8 @@ namespace ecs {
         EventData &output,
         const EventData &input,
         const EventBinding &binding) {
-        auto &actions = binding.actions.modifyExprs;
         EventData::Visit(output, [&](auto &data) {
+            auto &actions = binding.actions.modifyExprs;
             using T = std::decay_t<decltype(data)>;
             if constexpr (sp::is_glm_vec<T>()) {
                 using U = typename T::value_type;
@@ -275,88 +283,11 @@ namespace ecs {
         });
     }
 
-    bool filterAndModifyEvent(const DynamicLock<ReadSignalsLock> &lock,
-        sp::AsyncPtr<EventData> &asyncOutput,
-        const sp::AsyncPtr<EventData> &asyncInput,
-        const EventBinding &binding) {
-        Assertf(asyncOutput && asyncInput, "FilterAndModifyEvent called with null input/output");
-
-        if (binding.actions.filterExpr) {
-            if (binding.actions.filterExpr->CanEvaluate(lock) && asyncInput->Ready()) {
-                auto input = asyncInput->Get();
-                if (!input) return false; // Event filtered asynchronously
-                if (binding.actions.filterExpr->EvaluateEvent(lock, *input) < 0.5) return false;
-            } else {
-                Abortf("Event filter expression \"%s\" references unacquired lock");
-                // Events can be filtered asyncronously, but this introduces a race condition where filtering can
-                // execute before the emitting transaction commits.
-                //     asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                //         [filterExpr = binding.actions.filterExpr](std::shared_ptr<EventData> input) {
-                //             if (!input) {
-                //                 return std::shared_ptr<EventData>(); // Event filtered asynchronously
-                //             }
-
-                //             auto lock = StartTransaction<ReadAll>();
-                //             if (filterExpr->EvaluateEvent(lock, *input) >= 0.5) {
-                //                 return input;
-                //             } else {
-                //                 return std::shared_ptr<EventData>();
-                //             }
-                //         });
-            }
-        }
-
-        if (binding.actions.setValue) {
-            asyncOutput = sp::make_async<EventData>(*binding.actions.setValue);
-        }
-
-        if (!binding.actions.modifyExprs.empty()) {
-            bool canEval = std::all_of(binding.actions.modifyExprs.begin(),
-                binding.actions.modifyExprs.end(),
-                [&lock](auto &&expr) {
-                    return expr.CanEvaluate(lock);
-                });
-            if (canEval && asyncOutput->Ready() && asyncInput->Ready()) {
-                auto input = asyncInput->Get();
-                if (!input) return false; // Event filtered asynchronously
-                auto outputPtr = asyncOutput->Get();
-                EventData output = outputPtr ? *outputPtr : *input;
-                modifyEvent(lock, output, *input, binding);
-                asyncOutput = sp::make_async<EventData>(output);
-            } else {
-                Abortf("Event modify expression \"%s\" references unacquired lock");
-                // Event data can be modified asyncronously, but this introduces a race condition where modifications
-                // can execute before the emitting transaction commits.
-                // asyncOutput = ecs::TransactionQueue().Dispatch<EventData>(asyncInput,
-                //     asyncOutput,
-                //     [binding](std::shared_ptr<EventData> input, std::shared_ptr<EventData> output) {
-                //         if (!input || !output) {
-                //             return std::make_shared<EventData>(); // Event filtered asynchronously
-                //         }
-
-                //         auto lock = StartTransaction<ReadAll>();
-                //         EventData modified = *output;
-                //         modifyEvent(lock, modified, *input, binding);
-                //         return std::make_shared<EventData>(modified);
-                //     });
-            }
-        }
-        return true;
-    }
-
     uint64_t EventBindings::SendEvent(const DynamicLock<SendEventsLock> &lock,
         const EntityRef &target,
         const Event &event,
-        uint32_t depth) {
-        AsyncEvent asyncEvent = AsyncEvent(event.name, event.source, event.data);
-        asyncEvent.transactionId = lock.GetTransactionId();
-        return SendAsyncEvent(lock, target, asyncEvent, depth);
-    }
-
-    uint64_t EventBindings::SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
-        const EntityRef &target,
-        const AsyncEvent &event,
-        uint32_t depth) {
+        uint32_t depth,
+        EventTrace *trace) {
         ZoneScoped;
         Entity ent = target.Get(lock);
         if (!ent.Exists(lock)) {
@@ -367,23 +298,12 @@ namespace ecs {
         uint64_t eventsSent = 0;
         if (ent.Has<EventInput>(lock)) {
             auto &eventInput = ent.Get<const EventInput>(lock);
-            eventsSent += eventInput.Add(event);
+            eventsSent += eventInput.Add(lock, ent, event);
         }
         if (ent.Has<Scripts>(lock)) {
-            if (event.data && event.data->Ready()) {
-                auto eventData = event.data->Get();
-                if (eventData) {
-                    Event completeEvent(event.name, event.source, *eventData);
-                    eventsSent += GetScriptManager().RunEventHandlers(lock, ent, completeEvent);
-                } else {
-                    // Event filtered asynchronously
-                }
-            } else if (event.data) {
-                // TODO: Queue event with EventScriptManager
-                Abortf("Not implemented");
-            }
+            eventsSent += GetEventScriptManager().QueueEventScripts(lock, ent, event);
         }
-        if (eventsSent > 0 && event.trace) event.trace->emplace_back(ent);
+        if (eventsSent > 0 && trace) trace->emplace_back(ent);
         if (ent.Has<EventBindings>(lock)) {
             auto &bindings = ent.Get<const EventBindings>(lock);
             auto list = bindings.sourceToDest.find(event.name);
@@ -394,22 +314,29 @@ namespace ecs {
                 }
                 for (auto &binding : list->second) {
                     if (binding.actions.printDebug) {
-                        Assertf(event.data->Ready(), "Event debug print expected data to be ready");
-                        auto input = event.data->Get();
-                        if (!input) return false; // Event filtered asynchronously
                         std::stringstream ss;
-                        ss << *input;
+                        ss << event.data;
                         Logf("Event %s%s = %s", target.Name().String(), event.name, ss.str());
                     }
 
+                    if (binding.actions.filterExpr) {
+                        if (binding.actions.filterExpr->EvaluateEvent(lock, event.data) < 0.5) continue;
+                    }
+
                     // Execute event modifiers before submitting to the destination queue
-                    // Note: event scripts could have modified signals that the filters depend on
-                    AsyncEvent outputEvent = event;
-                    if (!filterAndModifyEvent(lock, outputEvent.data, event.data, binding)) continue;
+                    Event output;
+                    if (binding.actions.setValue) {
+                        output = Event(event.name, event.source, *binding.actions.setValue);
+                    } else {
+                        output = event;
+                    }
+                    if (!binding.actions.modifyExprs.empty()) {
+                        modifyEvent(lock, output.data, event.data, binding);
+                    }
 
                     for (auto &dest : binding.outputs) {
-                        outputEvent.name = dest.queueName;
-                        eventsSent += SendAsyncEvent(lock, dest.target, outputEvent, depth + 1);
+                        output.name = dest.queueName;
+                        eventsSent += SendEvent(lock, dest.target, output, depth + 1, trace);
                     }
                 }
             }

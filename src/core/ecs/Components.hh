@@ -45,6 +45,10 @@ namespace ecs {
             const EntityScope &scope,
             const Entity &dst,
             const FlatEntity &src) const = 0;
+        virtual void MoveComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &dst,
+            FlatEntity &&src) const = 0;
         virtual void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const = 0;
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
         virtual bool HasComponent(const FlatEntity &ent) const = 0;
@@ -146,6 +150,10 @@ namespace ecs {
             const EntityScope &scope,
             const Entity &dst,
             const FlatEntity &src) const override;
+        void MoveComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &dst,
+            FlatEntity &&src) const override;
         void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
         bool HasComponent(const Lock<> &lock, Entity ent) const override;
         bool HasComponent(const FlatEntity &ent) const override;
@@ -223,6 +231,10 @@ namespace ecs {
             const EntityScope &scope,
             const Entity &,
             const FlatEntity &src) const override;
+        void MoveComponent(const Lock<AddRemove> &lock,
+            const EntityScope &scope,
+            const Entity &,
+            FlatEntity &&src) const override;
         void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
 
         bool HasComponent(const Lock<> &lock, Entity) const override;

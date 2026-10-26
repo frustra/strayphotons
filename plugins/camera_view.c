@@ -27,7 +27,6 @@ void camera_view_on_event(void *context,
     tecs_lock_t *lock,
     tecs_entity_t ent,
     sp_event_t *event) {
-    script_camera_view_t *ctx = context;
     if (!Tecs_entity_has_transform_tree(lock, ent)) return;
 
     if (strcmp(event->name, "/script/camera_rotate") != 0) return;
@@ -86,6 +85,7 @@ void camera_view_on_tick(void *context,
     tecs_entity_t ent,
     uint64_t intervalNs) {
     script_camera_view_t *ctx = context;
+    if (!sp_script_state_has_events(state)) return;
     if (!Tecs_entity_has_transform_tree(lock, ent)) return;
 
     if (!ctx->started) {
@@ -96,7 +96,7 @@ void camera_view_on_tick(void *context,
     }
 
     sp_event_t *event = NULL;
-    while ((event = sp_script_state_poll_event(state, lock))) {
+    while ((event = sp_script_state_poll_event(state))) {
         if (strcmp(event->name, "/script/camera_rotate") != 0) continue;
         if (event->data.type != SP_EVENT_DATA_TYPE_VEC2) continue;
 
@@ -155,7 +155,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         output[0].context_size = sizeof(script_camera_view_t);
         output[0].init_func = &camera_view_init;
         output[0].logic_tick_func = &camera_view_on_tick;
-        output[0].filter_on_event = true;
         sp_dynamic_script_definition_add_event(&output[0], "/script/camera_rotate");
 
         sp_dynamic_script_definition_add_field(&output[0],
@@ -172,7 +171,7 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         sp_string_set(&output[1].name, "async_camera_view");
         output[1].context_size = 0;
         output[1].on_event_func = &camera_view_on_event;
-        output[1].event_read_permissions = 1 | SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
+        output[1].event_read_permissions = SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
         output[1].event_write_permissions = SP_ACCESS_TRANSFORM_TREE | SP_ACCESS_TRANSFORM_SNAPSHOT;
         sp_dynamic_script_definition_add_event(&output[1], "/script/camera_rotate");
     }

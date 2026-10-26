@@ -7,6 +7,7 @@
 
 #include "SignalExpression.hh"
 
+#include "Tecs_permissions.hh"
 #include "assets/JsonHelpers.hh"
 #include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
@@ -508,11 +509,6 @@ namespace ecs {
         return !rootNode->uncacheable;
     }
 
-    bool SignalExpression::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
-        if (!rootNode) return true;
-        return rootNode->CanEvaluate(lock, depth);
-    }
-
     double SignalExpression::Evaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
         DebugZoneScoped;
         DebugZoneStr(expr);
@@ -605,17 +601,34 @@ namespace ecs {
             if (!ent) return 0.0;
             return GetComponentType(componentNode.component->metadata.type, [&](auto *typePtr) {
                 using T = std::remove_pointer_t<decltype(typePtr)>;
-                if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                    Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
-                    return 0.0;
-                } else if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
-                    auto &component = ent.Get<const T>(ctx.lock);
-                    return ReadStructField(&component, componentNode.field);
+                // if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
+                //     Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
+                //     return 0.0;
+                // } else
+                if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
+                    if constexpr (Tecs::is_global_component<T>()) {
+                        Warnf("SignalExpression accessing global component type %s with entity: %s",
+                            typeid(T).name(),
+                            componentNode.entity.Name().String());
+                        auto &component = ctx.lock.Get<const T>();
+                        return ReadStructField(&component, componentNode.field);
+                    } else {
+                        auto &component = ent.Get<const T>(ctx.lock);
+                        return ReadStructField(&component, componentNode.field);
+                    }
                 } else {
                     auto tryLock = ctx.lock.TryLock<Read<T>>();
                     if (tryLock) {
-                        auto &component = ent.Get<const T>(*tryLock);
-                        return ReadStructField(&component, componentNode.field);
+                        if constexpr (Tecs::is_global_component<T>()) {
+                            Warnf("SignalExpression accessing global component type %s with entity: %s",
+                                typeid(T).name(),
+                                componentNode.entity.Name().String());
+                            auto &component = tryLock->template Get<const T>();
+                            return ReadStructField(&component, componentNode.field);
+                        } else {
+                            auto &component = ent.Get<const T>(*tryLock);
+                            return ReadStructField(&component, componentNode.field);
+                        }
                     } else {
                         Warnf("SignalExpression can't evaluate component '%s' without lock: %s",
                             componentNode.path,
@@ -859,39 +872,6 @@ namespace ecs {
                 return node.childNodes[2]->Evaluate(ctx, depth);
             }
         };
-    }
-
-    bool Node::CanEvaluate(const DynamicLock<ReadSignalsLock> &lock, uint32_t depth) const {
-        if (std::holds_alternative<SignalNode>(*this)) {
-            const SignalNode &signalNode = std::get<SignalNode>(*this);
-            if (signalNode.signal.HasValue(lock)) return true;
-            auto &binding = signalNode.signal.GetBinding(lock);
-            if (depth >= MAX_SIGNAL_BINDING_DEPTH) {
-                Errorf("Max signal binding depth exceeded: %s -> %s", text, binding.expr);
-                return false;
-            }
-            return binding.CanEvaluate(lock, depth + 1);
-        } else if (std::holds_alternative<ComponentNode>(*this)) {
-            const ComponentNode &componentNode = std::get<ComponentNode>(*this);
-            const ComponentBase *base = componentNode.component;
-            if (!base) return true;
-            Entity ent = componentNode.entity.Get(lock);
-            if (!ent) return true;
-            return GetComponentType(base->metadata.type, [&](auto *typePtr) {
-                using T = std::remove_pointer_t<decltype(typePtr)>;
-                if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                    return true;
-                } else {
-                    return lock.TryLock<Read<T>>().has_value();
-                }
-            });
-        } else if (std::holds_alternative<FocusCondition>(*this)) {
-            if (!lock.template Has<FocusLock>()) return false;
-        }
-        for (auto &node : childNodes) {
-            if (!node->CanEvaluate(lock, depth)) return false;
-        }
-        return true;
     }
 
     SignalNodePtr Node::SetScope(const EntityScope &scope) const {

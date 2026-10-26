@@ -126,18 +126,9 @@ namespace sp {
         ZoneScoped;
         {
             ZoneScopedN("RunLogicUpdate");
-            auto lock = ecs::StartTransaction<ecs::LogicUpdateLock>();
+            ecs::LogicUpdateLock lock = ecs::StartTransaction<ecs::LogicUpdateLock>();
             UpdateInputEvents(lock, windowInputQueue);
             ecs::GetScriptManager().RunLogicUpdate(lock, interval);
-        }
-        {
-            ZoneScopedN("UpdateSignals");
-            auto lock = ecs::StartTransaction<ecs::Write<ecs::Signals>, ecs::ReadAll>();
-            auto &signals = lock.Get<const ecs::Signals>().signals;
-            for (size_t index = 0; index < signals.size(); index++) {
-                auto &signal = signals[index];
-                if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
-            }
         }
     }
 } // namespace sp

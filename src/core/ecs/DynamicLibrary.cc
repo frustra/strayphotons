@@ -9,6 +9,8 @@
 
 #include "ecs/ScriptDefinition.hh"
 #include "graphics/GenericCompositor.hh"
+#include "strayphotons/HeapVector.hh"
+#include "strayphotons/gui/GuiInputEvents.hh"
 
 #include <dynalo/dynalo.hpp>
 
@@ -154,7 +156,6 @@ namespace ecs {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.initFunc) {
-                Logf("Core int32: %llx, state: %llx", &typeid(int32_t), &typeid(ScriptState));
                 dynamicScript->dynamicDefinition.initFunc(ptr.context, state);
             }
         }
@@ -237,14 +238,21 @@ namespace ecs {
         }
     }
 
-    bool DynamicScript::BeforeFrame(sp::GenericCompositor &compositor, ScriptState &state, Entity ent) {
+    bool DynamicScript::BeforeFrame(sp::GenericCompositor &compositor,
+        ScriptState &state,
+        Entity ent,
+        const sp::HeapVector<sp::GuiInputEvent> &inputEvents) {
         ZoneScoped;
         auto ctx = state.definition.context.lock();
         if (const auto *dynamicScript = dynamic_cast<const DynamicScript *>(ctx.get())) {
             ZoneStr(dynamicScript->definition.name);
             auto &ptr = dynamicScript->MaybeAllocContext(state);
             if (dynamicScript->dynamicDefinition.beforeFrameFunc) {
-                return dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context, compositor, state, ent);
+                return dynamicScript->dynamicDefinition.beforeFrameFunc(ptr.context,
+                    compositor,
+                    state,
+                    ent,
+                    inputEvents);
             }
         }
         return false;
@@ -288,7 +296,6 @@ namespace ecs {
 #endif
         definition.name = dynamicDefinition.name;
         definition.events = dynamicDefinition.events;
-        definition.filterOnEvent = dynamicDefinition.filterOnEvent;
         metadata.fields.assign(dynamicDefinition.fields.begin(), dynamicDefinition.fields.end());
         definition.initFunc = ScriptInitFunc(&Init);
         definition.destroyFunc = ScriptDestroyFunc(&Destroy);

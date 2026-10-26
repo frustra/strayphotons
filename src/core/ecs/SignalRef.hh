@@ -21,7 +21,8 @@ namespace ecs {
         struct Node;
     }
 
-    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, EventInput, FocusLock>>;
+    // using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, EventInput, FocusLock>>;
+    using ReadSignalsLock = Lock<ReadAll>;
 
     class SignalRef {
     private:
@@ -110,6 +111,10 @@ namespace ecs {
     // Thread-safe equality check without weak_ptr::lock()
     inline bool operator==(const WeakSignalRef &a, const WeakSignalRef &b) {
         return !a.owner_before(b) && !b.owner_before(a);
+    }
+
+    inline bool operator<(const WeakSignalRef &a, const WeakSignalRef &b) {
+        return a.owner_before(b);
     }
 
     inline bool operator==(const std::shared_ptr<SignalRef::Ref> &a, const WeakSignalRef &b) {

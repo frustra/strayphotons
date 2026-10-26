@@ -120,7 +120,10 @@ namespace sp::scripts {
             ImGui::PopStyleColor();
         }
 
-        bool BeforeFrame(GenericCompositor &, ScriptState &state, Entity ent) {
+        bool BeforeFrame(GenericCompositor &,
+            ScriptState &state,
+            Entity ent,
+            const sp::HeapVector<sp::GuiInputEvent> &inputEvents) {
             return true;
         }
 
@@ -166,7 +169,7 @@ namespace sp::scripts {
 
             auto *drawData = ImGui::GetDrawData();
             drawData->ScaleClipRects(io.DisplayFramebufferScale);
-            ConvertImDrawData(drawData, &result);
+            ConvertImDrawData(drawData, result);
         }
     };
     StructMetadata MetadataSignalDisplay(typeid(SignalDisplayGui),

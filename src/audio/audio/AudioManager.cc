@@ -32,7 +32,7 @@
 namespace sp {
     static CVar<float> CVarVolume("s.Volume", 1.0f, "Global volume control");
     static CVar<int> CVarAudioBackend("s.AudioBackend",
-        1,
+        0,
         "Audio backend (0: JACK, 1: PulseAudio, 2: ALSA, 3: CoreAudio: 4: Wasapi)");
 
     AudioManager::AudioManager()
@@ -213,7 +213,7 @@ namespace sp {
 
     void AudioManager::SyncFromECS() {
         ZoneScoped;
-        auto lock = ecs::StartTransaction<ecs::Read<ecs::Audio, ecs::TransformSnapshot, ecs::Name, ecs::EventInput>>();
+        auto lock = ecs::StartTransaction<ecs::Read<ecs::Audio, ecs::TransformSnapshot, ecs::Name>>();
 
         auto head = entities::Head.Get(lock);
         if (head.Has<ecs::TransformSnapshot>(lock)) {
@@ -232,9 +232,9 @@ namespace sp {
                     [ent = compEvent.entity](auto &lock) {
                         if (!ent.Has<ecs::EventInput, ecs::Audio>(lock)) return;
 
-                        auto &audio = ent.Get<ecs::Audio>(lock);
-                        if (!audio.eventQueue) audio.eventQueue = ecs::EventQueue::New();
-                        auto &eventInput = ent.Get<ecs::EventInput>(lock);
+                        ecs::Audio &audio = ent.Get<ecs::Audio>(lock);
+                        if (!audio.eventQueue) audio.eventQueue = std::make_shared<ecs::EventQueue>();
+                        ecs::EventInput &eventInput = ent.Get<ecs::EventInput>(lock);
                         eventInput.Register(lock, audio.eventQueue, "/sound/play");
                         eventInput.Register(lock, audio.eventQueue, "/sound/resume");
                         eventInput.Register(lock, audio.eventQueue, "/sound/pause");
@@ -339,7 +339,7 @@ namespace sp {
             }
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, sources.eventQueue, event)) {
+            while (sources.eventQueue && sources.eventQueue->Poll(event)) {
                 int *ptr = ecs::EventData::TryGet<int>(event.data);
                 int index = ptr ? *ptr : 0;
                 if (index >= (int)soundIDs->size()) continue;

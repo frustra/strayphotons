@@ -29,7 +29,7 @@ namespace sp {
         void PostDefine(ecs::Entity ent) override;
 
     private:
-        ecs::EventQueueRef events = ecs::EventQueue::New();
+        ecs::EventQueueRef events;
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         bool stagingTabSelected = false;
         bool targetStagingEntity = false;

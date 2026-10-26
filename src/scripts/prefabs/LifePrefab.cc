@@ -23,7 +23,7 @@ namespace sp::scripts {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("LifeCellPrefab");
             if (!ent.Has<Name, EventBindings>(lock)) {
                 Errorf("LifeCellPrefab requires Name, and EventBindings: %s", ToString(lock, ent));
                 return;

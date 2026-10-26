@@ -15,11 +15,9 @@
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapVector.hh"
 
-#include <memory>
 #include <optional>
 #include <robin_hood.h>
 #include <string>
-#include <variant>
 
 namespace ecs {
     class ScriptInstance;
@@ -35,12 +33,9 @@ namespace ecs {
         /**
          * Adds an event to any matching event input queues.
          *
-         * A transactionId can be provided to synchronize event visibility with transactions.
-         * If no transactionId is provided, this event will be immediately visible to all transactions.
+         * The provided event will not be visible to readers until the currently active transaction commits
          */
-        uint64_t Add(const Event &event, uint64_t transactionId = 0) const;
-        uint64_t Add(const AsyncEvent &event) const;
-        static bool Poll(Lock<Read<EventInput>> lock, const EventQueueRef &queue, Event &eventOut);
+        uint64_t Add(Lock<> lock, Entity ent, const Event &event) const;
 
         robin_hood::unordered_map<EventName, sp::HeapVector<EventQueueWeakRef>, sp::StringHash, sp::StringEqual> events;
     };
@@ -145,6 +140,8 @@ their own event queues as needed.
     template<>
     void StructMetadata::DefineSchema<EventBinding>(picojson::value &dst, sp::json::SchemaTypeReferences *references);
 
+    using EventTrace = sp::InlineVector<Entity, 64>;
+
     class EventBindings {
     public:
         EventBindings() {}
@@ -156,11 +153,8 @@ their own event queues as needed.
         static uint64_t SendEvent(const DynamicLock<SendEventsLock> &lock,
             const EntityRef &target,
             const Event &event,
-            uint32_t depth = 0);
-        static uint64_t SendAsyncEvent(const DynamicLock<SendEventsLock> &lock,
-            const EntityRef &target,
-            const AsyncEvent &event,
-            uint32_t depth = 0);
+            uint32_t depth = 0,
+            EventTrace *trace = nullptr);
 
         using BindingList = typename sp::HeapVector<EventBinding>;
         robin_hood::unordered_map<EventName, BindingList, sp::StringHash, sp::StringEqual> sourceToDest;

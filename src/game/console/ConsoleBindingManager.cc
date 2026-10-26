@@ -10,6 +10,7 @@
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/components/Events.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
 #include "strayphotons/input/BindingNames.hh"
@@ -24,20 +25,21 @@ namespace sp {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, consoleInputEntity.Name());
                 ent.Set<ecs::EventInput>(lock);
                 auto &scripts = ent.Set<ecs::Scripts>(lock);
-                auto eventScript = ecs::CreateLogicScript(
-                    [](ecs::ScriptState &state, auto lock, ecs::Entity ent, chrono_clock::duration interval) {
-                        ecs::Event event;
-                        while (ecs::EventInput::Poll(lock, state.eventQueue, event)) {
-                            auto *command = ecs::EventData::TryGet<ecs::EventString>(event.data);
-                            if (command && !command->empty()) {
-                                GetConsoleManager().QueueParseAndExecute(*command);
-                            } else {
-                                Errorf("Console binding received invalid event: %s", event.ToString());
-                            }
+                auto eventScript = ecs::CreateEventScript(
+                    0,
+                    0,
+                    [](ecs::ScriptState &state,
+                        const ecs::DynamicLock<ecs::SendEventsLock> &dynLock,
+                        ecs::Entity ent,
+                        ecs::Event event) {
+                        auto *command = ecs::EventData::TryGet<ecs::EventString>(event.data);
+                        if (command && !command->empty()) {
+                            GetConsoleManager().QueueParseAndExecute(*command);
+                        } else {
+                            Errorf("Console binding received invalid event: %s", event.ToString());
                         }
-                    });
-                eventScript.events = {ACTION_EVENT_RUN_COMMAND};
-                eventScript.filterOnEvent = true;
+                    },
+                    ACTION_EVENT_RUN_COMMAND);
                 scripts.AddScript(ecs::Name(scene->data->name, ""), eventScript);
             });
 
