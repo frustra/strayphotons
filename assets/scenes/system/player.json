@@ -51,6 +51,7 @@
 			"light": {
 				"illuminance": 1,
 				"spot_angle": 10,
+				"tint": [0, 0, 0],
 				"on": true
 			},
 			"script": [

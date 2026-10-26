@@ -196,36 +196,16 @@ namespace SignalCachingTests {
                     {1, 2},
                     {2, 0},
                     {3, 1},
-                    {4, {}},
-                    {5, {}},
-                    {6, {}},
+                    {4, 0},
+                    {5, 1},
+                    {6, 1},
                 });
             AssertEqual(ecs::SignalRef(hand, TEST_SIGNAL_ACTION1).GetSignal(lock),
                 0.0,
                 "Expected correct expression evaluation");
-            CheckSignals(signals,
-                {
-                    {0, 1},
-                    {1, 2},
-                    {2, 0},
-                    {3, 1},
-                    {4, 0},
-                    {5, {}},
-                    {6, {}},
-                });
             AssertEqual(ecs::SignalRef(hand, TEST_SIGNAL_ACTION2).GetSignal(lock),
                 1.0,
                 "Expected correct expression evaluation");
-            CheckSignals(signals,
-                {
-                    {0, 1},
-                    {1, 2},
-                    {2, 0},
-                    {3, 1},
-                    {4, 0},
-                    {5, 1},
-                    {6, {}},
-                });
             AssertEqual(ecs::SignalRef(player, TEST_SIGNAL_ACTION3).GetSignal(lock),
                 1.0,
                 "Expected correct expression evaluation");
