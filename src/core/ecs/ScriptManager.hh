@@ -157,12 +157,8 @@ namespace ecs {
         bool initialized : 1 = false;
         bool logicTickActive : 1 = false;
         bool physicsTickActive : 1 = false;
-        // bool onEventActive : 1 = false;
-        // bool prefabActive : 1 = false;
-        // bool guiActive : 1 = false;
 
         EventQueueRef eventQueueHandle;
-        Event lastEvent;
 
         void *scriptData = nullptr;
         std::type_index scriptDataType = typeid(void);
@@ -199,7 +195,6 @@ namespace ecs {
         robin_hood::unordered_map<void *, std::weak_ptr<ScriptState>> allScripts;
         // TODO: Switch to unordered maps but ensure scripts on the same entity run in order
         sp::HeapVector<std::weak_ptr<ScriptState>> logicScripts, physicsScripts;
-        // sp::HeapVector<std::weak_ptr<ScriptState>> eventScripts, prefabScripts, guiScripts;
         sp::LockFreeMutex logicScriptMutex, physicsScriptMutex, eventScriptMutex, prefabScriptMutex, guiScriptMutex;
     };
 

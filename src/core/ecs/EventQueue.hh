@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -10,15 +10,11 @@
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "ecs/components/Transform.h"
-#include "strayphotons/Async.hh"
-#include "strayphotons/HeapVector.hh"
-#include "strayphotons/InlineVector.hh"
 #include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Utility.hh"
 
 #include <array>
 #include <atomic>
-#include <forward_list>
 #include <glm/glm.hpp>
 #include <iostream>
 #include <memory>
@@ -286,14 +282,17 @@ namespace ecs {
             }
 
             std::atomic_uint64_t commitId;
+            AsyncEvent *next = nullptr;
         };
 
+#ifdef SP_DEBUG
         std::weak_ptr<EventQueue> handle;
+#endif
 
     private:
         mutable sp::LockFreeMutex mutex;
-        std::pmr::forward_list<AsyncEvent> storage;
-        std::pmr::forward_list<AsyncEvent>::iterator last;
+        AsyncEvent *first = nullptr;
+        AsyncEvent *last = nullptr;
         uint32_t count = 0;
         uint32_t capacity;
     };

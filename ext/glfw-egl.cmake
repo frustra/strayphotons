@@ -21,8 +21,6 @@ else()
     set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
 endif()
 
-set(CMAKE_C_STANDARD 23)
-
 add_subdirectory(glfw ${CMAKE_CURRENT_BINARY_DIR}/glfw-egl)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

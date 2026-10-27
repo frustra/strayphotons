@@ -387,10 +387,6 @@ namespace sp {
                 ecs::Animation::UpdateTransform(live, e);
             }
         }
-        for (const ecs::Entity &ent : live.EntitiesWith<ecs::Scripts>()) {
-            if (!ent.Has<ecs::Scripts>(live)) continue;
-            ecs::GetScriptManager().RegisterActive(live, ent);
-        }
 
         active = false;
     }
