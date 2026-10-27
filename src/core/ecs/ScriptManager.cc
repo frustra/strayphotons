@@ -12,6 +12,7 @@
 #include "ecs/DynamicLibrary.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EntityRef.hh"
 #include "ecs/EventQueue.hh"
 #include "ecs/EventScriptManager.hh"
 #include "ecs/ScriptDefinition.hh"
@@ -24,6 +25,7 @@
 #include <memory_resource>
 #include <mutex>
 #include <shared_mutex>
+#include <threads.h>
 #include <tracy/Tracy.hpp>
 
 namespace ecs {
@@ -57,12 +59,10 @@ namespace ecs {
 
     ScriptState::ScriptState(const ScriptDefinition &definition, const EntityScope &scope)
         : scope(scope), definition(definition), eventQueue(CVarMaxScriptQueueSize.Get()), instanceId(++nextInstanceId) {
-        eventQueue.handle = eventQueueHandle = std::shared_ptr<EventQueue>(&eventQueue, [](auto *) {});
     }
     ScriptState::ScriptState(const ScriptState &other)
         : scope(other.scope), definition(other.definition), eventQueue(other.eventQueue.Capacity()),
           instanceId(other.instanceId) {
-        eventQueue.handle = eventQueueHandle = std::shared_ptr<EventQueue>(&eventQueue, [](auto *) {});
         if (other.scriptData) {
             scriptData = other.scriptDataCopier(other.scriptData);
             scriptDataType = other.scriptDataType;
@@ -121,9 +121,7 @@ namespace ecs {
         scriptManager.WithScriptLock(definition, true, [&] {
             if (logicTickActive) sp::erase(scriptManager.scriptSet.logicScripts, handle);
             if (physicsTickActive) sp::erase(scriptManager.scriptSet.physicsScripts, handle);
-            // if (onEventActive) sp::erase(scriptManager.scriptSet.eventScripts, handle);
-            // if (prefabActive) sp::erase(scriptManager.scriptSet.prefabScripts, handle);
-            // if (guiActive) sp::erase(scriptManager.scriptSet.guiScripts, handle);
+            eventQueueHandle.reset();
             ent = {};
         });
     }
@@ -137,6 +135,8 @@ namespace ecs {
             scriptDataDeleter = nullptr;
         }
     }
+
+    thread_local Event lastEvent;
 
     Event *ScriptState::PollEvent() {
         if (definition.onEventFunc) {
@@ -210,7 +210,6 @@ namespace ecs {
         ZoneScoped;
         DebugAssertf(instance, "ScriptManager::ActivateScriptInstance called on null instance");
         DebugZoneStr(instance->definition.name);
-        if (instance->ent == ent) return;
         Assertf(!instance->ent, "ScriptManager::ActivateScriptInstance called on active instance");
         WithScriptLock(instance->definition, true, [&] {
             instance->ent = ent;
@@ -222,18 +221,6 @@ namespace ecs {
                 scriptSet.physicsScripts.emplace_back(instance);
                 instance->physicsTickActive = true;
             }
-            // if (instance->definition.onEventFunc) {
-            //     scriptSet.eventScripts.emplace_back(instance);
-            //     instance->onEventActive = true;
-            // }
-            // if (instance->definition.prefabFunc) {
-            //     scriptSet.prefabScripts.emplace_back(instance);
-            //     instance->prefabActive = true;
-            // }
-            // if (instance->definition.beforeFrameFunc || instance->definition.renderGuiFunc) {
-            //     scriptSet.guiScripts.emplace_back(instance);
-            //     instance->guiActive = true;
-            // }
         });
     }
 
@@ -342,8 +329,17 @@ namespace ecs {
                 if (state.definition.NeedsEventQueue()) {
                     if (ent.Has<EventInput>(lock)) {
                         auto &eventInput = ent.Get<EventInput>(lock);
-                        for (auto &event : state.definition.events) {
-                            eventInput.Register(lock, state.eventQueueHandle, event);
+                        if (!state.definition.events.empty()) {
+                            DebugAssertf(!state.eventQueueHandle,
+                                "ScriptManager::RegisterActive script already has a queue handle: %s",
+                                EntityRef(ent).Name().String());
+                            state.eventQueueHandle = std::shared_ptr<EventQueue>(&state.eventQueue, [](auto *) {});
+#ifdef SP_DEBUG
+                            state.eventQueue.handle = state.eventQueueHandle;
+#endif
+                            for (auto &event : state.definition.events) {
+                                eventInput.Register(lock, state.eventQueueHandle, event);
+                            }
                         }
                     } else if (!state.definition.events.empty()) {
                         Warnf("Script %s has events but %s has no EventInput component",
@@ -377,7 +373,7 @@ namespace ecs {
             DebugZoneScopedN("OnLogicTick");
             DebugZoneStr(ecs::ToString(lock, state.ent));
             state.definition.logicTickFunc.callback(state, lock, state.ent, interval);
-            state.lastEvent = {};
+            lastEvent = {};
         }
     }
 
@@ -394,7 +390,7 @@ namespace ecs {
             DebugZoneScopedN("OnPhysicsTick");
             DebugZoneStr(ecs::ToString(lock, state.ent));
             state.definition.physicsTickFunc.callback(state, lock, state.ent, interval);
-            state.lastEvent = {};
+            lastEvent = {};
         }
     }
 

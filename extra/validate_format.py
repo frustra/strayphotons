@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2023 Jacob Wirth
+# Copyright (C) 2026 Jacob Wirth
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -16,7 +16,7 @@ import subprocess
 include_paths = ["src/", "tests/", "shaders/vulkan", "shaders/lib"]
 include_extenions = [".cc", ".hh", ".cpp", ".hpp", ".glsl", ".vert", ".frag", ".geom", ".comp"]
 version_pattern = re.compile(r'version ([0-9]+\.[0-9]+)\.[0-9]+')
-allowed_clangformat_versions = ["20.1"]
+allowed_clangformat_versions = ["23.1"]
 
 def run_clang_format(filepath, fix):
     if fix:

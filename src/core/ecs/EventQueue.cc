@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,9 +13,9 @@
 #include "strayphotons/Logging.hh"
 
 #include <cstdint>
-#include <forward_list>
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
+#include <memory_resource>
 #include <picojson.h>
 #include <shared_mutex>
 #include <sstream>
@@ -236,22 +236,29 @@ namespace ecs {
         return out;
     }
 
-    EventQueue::EventQueue(uint32_t maxQueueSize) : capacity(maxQueueSize) {
-        std::pmr::polymorphic_allocator<AsyncEvent> allocator(&GetECSContext().eventPool);
-        storage = std::pmr::forward_list<AsyncEvent>(allocator);
-        last = storage.before_begin();
-    }
+    EventQueue::EventQueue(uint32_t maxQueueSize) : capacity(maxQueueSize) {}
 
     EventQueue::~EventQueue() {
-        Assertf(handle.use_count() == 0, "EventQueue destroyed while referenced");
+        DebugAssertf(handle.expired(), "EventQueue destroyed while referenced");
+        AsyncEvent *entry = first;
+        while (entry) {
+            AsyncEvent *tmp = entry;
+            entry = entry->next;
+            GetECSContext().eventPool.deallocate(tmp, sizeof(AsyncEvent));
+        }
     }
 
-    thread_local sp::HeapVector<std::pmr::forward_list<EventQueue::AsyncEvent>::iterator> pendingEvents;
+    thread_local sp::HeapVector<EventQueue::AsyncEvent *> pendingEvents;
 
     bool EventQueue::Add(Lock<>, const Event &event) {
         std::lock_guard l(mutex);
         if (count >= capacity) return false;
-        last = storage.emplace_after(last, event);
+        void *memory = GetECSContext().eventPool.allocate(sizeof(AsyncEvent), alignof(AsyncEvent));
+        if (last) {
+            last = last->next = new (memory) AsyncEvent{event};
+        } else {
+            first = last = new (memory) AsyncEvent{event};
+        }
         count++;
         pendingEvents.emplace_back(last);
         return true;
@@ -259,24 +266,27 @@ namespace ecs {
 
     bool EventQueue::Poll(Event &eventOut) {
         std::lock_guard l(mutex);
-        if (storage.empty() || storage.front().commitId == 0) {
+        if (!first || first->commitId == 0) {
             eventOut = Event();
             return false;
         }
 
-        const AsyncEvent &first = storage.front();
-        DebugAssertf(first.commitId != 0, "EventQueue::Poll read a non-ready event");
-        eventOut = first;
+        DebugAssertf(first->commitId != 0, "EventQueue::Poll read a non-ready event");
+        eventOut = *first;
 
-        storage.pop_front();
-        if (storage.empty()) last = storage.before_begin();
+        AsyncEvent *tmp = first;
+        first = first->next;
+        if (!first) last = nullptr;
+
+        GetECSContext().eventPool.deallocate(tmp, sizeof(AsyncEvent));
+
         count--;
         return true;
     }
 
     bool EventQueue::Empty() const {
         std::shared_lock l(mutex);
-        return storage.empty() || storage.front().commitId == 0;
+        return !first || first->commitId == 0;
     }
 
     uint32_t EventQueue::Size() const {

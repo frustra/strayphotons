@@ -190,11 +190,7 @@ namespace ecs {
             sp::erase_if(dst.scripts, [&](const ScriptInstance &instance) {
                 if (!instance.state) return true;
                 bool remove = !scriptFound[i++];
-                if (remove) {
-                    instance.state->Deactivate();
-                    // } else {
-                    //     GetScriptManager().ActivateScriptInstance(instance.state, ent);
-                }
+                if (remove) instance.state->Deactivate();
                 return remove;
             });
         }

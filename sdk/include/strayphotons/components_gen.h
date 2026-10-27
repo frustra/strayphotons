@@ -981,8 +981,8 @@ typedef struct sp_script_definition_t {
 typedef struct sp_script_state_t {
     sp_ecs_name_t scope; // 128 bytes
     sp_script_definition_t definition; // 176 bytes
-    const uint8_t _unknown304[544];
-} sp_script_state_t; // 848 bytes
+    const uint8_t _unknown304[136];
+} sp_script_state_t; // 440 bytes
 const uint32_t SP_TYPE_INDEX_EVENT = 42;
 // Type: ecs::Event
 typedef struct sp_event_t {

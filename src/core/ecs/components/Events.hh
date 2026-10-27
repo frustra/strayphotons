@@ -14,6 +14,7 @@
 #include "ecs/StructMetadata.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapVector.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <optional>
 #include <robin_hood.h>
