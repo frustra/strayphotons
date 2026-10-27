@@ -49,7 +49,7 @@ namespace sp::scripts {
                     EntityRef neighbor = Name(relativeName, prefix);
 
                     sp::InlineString<127> bindingName(127, '\0');
-                    count = std::snprintf(bindingName.data(), sizeof(bindingName), "neighbors[%d][%d]", dx, dy);
+                    count = std::snprintf(bindingName.data(), sizeof(bindingName), "neighbor[%d][%d]", dx, dy);
                     bindingName.resize(count);
                     signalBindings.emplace(bindingName, SignalRef(neighbor, "alive"));
 
