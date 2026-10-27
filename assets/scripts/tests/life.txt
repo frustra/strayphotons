@@ -4,7 +4,6 @@ steplogic
 set_position player:player 0 0.25 -1.5
 rotate player:flathead -90 1 0 0
 stepphysics
-steplogic
 assert_screenshot life0.png
 stepgraphics
 printdebug

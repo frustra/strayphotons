@@ -5,7 +5,6 @@ set_position player:player -1 3 -3
 rotate player:flathead -90 1 0 0
 sendevent life3:spawn_button/button/press
 stepphysics
-steplogic
 assert_screenshot life0.png
 stepgraphics
 printsignal life3:life.3_6/alive
