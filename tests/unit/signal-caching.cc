@@ -38,12 +38,15 @@ namespace SignalCachingTests {
     void AssertSubscribers(const ecs::Signals &signals, size_t index, std::initializer_list<size_t> subscriberIndexes) {
         auto &signal = signals.signals[index];
         AssertEqual(signal.subscribers.size(), subscriberIndexes.size(), "Wrong number of subscribers");
-        size_t i = 0;
+        std::vector<bool> foundSubscribers(subscriberIndexes.size());
         for (auto &sub : signal.subscribers) {
             auto subscriber = sub.lock();
             if (!subscriber) continue;
-            AssertEqual(subscriber->index, *(subscriberIndexes.begin() + i), "Wrong subscriber index");
-            AssertTrue(subscriber->index < signals.signals.size(), "Wrong subscriber index");
+            AssertTrue(subscriber->index < signals.signals.size(),
+                "Subscriber index out of range: " + std::to_string(index));
+            auto it = std::find(subscriberIndexes.begin(), subscriberIndexes.end(), subscriber->index);
+            AssertTrue(it != subscriberIndexes.end(), "Wrong subscriber index: " + std::to_string(index));
+            foundSubscribers[it - subscriberIndexes.begin()] = true;
             bool found = false;
             for (auto &dep : signals.signals[subscriber->index].dependencies) {
                 auto dependency = dep.lock();
@@ -54,11 +57,18 @@ namespace SignalCachingTests {
                 }
             }
             AssertTrue(found, "Subscriber does not have dependency set");
+        }
+        int i = 0;
+        for (bool found : foundSubscribers) {
+            AssertTrue(found, "Subscriber " + std::to_string(i) + " is missing");
             i++;
         }
     }
 
     void CheckSignals(const ecs::Signals &signals, const std::map<size_t, std::optional<double>> &lastValues) {
+        for (auto &[index, _] : lastValues) {
+            Assertf(index < signals.signals.size(), "Expected signal index is missing: " + std::to_string(index));
+        }
         for (size_t index = 0; index < signals.signals.size(); index++) {
             auto it = lastValues.find(index);
             AssertTrue(it != lastValues.end(), "Signal index not in expected list: " + std::to_string(index));

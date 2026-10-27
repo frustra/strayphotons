@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -37,47 +37,13 @@ namespace ecs {
         ~ScriptState();
 
         template<typename T>
-        T *Get() {
-            if (!scriptData) return nullptr;
-            Assertf(typeid(T) == scriptDataType,
-                "ScriptState::get() called with wrong type: requested %s != %s",
-                typeid(T).name(),
-                scriptDataType.name());
-            return static_cast<T *>(scriptData);
-        }
+        T *Get();
 
         template<typename T>
-        const T *Get() const {
-            if (!scriptData) return nullptr;
-            Assertf(typeid(T) == scriptDataType,
-                "ScriptState::get() called with wrong type: requested %s != %s",
-                typeid(T).name(),
-                scriptDataType.name());
-            return static_cast<const T *>(scriptData);
-        }
+        const T *Get() const;
 
         template<typename T, typename... Args>
-        T *Set(Args &&...args) {
-            T *ptr = nullptr;
-            if (scriptData && typeid(T) == scriptDataType) {
-                ptr = static_cast<T *>(scriptData);
-                *ptr = T(std::forward<Args>(args)...);
-            } else {
-                Reset();
-                scriptData = ptr = new T(std::forward<Args>(args)...);
-                scriptDataType = typeid(T);
-                scriptDataCopier = [](void *data) -> void * {
-                    T *ptr = static_cast<T *>(data);
-                    T *newPtr = new T(*ptr);
-                    return newPtr;
-                };
-                scriptDataDeleter = [](void *data) {
-                    T *ptr = static_cast<T *>(data);
-                    delete ptr;
-                };
-            }
-            return ptr;
-        }
+        T *Set(Args &&...args);
 
         // Create a duplicate of this script with a copy of the state, then run the init function
         std::shared_ptr<ScriptState> CloneInstance(bool runInit) const;
@@ -162,7 +128,7 @@ namespace ecs {
 
         void *scriptData = nullptr;
         std::type_index scriptDataType = typeid(void);
-        void *(*scriptDataCopier)(void *scriptData) = nullptr;
+        void *(*scriptDataCopier)(const void *scriptData) = nullptr;
         void (*scriptDataDeleter)(void *scriptData) = nullptr;
 
         friend class ScriptInstance;
@@ -277,4 +243,47 @@ namespace ecs {
 
     ScriptManager &GetScriptManager();
     EventScriptManager &GetEventScriptManager();
+
+    template<typename T>
+    T *ScriptState::Get() {
+        if (!scriptData) return nullptr;
+        Assertf(typeid(T) == scriptDataType,
+            "ScriptState::get() called with wrong type: requested %s != %s",
+            typeid(T).name(),
+            scriptDataType.name());
+        return static_cast<T *>(scriptData);
+    }
+
+    template<typename T>
+    const T *ScriptState::Get() const {
+        if (!scriptData) return nullptr;
+        Assertf(typeid(T) == scriptDataType,
+            "ScriptState::get() called with wrong type: requested %s != %s",
+            typeid(T).name(),
+            scriptDataType.name());
+        return static_cast<const T *>(scriptData);
+    }
+
+    template<typename T, typename... Args>
+    T *ScriptState::Set(Args &&...args) {
+        if (scriptData && typeid(T) == scriptDataType) {
+            T *ptr = static_cast<T *>(scriptData);
+            *ptr = T(std::forward<Args>(args)...);
+            return ptr;
+        } else {
+            Reset();
+            scriptData = GetScriptManager().scriptSet.scriptPool.allocate(sizeof(T), alignof(T));
+            scriptDataType = typeid(T);
+            scriptDataCopier = [](const void *data) -> void * {
+                void *memory = GetScriptManager().scriptSet.scriptPool.allocate(sizeof(T), alignof(T));
+                return new (memory) T(*static_cast<const T *>(data));
+            };
+            scriptDataDeleter = [](void *data) {
+                T *ptr = static_cast<T *>(data);
+                ptr->~T();
+                GetScriptManager().scriptSet.scriptPool.deallocate(ptr, sizeof(T));
+            };
+            return new (scriptData) T(std::forward<Args>(args)...);
+        }
+    }
 } // namespace ecs
