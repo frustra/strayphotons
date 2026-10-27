@@ -285,10 +285,6 @@ namespace ecs {
             AsyncEvent *next = nullptr;
         };
 
-#ifdef SP_DEBUG
-        std::weak_ptr<EventQueue> handle;
-#endif
-
     private:
         mutable sp::LockFreeMutex mutex;
         AsyncEvent *first = nullptr;

@@ -118,18 +118,18 @@ namespace ecs {
 
     private:
         std::weak_ptr<ScriptState> handle;
-        size_t instanceId;
-        Entity ent;
-        bool initialized : 1 = false;
-        bool logicTickActive : 1 = false;
-        bool physicsTickActive : 1 = false;
-
         EventQueueRef eventQueueHandle;
 
         void *scriptData = nullptr;
         std::type_index scriptDataType = typeid(void);
         void *(*scriptDataCopier)(const void *scriptData) = nullptr;
         void (*scriptDataDeleter)(void *scriptData) = nullptr;
+
+        size_t instanceId;
+        Entity ent;
+        bool initialized : 1 = false;
+        bool logicTickActive : 1 = false;
+        bool physicsTickActive : 1 = false;
 
         friend class ScriptInstance;
         friend class ScriptManager;

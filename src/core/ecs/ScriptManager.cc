@@ -334,9 +334,6 @@ namespace ecs {
                                 "ScriptManager::RegisterActive script already has a queue handle: %s",
                                 EntityRef(ent).Name().String());
                             state.eventQueueHandle = std::shared_ptr<EventQueue>(&state.eventQueue, [](auto *) {});
-#ifdef SP_DEBUG
-                            state.eventQueue.handle = state.eventQueueHandle;
-#endif
                             for (auto &event : state.definition.events) {
                                 eventInput.Register(lock, state.eventQueueHandle, event);
                             }

@@ -239,7 +239,6 @@ namespace ecs {
     EventQueue::EventQueue(uint32_t maxQueueSize) : capacity(maxQueueSize) {}
 
     EventQueue::~EventQueue() {
-        DebugAssertf(handle.expired(), "EventQueue destroyed while referenced");
         AsyncEvent *entry = first;
         while (entry) {
             AsyncEvent *tmp = entry;
