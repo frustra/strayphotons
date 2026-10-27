@@ -57,7 +57,7 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     exit 1
 fi
 
-if [[ $(git diff --exit-code sdk/) -ne 0 ]]; then
+if ! git diff --exit-code sdk/; then
     echo -e "\n^^^ +++"
     echo -e "\033[31mError: SDK output changed\033[0m"
     if [ -n "$BUILDKITE_BRANCH" ]; then

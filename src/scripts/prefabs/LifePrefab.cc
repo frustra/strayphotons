@@ -33,18 +33,24 @@ namespace sp::scripts {
             auto &eventBindings = ent.Get<EventBindings>(lock);
             auto &signalOutput = ent.Get<SignalOutput>(lock).signals;
             auto &signalBindings = ent.Get<SignalBindings>(lock).bindings;
+            signalBindings.reserve(signalBindings.size() + 8);
 
-            auto prefix = Name(name.scene, name.entity.substr(0, name.entity.find_last_of('.')));
-            glm::uvec2 pos = glm::uvec2(signalOutput.at("tile.x"), signalOutput.at("tile.y"));
+            Name prefix(name.scene, name.entity.substr(0, name.entity.find_last_of('.')));
+            glm::uvec2 pos(signalOutput.at("tile.x"), signalOutput.at("tile.y"));
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     if (dx == 0 && dy == 0) continue;
 
                     glm::uvec2 wrapped = (pos + glm::uvec2(boardSize.x + dx, boardSize.y + dy)) % boardSize;
-                    EntityRef neighbor = Name(std::to_string(wrapped.x) + "_" + std::to_string(wrapped.y), prefix);
+                    sp::InlineString<127> relativeName(127, '\0');
+                    int count = std::snprintf(relativeName.data(), sizeof(relativeName), "%u_%u", wrapped.x, wrapped.y);
+                    relativeName.resize(count);
+                    EntityRef neighbor = Name(relativeName, prefix);
 
-                    std::string bindingName = "neighbor[" + std::to_string(dx) + "][" + std::to_string(dy) + "]";
+                    sp::InlineString<127> bindingName(127, '\0');
+                    count = std::snprintf(bindingName.data(), sizeof(bindingName), "neighbors[%d][%d]", dx, dy);
+                    bindingName.resize(count);
                     signalBindings.emplace(bindingName, SignalRef(neighbor, "alive"));
 
                     eventBindings.Bind("/life/notify_neighbors", neighbor, "/life/neighbor_alive");
