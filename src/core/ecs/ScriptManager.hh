@@ -12,6 +12,7 @@
 #include "ecs/EventQueue.hh"
 #include "ecs/EventScriptManager.hh"
 #include "ecs/ScriptDefinition.hh"
+#include "ecs/StructMetadata.hh"
 #include "robin_hood.h"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeMutex.hh"

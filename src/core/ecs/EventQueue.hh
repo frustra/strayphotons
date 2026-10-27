@@ -286,12 +286,14 @@ namespace ecs {
         };
 
     private:
-        mutable sp::LockFreeMutex mutex;
         AsyncEvent *first = nullptr;
         AsyncEvent *last = nullptr;
         uint32_t count = 0;
         uint32_t capacity;
+        mutable sp::LockFreeMutex mutex;
     };
+
+    static_assert(sizeof(EventQueue) == 32, "EventQueue size mismatch");
 
     using EventQueueRef = std::shared_ptr<EventQueue>;
     using EventQueueWeakRef = std::weak_ptr<EventQueue>;
