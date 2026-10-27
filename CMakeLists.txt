@@ -143,6 +143,9 @@ target_include_directories(${PROJECT_COMMON_EXE}
 
 if(UNIX)
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE pthread)
+    if(NOT SP_DEBUG)
+        target_link_options(${PROJECT_COMMON_EXE} INTERFACE -static-libgcc -static-libstdc++)
+    endif()
 elseif(WIN32)
     target_link_libraries(${PROJECT_COMMON_EXE} INTERFACE winmm)
 endif()

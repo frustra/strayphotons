@@ -18,8 +18,14 @@ add_executable(sp-unit-tests tests.cc ${unit_test_sources})
 target_compile_definitions(sp-unit-tests PRIVATE
     TEST_TYPE=\"unit\"
 )
-target_link_libraries(sp-unit-tests ${PROJECT_COMMON_LIB} ${PROJECT_CORE_LIB})
+target_link_libraries(sp-unit-tests
+    ${PROJECT_COMMON_LIB}
+    ${PROJECT_CORE_LIB}
+)
 target_include_directories(sp-unit-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(UNIX AND NOT SP_DEBUG)
+    target_link_options(sp-unit-tests PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 # target to run the tests
 add_custom_target(
@@ -45,6 +51,9 @@ target_link_libraries(sp-integration-tests
     ${PROJECT_SCRIPTS_LIB}
 )
 target_include_directories(sp-integration-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(UNIX AND NOT SP_DEBUG)
+    target_link_options(sp-integration-tests PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 # target to run the tests
 add_custom_target(
