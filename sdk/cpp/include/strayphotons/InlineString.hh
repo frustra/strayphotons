@@ -43,41 +43,41 @@ namespace sp {
         using ArrayT::operator[];
         using ArrayT::ArrayT;
 
-        InlineString() noexcept : ArrayT() {
+        constexpr InlineString() noexcept : ArrayT() {
             setSize(0);
         }
 
-        InlineString(size_t count, CharT ch) noexcept : ArrayT() {
+        constexpr InlineString(size_t count, CharT ch) noexcept : ArrayT() {
             resize(count, ch);
         }
 
-        InlineString(const CharT *init) : ArrayT() {
+        constexpr InlineString(const CharT *init) : ArrayT() {
             size_type count = init ? traits_type::length(init) : 0;
             Assert(count <= MaxSize, "InlineString overflow");
             if (count > 0) traits_type::copy(data(), init, count);
             setSize(count);
         }
 
-        InlineString(const std::basic_string<CharT> &init) : ArrayT() {
+        constexpr InlineString(const std::basic_string<CharT> &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
-        InlineString(const std::basic_string_view<CharT> &init) : ArrayT() {
+        constexpr InlineString(const std::basic_string_view<CharT> &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
         template<std::enable_if_t<std::is_same_v<CharT, char>, int> = 0>
-        InlineString(const sp::HeapString &init) : ArrayT() {
+        constexpr InlineString(const sp::HeapString &init) : ArrayT() {
             Assert(init.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data(), init.data(), init.size());
             setSize(init.size());
         }
 
-        size_type size() {
+        constexpr size_type size() {
             size_type unusedCount = (size_type)(std::make_unsigned_t<CharT>)(ArrayT::back());
             DebugAssertf(unusedCount <= MaxSize, "Corrupted InlineString size: %llu/%llu", unusedCount, MaxSize);
             DebugAssertf(at(MaxSize - unusedCount) == CharT(),
@@ -96,7 +96,7 @@ namespace sp {
             return MaxSize - unusedCount;
         }
 
-        size_type size() const {
+        constexpr size_type size() const {
             size_type unusedCount = (size_type)(std::make_unsigned_t<CharT>)(ArrayT::back());
             DebugAssertf(unusedCount <= MaxSize, "Corrupted InlineString size: %llu/%llu", unusedCount, MaxSize);
             DebugAssertf(at(MaxSize - unusedCount) == CharT(),
@@ -112,15 +112,15 @@ namespace sp {
             return MaxSize - unusedCount;
         }
 
-        size_type length() {
+        constexpr size_type length() {
             return size();
         }
 
-        size_type length() const {
+        constexpr size_type length() const {
             return size();
         }
 
-        size_type capacity() const {
+        constexpr size_type capacity() const {
             return ArrayT::size() - 1;
         }
 
@@ -128,7 +128,7 @@ namespace sp {
             return MaxSize;
         }
 
-        void resize(size_type newSize, CharT ch = CharT()) {
+        constexpr void resize(size_type newSize, CharT ch = CharT()) {
             Assert(newSize <= MaxSize, "InlineString overflow");
             auto oldSize = size();
             if (newSize < oldSize) {
@@ -139,42 +139,42 @@ namespace sp {
             setSize(newSize);
         }
 
-        void fill(const CharT &value) noexcept {
+        constexpr void fill(const CharT &value) noexcept {
             std::fill(begin(), end(), value);
             setSize(value == CharT() ? 0 : MaxSize);
         }
 
-        bool empty() const noexcept {
+        constexpr bool empty() const noexcept {
             return at(0) == CharT();
         }
 
-        CharT &back() {
+        constexpr CharT &back() {
             return at(size() - 1);
         }
 
-        const CharT *c_str() const {
+        constexpr const CharT *c_str() const {
             DebugAssertf(at(size()) == CharT(), "String missing null termination");
             return data();
         }
 
-        std::basic_string<CharT> str() const {
+        constexpr std::basic_string<CharT> str() const {
             return std::basic_string<CharT>(data(), size());
         }
 
-        void push_back(const CharT &value) {
+        constexpr void push_back(const CharT &value) {
             Assert(size() <= MaxSize, "InlineString overflow");
             at(size()) = value;
             setSize(size() + 1);
         }
 
-        void pop_back() {
+        constexpr void pop_back() {
             Assert(!empty() && MaxSize > 0, "InlineString underflow");
             at(size() - 1) = CharT();
             setSize(size() - 1);
         }
 
         template<class... Args>
-        CharT &emplace_back(Args &&...args) {
+        constexpr CharT &emplace_back(Args &&...args) {
             Assert(size() + 1 <= MaxSize, "InlineString overflow");
             auto &ref = at(size());
             ref = CharT(std::forward<Args>(args)...);
@@ -182,102 +182,102 @@ namespace sp {
             return ref;
         }
 
-        void clear() noexcept {
+        constexpr void clear() noexcept {
             fill(CharT());
         }
 
         using ArrayT::begin;
-        iterator end() {
+        constexpr iterator end() {
             return begin() + size();
         }
-        const_iterator end() const {
+        constexpr const_iterator end() const {
             return begin() + size();
         }
 
         using ArrayT::rend;
-        reverse_iterator rbegin() {
+        constexpr reverse_iterator rbegin() {
             return std::reverse_iterator(end());
         }
-        const_reverse_iterator rbegin() const {
+        constexpr const_reverse_iterator rbegin() const {
             return std::reverse_iterator(end());
         }
 
-        size_type find(std::basic_string_view<CharT> str, size_type pos = 0) const {
+        constexpr size_type find(std::basic_string_view<CharT> str, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find(str, pos);
         }
 
-        size_type find(CharT ch, size_type pos = 0) const {
+        constexpr size_type find(CharT ch, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find(ch, pos);
         }
 
-        size_type rfind(std::basic_string_view<CharT> str, size_type pos = npos) const {
+        constexpr size_type rfind(std::basic_string_view<CharT> str, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).rfind(str, pos);
         }
 
-        size_type rfind(CharT ch, size_type pos = npos) const {
+        constexpr size_type rfind(CharT ch, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).rfind(ch, pos);
         }
 
-        size_type find_first_of(std::basic_string_view<CharT> str, size_type pos = 0) const {
+        constexpr size_type find_first_of(std::basic_string_view<CharT> str, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find_first_of(str, pos);
         }
 
-        size_type find_first_of(CharT ch, size_type pos = 0) const {
+        constexpr size_type find_first_of(CharT ch, size_type pos = 0) const {
             return std::basic_string_view<CharT>(*this).find_first_of(ch, pos);
         }
 
-        size_type find_last_of(std::basic_string_view<CharT> str, size_type pos = npos) const {
+        constexpr size_type find_last_of(std::basic_string_view<CharT> str, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).find_last_of(str, pos);
         }
 
-        size_type find_last_of(CharT ch, size_type pos = npos) const {
+        constexpr size_type find_last_of(CharT ch, size_type pos = npos) const {
             return std::basic_string_view<CharT>(*this).find_last_of(ch, pos);
         }
 
-        std::basic_string_view<CharT> substr(size_type pos = 0, size_type count = npos) const {
+        constexpr std::basic_string_view<CharT> substr(size_type pos = 0, size_type count = npos) const {
             return std::basic_string_view<CharT>(*this).substr(pos, count);
         }
 
-        operator std::basic_string_view<CharT>() const {
+        constexpr operator std::basic_string_view<CharT>() const {
             DebugAssertf(at(size()) == CharT(), "String missing null termination");
             return std::basic_string_view<CharT>(data(), size());
         }
 
-        int compare(const InlineString<MaxSize, CharT, ArrayT> &other) const {
+        constexpr int compare(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this).compare(other);
         }
 
-        int compare(const std::basic_string_view<CharT> &other) const {
+        constexpr int compare(const std::basic_string_view<CharT> &other) const {
             return std::basic_string_view<CharT>(*this).compare(other);
         }
 
-        int compare(const CharT *other) const {
+        constexpr int compare(const CharT *other) const {
             return std::basic_string_view<CharT>(*this).compare(other);
         }
 
-        bool operator==(const InlineString<MaxSize, CharT, ArrayT> &other) const {
+        constexpr bool operator==(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this) == std::basic_string_view<CharT>(other);
         }
 
-        bool operator==(const CharT *other) const {
+        constexpr bool operator==(const CharT *other) const {
             return std::basic_string_view<CharT>(*this) == other;
         }
 
         template<typename StringViewLike>
-        bool operator==(const StringViewLike &other) const {
+        constexpr bool operator==(const StringViewLike &other) const {
             return std::basic_string_view<CharT>(*this) == other;
         }
 
-        bool operator<(const InlineString<MaxSize, CharT, ArrayT> &other) const {
+        constexpr bool operator<(const InlineString<MaxSize, CharT, ArrayT> &other) const {
             return std::basic_string_view<CharT>(*this) < std::basic_string_view<CharT>(other);
         }
 
         template<typename StringViewLike>
-        bool operator<(const StringViewLike &other) const {
+        constexpr bool operator<(const StringViewLike &other) const {
             return std::basic_string_view<CharT>(*this) < other;
         }
 
-        InlineString<MaxSize, CharT, ArrayT> &operator+=(const std::basic_string_view<CharT> &str) {
+        constexpr InlineString<MaxSize, CharT, ArrayT> &operator+=(const std::basic_string_view<CharT> &str) {
             size_t oldSize = size();
             Assert(oldSize + str.size() <= MaxSize, "InlineString overflow");
             traits_type::copy(data() + oldSize, str.data(), str.size());
@@ -285,13 +285,13 @@ namespace sp {
             return *this;
         }
 
-        InlineString<MaxSize, CharT, ArrayT> &operator+=(CharT ch) {
+        constexpr InlineString<MaxSize, CharT, ArrayT> &operator+=(CharT ch) {
             push_back(ch);
             return *this;
         }
 
     private:
-        void setSize(size_type newSize) {
+        constexpr void setSize(size_type newSize) {
             DebugAssertf(newSize <= MaxSize, "InlineString overflow: %llu", newSize);
             if (newSize == 0) {
                 // Leave an empty string as all-zeros so strcpy doesn't result in invalid strings

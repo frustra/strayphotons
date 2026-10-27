@@ -13,12 +13,14 @@
 
 namespace ecs {
     Name::Name(std::string_view scene, std::string_view entity) : scene(scene), entity(entity) {
-        Assertf(scene.find_first_of(",():/# ") == std::string::npos, "Scene name has invalid character: '%s'", scene);
-        Assertf(entity.find_first_of(",():/# ") == std::string::npos,
+        Assertf(scene.find_first_of(",():/# ") == std::string_view::npos,
+            "Scene name has invalid character: '%s'",
+            scene);
+        Assertf(entity.find_first_of(",():/# ") == std::string_view::npos,
             "Entity name has invalid character: '%s'",
             entity);
-        Assertf(scene.rfind('-', 0) == std::string::npos, "Scene name must not start with '-': '%s'", scene);
-        Assertf(entity.rfind('-', 0) == std::string::npos, "Entity name must not start with '-': '%s'", entity);
+        Assertf(scene.rfind('-', 0) == std::string_view::npos, "Scene name must not start with '-': '%s'", scene);
+        Assertf(entity.rfind('-', 0) == std::string_view::npos, "Entity name must not start with '-': '%s'", entity);
     }
 
     Name::Name(std::string_view relativeName, const EntityScope &scope) {
@@ -36,7 +38,7 @@ namespace ecs {
 
     bool Name::Parse(std::string_view relativeName, const EntityScope &scope) {
         size_t i = relativeName.find(':');
-        if (i != std::string::npos) {
+        if (i != std::string_view::npos) {
             scene = relativeName.substr(0, i);
             entity = relativeName.substr(i + 1);
         } else if (!scope.scene.empty()) {
@@ -54,7 +56,7 @@ namespace ecs {
                 if (scope.entity.empty()) {
                     entity = relativeName;
                 } else {
-                    entity = scope.entity + "." + std::string(relativeName);
+                    entity = scope.entity + sp::InlineString<63>(".") + relativeName;
                 }
             }
         } else {
@@ -64,10 +66,10 @@ namespace ecs {
             } else if (relativeName == "scoperoot") {
                 entity = scope.entity;
             } else {
-                entity = scope.entity + "." + std::string(relativeName);
+                entity = scope.entity + sp::InlineString<63>(".") + relativeName;
             }
         }
-        if (scene.find_first_of(",():/# ") != std::string::npos) {
+        if (scene.find_first_of(",():/# ") != std::string_view::npos) {
             scene.clear();
             entity.clear();
             Errorf("Scene name has invalid character: '%s'", scene);
@@ -78,7 +80,7 @@ namespace ecs {
             Errorf("Scene name must not start with '-': '%s'", scene);
             return false;
         }
-        if (entity.find_first_of(",():/# ") != std::string::npos) {
+        if (entity.find_first_of(",():/# ") != std::string_view::npos) {
             scene.clear();
             entity.clear();
             Errorf("Entity name has invalid character: '%s'", entity);
