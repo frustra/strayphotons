@@ -54,7 +54,7 @@ namespace sp {
         UnregisterEvents();
         this->guiEntity = guiEntity;
         if (guiEntity) {
-            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [name = this->guiName, guiEntity = this->guiEntity, events = this->events](auto &lock) {
                     ecs::Entity ent = guiEntity;
                     if (!ent.Has<ecs::EventInput>(lock)) {
@@ -80,7 +80,7 @@ namespace sp {
 
     void GuiContext::UnregisterEvents() {
         if (guiEntity) {
-            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(
+            ecs::QueueTransaction<ecs::Write<ecs::EventInput>>(NewDispatchSource,
                 [ent = this->guiEntity, events = this->events](auto &lock) {
                     if (ent.Has<ecs::EventInput>(lock)) {
                         auto &eventInput = ent.Get<ecs::EventInput>(lock);

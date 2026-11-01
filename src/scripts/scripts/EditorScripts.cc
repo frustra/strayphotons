@@ -99,7 +99,8 @@ namespace sp::scripts {
                 auto spawnSceneProperties = scene.data->GetProperties(lock);
 
                 auto sharedEntity = std::make_shared<EntityRef>();
-                GetSceneManager().QueueAction(SceneAction::EditStagingScene,
+                GetSceneManager().QueueAction(NewDispatchSource,
+                    SceneAction::EditStagingScene,
                     scene.data->name,
                     [source = templateSource,
                         transform,
@@ -131,7 +132,8 @@ namespace sp::scripts {
 
                         *sharedEntity = newEntity;
                     });
-                GetSceneManager().QueueAction(SceneAction::ApplyStagingScene,
+                GetSceneManager().QueueAction(NewDispatchSource,
+                    SceneAction::ApplyStagingScene,
                     scene.data->name,
                     [ent, target = event.source, sharedEntity](ecs::Lock<ecs::AddRemove> lock) {
                         ecs::EventBindings::SendEvent(lock,

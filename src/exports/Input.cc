@@ -18,7 +18,8 @@ using namespace sp;
 SP_EXPORT sp_entity_t sp_new_input_device(sp_game_t *ctx, const char *name) {
     Assertf(ctx != nullptr, "sp_new_input_device called with null game ctx");
     ecs::EntityRef inputEntity = ecs::Name("input", name);
-    GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+    GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+        SceneAction::ApplySystemScene,
         "input",
         [&](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
             auto keyboard = scene->NewSystemEntity(lock, scene, inputEntity.Name());

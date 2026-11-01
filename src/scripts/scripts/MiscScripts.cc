@@ -98,7 +98,8 @@ namespace sp::scripts {
 
                 Entity stagingRootId = ent.Get<SceneInfo>(lock).rootStagingId;
 
-                GetSceneManager().QueueAction(SceneAction::ApplySystemScene,
+                GetSceneManager().QueueAction(NewDispatchSource,
+                    SceneAction::ApplySystemScene,
                     state.scope.scene,
                     [stagingRootId,
                         transform,

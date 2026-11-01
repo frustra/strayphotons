@@ -91,9 +91,6 @@ namespace sp::vulkan {
         std::shared_ptr<GuiContext> activeGuiContext;
         AsyncPtr<ImageView> logoTex;
 
-        ecs::ComponentModifiedObserver<ecs::Renderable> renderableObserver;
-        ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
-
         bool listImages = false;
 
         std::vector<glm::mat4> xrRenderPoses;

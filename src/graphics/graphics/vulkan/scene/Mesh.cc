@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -12,10 +12,13 @@
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "strayphotons/Logging.hh"
 
 #include <memory>
+#include <string>
 
 namespace sp::vulkan {
     Mesh::Mesh(std::shared_ptr<const Gltf> source) : modelName(source ? source->name : ""), asset(source) {}
@@ -54,15 +57,15 @@ namespace sp::vulkan {
 
         JointVertex *jointsData = nullptr, *jointsDataStart = nullptr;
 
+        BufferPtr stagingJointsBuffer;
         if (jointsCount > 0) {
             jointsBuffer = scene.jointsBuffer->ArrayAllocate(jointsCount);
-            staging.jointsBuffer = device.AllocateBuffer({sizeof(JointVertex), jointsCount},
+            stagingJointsBuffer = device.AllocateBuffer({sizeof(JointVertex), jointsCount},
                 vk::BufferUsageFlagBits::eTransferSrc,
                 VMA_MEMORY_USAGE_CPU_ONLY);
-            Assertf(jointsBuffer->ByteSize() == staging.jointsBuffer->ByteSize(),
-                "joints staging buffer size mismatch");
+            Assertf(jointsBuffer->ByteSize() == stagingJointsBuffer->ByteSize(), "joints staging buffer size mismatch");
 
-            jointsData = (JointVertex *)staging.jointsBuffer->Mapped();
+            jointsData = (JointVertex *)stagingJointsBuffer->Mapped();
             jointsDataStart = jointsData;
         }
 
@@ -155,7 +158,7 @@ namespace sp::vulkan {
         InlineVector<DeviceContext::BufferTransfer, 5> transfer;
         transfer.emplace_back(staging.indexBuffer, indexBuffer);
         transfer.emplace_back(staging.vertexBuffer, vertexBuffer);
-        if (staging.jointsBuffer) transfer.emplace_back(staging.jointsBuffer, jointsBuffer);
+        if (stagingJointsBuffer) transfer.emplace_back(stagingJointsBuffer, jointsBuffer);
         transfer.emplace_back(staging.primitiveList, primitiveList);
         transfer.emplace_back(staging.modelEntry, modelEntry);
 

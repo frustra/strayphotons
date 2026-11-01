@@ -304,7 +304,7 @@ void sp::ConsoleManager::RegisterCoreCommands() {
                 return;
             }
 
-            auto lock = ecs::QueueTransaction<ecs::WriteAll>([=](auto lock) {
+            auto lock = ecs::QueueTransaction<ecs::WriteAll>(NewDispatchSource, [=](auto lock) {
                 ecs::EntityRef ref(entityName);
                 ecs::Entity ent = ref.Get(lock);
                 if (!comp->HasComponent(lock, ent)) {

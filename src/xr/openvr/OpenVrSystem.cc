@@ -44,8 +44,8 @@ namespace sp::xr {
     OpenVrSystem::~OpenVrSystem() {
         StopThread();
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "system/vr");
-        GetSceneManager().QueueActionAndBlock(SceneAction::RemoveScene, "vr_system");
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::RemoveScene, "system/vr");
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::RemoveScene, "vr_system");
         loaded.clear();
         vrSystem.reset();
     }
@@ -87,7 +87,8 @@ namespace sp::xr {
 
         RegisterModels();
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "vr_system",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 auto vrOrigin = scene->NewSystemEntity(lock, scene, vrOriginEntity.Name());
@@ -128,7 +129,7 @@ namespace sp::xr {
                 }
             });
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene, "system/vr");
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource, SceneAction::ApplySystemScene, "system/vr");
 
         return true;
     }
@@ -310,7 +311,8 @@ namespace sp::xr {
         }
         if (missingEntities) {
             ZoneScopedN("OpenVrSystem::AddMissingEntities");
-            GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+            GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+                SceneAction::ApplySystemScene,
                 "vr_system",
                 [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                     for (auto *entityRef : trackedDevices) {

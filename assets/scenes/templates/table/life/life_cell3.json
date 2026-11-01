@@ -3,7 +3,7 @@
 		"transform": {},
 		"signal_output": {
 			"alive": 0,
-			"age": 100000
+			"age": 10000
 		},
 		"signal_bindings": {
 			"neighbor_count": "scoperoot/neighbor[-1][-1] + scoperoot/neighbor[-1][0] + scoperoot/neighbor[-1][1] + scoperoot/neighbor[0][-1] + scoperoot/neighbor[0][1] + scoperoot/neighbor[1][-1] + scoperoot/neighbor[1][0] + scoperoot/neighbor[1][1]",
@@ -40,7 +40,7 @@
 				"name": "signal_from_signal",
 				"parameters": {
 					"alive": "scoperoot/next_alive",
-					"age": "scoperoot/alive >= scoperoot/next_alive ? scoperoot/age + 1 : 0"
+					"age": "min(10000, scoperoot/alive >= scoperoot/next_alive ? scoperoot/age + 1 : 0)"
 				}
 			},
 			{

@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace sp::vulkan {
@@ -56,7 +57,7 @@ namespace sp::vulkan {
         if (asyncPtr->Ready()) return Add(asyncPtr->Get());
 
         auto i = AllocateTextureIndex();
-        return TextureHandle(i, workQueue.Dispatch<void>(asyncPtr, [this, i](ImageViewPtr view) {
+        return TextureHandle(i, workQueue.Dispatch<void>(NewDispatchSource, asyncPtr, [this, i](ImageViewPtr view) {
             DebugAssertf(view, "TextureSet::Add missing image view");
             textures[i] = view;
             texturesToFlush.push_back(i);
@@ -292,6 +293,7 @@ namespace sp::vulkan {
     }
 
     void TextureSet::Flush() {
+        ZoneScoped;
         workQueue.Flush();
         texturesPendingDelete.clear();
 

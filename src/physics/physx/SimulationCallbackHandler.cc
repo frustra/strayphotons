@@ -7,7 +7,9 @@
 
 #include "SimulationCallbackHandler.hh"
 
+#include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "glm/geometric.hpp"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
 #include "strayphotons/Logging.hh"
@@ -68,10 +70,13 @@ namespace sp {
         auto *userData0 = (ActorUserData *)pairHeader.actors[0]->userData;
         auto *userData1 = (ActorUserData *)pairHeader.actors[1]->userData;
         if (!userData0 || !userData1) return;
+
+        ZoneScopedN("SimulationCallbackHandler::onContact");
         auto thresholdForce0 = userData0->contactReportThreshold >= 0 ? userData0->contactReportThreshold : PX_MAX_F32;
         auto thresholdForce1 = userData1->contactReportThreshold >= 0 ? userData1->contactReportThreshold : PX_MAX_F32;
         float thresholdForce = std::min(thresholdForce0, thresholdForce1);
 
+        // TODO: store this on the local thread so all events can be batched in one transaction
         auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
         PxContactPairExtraDataIterator iter(pairHeader.extraDataStream, pairHeader.extraDataStreamSize);
@@ -91,33 +96,34 @@ namespace sp {
             //     ecs::ToString(lock, shapeUserData0->parent),
             //     ecs::ToString(lock, shapeUserData1->parent));
 
-            const float frameRate = 120.0f;
+            float frameRate = CVarPhysicsFPS.Get();
+            if (frameRate <= 0.0f) frameRate = 120.0f;
             float maxForce = 0.0f;
 
-            const auto *dynamicActor0 = pairHeader.actors[0]->is<PxRigidDynamic>();
+            const PxRigidDynamic *dynamicActor0 = pairHeader.actors[0]->is<PxRigidDynamic>();
             if (dynamicActor0) {
-                glm::vec3 preSolveLinear0 = PxVec3ToGlmVec3(iter.preSolverVelocity->linearVelocity[0]);
-                glm::vec3 postSolveLinear0 = PxVec3ToGlmVec3(iter.postSolverVelocity->linearVelocity[0]);
-                glm::vec3 deltaLinear0 = postSolveLinear0 - preSolveLinear0;
+                glm::vec3 preSolveLinear = PxVec3ToGlmVec3(iter.preSolverVelocity->linearVelocity[0]);
+                glm::vec3 postSolveLinear = PxVec3ToGlmVec3(iter.postSolverVelocity->linearVelocity[0]);
+                glm::vec3 deltaLinear = postSolveLinear - preSolveLinear;
 
-                glm::vec3 preSolveAngular0 = PxVec3ToGlmVec3(iter.preSolverVelocity->angularVelocity[0]);
-                glm::vec3 postSolveAngular0 = PxVec3ToGlmVec3(iter.postSolverVelocity->angularVelocity[0]);
-                glm::vec3 deltaAngular0 = postSolveAngular0 - preSolveAngular0;
+                glm::vec3 preSolveAngular = PxVec3ToGlmVec3(iter.preSolverVelocity->angularVelocity[0]);
+                glm::vec3 postSolveAngular = PxVec3ToGlmVec3(iter.postSolverVelocity->angularVelocity[0]);
+                glm::vec3 deltaAngular = postSolveAngular - preSolveAngular;
 
-                float linearForce = glm::length(deltaLinear0) * dynamicActor0->getMass();
+                float linearForce = glm::length(deltaLinear) * frameRate * dynamicActor0->getMass();
                 float angularTorque = glm::length(
-                    deltaAngular0 * PxVec3ToGlmVec3(dynamicActor0->getMassSpaceInertiaTensor()));
+                    deltaAngular * frameRate * PxVec3ToGlmVec3(dynamicActor0->getMassSpaceInertiaTensor()));
                 if (linearForce > 0 || angularTorque > 0) {
                     // Logf("Actor0 %s shape %u mass %f Linear %f Angular %f",
                     //     ecs::EntityRef(userData0->entity).Name().String(),
                     //     iter.contactPairIndex,
                     //     dynamicActor0->getMass(),
-                    //     linearForce * frameRate,
-                    //     angularTorque * frameRate);
-                    maxForce = std::max({maxForce, linearForce * frameRate, angularTorque * frameRate});
+                    //     linearForce,
+                    //     angularTorque);
+                    maxForce = std::max({maxForce, linearForce, angularTorque});
                 }
             }
-            const auto *dynamicActor1 = pairHeader.actors[1]->is<PxRigidDynamic>();
+            const PxRigidDynamic *dynamicActor1 = pairHeader.actors[1]->is<PxRigidDynamic>();
             if (dynamicActor1) {
                 glm::vec3 preSolveLinear = PxVec3ToGlmVec3(iter.preSolverVelocity->linearVelocity[1]);
                 glm::vec3 postSolveLinear = PxVec3ToGlmVec3(iter.postSolverVelocity->linearVelocity[1]);
@@ -127,17 +133,17 @@ namespace sp {
                 glm::vec3 postSolveAngular = PxVec3ToGlmVec3(iter.postSolverVelocity->angularVelocity[1]);
                 glm::vec3 deltaAngular = postSolveAngular - preSolveAngular;
 
-                float linearForce = glm::length(deltaLinear) * dynamicActor1->getMass();
+                float linearForce = glm::length(deltaLinear * frameRate) * dynamicActor1->getMass();
                 float angularTorque = glm::length(
-                    deltaAngular * PxVec3ToGlmVec3(dynamicActor1->getMassSpaceInertiaTensor()));
+                    deltaAngular * frameRate * PxVec3ToGlmVec3(dynamicActor1->getMassSpaceInertiaTensor()));
                 if (linearForce > 0 || angularTorque > 0) {
                     // Logf("Actor1 %s shape %u mass %f Linear %f Angular %f",
                     //     ecs::EntityRef(userData1->entity).Name().String(),
                     //     iter.contactPairIndex,
                     //     dynamicActor1->getMass(),
-                    //     linearForce * frameRate,
-                    //     angularTorque * frameRate);
-                    maxForce = std::max({maxForce, linearForce * frameRate, angularTorque * frameRate});
+                    //     linearForce,
+                    //     angularTorque);
+                    maxForce = std::max({maxForce, linearForce, angularTorque});
                 }
             }
 

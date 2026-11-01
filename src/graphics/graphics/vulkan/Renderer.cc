@@ -7,7 +7,6 @@
 
 #include "Renderer.hh"
 
-#include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Game.hh"
@@ -31,7 +30,6 @@
 #include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
-#include "graphics/vulkan/scene/Mesh.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/Logging.hh"
@@ -66,22 +64,12 @@ namespace sp::vulkan {
             listImages = true;
         });
 
-        auto lock = ecs::StartTransaction<ecs::AddRemove>();
-        renderableObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Renderable>>();
-        lightObserver = lock.Watch<ecs::ComponentModifiedEvent<ecs::Light>>();
-
         depthStencilFormat = device.SelectSupportedFormat(vk::FormatFeatureFlagBits::eDepthStencilAttachment,
             {vk::Format::eD24UnormS8Uint, vk::Format::eD32SfloatS8Uint, vk::Format::eD16UnormS8Uint});
     }
 
     Renderer::~Renderer() {
         if (!device.RequiresReset()) device->waitIdle();
-
-        {
-            auto lock = ecs::StartTransaction<ecs::AddRemove>();
-            renderableObserver.Stop(lock);
-            lightObserver.Stop(lock);
-        }
     }
 
     void Renderer::AttachWindow(const std::shared_ptr<GuiContext> &context) {

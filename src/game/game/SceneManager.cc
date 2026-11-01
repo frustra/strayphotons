@@ -19,6 +19,7 @@
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "glm/gtx/string_cast.hpp"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 
 #include <algorithm>
@@ -55,25 +56,25 @@ namespace sp {
         funcs.Register<std::string>("loadscene",
             "Load a scene and replace current scenes",
             [this](std::string scenePath) {
-                QueueActionAndBlock(SceneAction::LoadScene, scenePath);
+                QueueActionAndBlock(NewDispatchSource, SceneAction::LoadScene, scenePath);
             });
         funcs.Register<std::string>("addscene", "Load a scene", [this](std::string scenePath) {
-            QueueActionAndBlock(SceneAction::AddScene, scenePath);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::AddScene, scenePath);
         });
         funcs.Register<std::string>("removescene", "Remove a scene", [this](std::string scenePath) {
-            QueueActionAndBlock(SceneAction::RemoveScene, scenePath);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::RemoveScene, scenePath);
         });
         funcs.Register<std::string>("reloadscene", "Reload current scene", [this](std::string scenePath) {
-            QueueActionAndBlock(SceneAction::ReloadScene, scenePath);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::ReloadScene, scenePath);
         });
         funcs.Register("respawn", "Respawn the player", [this]() {
-            QueueActionAndBlock(SceneAction::RespawnPlayer);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::RespawnPlayer);
         });
         funcs.Register("reloadplayer", "Reload player scene", [this]() {
-            QueueActionAndBlock(SceneAction::ReloadPlayer);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::ReloadPlayer);
         });
         funcs.Register("reloadbindings", "Reload input bindings", [this]() {
-            QueueActionAndBlock(SceneAction::ReloadBindings);
+            QueueActionAndBlock(NewDispatchSource, SceneAction::ReloadBindings);
         });
         funcs.Register(this, "printscene", "Print info about currently loaded scenes", &SceneManager::PrintScene);
 
@@ -511,57 +512,66 @@ namespace sp {
         ecs::GetSignalManager().Tick(this->interval);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string_view sceneName, EditSceneCallback callback) {
+    void SceneManager::QueueAction(const DispatchSourceInfo &sourceInfo,
+        SceneAction action,
+        std::string_view sceneName,
+        EditSceneCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
-        actionQueue.emplace_back(action, sceneName, callback);
+        actionQueue.emplace_back(sourceInfo, action, sceneName, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, std::string_view sceneName, EditCallback callback) {
+    void SceneManager::QueueAction(const DispatchSourceInfo &sourceInfo,
+        SceneAction action,
+        std::string_view sceneName,
+        EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
-        actionQueue.emplace_back(action, sceneName, callback);
+        actionQueue.emplace_back(sourceInfo, action, sceneName, callback);
     }
 
-    void SceneManager::QueueAction(SceneAction action, EditCallback callback) {
+    void SceneManager::QueueAction(const DispatchSourceInfo &sourceInfo, SceneAction action, EditCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
-        actionQueue.emplace_back(action, callback);
+        actionQueue.emplace_back(sourceInfo, action, callback);
     }
 
-    void SceneManager::QueueAction(VoidCallback callback) {
+    void SceneManager::QueueAction(const DispatchSourceInfo &sourceInfo, VoidCallback callback) {
         std::lock_guard lock(actionMutex);
         if (state != ThreadState::Started) return;
-        actionQueue.emplace_back(SceneAction::RunCallback, callback);
+        actionQueue.emplace_back(sourceInfo, SceneAction::RunCallback, callback);
     }
 
-    void SceneManager::QueueActionAndBlock(SceneAction action, std::string_view sceneName, EditSceneCallback callback) {
+    void SceneManager::QueueActionAndBlock(const DispatchSourceInfo &sourceInfo,
+        SceneAction action,
+        std::string_view sceneName,
+        EditSceneCallback callback) {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
             if (state != ThreadState::Started) return;
-            auto &entry = actionQueue.emplace_back(action, sceneName, callback);
+            auto &entry = actionQueue.emplace_back(sourceInfo, action, sceneName, callback);
             future = entry.promise.get_future();
         }
         try {
             future.get();
         } catch (const std::future_error &) {
-            Abortf("SceneManager action did not complete: %s(%s)", action, sceneName);
+            Abortf("SceneManager %s action on %s did not complete: %s", action, sceneName, sourceInfo.String());
         }
     }
 
-    void SceneManager::QueueActionAndBlock(VoidCallback callback) {
+    void SceneManager::QueueActionAndBlock(const DispatchSourceInfo &sourceInfo, VoidCallback callback) {
         std::future<void> future;
         {
             std::lock_guard lock(actionMutex);
             if (state != ThreadState::Started) return;
-            auto &entry = actionQueue.emplace_back(SceneAction::RunCallback, callback);
+            auto &entry = actionQueue.emplace_back(sourceInfo, SceneAction::RunCallback, callback);
             future = entry.promise.get_future();
         }
         try {
             future.get();
         } catch (const std::future_error &) {
-            Abortf("SceneManager action did not complete");
+            Abortf("SceneManager action did not complete: %s", sourceInfo.String());
         }
     }
 

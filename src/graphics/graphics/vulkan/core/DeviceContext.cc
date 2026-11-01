@@ -4,10 +4,10 @@
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+#include <chrono>
 #define VULKAN_HPP_USE_REFLECT
 
 #include "DeviceContext.hh"
-
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/Image.hh"
@@ -874,11 +874,11 @@ namespace sp::vulkan {
     void DeviceContext::EndFrame() {
         if (vkRenderer) vkRenderer->EndFrame();
 
-        allocatorQueue.Dispatch<void>([this]() {
+        allocatorQueue.Dispatch<void>(NewDispatchSource, [this]() {
             Thread().ReleaseAvailableResources();
         });
 
-        frameEndQueue.Flush();
+        frameEndQueue.Flush(false, std::chrono::milliseconds(5));
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 
@@ -1049,7 +1049,7 @@ namespace sp::vulkan {
 
     AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const InitialData &data, vk::BufferUsageFlags usage) {
         if (!data.data) return nullptr;
-        return allocatorQueue.Dispatch<Buffer>([data, usage, this] {
+        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [data, usage, this] {
             vk::BufferCreateInfo bufferInfo = {};
             bufferInfo.size = data.dataSize;
             bufferInfo.usage = usage;
@@ -1067,7 +1067,7 @@ namespace sp::vulkan {
     AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
         vk::BufferCreateInfo bufferInfo,
         VmaAllocationCreateInfo allocInfo) {
-        return allocatorQueue.Dispatch<Buffer>([=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
             return buf;
@@ -1077,7 +1077,7 @@ namespace sp::vulkan {
     AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
         vk::BufferUsageFlags usage,
         VmaMemoryUsage residency) {
-        return allocatorQueue.Dispatch<Buffer>([=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
             auto buf = AllocateBuffer(data.dataSize, usage, residency);
             buf->CopyFrom(data.data, data.dataSize);
             return buf;
@@ -1126,7 +1126,7 @@ namespace sp::vulkan {
 
         transferCmd->End();
 
-        return frameEndQueue.Dispatch<void>([this, transferCmd]() {
+        return frameEndQueue.Dispatch<void>(NewDispatchSource, [this, transferCmd]() {
             auto cmd = transferCmd;
             Submit(cmd);
         });
@@ -1211,7 +1211,7 @@ namespace sp::vulkan {
             }
         }
 
-        auto futImage = allocatorQueue.Dispatch<Image>([this, createInfo, declaredUsage]() {
+        auto futImage = allocatorQueue.Dispatch<Image>(NewDispatchSource, [this, createInfo, declaredUsage]() {
             auto actualCreateInfo = createInfo.GetVkCreateInfo();
             auto formatInfo = createInfo.GetVkFormatList();
             if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
@@ -1223,7 +1223,7 @@ namespace sp::vulkan {
             futImage = UpdateImage(futImage, uploadBuffer, genMipmap && !genFactor);
 
             if (genFactor) {
-                futImage = frameEndQueue.Dispatch<Image>(futImage, [=, this](ImagePtr image) {
+                futImage = frameEndQueue.Dispatch<Image>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
                     if (!image) return std::shared_ptr<Image>();
 
                     ZoneScopedN("ApplyFactor");
@@ -1303,72 +1303,65 @@ namespace sp::vulkan {
     AsyncPtr<Image> DeviceContext::UpdateImage(const AsyncPtr<Image> &dstImage,
         const AsyncPtr<Buffer> &srcBuffer,
         bool updateMipmap) {
-        auto futImage = frameEndQueue.Dispatch<Image>(dstImage,
-            srcBuffer,
-            [updateMipmap, this](ImagePtr image, BufferPtr stagingBuf) {
-                if (!image) return std::shared_ptr<Image>();
+        auto futImage = frameEndQueue.Dispatch<
+            Image>(NewDispatchSource, dstImage, srcBuffer, [updateMipmap, this](ImagePtr image, BufferPtr stagingBuf) {
+            if (!image) return std::shared_ptr<Image>();
 
-                ZoneScopedN("PrepareImage");
-                auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+            ZoneScopedN("PrepareImage");
+            auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
 
-                ImageBarrierInfo transferToTransferAsync = {};
-                transferToTransferAsync.srcQueueFamilyIndex = image->LastQueueFamily();
-                transferToTransferAsync.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-                auto waitSemaphore = image->GetWaitSemaphore(transferToTransferAsync.dstQueueFamilyIndex);
-                if (transferToTransferAsync.srcQueueFamilyIndex == transferToTransferAsync.dstQueueFamilyIndex ||
-                    transferToTransferAsync.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                    transferToTransferAsync.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    transferToTransferAsync.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            ImageBarrierInfo transferToTransferAsync = {};
+            transferToTransferAsync.srcQueueFamilyIndex = image->LastQueueFamily();
+            transferToTransferAsync.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
+            auto waitSemaphore = image->GetWaitSemaphore(transferToTransferAsync.dstQueueFamilyIndex);
+            if (transferToTransferAsync.srcQueueFamilyIndex == transferToTransferAsync.dstQueueFamilyIndex ||
+                transferToTransferAsync.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
+                transferToTransferAsync.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                transferToTransferAsync.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            }
+
+            transferCmd->ImageBarrier(image,
+                vk::ImageLayout::eTransferDstOptimal,
+                vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite,
+                transferToTransferAsync);
+
+            vk::BufferImageCopy region;
+            region.bufferOffset = 0;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+            region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
+            region.imageSubresource.mipLevel = 0;
+            region.imageSubresource.baseArrayLayer = 0;
+            region.imageSubresource.layerCount = 1;
+            region.imageOffset = vk::Offset3D{0, 0, 0};
+            region.imageExtent = image->Extent();
+
+            transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
+
+            auto fence = transferCmd->Fence();
+            PushInFlightObject(stagingBuf, fence);
+            auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
+                transferToTransferAsync.dstQueueFamilyIndex);
+            {
+                ZoneScopedN("CopyBufferToImage");
+                if (waitSemaphore) {
+                    Submit(transferCmd, {transferComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
+                } else {
+                    Submit(transferCmd, {transferComplete}, {}, {});
                 }
+            }
 
-                transferCmd->ImageBarrier(image,
-                    vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferWrite,
-                    transferToTransferAsync);
-
-                vk::BufferImageCopy region;
-                region.bufferOffset = 0;
-                region.bufferRowLength = 0;
-                region.bufferImageHeight = 0;
-                region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
-                region.imageSubresource.mipLevel = 0;
-                region.imageSubresource.baseArrayLayer = 0;
-                region.imageSubresource.layerCount = 1;
-                region.imageOffset = vk::Offset3D{0, 0, 0};
-                region.imageExtent = image->Extent();
-
-                transferCmd->Raw().copyBufferToImage(*stagingBuf,
-                    *image,
-                    vk::ImageLayout::eTransferDstOptimal,
-                    {region});
-
-                auto fence = transferCmd->Fence();
-                PushInFlightObject(stagingBuf, fence);
-                auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                    transferToTransferAsync.dstQueueFamilyIndex);
-                {
-                    ZoneScopedN("CopyBufferToImage");
-                    if (waitSemaphore) {
-                        Submit(transferCmd,
-                            {transferComplete},
-                            {waitSemaphore},
-                            {vk::PipelineStageFlagBits::eTransfer});
-                    } else {
-                        Submit(transferCmd, {transferComplete}, {}, {});
-                    }
-                }
-
-                if (!updateMipmap) transferImageQueueType(*this, image);
-                return image;
-            });
+            if (!updateMipmap) transferImageQueueType(*this, image);
+            return image;
+        });
         if (updateMipmap) futImage = UpdateImageMipmap(futImage);
         return futImage;
     }
 
     AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const AsyncPtr<Image> &image) {
         ZoneScoped;
-        return frameEndQueue.Dispatch<Image>(image, [this](ImagePtr image) {
+        return frameEndQueue.Dispatch<Image>(NewDispatchSource, image, [this](ImagePtr image) {
             if (!image) return std::shared_ptr<Image>();
             auto graphicsCmd = GetFencedCommandContext(CommandContextType::General); // TODO: Add GraphicsAsync
 
@@ -1506,7 +1499,7 @@ namespace sp::vulkan {
         ZoneScoped;
         auto futImage = CreateImage(imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageView>(futImage, [=, this](ImagePtr image) {
+        return allocatorQueue.Dispatch<ImageView>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
             auto viewI = viewInfo;
             viewI.image = image;
             return CreateImageView(viewI);
@@ -1515,7 +1508,8 @@ namespace sp::vulkan {
 
     AsyncPtr<ImageView> DeviceContext::LoadAssetImage(std::string_view path, bool genMipmap, bool srgb) {
         auto futImage = Assets().LoadImage(path);
-        return allocatorQueue.Dispatch<ImageView>(futImage,
+        return allocatorQueue.Dispatch<ImageView>(NewDispatchSource,
+            futImage,
             [this, path = AssetPath(path), genMipmap, srgb](std::shared_ptr<sp::Image> image) {
                 if (!image) {
                     Warnf("Missing asset image: %s", path);

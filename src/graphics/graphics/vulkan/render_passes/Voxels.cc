@@ -583,6 +583,7 @@ namespace sp::vulkan::renderer {
             !CVarEnableVoxels2.Get()) {
             return;
         }
+        if (!graph.HasResource("Voxels/FragmentListMetadata")) return;
 
         ZoneScoped;
         auto scope = graph.Scope("Voxels2");

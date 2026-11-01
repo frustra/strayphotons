@@ -87,14 +87,15 @@ namespace sp::vulkan::renderer {
             InlineVector<ecs::Entity, MAX_LIGHT_SENSORS> sensorEntities(data->gpu.sensorCount);
             std::copy_n(illuminanceValues, data->gpu.sensorCount, sensorValues.data());
             std::copy_n(data->entities, data->gpu.sensorCount, sensorEntities.data());
-            ecs::QueueTransaction<ecs::Write<ecs::LightSensor>>([sensorValues, sensorEntities](auto &lock) {
-                for (size_t i = 0; i < sensorValues.size(); i++) {
-                    if (sensorEntities[i].Has<ecs::LightSensor>(lock)) {
-                        auto &sensor = sensorEntities[i].Get<ecs::LightSensor>(lock);
-                        sensor.illuminance = sensorValues[i];
+            ecs::QueueTransaction<ecs::Write<ecs::LightSensor>>(NewDispatchSource,
+                [sensorValues, sensorEntities](auto &lock) {
+                    for (size_t i = 0; i < sensorValues.size(); i++) {
+                        if (sensorEntities[i].Has<ecs::LightSensor>(lock)) {
+                            auto &sensor = sensorEntities[i].Get<ecs::LightSensor>(lock);
+                            sensor.illuminance = sensorValues[i];
+                        }
                     }
-                }
-            });
+                });
         });
     }
 } // namespace sp::vulkan::renderer

@@ -8,7 +8,6 @@
 #pragma once
 
 #include "console/CFunc.hh"
-#include "ecs/components/Renderable.hh"
 #include "graphics/vulkan/scene/GPUScene.hh"
 
 namespace sp::vulkan::renderer {

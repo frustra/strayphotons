@@ -157,7 +157,7 @@ namespace ecs {
         });
         if (!refsToFree.empty()) {
             ZoneScopedN("FreeSignals");
-            QueueTransaction<Write<Signals>>([refsToFree](const Lock<Write<Signals>> &lock) {
+            QueueTransaction<Write<Signals>>(NewDispatchSource, [refsToFree](const Lock<Write<Signals>> &lock) {
                 auto &signals = lock.Get<Signals>();
                 for (auto &refPtr : refsToFree) {
                     signals.FreeSignal(lock, refPtr->index);

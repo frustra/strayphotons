@@ -44,7 +44,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+    const uint32_t MAX_FRAMES_IN_FLIGHT = 3;
 
     class DescriptorPool;
     class PerfTimer;
@@ -241,7 +241,7 @@ namespace sp::vulkan {
 
         template<typename CallbackFn>
         void ExecuteAfterFence(vk::Fence fence, CallbackFn &&callback) {
-            frameBeginQueue.Dispatch<void>([this, callback, fence]() {
+            frameBeginQueue.Dispatch<void>(NewDispatchSource, [this, callback, fence]() {
                 if (device->getFenceStatus(fence) == vk::Result::eSuccess) {
                     callback();
                 } else {

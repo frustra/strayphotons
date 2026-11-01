@@ -41,7 +41,7 @@ namespace sp {
     using namespace physx;
 
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
-    static CVar<uint32_t> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
+    CVar<uint32_t> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
 
     PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
         : RegisteredThread("PhysX", CVarPhysicsFPS.Get(), true), windowInputQueue(windowInputQueue),
@@ -88,7 +88,8 @@ namespace sp {
             this->Pause(false);
         });
 
-        GetSceneManager().QueueActionAndBlock(SceneAction::ApplySystemScene,
+        GetSceneManager().QueueActionAndBlock(NewDispatchSource,
+            SceneAction::ApplySystemScene,
             "physx",
             [this](ecs::Lock<ecs::AddRemove> lock, std::shared_ptr<Scene> scene) {
                 ecs::Entity ent = scene->NewSystemEntity(lock, scene, debugLineEntity.Name());
@@ -549,19 +550,20 @@ namespace sp {
                 set = cache.Load(settings->name);
                 if (set) return set;
 
-                set = workQueue.Dispatch<ConvexHullSet>([this, modelPtr, settingsPtr, name = settings->name]() {
-                    ZoneScopedN("LoadConvexHullSet::Dispatch");
-                    ZoneStr(name);
+                set = workQueue.Dispatch<ConvexHullSet>(NewDispatchSource,
+                    [this, modelPtr, settingsPtr, name = settings->name]() {
+                        ZoneScopedN("LoadConvexHullSet::Dispatch");
+                        ZoneStr(name);
 
-                    auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
-                    if (set) return set;
+                        auto set = hullgen::LoadCollisionCache(*pxSerialization, modelPtr, settingsPtr);
+                        if (set) return set;
 
-                    Logf("Updating physics collision cache: %s", name);
-                    set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
-                    hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
+                        Logf("Updating physics collision cache: %s", name);
+                        set = hullgen::BuildConvexHulls(*pxCooking, *pxPhysics, modelPtr, settingsPtr);
+                        hullgen::SaveCollisionCache(*pxSerialization, modelPtr, settingsPtr, *set);
 
-                    return set;
-                });
+                        return set;
+                    });
                 cache.Register(settings->name, set);
             }
         }

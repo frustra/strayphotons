@@ -247,7 +247,7 @@ namespace sp {
                 if (asset) return asset;
             }
 
-            asset = workQueue.Dispatch<Asset>([this, path = AssetPath(path), type] {
+            asset = workQueue.Dispatch<Asset>(NewDispatchSource, [this, path = AssetPath(path), type] {
                 ZoneScopedN("LoadAsset");
                 ZoneStr(path);
                 std::ifstream in;
@@ -313,13 +313,15 @@ namespace sp {
                 asset = Load(path, AssetType::External);
             }
 
-            gltf = workQueue.Dispatch<Gltf>(asset, [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
-                if (!asset) {
-                    Logf("Gltf not found: %s", name);
-                    return std::shared_ptr<Gltf>();
-                }
-                return std::make_shared<Gltf>(name, asset);
-            });
+            gltf = workQueue.Dispatch<Gltf>(NewDispatchSource,
+                asset,
+                [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
+                    if (!asset) {
+                        Logf("Gltf not found: %s", name);
+                        return std::shared_ptr<Gltf>();
+                    }
+                    return std::make_shared<Gltf>(name, asset);
+                });
             loadedGltfs.Register(name, gltf);
             if (shutdown.load()) StartThread();
         }
@@ -356,7 +358,8 @@ namespace sp {
                 auto path = FindPhysicsByName(name);
                 if (!path.empty()) asset = Load(path, AssetType::Bundled);
 
-                physicsInfo = workQueue.Dispatch<PhysicsInfo>(asset,
+                physicsInfo = workQueue.Dispatch<PhysicsInfo>(NewDispatchSource,
+                    asset,
                     [name = AssetName(name)](std::shared_ptr<const Asset> asset) {
                         // PhysicsInfo handles missing asset internally
                         return std::make_shared<PhysicsInfo>(name, asset);
@@ -374,7 +377,8 @@ namespace sp {
 
         auto physicsInfo = LoadPhysicsInfo(modelName);
 
-        return workQueue.Dispatch<HullSettings>(physicsInfo,
+        return workQueue.Dispatch<HullSettings>(NewDispatchSource,
+            physicsInfo,
             [modelName = AssetName(modelName), meshName = AssetName(meshName)](
                 std::shared_ptr<const PhysicsInfo> physicsInfo) {
                 if (!physicsInfo) {
@@ -397,13 +401,15 @@ namespace sp {
                 if (image) return image;
 
                 auto asset = Load(path);
-                image = workQueue.Dispatch<Image>(asset, [path = AssetPath(path)](std::shared_ptr<const Asset> asset) {
-                    if (!asset) {
-                        Logf("Image not found: %s", path);
-                        return std::shared_ptr<Image>();
-                    }
-                    return std::make_shared<Image>(asset);
-                });
+                image = workQueue.Dispatch<Image>(NewDispatchSource,
+                    asset,
+                    [path = AssetPath(path)](std::shared_ptr<const Asset> asset) {
+                        if (!asset) {
+                            Logf("Image not found: %s", path);
+                            return std::shared_ptr<Image>();
+                        }
+                        return std::make_shared<Image>(asset);
+                    });
 
                 loadedImages.Register(path, image);
             }
