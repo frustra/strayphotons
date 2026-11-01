@@ -26,7 +26,7 @@ namespace sp {
         LockFreeMutex mutex;
         std::map<ecs::Name, TreeNode> entityTree;
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
-        const ecs::ComponentBase *selectedComponent = nullptr;
+        int selectedComponent = -1;
         SceneRef scene;
         ecs::SignalRef selectedSignal;
         const ecs::ScriptDefinition *selectedScript = nullptr;
@@ -52,7 +52,6 @@ namespace sp {
 
         template<typename T>
         bool AddImGuiElement(const std::string &name, T &value);
-        template<typename T>
         void AddFieldControls(const ecs::StructField &field, const ecs::ComponentBase &comp, const void *component);
     };
 

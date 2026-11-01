@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -14,19 +14,11 @@
 
 namespace ecs {
     uint32_t GetFieldTypeIndex(const std::type_index &idx) {
-        if (idx == typeid(void)) return 0;
-        return GetFieldType(idx, [](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-            return GetFieldTypeIndex<T>();
-        });
+        return detail::GetFieldTypeIndex((FieldTypes *)nullptr, (ECS *)nullptr, idx);
     }
 
     std::type_index GetFieldTypeIndex(uint32_t typeIndex) {
-        if (typeIndex == 0) return typeid(void);
-        return GetFieldType(typeIndex, [](auto *typePtr) {
-            using T = std::remove_pointer_t<decltype(typePtr)>;
-            return std::type_index(typeid(T));
-        });
+        return detail::GetFieldTypeIndex((FieldTypes *)nullptr, (ECS *)nullptr, typeIndex);
     }
 
     typedef std::map<std::type_index, const StructMetadata *> MetadataTypeMap;

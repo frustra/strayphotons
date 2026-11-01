@@ -9,30 +9,8 @@
 
 #include "assets/JsonHelpers.hh"
 #include "ecs/Ecs.hh"
+#include "ecs/EcsImpl.hh"
 #include "ecs/StructFieldTypes.hh"
-
-namespace detail {
-    template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
-    void ForEachComponentType(ECSType<AllComponentTypes...> *, Func &&callback) {
-        ( // For each component:
-            [&] {
-                using T = AllComponentTypes;
-
-                if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
-                    // Skip
-                } else if constexpr (!Tecs::is_global_component<T>()) {
-                    callback((T *)nullptr);
-                }
-            }(),
-            ...);
-    }
-
-    // Calls the provided auto-lambda for all components except Name and SceneInfo
-    template<typename Func>
-    void ForEachComponentType(Func &&callback) {
-        ForEachComponentType((ecs::ECS *)nullptr, std::forward<Func>(callback));
-    }
-} // namespace detail
 
 struct SchemaContext {
     picojson::object definitions;
@@ -63,17 +41,20 @@ struct SchemaContext {
     void SaveSchema() {
         picojson::object entityProperties;
 
-        auto &nameComp = ecs::LookupComponent<ecs::Name>();
-        sp::json::SaveSchema<ecs::Name>(entityProperties[nameComp.name]);
-        detail::ForEachComponentType([&](auto *typePtr) {
+        sp::json::SaveSchema<ecs::Name>(entityProperties[ecs::ComponentName.name]);
+        ecs::ForEachComponentType([&](auto *typePtr) {
             using T = std::remove_pointer_t<decltype(typePtr)>;
 
-            auto &comp = ecs::LookupComponent<T>();
-            sp::json::SchemaTypeReferences references;
-            sp::json::SaveSchema<T>(entityProperties[comp.name], &references);
+            if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
+                // Skip
+            } else if constexpr (!Tecs::is_global_component<T>()) {
+                auto &comp = ecs::LookupComponent<T>();
+                sp::json::SchemaTypeReferences references;
+                sp::json::SaveSchema<T>(entityProperties[comp.name], &references);
 
-            for (auto *metadata : references) {
-                if (metadata) AddDefinition(*metadata);
+                for (auto *metadata : references) {
+                    if (metadata) AddDefinition(*metadata);
+                }
             }
         });
 

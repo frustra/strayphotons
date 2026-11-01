@@ -19,7 +19,7 @@ namespace sp::scripts {
     struct RelativeMovement {
         EntityRef targetEntity, referenceEntity;
 
-        void OnLogicTick(ScriptState &state,
+        void OnPhysicsTick(ScriptState &state,
             Lock<ReadSignalsLock, Read<TransformTree>, Write<Signals>> lock,
             Entity ent,
             chrono_clock::duration interval) {

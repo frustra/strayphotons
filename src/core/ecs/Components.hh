@@ -40,40 +40,11 @@ namespace ecs {
             const EntityScope &scope,
             picojson::value &dst,
             const Entity &src) const = 0;
-        virtual void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const = 0;
-        virtual void SetComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &dst,
-            const FlatEntity &src) const = 0;
-        virtual void MoveComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &dst,
-            FlatEntity &&src) const = 0;
-        virtual void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const = 0;
         virtual bool HasComponent(const Lock<> &lock, Entity ent) const = 0;
-        virtual bool HasComponent(const FlatEntity &ent) const = 0;
         virtual const void *Access(const DynamicLock<> &lock, Entity ent) const = 0;
         virtual void *AccessMut(const DynamicLock<> &lock, Entity ent) const = 0;
         virtual const void *GetLiveDefault() const = 0;
         virtual const void *GetStagingDefault() const = 0;
-
-        template<typename T>
-        void ApplyComponent(T &dst, const T &src, bool liveTarget) const {
-            if constexpr (Tecs::is_global_component<T>()) {
-                dynamic_cast<const GlobalComponent<T> *>(this)->ApplyComponent(dst, src, liveTarget);
-            } else {
-                dynamic_cast<const EntityComponent<T> *>(this)->ApplyComponent(dst, src, liveTarget);
-            }
-        }
-
-        template<typename T>
-        const T &GetStagingDefault() const {
-            if constexpr (Tecs::is_global_component<T>()) {
-                return *static_cast<const T *>(dynamic_cast<const GlobalComponent<T> *>(this)->GetStagingDefault());
-            } else {
-                return *static_cast<const T *>(dynamic_cast<const EntityComponent<T> *>(this)->GetStagingDefault());
-            }
-        }
 
         std::string name;
         StructMetadata metadata;
@@ -83,42 +54,27 @@ namespace ecs {
     const ComponentBase *LookupComponent(std::string_view name);
     const ComponentBase *LookupComponent(const std::type_index &idx);
 
-    // Calls the provided function for all components except Name and SceneInfo
-    void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback);
-
     template<typename T, std::enable_if_t<Tecs::is_global_component<T>::value, int> = 0>
     const GlobalComponent<T> &LookupComponent() {
-        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        static const auto *ptr = dynamic_cast<const GlobalComponent<T> *>(LookupComponent(std::type_index(typeid(T))));
         Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *dynamic_cast<const GlobalComponent<T> *>(ptr);
+        return *ptr;
     }
 
     template<typename T, std::enable_if_t<!Tecs::is_global_component<T>::value, int> = 0>
     const EntityComponent<T> &LookupComponent() {
-        auto ptr = LookupComponent(std::type_index(typeid(T)));
+        static const auto *ptr = dynamic_cast<const EntityComponent<T> *>(LookupComponent(std::type_index(typeid(T))));
         Assertf(ptr != nullptr, "Couldn't lookup component type: %s", typeid(T).name());
-        return *dynamic_cast<const EntityComponent<T> *>(ptr);
+        return *ptr;
     }
 
     template<typename CompType>
-    class EntityComponent : public ComponentBase {
-    private:
-        const CompType defaultLiveComponent = {};
-        const CompType defaultStagingComponent;
+    void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget);
 
-        CompType makeDefaultStagingComponent(const StructMetadata &metadata) {
-            static const CompType defaultComp = {};
-            CompType comp = {};
-            for (auto &field : metadata.fields) {
-                field.InitUndefined(&comp, &defaultComp);
-            }
-            StructMetadata::InitUndefined(comp);
-            return comp;
-        }
-
+    template<typename CompType>
+    class EntityComponent final : public ComponentBase {
     public:
-        EntityComponent(StructMetadata &&metadata, const char *name)
-            : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
+        EntityComponent(StructMetadata &&metadata, const char *name) : ComponentBase(name, std::move(metadata)) {
             auto existing = dynamic_cast<const EntityComponent<CompType> *>(LookupComponent(std::string(name)));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
@@ -144,26 +100,14 @@ namespace ecs {
             picojson::value &dst,
             const Entity &src) const override;
 
-        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const;
-        void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const override;
-        void SetComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &dst,
-            const FlatEntity &src) const override;
-        void MoveComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &dst,
-            FlatEntity &&src) const override;
-        void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
         bool HasComponent(const Lock<> &lock, Entity ent) const override;
-        bool HasComponent(const FlatEntity &ent) const override;
-
         const void *Access(const DynamicLock<> &lock, Entity ent) const override;
         void *AccessMut(const DynamicLock<> &lock, Entity ent) const override;
 
         const void *GetLiveDefault() const override;
         const void *GetStagingDefault() const override;
-        const CompType &StagingDefault() const;
+        static const CompType &LiveDefault();
+        static const CompType &StagingDefault();
 
         bool operator==(const EntityComponent<CompType> &other) const {
             return name == other.name && metadata == other.metadata;
@@ -177,27 +121,15 @@ namespace ecs {
         static void Apply(CompType &dst, const CompType &src, bool liveTarget) {
             // Custom field apply is always called, default to no-op.
         }
+
+        template<typename T>
+        friend void ApplyComponent(T &, const T &, bool);
     };
 
     template<typename CompType>
-    class GlobalComponent : public ComponentBase {
-    private:
-        const CompType defaultLiveComponent = {};
-        const CompType defaultStagingComponent;
-
-        CompType makeDefaultStagingComponent(const StructMetadata &metadata) {
-            static const CompType defaultComp = {};
-            CompType comp = {};
-            for (auto &field : metadata.fields) {
-                field.InitUndefined(&comp, &defaultComp);
-            }
-            StructMetadata::InitUndefined(comp);
-            return comp;
-        }
-
+    class GlobalComponent final : public ComponentBase {
     public:
-        GlobalComponent(StructMetadata &&metadata, const char *name)
-            : ComponentBase(name, std::move(metadata)), defaultStagingComponent(makeDefaultStagingComponent(metadata)) {
+        GlobalComponent(StructMetadata &&metadata, const char *name) : ComponentBase(name, std::move(metadata)) {
             auto existing = dynamic_cast<const GlobalComponent<CompType> *>(LookupComponent(name));
             if (existing == nullptr) {
                 RegisterComponent(name, std::type_index(typeid(CompType)), this);
@@ -217,35 +149,19 @@ namespace ecs {
         }
 
         bool LoadFields(CompType &dst, const picojson::value &src) const;
-
         bool LoadEntity(FlatEntity &, const picojson::value &) const override {
             return false;
         }
-
         void SaveEntity(const Lock<ReadAll> &, const EntityScope &, picojson::value &, const Entity &) const override {}
 
-        void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const;
-
-        void SetComponent(const Lock<AddRemove> &lock, const EntityScope &scope, const Entity &dst) const override;
-        void SetComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &,
-            const FlatEntity &src) const override;
-        void MoveComponent(const Lock<AddRemove> &lock,
-            const EntityScope &scope,
-            const Entity &,
-            FlatEntity &&src) const override;
-        void UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const override;
-
         bool HasComponent(const Lock<> &lock, Entity) const override;
-        bool HasComponent(const FlatEntity &ent) const override;
-
         const void *Access(const DynamicLock<> &lock, Entity) const override;
         void *AccessMut(const DynamicLock<> &lock, Entity) const override;
 
         const void *GetLiveDefault() const override;
         const void *GetStagingDefault() const override;
-        const CompType &StagingDefault() const;
+        static const CompType &LiveDefault();
+        static const CompType &StagingDefault();
 
         bool operator==(const GlobalComponent<CompType> &other) const {
             return name == other.name && metadata == other.metadata;
@@ -259,5 +175,8 @@ namespace ecs {
         static void Apply(CompType &dst, const CompType &src, bool liveTarget) {
             // Custom field apply is always called, default to no-op.
         }
+
+        template<typename T>
+        friend void ApplyComponent(T &, const T &, bool);
     };
 }; // namespace ecs

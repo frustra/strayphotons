@@ -106,6 +106,7 @@ namespace ecs {
                 // Create a new script instance so references to the old scope remain valid.
                 dst.state = dst.state->CloneInstance(false);
             }
+            dst.state->scope = scope;
 
             auto context = dst.state->definition.context.lock();
             if (context) {

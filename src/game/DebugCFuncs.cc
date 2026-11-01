@@ -131,12 +131,18 @@ namespace sp {
                 auto &name = entity.Get<ecs::Name>(lock);
                 components["name"] = picojson::value(name.String());
             }
-            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                if (comp.HasComponent(lock, entity)) {
-                    if (comp.metadata.fields.empty()) {
-                        components[comp.name].set<picojson::object>({});
+            ecs::ForEachComponentType([&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
+                if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
+                    // Skip
+                } else if constexpr (!Tecs::is_global_component<T>()) {
+                    if (entity.Has<T>(lock)) {
+                        auto &comp = ecs::LookupComponent<T>();
+                        if (comp.metadata.fields.empty()) {
+                            components[comp.name].template set<picojson::object>({});
+                        }
+                        comp.SaveEntity(lock, scope, components[comp.name], entity);
                     }
-                    comp.SaveEntity(lock, scope, components[comp.name], entity);
                 }
             });
             auto val = picojson::value(components);

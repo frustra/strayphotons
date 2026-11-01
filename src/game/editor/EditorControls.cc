@@ -6,12 +6,19 @@
  */
 
 #include "EditorControlsImpl.hh"
+#include "ecs/Components.hh"
+#include "ecs/Ecs.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/Name.hh"
+#include "ecs/components/SceneProperties.hh"
+#include "ecs/components/Signals.hh"
 #include "game/SceneManager.hh"
 #include "strayphotons/Defer.hh"
+#include "strayphotons/InlineVector.hh"
 
 #include <mutex>
 #include <shared_mutex>
+#include <type_traits>
 
 namespace sp {
     void EditorContext::RefreshEntityTree() {
@@ -412,46 +419,55 @@ namespace sp {
 
         if (ecs::IsLive(lock)) AddLiveSignalControls(lock, targetEntity);
 
-        std::vector<const ecs::ComponentBase *> missingComponents;
-        ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-            ZoneScopedN("ShowEntityControls::ForEachComponent");
-            ZoneStr(name);
-            if (!comp.HasComponent(lock, this->target)) {
-                if (!comp.IsGlobal() && name != "scene_properties") {
-                    if (ecs::IsLive(lock) && (name == "signal_output" || name == "signal_bindings")) return;
-                    missingComponents.push_back(&comp);
-                }
-                return;
-            }
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap;
-            if (name != "scene_properties") flags |= ImGuiTreeNodeFlags_DefaultOpen;
-            bool open = ImGui::CollapsingHeader(name.c_str(), flags);
-            ImGui::SameLine(ImGui::GetColumnWidth() - 8);
-            std::string removeLabel = "X##" + name;
-            if (ImGui::Button(removeLabel.c_str())) {
-                if (IsLive(lock)) {
-                    ecs::QueueTransaction<ecs::AddRemove>(NewDispatchSource,
-                        [target = this->target, &comp](auto &lock) {
+        struct MissingComponent {
+            const char *name = nullptr;
+            std::function<void(const ecs::Lock<ecs::AddRemove> &, const ecs::EntityScope &)> setComponent;
+        };
+        InlineVector<MissingComponent, ecs::ECS::GetComponentCount()> missingComponents;
+        ecs::ForEachComponentType([&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
+                // Skip
+            } else if constexpr (!Tecs::is_global_component<T>()) {
+                ZoneScopedN("ShowEntityControls::ForEachComponent");
+                auto &comp = ecs::LookupComponent<T>();
+                ZoneStr(comp.name);
+                if (!target.Has<T>(lock)) {
+                    if (std::is_same_v<T, ecs::SceneProperties>) return;
+                    if (ecs::IsLive(lock) &&
+                        (std::is_same_v<T, ecs::SignalOutput> || std::is_same_v<T, ecs::SignalBindings>)) {
+                        return;
+                    }
+                    missingComponents.emplace_back(comp.name.c_str(),
+                        [target = this->target](const ecs::Lock<ecs::AddRemove> &lock, const ecs::EntityScope &scope) {
                             if (!target.Exists(lock)) return;
-                            comp.UnsetComponent(lock, target);
+                            auto &comp = target.Set<T>(lock);
+                            scope::SetScope(comp, scope);
                         });
-                } else {
-                    ecs::QueueStagingTransaction<ecs::AddRemove>(NewDispatchSource,
-                        [target = this->target, &comp](auto &lock) {
-                            if (!target.Exists(lock)) return;
-                            comp.UnsetComponent(lock, target);
-                        });
+                    return;
                 }
-            }
-            if (open) {
-                const void *component = comp.Access(lock, this->target);
-                for (auto &field : comp.metadata.fields) {
-                    ecs::GetFieldType(field.type, [&](auto *typePtr) {
-                        using T = std::remove_pointer_t<decltype(typePtr)>;
-                        if constexpr (std::is_default_constructible<T>()) {
-                            AddFieldControls<T>(field, comp, component);
-                        }
-                    });
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap;
+                if (!std::is_same_v<T, ecs::SceneProperties>) flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                bool open = ImGui::CollapsingHeader(comp.name.c_str(), flags);
+                ImGui::SameLine(ImGui::GetColumnWidth() - 8);
+                std::string removeLabel = "X##" + comp.name;
+                if (ImGui::Button(removeLabel.c_str())) {
+                    if (IsLive(lock)) {
+                        ecs::QueueTransaction<ecs::AddRemove>(NewDispatchSource, [target = this->target](auto &lock) {
+                            if (target.Exists(lock)) target.Unset<T>(lock);
+                        });
+                    } else {
+                        ecs::QueueStagingTransaction<ecs::AddRemove>(NewDispatchSource,
+                            [target = this->target](auto &lock) {
+                                if (target.Exists(lock)) target.Unset<T>(lock);
+                            });
+                    }
+                }
+                if (open) {
+                    const T *component = &target.Get<T>(lock);
+                    for (auto &field : comp.metadata.fields) {
+                        AddFieldControls(field, comp, component);
+                    }
                 }
             }
         });
@@ -459,8 +475,13 @@ namespace sp {
             ImGui::Dummy(ImVec2(0, 6));
             ImGui::Separator();
             ImGui::Dummy(ImVec2(0, 6));
-            if (!selectedComponent) ImGui::BeginDisabled();
-            if (ImGui::Button("Add##addComponentButton") && selectedComponent) {
+            const char *selectedName;
+            if (selectedComponent < 0 || selectedComponent >= missingComponents.size()) {
+                ImGui::BeginDisabled();
+                ImGui::Button("Add##addComponentButton");
+                ImGui::EndDisabled();
+                selectedName = "...";
+            } else if (ImGui::Button("Add##addComponentButton")) {
                 ecs::EntityScope scope(scene.data->name, "");
                 if (target.Has<ecs::SceneInfo>(lock)) {
                     auto &targetSceneInfo = target.Get<ecs::SceneInfo>(lock);
@@ -468,27 +489,25 @@ namespace sp {
                 }
                 if (IsLive(lock)) {
                     ecs::QueueTransaction<ecs::AddRemove>(NewDispatchSource,
-                        [target = this->target, comp = selectedComponent, scope](auto &lock) {
-                            if (!target.Exists(lock)) return;
-                            comp->SetComponent(lock, scope, target);
+                        [comp = missingComponents[selectedComponent], scope](auto &lock) {
+                            comp.setComponent(lock, scope);
                         });
                 } else {
                     ecs::QueueStagingTransaction<ecs::AddRemove>(NewDispatchSource,
-                        [target = this->target, comp = selectedComponent, scope](auto &lock) {
-                            if (!target.Exists(lock)) return;
-                            comp->SetComponent(lock, scope, target);
+                        [comp = missingComponents[selectedComponent], scope](auto &lock) {
+                            comp.setComponent(lock, scope);
                         });
                 }
-                selectedComponent = nullptr;
-            } else if (!selectedComponent) {
-                ImGui::EndDisabled();
+                selectedComponent = -1;
+                selectedName = "...";
+            } else {
+                selectedName = missingComponents[selectedComponent].name;
             }
             ImGui::SameLine();
-            if (ImGui::BeginCombo("##componentSelector", selectedComponent ? selectedComponent->name.c_str() : "...")) {
-                for (auto *comp : missingComponents) {
-                    bool isSelected = comp == selectedComponent;
-                    if (ImGui::Selectable(comp->name.c_str(), isSelected)) {
-                        selectedComponent = comp;
+            if (ImGui::BeginCombo("##componentSelector", selectedName)) {
+                for (size_t i = 0; i < missingComponents.size(); i++) {
+                    if (ImGui::Selectable(missingComponents[i].name, i == selectedComponent)) {
+                        selectedComponent = i;
                     }
                 }
                 ImGui::EndCombo();
@@ -702,5 +721,68 @@ namespace sp {
                 }
             }
         }
+    }
+
+    void EditorContext::AddFieldControls(const StructField &field, const ComponentBase &comp, const void *component) {
+        ecs::GetFieldType(field.type, [&](auto *typePtr) {
+            using T = std::remove_pointer_t<decltype(typePtr)>;
+            if constexpr (std::is_default_constructible<T>() && std::is_copy_constructible<T>()) {
+                T value = field.Access<T>(component);
+                fieldName = field.name;
+                fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
+                std::string elementName = fieldName + fieldId;
+
+                bool valueChanged = false;
+                bool isDefined = true;
+                if constexpr (std::equality_comparable<T>) {
+                    if (IsStaging(target)) {
+                        auto defaultLiveComponent = comp.GetLiveDefault();
+                        auto defaultStagingComponent = comp.GetStagingDefault();
+                        auto &defaultValue = field.Access<T>(defaultLiveComponent);
+                        auto &undefinedValue = field.Access<T>(defaultStagingComponent);
+                        if (defaultValue != undefinedValue) {
+                            isDefined = value != undefinedValue;
+                            if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
+                                // Value has already been toggled by ImGui at this point
+                                if (!isDefined) {
+                                    value = undefinedValue;
+                                } else {
+                                    value = defaultValue;
+                                }
+                                valueChanged = true;
+                            }
+                            if (isDefined) ImGui::SameLine();
+                        }
+                    }
+                }
+                if (isDefined) {
+                    if (AddImGuiElement(elementName, value)) valueChanged = true;
+                }
+
+                if (valueChanged) {
+                    if (IsLive(target)) {
+                        QueueTransaction<WriteAll>(NewDispatchSource,
+                            [target = this->target, value, &comp, &field](auto &lock) {
+                                void *component = comp.AccessMut(lock, target);
+                                field.Access<T>(component) = value;
+                                if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
+                                    for (const Entity &ent : lock.template EntitiesWith<Scripts>()) {
+                                        if (!ent.Has<Scripts>(lock)) continue;
+                                        GetScriptManager().RegisterActive(lock, ent);
+                                    }
+                                }
+                            });
+                    } else if (scene) {
+                        QueueStagingTransaction<WriteAll>(NewDispatchSource,
+                            [target = this->target, value, &comp, &field](auto &lock) {
+                                void *component = comp.AccessMut(lock, target);
+                                field.Access<T>(component) = value;
+                            });
+                    } else {
+                        Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
+                    }
+                }
+            }
+        });
     }
 } // namespace sp

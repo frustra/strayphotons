@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2025 Jacob Wirth
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -13,6 +13,7 @@
 #include "ecs/components/Focus.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapString.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/InlineVector.hh"
 
 #include <memory>
@@ -118,17 +119,18 @@ namespace ecs {
             OneInputOperation,
             TwoInputOperation,
             DeciderOperation>;
-        struct Node : public NodeVariant {
+        struct Node final : public NodeVariant {
             sp::HeapString text;
             CompiledFunc evaluate = nullptr;
             sp::InlineVector<SignalNodePtr, 3> childNodes;
-            std::vector<WeakNodePtr> references;
+            sp::HeapVector<WeakNodePtr> references;
             bool uncacheable = false;
 
             template<typename T>
             Node(T &&arg, std::string_view text, std::initializer_list<SignalNodePtr> childNodes = {})
                 : NodeVariant(arg), text(text) {
                 this->childNodes.insert(this->childNodes.end(), childNodes.begin(), childNodes.end());
+                // TODO: Make ComponentNode and FocusCondition cacheable
                 if constexpr (std::is_same<T, IdentifierNode>() || std::is_same<T, ComponentNode>() ||
                               std::is_same<T, FocusCondition>()) {
                     uncacheable = true;

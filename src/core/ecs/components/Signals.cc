@@ -14,6 +14,7 @@
 #include "strayphotons/HeapString.hh"
 #include "strayphotons/Logging.hh"
 
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 namespace ecs {
@@ -206,14 +207,13 @@ namespace ecs {
         }
     }
 
-    thread_local bool signalsModified = false;
+    thread_local size_t signalsModified = 0;
 
     void Signals::MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index) {
         DebugZoneScoped;
         auto &signals = lock.Get<Signals>();
-        if (!signalsModified) {
+        if (!signalsModified++) {
             signals.dirtyIndices.clear();
-            signalsModified = true;
             signals.changeCount++;
         }
         Assertf(index < signals.signals.size(), "Signals::MarkStorageDirty index out of range");
@@ -223,15 +223,16 @@ namespace ecs {
     void Signals::BeforeCommit(const Lock<Write<Signals>, ReadSignalsLock> &lock) {
         if (!signalsModified) return;
         ZoneScopedN("UpdateDirtySignals");
-        auto &signals = lock.Get<const ecs::Signals>().signals;
-        for (size_t index = 0; index < signals.size(); index++) {
-            auto &signal = signals[index];
+        ZoneValue(signalsModified);
+        auto &signals = lock.Get<const ecs::Signals>();
+        for (size_t index : signals.dirtyIndices) {
+            auto &signal = signals.signals[index];
             if (signal.ref && signal.lastValueDirty) signal.ref.UpdateDirtySubscribers(lock);
         }
     }
 
     void Signals::AfterCommit() {
-        signalsModified = false;
+        signalsModified = 0;
     }
 
     Signals &Signals::operator=(const Signals &other) {

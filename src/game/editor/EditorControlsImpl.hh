@@ -570,67 +570,6 @@ namespace sp {
         return changed;
     }
 
-    template<typename T>
-    void EditorContext::AddFieldControls(const StructField &field, const ComponentBase &comp, const void *component) {
-        if constexpr (std::is_copy_constructible<T>()) {
-            T value = field.Access<T>(component);
-            fieldName = field.name;
-            fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
-            std::string elementName = fieldName + fieldId;
-
-            bool valueChanged = false;
-            bool isDefined = true;
-            if constexpr (std::equality_comparable<T>) {
-                if (IsStaging(target)) {
-                    auto defaultLiveComponent = comp.GetLiveDefault();
-                    auto defaultStagingComponent = comp.GetStagingDefault();
-                    auto &defaultValue = field.Access<T>(defaultLiveComponent);
-                    auto &undefinedValue = field.Access<T>(defaultStagingComponent);
-                    if (defaultValue != undefinedValue) {
-                        isDefined = value != undefinedValue;
-                        if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
-                            // Value has already been toggled by ImGui at this point
-                            if (!isDefined) {
-                                value = undefinedValue;
-                            } else {
-                                value = defaultValue;
-                            }
-                            valueChanged = true;
-                        }
-                        if (isDefined) ImGui::SameLine();
-                    }
-                }
-            }
-            if (isDefined) {
-                if (AddImGuiElement(elementName, value)) valueChanged = true;
-            }
-
-            if (valueChanged) {
-                if (IsLive(target)) {
-                    QueueTransaction<WriteAll>(NewDispatchSource,
-                        [target = this->target, value, &comp, &field](auto &lock) {
-                            void *component = comp.AccessMut(lock, target);
-                            field.Access<T>(component) = value;
-                            if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
-                                for (const Entity &ent : lock.template EntitiesWith<Scripts>()) {
-                                    if (!ent.Has<Scripts>(lock)) continue;
-                                    GetScriptManager().RegisterActive(lock, ent);
-                                }
-                            }
-                        });
-                } else if (scene) {
-                    QueueStagingTransaction<WriteAll>(NewDispatchSource,
-                        [target = this->target, value, &comp, &field](auto &lock) {
-                            void *component = comp.AccessMut(lock, target);
-                            field.Access<T>(component) = value;
-                        });
-                } else {
-                    Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
-                }
-            }
-        }
-    }
-
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     void CopyToStaging(Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> staging,
         Lock<ReadAll> live,
@@ -706,7 +645,7 @@ namespace sp {
                     T compareComp = {};
                     auto &existingComp = std::get<std::optional<T>>(flatParentEntity);
                     if (existingComp) {
-                        comp.ApplyComponent(compareComp, *existingComp, true);
+                        ApplyComponent<T>(compareComp, *existingComp, true);
                     }
 
                     picojson::value tmp;
@@ -718,7 +657,11 @@ namespace sp {
                                 comp.name,
                                 ToString(staging, stagingId));
                         } else {
-                            comp.MoveComponent(staging, scope, stagingId, std::move(flatStagingEntity));
+                            auto &&opt = std::get<std::optional<T>>(flatStagingEntity);
+                            if (opt) {
+                                auto &comp = stagingId.Set<T>(staging, std::move(*opt));
+                                scope::SetScope(comp, scope);
+                            }
                         }
                     } else if (existingComp) {
                         if (stagingId.Has<T>(staging)) stagingId.Unset<T>(staging);

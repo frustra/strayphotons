@@ -13,9 +13,6 @@
 #include <cstring>
 #include <ecs/EcsImpl.hh>
 #include <ecs/StructFieldTypes.hh>
-#include <fstream>
-#include <iostream>
-#include <memory>
 #include <source_location>
 
 template<typename T>
@@ -119,7 +116,7 @@ std::string TypeToString() {
     }
 }
 
-std::string TypeToString(std::type_index type) {
+inline std::string TypeToString(std::type_index type) {
     if (type == typeid(void)) return "void";
     return ecs::GetFieldType(type, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
@@ -127,7 +124,7 @@ std::string TypeToString(std::type_index type) {
     });
 }
 
-std::string TypeToString(uint32_t typeIndex) {
+inline std::string TypeToString(uint32_t typeIndex) {
     return ecs::GetFieldType(typeIndex, [&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;
         return TypeToString<T>();

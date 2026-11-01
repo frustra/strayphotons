@@ -8,8 +8,45 @@
 #pragma once
 
 #include "Components.hh"
+#include "Tecs_permissions.hh"
+#include "ecs/StructMetadata.hh"
 
 namespace ecs {
+    namespace detail {
+        template<typename T>
+        T makeDefaultStagingComponent(const StructMetadata &metadata) {
+            static const T defaultComp = {};
+            T comp = {};
+            for (auto &field : metadata.fields) {
+                field.InitUndefined(&comp, &defaultComp);
+            }
+            StructMetadata::InitUndefined(comp);
+            return comp;
+        }
+    } // namespace detail
+
+    template<typename CompType>
+    void ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) {
+        static const StructMetadata &metadata = LookupComponent<CompType>().metadata;
+        const void *defaultComponent;
+        if constexpr (Tecs::is_global_component<CompType>()) {
+            defaultComponent = liveTarget ? &GlobalComponent<CompType>::LiveDefault()
+                                          : &GlobalComponent<CompType>::StagingDefault();
+        } else {
+            defaultComponent = liveTarget ? &EntityComponent<CompType>::LiveDefault()
+                                          : &EntityComponent<CompType>::StagingDefault();
+        }
+        // Merge existing component with a new one
+        for (auto &field : metadata.fields) {
+            field.Apply(&dst, &src, defaultComponent);
+        }
+        if constexpr (Tecs::is_global_component<CompType>()) {
+            GlobalComponent<CompType>::Apply(dst, src, liveTarget);
+        } else {
+            EntityComponent<CompType>::Apply(dst, src, liveTarget);
+        }
+    }
+
     template<typename CompType>
     bool EntityComponent<CompType>::LoadFields(CompType &dst, const picojson::value &src) const {
         for (auto &field : metadata.fields) {
@@ -23,7 +60,7 @@ namespace ecs {
 
     template<typename CompType>
     bool EntityComponent<CompType>::LoadEntity(FlatEntity &dst, const picojson::value &src) const {
-        CompType comp = defaultStagingComponent;
+        CompType comp = StagingDefault();
         if (!LoadFields(comp, src)) return false;
         if (StructMetadata::Load<CompType>(comp, src)) {
             std::get<std::optional<CompType>>(dst) = std::move(comp);
@@ -41,72 +78,20 @@ namespace ecs {
 
         if (IsLive(lock)) {
             for (auto &field : metadata.fields) {
-                field.Save(scope, dst, &comp, &defaultLiveComponent);
+                field.Save(scope, dst, &comp, &LiveDefault());
             }
-            StructMetadata::Save<CompType>(scope, dst, comp, &defaultLiveComponent);
+            StructMetadata::Save<CompType>(scope, dst, comp, &LiveDefault());
         } else {
             for (auto &field : metadata.fields) {
-                field.Save(scope, dst, &comp, &defaultStagingComponent);
+                field.Save(scope, dst, &comp, &StagingDefault());
             }
-            StructMetadata::Save<CompType>(scope, dst, comp, &defaultStagingComponent);
+            StructMetadata::Save<CompType>(scope, dst, comp, &StagingDefault());
         }
-    }
-
-    template<typename CompType>
-    void EntityComponent<CompType>::ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
-        const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
-        // Merge existing component with a new one
-        for (auto &field : metadata.fields) {
-            field.Apply(&dst, &src, &defaultComponent);
-        }
-        Apply(dst, src, liveTarget);
-    }
-
-    template<typename CompType>
-    void EntityComponent<CompType>::SetComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst) const {
-        auto &comp = dst.Set<CompType>(lock);
-        scope::SetScope(comp, scope);
-    }
-
-    template<typename CompType>
-    void EntityComponent<CompType>::SetComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst,
-        const FlatEntity &src) const {
-        auto &opt = std::get<std::optional<CompType>>(src);
-        if (opt) {
-            auto &comp = dst.Set<CompType>(lock, *opt);
-            scope::SetScope(comp, scope);
-        }
-    }
-
-    template<typename CompType>
-    void EntityComponent<CompType>::MoveComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst,
-        FlatEntity &&src) const {
-        auto &&opt = std::get<std::optional<CompType>>(src);
-        if (opt) {
-            auto &comp = dst.Set<CompType>(lock, std::move(*opt));
-            scope::SetScope(comp, scope);
-        }
-    }
-
-    template<typename CompType>
-    void EntityComponent<CompType>::UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const {
-        dst.Unset<CompType>(lock);
     }
 
     template<typename CompType>
     bool EntityComponent<CompType>::HasComponent(const Lock<> &lock, Entity ent) const {
         return ent.Has<CompType>(lock);
-    }
-
-    template<typename CompType>
-    bool EntityComponent<CompType>::HasComponent(const FlatEntity &ent) const {
-        return (bool)std::get<std::optional<CompType>>(ent);
     }
 
     template<typename CompType>
@@ -129,16 +114,24 @@ namespace ecs {
 
     template<typename CompType>
     const void *EntityComponent<CompType>::GetLiveDefault() const {
-        return &defaultLiveComponent;
+        return &LiveDefault();
     }
 
     template<typename CompType>
     const void *EntityComponent<CompType>::GetStagingDefault() const {
-        return &defaultStagingComponent;
+        return &StagingDefault();
     }
 
     template<typename CompType>
-    const CompType &EntityComponent<CompType>::StagingDefault() const {
+    const CompType &EntityComponent<CompType>::LiveDefault() {
+        static const CompType defaultLiveComponent = {};
+        return defaultLiveComponent;
+    }
+
+    template<typename CompType>
+    const CompType &EntityComponent<CompType>::StagingDefault() {
+        static const CompType defaultStagingComponent = detail::makeDefaultStagingComponent<CompType>(
+            LookupComponent<CompType>().metadata);
         return defaultStagingComponent;
     }
 
@@ -154,60 +147,8 @@ namespace ecs {
     }
 
     template<typename CompType>
-    void GlobalComponent<CompType>::ApplyComponent(CompType &dst, const CompType &src, bool liveTarget) const {
-        const auto &defaultComponent = liveTarget ? defaultLiveComponent : defaultStagingComponent;
-        // Merge existing component with a new one
-        for (auto &field : metadata.fields) {
-            field.Apply(&dst, &src, &defaultComponent);
-        }
-        Apply(dst, src, liveTarget);
-    }
-
-    template<typename CompType>
-    void GlobalComponent<CompType>::SetComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst) const {
-        auto &comp = lock.Set<CompType>();
-        scope::SetScope(comp, scope);
-    }
-
-    template<typename CompType>
-    void GlobalComponent<CompType>::SetComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst,
-        const FlatEntity &src) const {
-        auto &opt = std::get<std::optional<CompType>>(src);
-        if (opt) {
-            auto &comp = lock.Set<CompType>(*opt);
-            scope::SetScope(comp, scope);
-        }
-    }
-
-    template<typename CompType>
-    void GlobalComponent<CompType>::MoveComponent(const Lock<AddRemove> &lock,
-        const EntityScope &scope,
-        const Entity &dst,
-        FlatEntity &&src) const {
-        auto &&opt = std::get<std::optional<CompType>>(src);
-        if (opt) {
-            auto &comp = lock.Set<CompType>(std::move(*opt));
-            scope::SetScope(comp, scope);
-        }
-    }
-
-    template<typename CompType>
-    void GlobalComponent<CompType>::UnsetComponent(const Lock<AddRemove> &lock, const Entity &dst) const {
-        lock.Unset<CompType>();
-    }
-
-    template<typename CompType>
     bool GlobalComponent<CompType>::HasComponent(const Lock<> &lock, Entity) const {
         return lock.Has<CompType>();
-    }
-
-    template<typename CompType>
-    bool GlobalComponent<CompType>::HasComponent(const FlatEntity &ent) const {
-        return (bool)std::get<std::optional<CompType>>(ent);
     }
 
     template<typename CompType>
@@ -230,16 +171,24 @@ namespace ecs {
 
     template<typename CompType>
     const void *GlobalComponent<CompType>::GetLiveDefault() const {
-        return &defaultLiveComponent;
+        return &LiveDefault();
     }
 
     template<typename CompType>
     const void *GlobalComponent<CompType>::GetStagingDefault() const {
-        return &defaultStagingComponent;
+        return &StagingDefault();
     }
 
     template<typename CompType>
-    const CompType &GlobalComponent<CompType>::StagingDefault() const {
+    const CompType &GlobalComponent<CompType>::LiveDefault() {
+        static const CompType defaultLiveComponent = {};
+        return defaultLiveComponent;
+    }
+
+    template<typename CompType>
+    const CompType &GlobalComponent<CompType>::StagingDefault() {
+        static const CompType defaultStagingComponent = detail::makeDefaultStagingComponent<CompType>(
+            LookupComponent<CompType>().metadata);
         return defaultStagingComponent;
     }
 }; // namespace ecs

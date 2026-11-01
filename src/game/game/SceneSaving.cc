@@ -8,9 +8,11 @@
 #include "assets/Asset.hh"
 #include "assets/AssetManager.hh"
 #include "assets/JsonHelpers.hh"
+#include "ecs/Components.hh"
 #include "ecs/ComponentsImpl.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/SceneProperties.hh"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
 #include "game/SceneImpl.hh"
@@ -47,21 +49,17 @@ namespace sp {
 
                 if constexpr (std::is_same_v<T, SceneProperties>) {
                     if (!flatComp) {
-                        flatComp = LookupComponent<SceneProperties>().StagingDefault();
+                        flatComp = ComponentSceneProperties.StagingDefault();
                     }
 
                     Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
                     auto properties = stagingInfo.scene.data->GetProperties(staging);
                     properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
                     properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
-                    LookupComponent<SceneProperties>().ApplyComponent(*flatComp, properties, false);
+                    ApplyComponent<SceneProperties>(*flatComp, properties, false);
                 } else if constexpr (!Tecs::is_global_component<T>()) {
                     if (stagingId.Has<T>(staging)) {
-                        if (!flatComp) {
-                            const ComponentBase *comp = LookupComponent(typeid(T));
-                            Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            flatComp = comp->GetStagingDefault<T>();
-                        }
+                        if (!flatComp) flatComp = EntityComponent<T>::StagingDefault();
 
                         if constexpr (std::is_same_v<T, TransformTree> || std::is_same_v<T, Animation>) {
                             auto transform = stagingId.Get<TransformTree>(staging);
@@ -78,7 +76,7 @@ namespace sp {
                                     }
                                 }
 
-                                LookupComponent<TransformTree>().ApplyComponent(*flatComp, transform, false);
+                                ApplyComponent<TransformTree>(*flatComp, transform, false);
                             } else {
                                 auto animation = stagingId.Get<Animation>(staging);
 
@@ -95,11 +93,11 @@ namespace sp {
                                     }
                                 }
 
-                                LookupComponent<Animation>().ApplyComponent(*flatComp, animation, false);
+                                ApplyComponent<Animation>(*flatComp, animation, false);
                             }
                         } else {
                             auto &srcComp = stagingId.Get<T>(staging);
-                            LookupComponent<T>().ApplyComponent(*flatComp, srcComp, false);
+                            ApplyComponent<T>(*flatComp, srcComp, false);
                         }
                     }
                 }
@@ -148,29 +146,27 @@ namespace sp {
                         auto stagingBindings = BuildFlatComponent<SignalBindings>(staging, sceneInfo.rootStagingId);
 
                         if (liveOutputs) {
-                            const EntityComponent<SignalOutput> &base = LookupComponent<SignalOutput>();
-                            auto &value = components[base.name];
+                            auto &value = components[ComponentSignalOutput.name];
                             SignalOutput *outputsPtr = nullptr;
                             if (stagingOutputs) outputsPtr = &stagingOutputs.value();
-                            for (const StructField &field : base.metadata.fields) {
+                            for (const StructField &field : ComponentSignalOutput.metadata.fields) {
                                 field.Save(scope, value, &liveOutputs.value(), outputsPtr);
                             }
                             StructMetadata::Save<SignalOutput>(scope, value, liveOutputs.value(), outputsPtr);
                             if (value.is<picojson::null>()) {
-                                components.erase(base.name);
+                                components.erase(ComponentSignalOutput.name);
                             }
                         }
                         if (liveBindings) {
-                            const EntityComponent<SignalBindings> &base = LookupComponent<SignalBindings>();
-                            auto &value = components[base.name];
+                            auto &value = components[ComponentSignalBindings.name];
                             SignalBindings *bindingsPtr = nullptr;
                             if (stagingBindings) bindingsPtr = &stagingBindings.value();
-                            for (const StructField &field : base.metadata.fields) {
+                            for (const StructField &field : ComponentSignalBindings.metadata.fields) {
                                 field.Save(scope, value, &liveBindings.value(), bindingsPtr);
                             }
                             StructMetadata::Save<SignalBindings>(scope, value, liveBindings.value(), bindingsPtr);
                             if (value.is<picojson::null>()) {
-                                components.erase(base.name);
+                                components.erase(ComponentSignalBindings.name);
                             }
                         }
                     }
@@ -184,7 +180,7 @@ namespace sp {
                         T *compPtr = nullptr;
                         T flatComp = {};
                         if (stagingComp) {
-                            base.ApplyComponent(flatComp, *stagingComp, true);
+                            ApplyComponent<T>(flatComp, *stagingComp, true);
                             compPtr = &flatComp;
                         }
                         if constexpr (std::is_same_v<T, TransformTree>) {
@@ -245,14 +241,20 @@ namespace sp {
                         json::Save(scope, components["name"], name);
                     }
                 }
-                ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
-                    if (name == "scene_properties") return;
-                    if (comp.HasComponent(staging, e)) {
-                        auto &value = components[comp.name];
-                        if (comp.metadata.fields.empty() || value.is<picojson::null>()) {
-                            value.set<picojson::object>({});
+                ForEachComponentType([&](auto *typePtr) {
+                    using T = std::remove_pointer_t<decltype(typePtr)>;
+                    if constexpr (std::is_same_v<T, Name> || std::is_same_v<T, SceneInfo> ||
+                                  std::is_same_v<T, SceneProperties>) {
+                        // Skip
+                    } else if constexpr (!Tecs::is_global_component<T>()) {
+                        if (e.Has<T>(staging)) {
+                            auto &comp = ecs::LookupComponent<T>();
+                            auto &value = components[comp.name];
+                            if (comp.metadata.fields.empty() || value.template is<picojson::null>()) {
+                                value.template set<picojson::object>({});
+                            }
+                            comp.SaveEntity(staging, scope, value, e);
                         }
-                        comp.SaveEntity(staging, scope, value, e);
                     }
                 });
                 entities.emplace_back(components);

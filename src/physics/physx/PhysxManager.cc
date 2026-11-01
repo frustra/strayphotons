@@ -259,7 +259,7 @@ namespace sp {
                     ecs::Signals>,
                 ecs::ReadPrevious>();
 
-            GameLogic::UpdateInputEvents(lock, windowInputQueue);
+            ecs::EventScriptManager::UpdateInputEvents(lock, windowInputQueue);
 
             characterControlSystem.Frame(lock);
 

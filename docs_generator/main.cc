@@ -92,10 +92,14 @@ int main(int argc, char **argv) {
     }
 
     std::vector<std::string> otherGroup;
-    auto &nameComp = ecs::LookupComponent<ecs::Name>();
-    otherGroup.emplace_back(nameComp.name);
-    ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &) {
-        otherGroup.emplace_back(name);
+    otherGroup.emplace_back(ecs::ComponentName.name);
+    ecs::ForEachComponentType([&](auto *typePtr) {
+        using T = std::remove_pointer_t<decltype(typePtr)>;
+        if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
+            // Skip
+        } else if constexpr (!Tecs::is_global_component<T>()) {
+            otherGroup.emplace_back(ecs::LookupComponent<T>().name);
+        }
     });
 
     try {

@@ -241,6 +241,18 @@ namespace ecs {
     static inline bool IsStaging(const Lock<> &lock) noexcept {
         return lock.GetInstance().GetInstanceId() == StagingWorld().GetInstanceId();
     }
+
+    namespace detail {
+        template<typename Fn, typename... Tn, template<typename...> typename Type>
+        void ForEachType(Type<Tn...> *, Fn &&callback) {
+            (std::invoke(callback, (Tn *)nullptr), ...);
+        }
+    } // namespace detail
+
+    template<typename Fn>
+    void ForEachComponentType(Fn &&callback) {
+        detail::ForEachType((ECS *)nullptr, std::forward<Fn>(callback));
+    }
 }; // namespace ecs
 
 TECS_NAME_COMPONENT(ecs::Name, "Name");

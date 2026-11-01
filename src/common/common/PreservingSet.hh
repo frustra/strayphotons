@@ -100,6 +100,7 @@ namespace sp {
             InlineVector<size_t, 10000> cleanupList;
             {
                 std::shared_lock lock(mutex);
+                ZoneValue(storage.size());
                 for (size_t i = 0; i < storage.size(); i++) {
                     auto &timed = storage[i];
                     if (timed.ptr.use_count() == 0) continue; // Weak ptr empty
@@ -113,6 +114,8 @@ namespace sp {
                 }
             }
             if (cleanupList.size() > 0) {
+                ZoneScopedN("TickCleanup");
+                ZoneValue(cleanupList.size());
                 std::unique_lock lock(mutex);
 
                 for (size_t &i : cleanupList) {

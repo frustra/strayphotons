@@ -123,12 +123,12 @@ namespace sp::scripts {
                     newEntity.Set<TransformTree>(lock, transform);
                     newEntity.Set<TransformSnapshot>(lock, transform);
                     if (!modelName.empty()) {
-                        Renderable newRenderable = LookupComponent<Renderable>().StagingDefault();
+                        Renderable newRenderable = ComponentRenderable.StagingDefault();
                         newRenderable.modelName = modelName;
                         newRenderable.meshIndex = 0;
                         newEntity.Set<Renderable>(lock, newRenderable);
 
-                        Physics newPhysics = LookupComponent<Physics>().StagingDefault();
+                        Physics newPhysics = ComponentPhysics.StagingDefault();
                         newPhysics.shapes = {PhysicsShape::ConvexMesh(modelName)};
                         newEntity.Set<Physics>(lock, newPhysics);
                     }
