@@ -134,8 +134,8 @@ namespace sp {
             ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4());
             picojson::value jsonValue;
             json::Save({}, jsonValue, value);
-            if (!fieldName.empty()) ImGui::Text("%s:", fieldName.c_str());
             std::string serializedValue = jsonValue.serialize(true);
+            if (!fieldName.empty()) serializedValue = fieldName + ": " + serializedValue;
             trim_right(serializedValue);
             std::string textName = "##" + name;
             float lines = 1 + std::count(serializedValue.begin(), serializedValue.end(), '\n');
