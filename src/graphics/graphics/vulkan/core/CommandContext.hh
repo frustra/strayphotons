@@ -10,7 +10,9 @@
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <bit>
 #include <glm/glm.hpp>
@@ -54,6 +56,11 @@ namespace sp::vulkan {
         // false skips checking and saving the image layout,
         // caller must set the image's layout before passing the image to other code
         bool trackImageLayout = true;
+    };
+
+    struct BufferBarrierInfo {
+        uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     };
 
     const size_t MAX_VIEWPORTS = 4;
@@ -133,6 +140,18 @@ namespace sp::vulkan {
             vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
             vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
             const ImageBarrierInfo &options = {});
+
+        void BufferBarrier(const BufferPtr &buffer,
+            vk::PipelineStageFlags srcStages, // ensuring any buffer accesses in these stages
+            vk::AccessFlags srcAccess, // of these types (usually writes) are complete and visible.
+            vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
+            vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
+            const BufferBarrierInfo &options = {});
+
+        void BufferBarrier(const BufferPtr &buffer,
+            vk::PipelineStageFlags dstStages, // Block work in these stages until the transition is complete,
+            vk::AccessFlags dstAccess, // but only block these access types (can be reads or writes).
+            const BufferBarrierInfo &options = {});
 
         // Sets the shaders for arbitrary stages. Any stages not defined in `shaders` will be unset.
         void SetShaders(std::initializer_list<std::pair<ShaderStage, std::string_view>> shaders);

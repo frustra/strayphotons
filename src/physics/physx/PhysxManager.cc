@@ -20,10 +20,14 @@
 #include "ecs/ScriptManager.hh"
 #include "ecs/components/CharacterController.hh"
 #include "ecs/components/Physics.hh"
+#include "ecs/components/VoxelData.hh"
+#include "game/Game.hh"
 #include "game/GameLogic.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
+#include "graphics/MeshGenerator.hh"
 #include "physx/ForceConstraint.hh"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/Logging.hh"
 
 #include <MurmurHash3.h>
@@ -35,6 +39,7 @@
 #include <glm/ext/matrix_relational.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include <memory>
+#include <string_view>
 #include <variant>
 
 namespace sp {
@@ -43,8 +48,8 @@ namespace sp {
     CVar<bool> CVarPhysxDebugCollision("x.DebugColliders", false, "Show physx colliders");
     CVar<uint32_t> CVarPhysicsFPS("x.PhysicsFPS", 144, "Target frame rate for physics to run");
 
-    PhysxManager::PhysxManager(LockFreeEventQueue<ecs::Event> &windowInputQueue)
-        : RegisteredThread("PhysX", CVarPhysicsFPS.Get(), true), windowInputQueue(windowInputQueue),
+    PhysxManager::PhysxManager(Game &game)
+        : RegisteredThread("PhysX", CVarPhysicsFPS.Get(), true), game(game), windowInputQueue(game.inputEventQueue),
           characterControlSystem(*this), constraintSystem(*this), physicsQuerySystem(*this), laserSystem(*this),
           animationSystem(*this), workQueue("PhysXHullLoading") {
         Logf("PhysX %d.%d.%d starting up",
@@ -123,7 +128,9 @@ namespace sp {
         actors.clear();
         subActors.clear();
         scene.reset();
-        cache.DropAll();
+        activeConvexHulls.DropAll();
+        activeHullSettings.DropAll();
+        activeModels.DropAll();
 
         if (dispatcher) {
             dispatcher->release();
@@ -175,9 +182,29 @@ namespace sp {
                 auto &ph = ent.Get<ecs::Physics>(lock);
                 for (auto &shape : ph.shapes) {
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
-                    if (!mesh || !mesh->model || !mesh->hullSettings) continue;
-                    if (mesh->model->Ready() && mesh->hullSettings->Ready()) {
-                        auto set = LoadConvexHullSet(mesh->model, mesh->hullSettings);
+                    if (!mesh) continue;
+                    auto model = LoadModel(mesh->modelName);
+                    auto hullSettings = LoadHullSettings(mesh->modelName, mesh->meshName);
+                    if (mesh->modelName.empty() && ent.Has<ecs::VoxelData>(lock) && game.meshGenerator) {
+                        auto &voxelData = ent.Get<ecs::VoxelData>(lock);
+                        auto voxelModelName = voxelData.algorithm + "." + std::to_string(voxelData.seed);
+                        model = activeModels.Load(voxelModelName);
+                        if (!model) {
+                            model = game.meshGenerator->GenerateMesh(voxelData);
+                            activeModels.Register(voxelModelName, model);
+                        }
+                        if (!hullSettings) {
+                            auto settings = std::make_shared<HullSettings>();
+                            settings->name = voxelModelName;
+                            hullSettings = make_async<HullSettings>(std::move(settings));
+                        }
+                    }
+                    if (model->Ready() && hullSettings->Ready()) {
+                        if (!model->Get() || !hullSettings->Get()) continue;
+                        Assertf(model->Get()->meshes.size() > 0,
+                            "MeshGenerator returned invalid model: %s",
+                            hullSettings->Get()->name);
+                        auto set = LoadConvexHullSet(model, hullSettings);
                         if (!set || !set->Ready()) complete = false;
                     } else {
                         complete = false;
@@ -213,6 +240,7 @@ namespace sp {
                     ecs::LightSensor,
                     ecs::EventBindings,
                     ecs::Physics,
+                    ecs::VoxelData,
                     ecs::EventInput,
                     ecs::TriggerGroup,
                     ecs::CharacterController,
@@ -466,7 +494,9 @@ namespace sp {
             scene->fetchResults(true);
         }
 
-        cache.Tick(interval);
+        activeConvexHulls.Tick(interval);
+        activeHullSettings.Tick(interval);
+        activeModels.Tick(interval);
     }
 
     void PhysxManager::CreatePhysxScene() {
@@ -538,16 +568,25 @@ namespace sp {
         Assertf(settingsPtr, "PhysxManager::LoadConvexHullSet called with null hull settings ptr");
         auto model = modelPtr->Get();
         auto settings = settingsPtr->Get();
-        Assertf(model, "PhysxManager::LoadConvexHullSet called with null model");
-        Assertf(settings, "PhysxManager::LoadConvexHullSet called with null hull settings");
+        if (!model) {
+            Errorf("PhysxManager::LoadConvexHullSet called with null model");
+            return nullptr;
+        }
+        if (!settings) {
+            Errorf("PhysxManager::LoadConvexHullSet called with null hull settings");
+            return nullptr;
+        }
 
         Assertf(!settings->name.empty(), "PhysxManager::LoadConvexHullSet called with invalid hull settings");
-        auto set = cache.Load(settings->name);
+        Assertf(settings->hull.meshIndex < model->meshes.size(),
+            "PhysxManager::LoadConvexHullSet called with invalid model: %s",
+            settings->name);
+        auto set = activeConvexHulls.Load(settings->name);
         if (!set) {
             {
                 std::lock_guard lock(cacheMutex);
                 // Check again in case an inflight set just completed on another thread
-                set = cache.Load(settings->name);
+                set = activeConvexHulls.Load(settings->name);
                 if (set) return set;
 
                 set = workQueue.Dispatch<ConvexHullSet>(NewDispatchSource,
@@ -564,14 +603,77 @@ namespace sp {
 
                         return set;
                     });
-                cache.Register(settings->name, set);
+                activeConvexHulls.Register(settings->name, set);
             }
         }
 
         return set;
     }
 
-    size_t PhysxManager::UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics>> lock,
+    AsyncPtr<HullSettings> PhysxManager::LoadHullSettings(std::string_view fullMeshName) {
+        if (fullMeshName.empty()) return nullptr;
+        ZoneScoped;
+        ZoneStr(fullMeshName);
+
+        AsyncPtr<HullSettings> asyncHullSettings = activeHullSettings.Load(fullMeshName);
+        if (!asyncHullSettings) {
+            AssetName modelName, meshName;
+            auto sep = fullMeshName.find('.');
+            if (sep != std::string_view::npos) {
+                modelName = fullMeshName.substr(0, sep);
+                meshName = fullMeshName.substr(sep + 1);
+            } else {
+                modelName = fullMeshName;
+                meshName = "convex0";
+            }
+
+            Assertf(!modelName.empty(), "PhysxManager::LoadHullSettings called with empty model name");
+            Assertf(!meshName.empty(), "PhysxManager::LoadHullSettings called with empty mesh name");
+
+            asyncHullSettings = workQueue.Dispatch<HullSettings>(NewDispatchSource,
+                [fullMeshName = std::string(fullMeshName), modelName, meshName] {
+                    return Assets().LoadHullSettings(modelName, meshName);
+                });
+            activeHullSettings.Register(fullMeshName, asyncHullSettings);
+        }
+        return asyncHullSettings;
+    }
+
+    AsyncPtr<HullSettings> PhysxManager::LoadHullSettings(std::string_view modelName, std::string_view meshName) {
+        if (modelName.empty()) return nullptr;
+        HeapString fullMeshName = modelName;
+        if (meshName.empty()) meshName = "convex0";
+        fullMeshName += HeapString(".") + meshName;
+        ZoneScoped;
+        ZoneStr(fullMeshName);
+
+        AsyncPtr<HullSettings> asyncHullSettings = activeHullSettings.Load(fullMeshName);
+        if (!asyncHullSettings) {
+            asyncHullSettings = workQueue.Dispatch<HullSettings>(NewDispatchSource,
+                [fullMeshName, modelName = std::string(modelName), meshName = std::string(meshName)] {
+                    return Assets().LoadHullSettings(modelName, meshName);
+                });
+            activeHullSettings.Register(fullMeshName, asyncHullSettings);
+        }
+        return asyncHullSettings;
+    }
+
+    AsyncPtr<Gltf> PhysxManager::LoadModel(std::string_view modelName) {
+        if (modelName.empty()) return nullptr;
+        ZoneScoped;
+        ZoneStr(modelName);
+
+        AsyncPtr<Gltf> asyncModel = activeModels.Load(modelName);
+        if (!asyncModel) {
+            asyncModel = workQueue.Dispatch<Gltf>(NewDispatchSource, [modelName = std::string(modelName)] {
+                return Assets().LoadGltf(modelName);
+            });
+            activeModels.Register(modelName, asyncModel);
+        }
+        return asyncModel;
+    }
+
+    size_t PhysxManager::UpdateShapes(ecs::Lock<ecs::Read<ecs::Name, ecs::Physics, ecs::VoxelData>> lock,
         const ecs::Entity &owner,
         const ecs::Entity &actorEnt,
         physx::PxRigidActor *actor,
@@ -605,12 +707,28 @@ namespace sp {
                         glm::notEqual(shapeTransform.scale, shapeUserData->shapeTransform.scale, 1e-4f));
                     auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
                     if (mesh) {
-                        auto meshSettings = mesh->hullSettings ? mesh->hullSettings->Get() : nullptr;
+                        auto model = LoadModel(mesh->modelName);
+                        auto hullSettings = LoadHullSettings(mesh->modelName, mesh->meshName);
+                        if (mesh->modelName.empty() && owner.Has<ecs::VoxelData>(lock) && game.meshGenerator) {
+                            auto &voxelData = owner.Get<ecs::VoxelData>(lock);
+                            auto voxelModelName = voxelData.algorithm + "." + std::to_string(voxelData.seed);
+                            model = activeModels.Load(voxelModelName);
+                            if (!model) {
+                                model = game.meshGenerator->GenerateMesh(voxelData);
+                                activeModels.Register(voxelModelName, model);
+                            }
+                            if (!hullSettings) {
+                                auto settings = std::make_shared<HullSettings>();
+                                settings->name = voxelModelName;
+                                hullSettings = make_async<HullSettings>(std::move(settings));
+                            }
+                        }
+                        auto meshSettings = hullSettings ? hullSettings->Get() : nullptr;
                         auto sourceSettings = shapeUserData->hullCache ? shapeUserData->hullCache->sourceSettings->Get()
                                                                        : nullptr;
                         if (!meshSettings || !sourceSettings) {
                             removeShape = true;
-                        } else if (mesh->model != shapeUserData->hullCache->sourceModel ||
+                        } else if (model != shapeUserData->hullCache->sourceModel ||
                                    meshSettings->sourceInfo != sourceSettings->sourceInfo) {
                             removeShape = true;
                         } else {
@@ -715,17 +833,36 @@ namespace sp {
                 Warnf("Plane shape not supported on Dynamic physics actor: %s", ecs::ToString(lock, actorEnt));
                 continue;
             }
+            auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
+            if (mesh && mesh->modelName.empty()) {
+                if (!owner.Has<ecs::VoxelData>(lock) || !game.meshGenerator) continue;
+            }
             PxMaterial *pxMaterial = pxPhysics->createMaterial(shape.material.staticFriction,
                 shape.material.dynamicFriction,
                 shape.material.restitution);
             std::shared_ptr<PxMaterial> material(pxMaterial, [](auto *ptr) {
                 ptr->release();
             });
-            auto mesh = std::get_if<ecs::PhysicsShape::ConvexMesh>(&shape.shape);
             if (mesh) {
                 std::shared_ptr<ConvexHullSet> shapeCache;
-                if (mesh->model && mesh->hullSettings) {
-                    shapeCache = LoadConvexHullSet(mesh->model, mesh->hullSettings)->Get();
+                auto model = LoadModel(mesh->modelName);
+                auto hullSettings = LoadHullSettings(mesh->modelName, mesh->meshName);
+                if (mesh->modelName.empty() && owner.Has<ecs::VoxelData>(lock) && game.meshGenerator) {
+                    auto &voxelData = owner.Get<ecs::VoxelData>(lock);
+                    auto voxelModelName = voxelData.algorithm + "." + std::to_string(voxelData.seed);
+                    model = activeModels.Load(voxelModelName);
+                    if (!model) {
+                        model = game.meshGenerator->GenerateMesh(voxelData);
+                        activeModels.Register(voxelModelName, model);
+                    }
+                    if (!hullSettings) {
+                        auto settings = std::make_shared<HullSettings>();
+                        settings->name = voxelModelName;
+                        hullSettings = make_async<HullSettings>(std::move(settings));
+                    }
+                }
+                if (model && model->Ready() && hullSettings && hullSettings->Ready()) {
+                    shapeCache = LoadConvexHullSet(model, hullSettings)->Get();
                 }
 
                 if (shapeCache) {
@@ -758,7 +895,10 @@ namespace sp {
                         Errorf("Actor mesh scale is out of range: %s %s", mesh->meshName, glm::to_string(newScale));
                     }
                 } else {
-                    Errorf("Physics actor created with invalid mesh: %s", mesh->meshName);
+                    Errorf("Physics actor created with invalid mesh: %s%s%s",
+                        mesh->modelName,
+                        !mesh->meshName.empty() ? "." : "",
+                        mesh->meshName);
                 }
             } else {
                 auto shapeTransform = offset * shape.transform;
@@ -800,7 +940,8 @@ namespace sp {
         return shapeCount;
     }
 
-    PxRigidActor *PhysxManager::CreateActor(ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics>> lock,
+    PxRigidActor *PhysxManager::CreateActor(
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::VoxelData>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         ZoneStr(ecs::ToString(lock, e));
@@ -857,7 +998,7 @@ namespace sp {
     }
 
     void PhysxManager::UpdateActor(
-        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::SceneProperties>> lock,
+        ecs::Lock<ecs::Read<ecs::Name, ecs::TransformTree, ecs::Physics, ecs::VoxelData, ecs::SceneProperties>> lock,
         const ecs::Entity &e) {
         ZoneScoped;
         auto &ph = e.Get<ecs::Physics>(lock);

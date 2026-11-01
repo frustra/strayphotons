@@ -57,6 +57,7 @@ namespace ecs {
     enum class TriggerGroup : uint8_t;
     struct View;
     struct VoxelArea;
+    struct VoxelData;
     struct XrView;
 
     using ECS = Tecs::ECS<Name,
@@ -88,6 +89,7 @@ namespace ecs {
         TriggerGroup,
         View,
         VoxelArea,
+        VoxelData,
         XrView,
 
         EventInput,
@@ -251,6 +253,7 @@ TECS_NAME_COMPONENT(ecs::TriggerArea, "TriggerArea");
 TECS_NAME_COMPONENT(ecs::TriggerGroup, "TriggerGroup");
 TECS_NAME_COMPONENT(ecs::View, "View");
 TECS_NAME_COMPONENT(ecs::VoxelArea, "VoxelArea");
+TECS_NAME_COMPONENT(ecs::VoxelData, "VoxelData");
 TECS_NAME_COMPONENT(ecs::XrView, "XrView");
 
 static inline std::ostream &operator<<(std::ostream &out, const Tecs::Entity &e) {

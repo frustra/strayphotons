@@ -9,6 +9,7 @@
 
 #include "ecs/EcsImpl.hh"
 #include "ecs/components/Renderable.hh"
+#include "ecs/components/VoxelData.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
 #include "graphics/vulkan/Compositor.hh"
@@ -32,6 +33,7 @@
 #include "graphics/vulkan/scene/GPUScene.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
+#include "strayphotons/Async.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
@@ -74,6 +76,10 @@ namespace sp::vulkan {
 
     void Renderer::AttachWindow(const std::shared_ptr<GuiContext> &context) {
         windowGuiContext = context;
+    }
+
+    AsyncPtr<Gltf> Renderer::GenerateMesh(const ecs::VoxelData &voxelData) {
+        return scene.GenerateGltf(voxelData);
     }
 
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
@@ -143,6 +149,7 @@ namespace sp::vulkan {
                 ecs::TransformSnapshot,
                 ecs::View,
                 ecs::VoxelArea,
+                ecs::VoxelData,
                 ecs::XrView>>();
 
             scene.LoadState(graph, lock);
@@ -155,7 +162,6 @@ namespace sp::vulkan {
             voxels.AddVoxelizationInit(graph, lighting);
             voxels.AddVoxelization(graph, lighting);
             voxels.AddVoxelization2(graph, lighting);
-            marchingCubes.AddMarchingCubes(graph, voxels);
             renderer::AddLightSensors(graph, scene, lock);
 
             AddViewOutputs(lock, elapsedTime);

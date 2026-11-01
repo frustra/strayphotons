@@ -220,6 +220,32 @@
 			}
 		},
 		{
+			"name": "asteroid1",
+			"transform": {
+				"translate": [-0.5, 2.5, -8.4],
+				"scale": 0.1
+			},
+			"renderable": {
+				"color_override": [0.1, 0.1, 0.15, 1.0],
+				"metallic_roughness_override": [0.99, 0]
+			},
+			"physics": {
+				"shapes": {
+					"model": ""
+				},
+				"density": 1
+			},
+			"voxel_data": {
+				"algorithm": "perlin_sphere"
+			},
+			"script": {
+				"parameters": {
+					"source": "interactive"
+				},
+				"name": "prefab_template"
+			}
+		},
+		{
 			"name": "sun",
 			"light": {
 				"tint": [0.9, 0.9, 1],

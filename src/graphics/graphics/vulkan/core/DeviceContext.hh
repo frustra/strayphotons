@@ -18,9 +18,11 @@
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/Utility.hh"
 
 #include <atomic>
+#include <limits>
 #include <memory>
 #include <robin_hood.h>
 #include <string>
@@ -104,6 +106,8 @@ namespace sp::vulkan {
         std::shared_ptr<Renderer> GetRenderer() const;
 
         GenericCompositor &GetCompositor() override;
+
+        AsyncPtr<Gltf> GenerateMesh(const ecs::VoxelData &voxelData) override;
 
         void RenderFrame(chrono_clock::duration elapsedTime) override;
 
@@ -240,19 +244,19 @@ namespace sp::vulkan {
         }
 
         template<typename CallbackFn>
-        void ExecuteAfterFence(vk::Fence fence, CallbackFn &&callback) {
-            frameBeginQueue.Dispatch<void>(NewDispatchSource, [this, callback, fence]() {
-                if (device->getFenceStatus(fence) == vk::Result::eSuccess) {
+        AsyncPtr<void> ExecuteAfterFence(const DispatchSourceInfo &sourceInfo, vk::Fence fence, CallbackFn &&callback) {
+            AsyncPtr<void> fenceReady = std::make_shared<Async<void>>();
+            pendingFences.emplace_back(fenceReady, fence);
+            return frameBeginQueue.Dispatch<void>(sourceInfo,
+                fenceReady,
+                [callback = std::move(callback)](std::shared_ptr<void> fenceReady) {
                     callback();
-                } else {
-                    ExecuteAfterFence(fence, callback);
-                }
-            });
+                });
         }
 
         template<typename CallbackFn>
-        void ExecuteAfterFrameFence(CallbackFn &&callback) {
-            ExecuteAfterFence(*Frame().inFlightFence, std::forward<CallbackFn>(callback));
+        void ExecuteAfterFrameFence(const DispatchSourceInfo &sourceInfo, CallbackFn &&callback) {
+            ExecuteAfterFence(sourceInfo, *Frame().inFlightFence, std::forward<CallbackFn>(callback));
         }
 
         PerfTimer *GetPerfTimer() const {
@@ -400,6 +404,7 @@ namespace sp::vulkan {
         uint32_t frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;
 
+        std::vector<std::pair<AsyncPtr<void>, vk::Fence>> pendingFences;
         DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
 
         std::unique_ptr<CFuncCollection> funcs;

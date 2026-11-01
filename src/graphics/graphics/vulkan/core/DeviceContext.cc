@@ -5,6 +5,8 @@
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 #include <chrono>
+#include <cstddef>
+#include <variant>
 #define VULKAN_HPP_USE_REFLECT
 
 #include "DeviceContext.hh"
@@ -732,6 +734,14 @@ namespace sp::vulkan {
         return *compositor;
     }
 
+    AsyncPtr<Gltf> DeviceContext::GenerateMesh(const ecs::VoxelData &voxelData) {
+        if (!vkRenderer) {
+            Errorf("Cannot generate mesh without active renderer");
+            return nullptr;
+        }
+        return vkRenderer->GenerateMesh(voxelData);
+    }
+
     void DeviceContext::RenderFrame(chrono_clock::duration elapsedTime) {
         if (vkRenderer) vkRenderer->RenderFrame(elapsedTime);
     }
@@ -819,6 +829,16 @@ namespace sp::vulkan {
             }
 #endif
 
+            erase_if(pendingFences, [this](auto &pair) {
+                if (!pair.first || pair.first->Ready()) {
+                    return true;
+                } else if (device->getFenceStatus(pair.second) == vk::Result::eSuccess) {
+                    pair.first->Set(nullptr);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
             frameBeginQueue.Flush();
         } catch (const vk::DeviceLostError &err) {
             Errorf("Device lost! BeginFrame() %s", err.what());

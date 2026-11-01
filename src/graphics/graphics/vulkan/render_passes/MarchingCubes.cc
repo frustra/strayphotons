@@ -7,7 +7,6 @@
 
 #include "MarchingCubes.hh"
 
-#include "MarchingCubesData.h"
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
@@ -18,6 +17,7 @@
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/Voxels.hh"
+#include "graphics/vulkan/scene/MarchingCubesData.h"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 
 #include <cstdint>
@@ -134,7 +134,6 @@ namespace sp::vulkan::renderer {
                 } else {
                     cmd.SetComputeShader("marching_cubes_vertex.comp");
                 }
-                cmd.SetShaderConstant(ShaderStage::Compute, "CUBE_LAYER", cubeLayer);
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
@@ -171,7 +170,6 @@ namespace sp::vulkan::renderer {
                 } else {
                     cmd.SetComputeShader("marching_cubes_triangle.comp");
                 }
-                cmd.SetShaderConstant(ShaderStage::Compute, "CUBE_LAYER", cubeLayer);
 
                 cmd.SetUniformBuffer("VoxelStateUniform", "VoxelState");
 
