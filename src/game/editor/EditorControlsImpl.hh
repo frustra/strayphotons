@@ -462,7 +462,6 @@ namespace sp {
                     }
                     ImGui::SameLine();
                 }
-                ImGui::TextUnformatted(state.definition.name.c_str());
 
                 auto ctx = state.definition.context.lock();
                 if (ctx) {
