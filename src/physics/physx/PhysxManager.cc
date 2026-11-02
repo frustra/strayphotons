@@ -199,6 +199,7 @@ namespace sp {
                             hullSettings = make_async<HullSettings>(std::move(settings));
                         }
                     }
+                    if (!model || !hullSettings) continue;
                     if (model->Ready() && hullSettings->Ready()) {
                         if (!model->Get() || !hullSettings->Get()) continue;
                         Assertf(model->Get()->meshes.size() > 0,

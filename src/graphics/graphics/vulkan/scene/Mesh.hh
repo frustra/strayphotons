@@ -72,7 +72,7 @@ namespace sp::vulkan {
         }
 
         bool Valid() const {
-            return !modelName.empty() && staging.transferComplete != nullptr;
+            return staging.transferComplete != nullptr;
         }
 
         std::shared_ptr<Gltf> Model() const {
