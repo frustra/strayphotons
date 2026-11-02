@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include "ecs/Components.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/components/SceneProperties.hh"
 #include "strayphotons/Logging.hh"
 
 namespace sp::scene_util {
@@ -48,23 +50,19 @@ namespace sp::scene_util {
                     } else if constexpr (std::is_same_v<T, SceneProperties>) {
                         auto &component = std::get<std::optional<SceneProperties>>(flatEntity);
                         if (!component) {
-                            component = LookupComponent<SceneProperties>().StagingDefault();
+                            component = ComponentSceneProperties.StagingDefault();
                         }
 
                         Assertf(stagingInfo.scene, "Staging entity %s has null scene", ToString(staging, stagingId));
                         auto properties = stagingInfo.scene.data->GetProperties(staging);
                         properties.fixedGravity = properties.rootTransform * glm::vec4(properties.fixedGravity, 0.0f);
                         properties.gravityTransform = properties.rootTransform * properties.gravityTransform;
-                        LookupComponent<SceneProperties>().ApplyComponent(*component, properties, false);
+                        ApplyComponent<SceneProperties>(*component, properties, false);
                     } else if constexpr (!Tecs::is_global_component<T>()) {
                         if (!stagingId.Has<T>(staging)) return;
 
                         auto &component = std::get<std::optional<T>>(flatEntity);
-                        if (!component) {
-                            const ecs::ComponentBase *comp = LookupComponent(typeid(T));
-                            Assertf(comp, "Couldn't lookup component type: %s", typeid(T).name());
-                            component = comp->GetStagingDefault<T>();
-                        }
+                        if (!component) component = EntityComponent<T>::StagingDefault();
 
                         if constexpr (std::is_same_v<T, TransformTree>) {
                             auto transform = stagingId.Get<TransformTree>(staging);
@@ -80,20 +78,20 @@ namespace sp::scene_util {
                                 }
                             }
 
-                            LookupComponent<TransformTree>().ApplyComponent(*component, transform, false);
+                            ApplyComponent<TransformTree>(*component, transform, false);
                         } else if constexpr (std::is_same_v<T, Scripts>) {
                             auto scripts = stagingId.Get<Scripts>(staging);
 
                             // Create a new script instance for each staging definition
                             for (ScriptInstance &instance : scripts.scripts) {
                                 if (!instance.state) continue;
-                                instance.state = GetScriptManager().NewScriptInstance(*instance.state, true);
+                                instance.state = instance.state->CloneInstance(true);
                             }
 
-                            LookupComponent<Scripts>().ApplyComponent(*component, scripts, false);
+                            ApplyComponent<Scripts>(*component, scripts, false);
                         } else {
                             auto &srcComp = stagingId.Get<T>(staging);
-                            LookupComponent<T>().ApplyComponent(*component, srcComp, false);
+                            ApplyComponent<T>(*component, srcComp, false);
                         }
                     }
                 }(),
@@ -124,17 +122,17 @@ namespace sp::scene_util {
                     }
 
                     if (!flatAnimation) {
-                        flatAnimation = LookupComponent<Animation>().StagingDefault();
+                        flatAnimation = ComponentAnimation.StagingDefault();
                     }
-                    LookupComponent<Animation>().ApplyComponent(*flatAnimation, animation, false);
+                    ApplyComponent<Animation>(*flatAnimation, animation, false);
                 }
                 stagingId = stagingInfo.nextStagingId;
             }
         }
     }
 
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> &live,
+    template<typename... AllComponentTypes, template<typename...> typename ECSType, typename... Permissions>
+    void ApplyFlatEntity(const Tecs::Lock<ECSType<AllComponentTypes...>, Permissions...> &live,
         const Entity &liveId,
         const FlatEntity &flatEntity,
         bool resetLive) {
@@ -159,7 +157,7 @@ namespace sp::scene_util {
                         if (resetLive) liveId.Unset<T>(live);
 
                         auto &dstComp = liveId.Get<T>(live);
-                        LookupComponent<T>().ApplyComponent(dstComp, *component, true);
+                        ApplyComponent<T>(dstComp, *component, true);
                     } else if (liveId.Has<T>(live)) {
                         if constexpr (std::is_same_v<T, TransformSnapshot>) {
                             auto &transformOpt = std::get<std::optional<TransformTree>>(flatEntity);
@@ -175,7 +173,7 @@ namespace sp::scene_util {
             ...);
 
         if (resetLive) {
-            auto &signals = live.template Get<ecs::Signals>();
+            auto &signals = live.template Get<Signals>();
             signals.FreeEntitySignals(live, liveId);
         }
 
@@ -196,9 +194,12 @@ namespace sp::scene_util {
             }
         }
 
-        if (liveId.Has<Scripts>(live) && !liveId.Has<EventInput>(live)) {
-            auto &scripts = liveId.Get<const Scripts>(live);
-            if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
+        if (liveId.Has<Scripts>(live)) {
+            if (!liveId.Has<EventInput>(live)) {
+                auto &scripts = liveId.Get<const Scripts>(live);
+                if (!scripts.scripts.empty()) liveId.Set<EventInput>(live);
+            }
+            GetScriptManager().RegisterActive(live, liveId);
         }
 
         if (liveId.Has<RenderOutput>(live) && !liveId.Has<EventInput>(live)) {

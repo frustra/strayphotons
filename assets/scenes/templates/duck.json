@@ -52,11 +52,15 @@
 			"transform": {
 				"translate": [0, -0.114, 0]
 			},
+			"event_bindings": {
+				"/interact/grab": "scoperoot/interact/grab"
+			},
 			"script": {
 				"name": "prefab_gltf",
 				"parameters": {
 					"model": "duck",
 					"render": true,
+					"interactive": true,
 					"physics": "SubActor"
 				}
 			}

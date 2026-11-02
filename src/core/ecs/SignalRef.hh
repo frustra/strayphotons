@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -21,7 +21,7 @@ namespace ecs {
         struct Node;
     }
 
-    using ReadSignalsLock = Lock<Read<Name, Signals, SignalOutput, SignalBindings, EventInput, FocusLock>>;
+    using ReadSignalsLock = ReadAll;
 
     class SignalRef {
     private:
@@ -110,6 +110,10 @@ namespace ecs {
     // Thread-safe equality check without weak_ptr::lock()
     inline bool operator==(const WeakSignalRef &a, const WeakSignalRef &b) {
         return !a.owner_before(b) && !b.owner_before(a);
+    }
+
+    inline bool operator<(const WeakSignalRef &a, const WeakSignalRef &b) {
+        return a.owner_before(b);
     }
 
     inline bool operator==(const std::shared_ptr<SignalRef::Ref> &a, const WeakSignalRef &b) {

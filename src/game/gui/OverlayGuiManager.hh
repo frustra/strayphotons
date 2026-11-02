@@ -9,6 +9,7 @@
 
 #include "ecs/EventQueue.hh"
 #include "gui/GuiContext.hh"
+#include "strayphotons/Utility.hh"
 
 #include <memory>
 
@@ -16,9 +17,9 @@ namespace sp {
     class ConsoleGui;
     class FpsCounterGui;
 
-    class OverlayGuiManager final : public GuiContext {
+    class OverlayGuiManager final : public GuiContext, public NonMoveable {
     public:
-        OverlayGuiManager(OverlayGuiManager &&) = default;
+        // OverlayGuiManager(OverlayGuiManager &&) = default;
         virtual ~OverlayGuiManager();
 
         static std::shared_ptr<GuiContext> CreateContext(const ecs::Name &guiName);
@@ -35,6 +36,6 @@ namespace sp {
         std::shared_ptr<ConsoleGui> consoleGui;
         std::shared_ptr<FpsCounterGui> fpsCounterGui;
 
-        ecs::EventQueueRef events = ecs::EventQueue::New();
+        ecs::EventQueueRef events;
     };
 } // namespace sp

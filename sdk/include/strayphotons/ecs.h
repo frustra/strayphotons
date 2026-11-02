@@ -17,8 +17,8 @@ typedef void tecs_ecs_t;
 
 // The following functions are declared in src/exports/Ecs.cc
 
-SP_EXPORT tecs_ecs_t *sp_get_live_ecs();
-SP_EXPORT tecs_ecs_t *sp_get_staging_ecs();
+SP_EXPORT tecs_ecs_t *sp_get_live_ecs(void);
+SP_EXPORT tecs_ecs_t *sp_get_staging_ecs(void);
 SP_EXPORT void sp_load_dynamic_library(const char *name);
 
 #ifdef __cplusplus

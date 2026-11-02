@@ -14,19 +14,18 @@ Script Example Definition
         // Internal script state
         bool init = false;
 
-        void OnLogicTick(ScriptState &state, Lock<Read<Name, EventInput>> lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state, Lock<Read<Name>> lock, Entity ent, chrono_clock::duration interval) {
             if (!init) {
                 // First run only
                 Logf("Example script added to %s", ToString(lock, ent));
                 init = true;
             }
+        }
 
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (event.name != "/script/event") continue;
+        void OnEvent(ScriptState &state, Lock<Write<Signals>> &lock, Entity ent, Event event) {
+            if (event.name != "/script/event") return;
 
-                // Process event
-            }
+            // Process event
         }
     };
 
@@ -42,5 +41,5 @@ Script Example Definition
 
     // Scripts self-registered using an instance of the LogicScript template.
     // A script's input events are defined here, as well as if OnLogicTick should be called every logic frame, or only if events are available.
-    BuiltInScript<Example> example("example", MetadataExample, true /* filterOnEvent */, "/script/event" /* ... more events go here ... */);
+    BuiltInScript<Example> example("example", MetadataExample, "/script/event" /* ... more events go here ... */);
 ```

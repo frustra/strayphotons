@@ -23,6 +23,8 @@ namespace sp {
         Attach(consoleGui, ecs::GuiLayoutAnchor::Top, {-100, -40});
         fpsCounterGui = std::make_shared<FpsCounterGui>();
         Attach(fpsCounterGui);
+
+        events = std::make_shared<ecs::EventQueue>();
     }
 
     OverlayGuiManager::~OverlayGuiManager() {
@@ -91,10 +93,10 @@ namespace sp {
     bool OverlayGuiManager::BeforeFrame(GenericCompositor &compositor) {
         bool focusChanged = false;
         {
-            auto lock = ecs::StartTransaction<ecs::Read<ecs::EventInput, ecs::FocusLock>>();
+            auto lock = ecs::StartTransaction<ecs::Read<ecs::FocusLock>>();
 
             ecs::Event event;
-            while (ecs::EventInput::Poll(lock, events, event)) {
+            while (events && events->Poll(event)) {
                 if (event.name == INPUT_EVENT_TOGGLE_CONSOLE) {
                     consoleGui->consoleOpen = !consoleGui->consoleOpen;
 

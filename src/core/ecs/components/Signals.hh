@@ -16,6 +16,7 @@
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/InlineString.hh"
 
+#include <memory>
 #include <robin_hood.h>
 
 namespace ecs {
@@ -33,8 +34,8 @@ namespace ecs {
 
             double lastValue = 0.0;
             bool lastValueDirty = true;
-            std::vector<WeakSignalRef> subscribers;
-            std::vector<WeakSignalRef> dependencies;
+            sp::FlatSet<WeakSignalRef> subscribers;
+            sp::FlatSet<WeakSignalRef> dependencies;
 
             Signal();
             Signal(const SignalRef &ref, double value);
@@ -59,6 +60,9 @@ namespace ecs {
         void UpdateMissingEntitySignals(const Lock<Write<Signals>> &lock);
 
         void MarkStorageDirty(const Lock<Write<Signals>> &lock, size_t index);
+
+        static void BeforeCommit(const Lock<Write<Signals>, ReadSignalsLock> &lock);
+        static void AfterCommit();
 
         Signals &operator=(const Signals &other);
     };

@@ -241,7 +241,8 @@
 				"density": 1
 			},
 			"voxel_data": {
-				"algorithm": "perlin_sphere"
+				"algorithm": "perlin_sphere",
+				"seed": 23
 			},
 			"script": {
 				"parameters": {

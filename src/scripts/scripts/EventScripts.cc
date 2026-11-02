@@ -25,8 +25,7 @@ namespace sp::scripts {
             DynamicLock<SendEventsLock> lock,
             Entity ent,
             chrono_clock::duration interval) {
-            state.definition.events.clear();
-            state.definition.filterOnEvent = true; // Effective next tick, only executes once on first frame.
+            state.definition.logicTickFunc = {}; // Only execute once on first frame
 
             for (auto &output : outputs) {
                 EventBindings::SendEvent(lock, ent, Event{output, ent, true});
@@ -50,21 +49,14 @@ namespace sp::scripts {
             } else {
                 state.definition.events = {inputEvent};
             }
-            state.definition.filterOnEvent = true;
         }
 
-        void OnLogicTick(ScriptState &state,
-            DynamicLock<SendEventsLock> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
-            Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
-                if (outputEvent.empty()) continue;
+        void OnEvent(ScriptState &state, Lock<SendEventsLock> lock, Entity ent, Event event) {
+            if (outputEvent.empty()) return;
 
-                if (gateExpression.EvaluateEvent(lock, event.data) >= 0.5) {
-                    event.name = outputEvent;
-                    EventBindings::SendEvent(lock, ent, event);
-                }
+            if (gateExpression.EvaluateEvent(lock, event.data) >= 0.5) {
+                event.name = outputEvent;
+                EventBindings::SendEvent(lock, ent, event);
             }
         }
     };
@@ -86,13 +78,14 @@ namespace sp::scripts {
             for (auto &map : mapping) {
                 state.definition.events.emplace_back(map.first);
             }
-            state.definition.filterOnEvent = true;
         }
 
         void OnTick(ScriptState &state, DynamicLock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
+            if (state.eventQueue.Empty()) return;
+
             robin_hood::unordered_map<EventName, std::optional<Event>, StringHash, StringEqual> outputEvents;
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 auto it = mapping.find(event.name);
                 if (it == mapping.end()) continue;
 
@@ -139,7 +132,6 @@ namespace sp::scripts {
                 state.definition.events.emplace_back("/signal/add/" + outputSignal);
                 state.definition.events.emplace_back("/signal/clear/" + outputSignal);
             }
-            state.definition.filterOnEvent = true;
         }
 
         void ProcessEvent(Lock<Write<Signals>> lock, Entity ent, Event event) {
@@ -194,12 +186,9 @@ namespace sp::scripts {
     };
     BuiltInScript<AsyncSignalFromEvent> asyncSignalFromEvent("async_signal_from_event", MetadataSignalFromEvent);
     struct LogicSignalFromEvent : public SignalFromEvent {
-        void OnLogicTick(ScriptState &state,
-            Lock<Read<EventInput>, Write<Signals>> lock,
-            Entity ent,
-            chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state, Lock<Write<Signals>> lock, Entity ent, chrono_clock::duration interval) {
             Event event;
-            while (EventInput::Poll(lock, state.eventQueue, event)) {
+            while (state.eventQueue.Poll(event)) {
                 ProcessEvent(lock, ent, event);
             }
         }
@@ -281,7 +270,6 @@ namespace sp::scripts {
 
                 state.definition.events.emplace_back("/set/" + fieldPath);
             }
-            state.definition.filterOnEvent = true;
         }
 
         void OnEvent(ScriptState &state, DynamicLock<Read<Name>> lock, Entity ent, Event event) {

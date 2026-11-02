@@ -91,7 +91,6 @@ extern "C" {
 PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definition_t *output, size_t output_size) {
     if (output_size >= 1 && output != NULL) {
         sp_string_set(&output[0].name, "hello_world");
-        output[0].filter_on_event = false;
         output[0].context_size = sizeof(ScriptHelloWorld);
         output[0].default_init_func = &ScriptHelloWorld::DefaultInit;
         output[0].init_func = &ScriptHelloWorld::Init;

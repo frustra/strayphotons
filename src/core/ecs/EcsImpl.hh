@@ -13,6 +13,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/EventQueue.hh"
 #include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/HeapVector.hh"
 #include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Logging.hh"
 
@@ -49,18 +50,13 @@
 #include "ecs/components/VoxelData.hh"
 #include "ecs/components/XrView.hh"
 
-namespace ecs {
-    struct EventQueuePool : public sp::NonMoveable {
-        sp::LogOnExit logOnExit = "EventQueuePool shut down ==============================================";
-        sp::LockFreeMutex mutex;
-        std::deque<EventQueue> pool;
-        std::priority_queue<size_t, std::vector<size_t>, std::greater<size_t>> freeList;
-    };
+#include <memory_resource>
 
+namespace ecs {
     struct ECSContext : public sp::NonMoveable {
         // Order of these is important! Items are destroyed in bottom-up order.
         sp::LogOnExit logOnExit = "ECS shut down =========================================================";
-        EventQueuePool eventQueues;
+        std::pmr::synchronized_pool_resource eventPool;
         ECS staging;
         ECS live;
         EntityReferenceManager refManager;

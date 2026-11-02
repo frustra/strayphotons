@@ -29,7 +29,7 @@ namespace sp {
         void PostDefine(ecs::Entity ent) override;
 
     private:
-        ecs::EventQueueRef events = ecs::EventQueue::New();
+        ecs::EventQueueRef events;
         ecs::EntityRef pickerEntity = ecs::Name("editor", "entity_picker");
         ecs::EntityRef inspectorEntity = ecs::Name("editor", "inspector");
         ecs::EntityRef targetEntity;

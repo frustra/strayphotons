@@ -40,7 +40,7 @@ void flashlight_on_tick(void *context,
     light->spot_angle.radians = glm_rad(sp_signal_ref_get_signal(&angleRef, lock, 0));
 
     sp_event_t *event;
-    while ((event = sp_script_state_poll_event(state, lock))) {
+    while ((event = sp_script_state_poll_event(state))) {
         if (strcmp(event->name, "/action/flashlight/toggle") == 0) {
             sp_signal_ref_set_value(&onRef, lock, light->on ? 0.0 : 1.0);
             light->on = !light->on;
@@ -111,7 +111,6 @@ PLUGIN_EXPORT size_t sp_plugin_get_script_definitions(sp_dynamic_script_definiti
         sp_string_set(&output[0].name, "flashlight");
         output[0].context_size = sizeof(script_flashlight_t);
         output[0].logic_tick_func = &flashlight_on_tick;
-        output[0].filter_on_event = false;
         sp_dynamic_script_definition_add_event(&output[0], "/action/flashlight/toggle");
         sp_dynamic_script_definition_add_event(&output[0], "/action/flashlight/grab");
 

@@ -137,8 +137,7 @@ namespace ecs {
     template<>
     void EntityComponent<TransformTree>::Apply(TransformTree &dst, const TransformTree &src, bool liveTarget) {
         DebugAssert(!std::isnan(src.pose.offset[0][0]), "TransformTree::Apply source pose is NaN");
-        auto &defaultTree = liveTarget ? ComponentTransformTree.defaultLiveComponent
-                                       : ComponentTransformTree.defaultStagingComponent;
+        auto &defaultTree = liveTarget ? LiveDefault() : StagingDefault();
 
         if (dst.pose == defaultTree.pose && dst.parent == defaultTree.parent) {
             if (!std::isinf(src.pose.offset[0][0])) dst.pose = src.pose;

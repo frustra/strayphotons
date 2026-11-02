@@ -9,6 +9,8 @@
 
 #include "graphics/GenericCompositor.hh"
 #include "imgui.h"
+#include "strayphotons/HeapString.hh"
+#include "strayphotons/gui/ImGuiHelpers.hh"
 
 #include <imgui_internal.h>
 
@@ -39,20 +41,13 @@ namespace ecs {
                 "ScriptGuiDefinition %s is missing gui callback definitions",
                 state.definition.name);
 
-            {
-                auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
-
-                ecs::Entity gui = guiDefinitionEntity.Get(lock);
-                for (ImGuiInputEvent &event : ImGui::GetCurrentContext()->InputEventsQueue) {
-                    ecs::EventBytes data = {};
-                    static_assert(sizeof(ImGuiInputEvent) <= sizeof(data));
-                    std::copy_n(reinterpret_cast<const char *>(&event), sizeof(ImGuiInputEvent), data.begin());
-                    ecs::Event inputEvent("/gui/imgui_input", gui, data);
-                    ecs::EventBindings::SendEvent(lock, guiDefinitionEntity, inputEvent);
-                }
+            sp::HeapVector<sp::GuiInputEvent> inputEvents;
+            for (ImGuiInputEvent &event : ImGui::GetCurrentContext()->InputEventsQueue) {
+                inputEvents.emplace_back(sp::ConvertImGuiInputEvent(event));
             }
 
-            if (beforeFrame && !beforeFrame(compositor, state, ent)) return false;
+            if (beforeFrame && !beforeFrame(compositor, state, ent, inputEvents)) return false;
+
             if (renderGui) {
                 auto &io = ImGui::GetIO();
                 ImGuiViewport *imguiViewport = ImGui::GetMainViewport();

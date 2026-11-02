@@ -47,6 +47,11 @@ extern "C" {
 #endif
 #pragma pack(push, 1)
 
+const uint64_t SP_ACCESS_READ_ALL = ~1ull;
+const uint64_t SP_ACCESS_WRITE_ALL = ~1ull;
+const uint64_t SP_ACCESS_ADD_REMOVE = ~0ull;
+const uint64_t SP_ACCESS_READ_PREVIOUS = 1;
+
 )RAWSTR";
     ForEachComponentType([&](auto *typePtr) {
         using T = std::remove_pointer_t<decltype(typePtr)>;

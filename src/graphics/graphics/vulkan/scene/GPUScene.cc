@@ -173,7 +173,8 @@ namespace sp::vulkan {
                                 ReleaseRenderable(state.renderableIndex);
                                 state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
                             }
-                        } else if (state.voxelDataMesh) {
+                        } else if (state.voxelDataMesh &&
+                                   (!state.voxelDataMesh->Ready() || state.voxelDataMesh->Get())) {
                             state.renderableMesh = state.voxelDataMesh;
                             if (state.renderableIndex < gpuRenderables.size()) {
                                 // Reuse existing index
@@ -182,7 +183,11 @@ namespace sp::vulkan {
                                 state.renderableIndex = AllocateRenderableIndex(renderableModifiedEvent);
                             }
                         } else {
+                            Errorf("Renderable %s mesh is null: %s",
+                                ecs::ToString(lock, renderableModifiedEvent),
+                                renderable.modelName);
                             state.renderableMesh.reset();
+                            state.voxelDataMesh.reset();
                             ReleaseRenderable(state.renderableIndex);
                             state.renderableIndex = std::numeric_limits<RenderableIndex>::max();
                         }
@@ -368,6 +373,23 @@ namespace sp::vulkan {
                     state.voxelDataSeed = voxelData.seed;
                     state.voxelDataMesh = LoadMesh(voxelData);
                 }
+                if (state.voxelDataMesh) {
+                    if (!state.voxelDataMesh->Ready()) {
+                        complete = false;
+                    } else {
+                        auto vkMesh = state.voxelDataMesh->Get();
+                        if (!vkMesh) {
+                            Errorf("VoxelData %s mesh is null", ecs::ToString(lock, pair.first));
+                            state.voxelDataMesh.reset();
+                        } else if (!vkMesh->Valid()) {
+                            Errorf("VoxelData %s mesh is invalid", ecs::ToString(lock, pair.first));
+                            state.voxelDataMesh.reset();
+                            // Don't hang preloading if mesh is null
+                        } else if (!vkMesh->CheckReady()) {
+                            complete = false;
+                        }
+                    }
+                }
             } else {
                 state.voxelDataAlgorithm = "";
                 state.voxelDataExtents = glm::uvec3(0);
@@ -412,7 +434,7 @@ namespace sp::vulkan {
                     auto vkMesh = state.renderableMesh->Get();
                     if (!vkMesh) {
                         Errorf("Renderable %s mesh is null: %s", ecs::ToString(lock, ent), renderable.modelName);
-                        state.renderableMesh = nullptr;
+                        state.renderableMesh.reset();
                     } else if (!vkMesh->Valid()) {
                         if (!vkMesh->asset) {
                             Errorf("Renderable %s model is null: %s", ecs::ToString(lock, ent), renderable.modelName);
@@ -422,7 +444,7 @@ namespace sp::vulkan {
                                 renderable.meshIndex,
                                 vkMesh->asset->meshes.size());
                         }
-                        state.renderableMesh = nullptr;
+                        state.renderableMesh.reset();
                         // Don't hang preloading if mesh is null
                     } else if (!vkMesh->CheckReady()) {
                         complete = false;

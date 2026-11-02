@@ -82,7 +82,7 @@ namespace sp {
     void GlfwInputHandler::Frame() {
         ZoneScoped;
         glfwPollEvents();
-        for (int jid = GLFW_JOYSTICK_1; jid < joysticks.size(); jid++) {
+        for (int jid = GLFW_JOYSTICK_1; jid < (int)joysticks.size(); jid++) {
             if (!joysticks[jid]) continue;
             int axisCount = 0;
             const float *axes = glfwGetJoystickAxes(jid, &axisCount);

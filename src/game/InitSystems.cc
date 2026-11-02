@@ -46,6 +46,9 @@ namespace sp {
             game.meshGenerator = dynamic_cast<MeshGenerator *>(game.graphics.get());
         }
 #endif
+        if (!game.meshGenerator) {
+            Warnf("MeshGenerator is inactive due to no graphics support");
+        }
     }
 
     void StartGraphicsThread(Game &game, bool scriptMode) {

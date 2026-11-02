@@ -74,7 +74,7 @@ namespace sp::vulkan::render_graph {
             return bufferDesc.layout.size;
         }
 
-        BufferLayout BufferLayout() const {
+        struct BufferLayout BufferLayout() const {
             Assert(type == Resource::Type::Buffer, "BufferLayout resource is not a buffer");
             return bufferDesc.layout;
         }

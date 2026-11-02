@@ -19,6 +19,7 @@
 #include "ecs/SignalExpression.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/StructFieldTypes.hh"
+#include "ecs/StructMetadata.hh"
 #include "ecs/components/Physics.hh"
 #include "ecs/components/SceneProperties.hh"
 #include "ecs/components/Transform.h"
@@ -35,6 +36,7 @@
 #include <magic_enum.hpp>
 #include <misc/cpp/imgui_stdlib.h>
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 namespace sp {
@@ -428,7 +430,6 @@ namespace sp {
     inline bool EditorContext::AddImGuiElement(const std::string &name, HeapVector<ScriptInstance> &value) {
         bool changed = false;
         std::vector<size_t> removeList;
-        robin_hood::unordered_map<size_t, std::string> changeList;
         for (auto &instance : value) {
             if (!instance || !instance.state) continue;
             auto &state = *instance.state;
@@ -448,7 +449,6 @@ namespace sp {
             }
             if (state.definition.beforeFrameFunc) scriptLabel += " BeforeFrame";
             if (state.definition.renderGuiFunc) scriptLabel += " RenderGui";
-            if (state.definition.filterOnEvent) scriptLabel += " (event filtered)";
             if (state.definition.name.empty()) {
                 scriptLabel += "(inline C++ lambda)";
             }
@@ -476,8 +476,38 @@ namespace sp {
                                 ImGui::TableSetupColumn("Value");
                                 ImGui::TableHeadersRow();
 
+                                size_t fieldCount = 0;
                                 for (auto &field : fields) {
-                                    if (!field.name.empty()) {
+                                    if (field.name.empty()) {
+                                        GetFieldType(field.type, field.AccessMut(dataPtr), [&](auto &fieldValue) {
+                                            using T = std::remove_cvref_t<decltype(fieldValue)>;
+                                            if constexpr (sp::is_unordered_flat_map<T>() ||
+                                                          sp::is_unordered_node_map<T>()) {
+                                                for (auto &[k, v] : fieldValue) {
+                                                    auto parentFieldName = fieldName;
+                                                    ImGui::TableNextRow();
+                                                    ImGui::TableSetColumnIndex(0);
+                                                    fieldName = "";
+                                                    ImGui::SetNextItemWidth(-FLT_MIN);
+                                                    // TODO: Make const keys editable by creating new key/value pair
+                                                    if (AddImGuiElement(rowId + ".k"s + std::to_string(fieldCount),
+                                                            k)) {
+                                                        changed = true;
+                                                    }
+                                                    ImGui::TableSetColumnIndex(1);
+                                                    ImGui::SetNextItemWidth(-FLT_MIN);
+                                                    if (AddImGuiElement(rowId + ".v"s + std::to_string(fieldCount),
+                                                            v)) {
+                                                        changed = true;
+                                                    }
+                                                    fieldName = parentFieldName;
+                                                    fieldCount++;
+                                                }
+                                            } else {
+                                                Abortf("Unsupported editor type: %s", typeid(T).name());
+                                            }
+                                        });
+                                    } else {
                                         ImGui::TableNextRow();
                                         ImGui::TableSetColumnIndex(0);
                                         ImGui::TextUnformatted(field.name.c_str());
@@ -490,6 +520,7 @@ namespace sp {
                                                 changed = true;
                                             }
                                             fieldName = parentFieldName;
+                                            fieldCount++;
                                         });
                                     }
                                 }
@@ -503,19 +534,6 @@ namespace sp {
                 }
 
                 ImGui::TreePop();
-            }
-        }
-        for (auto &[instanceId, scriptName] : changeList) {
-            const auto &definition = GetScriptDefinitions().scripts.at(scriptName);
-            for (auto &instance : value) {
-                if (instance.GetInstanceId() == instanceId) {
-                    if (IsLive(target)) {
-                        instance = GetScriptManager().NewScriptInstance(instance.GetState().scope, definition, true);
-                    } else {
-                        instance = std::make_shared<ScriptState>(definition, instance.GetState().scope);
-                    }
-                    break;
-                }
             }
         }
         if (IsStaging(target)) {
@@ -552,62 +570,6 @@ namespace sp {
         return changed;
     }
 
-    template<typename T>
-    void EditorContext::AddFieldControls(const StructField &field, const ComponentBase &comp, const void *component) {
-        auto value = field.Access<T>(component);
-        fieldName = field.name;
-        fieldId = "##"s + comp.name + std::to_string(field.fieldIndex);
-        std::string elementName = fieldName + fieldId;
-
-        bool valueChanged = false;
-        bool isDefined = true;
-        if constexpr (std::equality_comparable<T>) {
-            if (IsStaging(target)) {
-                auto defaultLiveComponent = comp.GetLiveDefault();
-                auto defaultStagingComponent = comp.GetStagingDefault();
-                auto &defaultValue = field.Access<T>(defaultLiveComponent);
-                auto &undefinedValue = field.Access<T>(defaultStagingComponent);
-                if (defaultValue != undefinedValue) {
-                    isDefined = value != undefinedValue;
-                    if (ImGui::Checkbox(isDefined ? fieldId.c_str() : elementName.c_str(), &isDefined)) {
-                        // Value has already been toggled by ImGui at this point
-                        if (!isDefined) {
-                            value = undefinedValue;
-                        } else {
-                            value = defaultValue;
-                        }
-                        valueChanged = true;
-                    }
-                    if (isDefined) ImGui::SameLine();
-                }
-            }
-        }
-        if (isDefined) {
-            if (AddImGuiElement(elementName, value)) valueChanged = true;
-        }
-
-        if (valueChanged) {
-            if (IsLive(target)) {
-                QueueTransaction<WriteAll>(NewDispatchSource,
-                    [target = this->target, value, &comp, &field](auto &lock) {
-                        void *component = comp.AccessMut(lock, target);
-                        field.Access<T>(component) = value;
-                        if constexpr (std::is_same<T, HeapVector<ScriptInstance>>()) {
-                            GetScriptManager().RegisterActive(lock);
-                        }
-                    });
-            } else if (scene) {
-                QueueStagingTransaction<WriteAll>(NewDispatchSource,
-                    [target = this->target, value, &comp, &field](auto &lock) {
-                        void *component = comp.AccessMut(lock, target);
-                        field.Access<T>(component) = value;
-                    });
-            } else {
-                Errorf("Can't add ImGui field controls for null scene: %s", std::to_string(target));
-            }
-        }
-    }
-
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
     void CopyToStaging(Tecs::Lock<ECSType<AllComponentTypes...>, AddRemove> staging,
         Lock<ReadAll> live,
@@ -616,7 +578,7 @@ namespace sp {
         Assertf(target.Has<SceneInfo>(live), "CopyToStaging target has no SceneInfo: %s", ToString(live, target));
 
         auto &liveSceneInfo = target.Get<SceneInfo>(live);
-        auto stagingId = liveSceneInfo.rootStagingId;
+        Entity stagingId = liveSceneInfo.rootStagingId;
         SceneRef targetScene;
         while (stagingId.Has<SceneInfo>(staging)) {
             auto &sceneInfo = stagingId.Get<SceneInfo>(staging);
@@ -683,7 +645,7 @@ namespace sp {
                     T compareComp = {};
                     auto &existingComp = std::get<std::optional<T>>(flatParentEntity);
                     if (existingComp) {
-                        comp.ApplyComponent(compareComp, *existingComp, true);
+                        ApplyComponent<T>(compareComp, *existingComp, true);
                     }
 
                     picojson::value tmp;
@@ -695,7 +657,11 @@ namespace sp {
                                 comp.name,
                                 ToString(staging, stagingId));
                         } else {
-                            comp.SetComponent(staging, scope, stagingId, flatStagingEntity);
+                            auto &&opt = std::get<std::optional<T>>(flatStagingEntity);
+                            if (opt) {
+                                auto &newComp = stagingId.Set<T>(staging, std::move(*opt));
+                                scope::SetScope(newComp, scope);
+                            }
                         }
                     } else if (existingComp) {
                         if (stagingId.Has<T>(staging)) stagingId.Unset<T>(staging);

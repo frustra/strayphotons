@@ -61,6 +61,7 @@ namespace sp {
             InlineVector<K, std::max<size_t>(100, 65536 / sizeof(K))> cleanupList;
             {
                 std::shared_lock lock(mutex);
+                ZoneValue(storage.size());
                 for (auto &[key, timed] : storage) {
                     if (timed.value.use_count() == 1) {
                         if ((timed.last_use += intervalMs) > PreserveAgeMilliseconds) {
@@ -72,6 +73,8 @@ namespace sp {
                 }
             }
             if (cleanupList.size() > 0) {
+                ZoneScopedN("TickCleanup");
+                ZoneValue(cleanupList.size());
                 std::unique_lock lock(mutex);
 
                 for (auto &key : cleanupList) {

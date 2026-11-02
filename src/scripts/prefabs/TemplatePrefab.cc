@@ -164,8 +164,17 @@ namespace ecs {
             lastAccess = chrono_clock::now();
 
             Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, "scoperoot", scope);
-            ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
-                comp.SetComponent(lock, scope, newEntity, rootComponents);
+            ForEachComponentType([&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
+                if constexpr (std::is_same_v<T, Name> || std::is_same_v<T, SceneInfo>) {
+                    // Skip
+                } else if constexpr (!Tecs::is_global_component<T>()) {
+                    auto &opt = std::get<std::optional<T>>(rootComponents);
+                    if (opt) {
+                        auto &comp = newEntity.Set<T>(lock, *opt);
+                        scope::SetScope(comp, scope);
+                    }
+                }
             });
             EntityRef newRef(newEntity);
 
@@ -192,6 +201,7 @@ namespace ecs {
             lastAccess = chrono_clock::now();
 
             std::vector<Entity> scriptEntities;
+            scriptEntities.reserve(entityList.size());
             for (auto &[relativeName, flatEnt] : entityList) {
                 Entity newEntity = scene->NewPrefabEntity(lock, rootEnt, prefabScriptId, relativeName, scope);
                 if (!newEntity) {
@@ -201,8 +211,17 @@ namespace ecs {
                 }
                 EntityRef newRef(newEntity);
 
-                ForEachComponent([&](const std::string &name, const ComponentBase &comp) {
-                    comp.SetComponent(lock, scope, newEntity, flatEnt);
+                ForEachComponentType([&](auto *typePtr) {
+                    using T = std::remove_pointer_t<decltype(typePtr)>;
+                    if constexpr (std::is_same_v<T, Name> || std::is_same_v<T, SceneInfo>) {
+                        // Skip
+                    } else if constexpr (!Tecs::is_global_component<T>()) {
+                        auto &opt = std::get<std::optional<T>>(flatEnt);
+                        if (opt) {
+                            auto &comp = newEntity.Set<T>(lock, *opt);
+                            scope::SetScope(comp, scope);
+                        }
+                    }
                 });
 
                 if (newEntity.Has<TransformTree>(lock)) {
@@ -248,7 +267,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("TemplatePrefab");
             ZoneStr(source);
 
             EntityScope scope = Name(scene->data->name, "");
@@ -281,7 +300,7 @@ namespace ecs {
             const std::shared_ptr<sp::Scene> &scene,
             Lock<AddRemove> lock,
             Entity ent) {
-            ZoneScoped;
+            ZoneScopedN("TilePrefab");
 
             size_t instanceId = state.GetInstanceId();
 
@@ -320,7 +339,9 @@ namespace ecs {
                     offset3D[axesIndex.first] = offset2D.x;
                     offset3D[axesIndex.second] = offset2D.y;
 
-                    EntityScope tileScope = Name(std::to_string(x) + "_" + std::to_string(y), rootScope);
+                    sp::InlineString<127> relativeName(127, '\0');
+                    relativeName.resize(std::snprintf(relativeName.data(), sizeof(relativeName), "%u_%u", x, y));
+                    EntityScope tileScope = Name(relativeName, rootScope);
 
                     Entity tileEnt = surface.ApplyComponents(lock, scene, ent, instanceId, tileScope, offset3D);
                     if (!tileEnt) {
@@ -336,8 +357,8 @@ namespace ecs {
                     tileSignals.emplace("tile.y", y);
                     surface.AddEntities(lock, scene, ent, instanceId, tileScope, offset3D);
 
-                    auto xEdge = x == 0 || x == (count.x - 1);
-                    auto yEdge = y == 0 || y == (count.y - 1);
+                    bool xEdge = x == 0 || x == (count.x - 1);
+                    bool yEdge = y == 0 || y == (count.y - 1);
 
                     if (xEdge && yEdge) {
                         if (haveCorner) {

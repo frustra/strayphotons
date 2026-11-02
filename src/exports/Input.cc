@@ -37,7 +37,7 @@ SP_EXPORT void sp_send_input_bool(sp_game_t *ctx, sp_entity_t input_device, cons
 SP_EXPORT void sp_send_input_str(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, const char *value) {
     Assertf(ctx != nullptr, "sp_send_input_str called with null game ctx");
     if (ctx->disableInput) return;
-    ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, std::string(value)});
+    ctx->game.inputEventQueue.PushEvent(ecs::Event{event_name, input_device, ecs::EventString(value)});
 }
 
 SP_EXPORT void sp_send_input_int(sp_game_t *ctx, sp_entity_t input_device, const char *event_name, int value) {

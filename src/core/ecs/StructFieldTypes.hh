@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "assets/AssetManager.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
@@ -21,10 +20,14 @@
 #include "strayphotons/InlineString.hh"
 #include "strayphotons/Utility.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
+#include "strayphotons/gui/GuiInputEvents.hh"
+#include "strayphotons/input/KeyCodes.hh"
 
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <optional>
 #include <robin_hood.h>
+#include <tuple>
 #include <type_traits>
 #include <typeindex>
 
@@ -101,6 +104,9 @@ namespace ecs {
         sp::GuiDrawData,
         sp::GuiDrawCommand,
         sp::GuiDrawVertex,
+        sp::GuiInputEvent,
+        sp::GuiInputMouseButtonEvent,
+        sp::GuiInputKeyEvent,
         sp::SceneRef,
         TypeInfo,
         sp::InlineString<2>,
@@ -116,6 +122,7 @@ namespace ecs {
         sp::HeapVector<sp::GuiDrawCommand>,
         sp::HeapVector<sp::GuiDrawIndex>,
         sp::HeapVector<sp::GuiDrawVertex>,
+        sp::HeapVector<sp::GuiInputEvent>,
         sp::HeapVector<AnimationState>,
         sp::HeapVector<PhysicsJoint>,
         sp::HeapVector<PhysicsShape>,
@@ -145,6 +152,12 @@ namespace ecs {
         // Enums
         FieldAction,
         FocusLayer,
+        sp::GuiInputEventType,
+        sp::GuiInputSource,
+        sp::GuiMouseSource,
+        sp::MouseButton,
+        sp::KeyCode,
+        sp::InputAction,
         GuiLayoutAnchor,
         InterpolationMode,
         PhysicsGroup,
@@ -161,7 +174,6 @@ namespace ecs {
         DynamicLock<ReadSignalsLock>,
         DynamicLock<SendEventsLock>,
         Lock<>,
-        Lock<Read<EventInput>>,
         Lock<Read<Signals>>,
         Lock<Read<TransformTree>>,
         Lock<Write<Signals>>,
@@ -177,7 +189,11 @@ namespace ecs {
         void (*)(void *, ScriptState &, DynamicLock<> &, Entity, uint64_t), // OnLogicTick/OnPhysicsTick
         void (*)(void *, ScriptState &, DynamicLock<> &, Entity, Event &), // OnEvent
         void (*)(const ScriptState &, DynamicLock<> &, Entity, const sp::SceneRef &), // RunPrefab
-        bool (*)(void *, sp::GenericCompositor &, ScriptState &, Entity), // BeforeFrame
+        bool (*)(void *,
+            sp::GenericCompositor &,
+            ScriptState &,
+            Entity,
+            const sp::HeapVector<sp::GuiInputEvent> &), // BeforeFrame
         void (*)(void *,
             sp::GenericCompositor &,
             ScriptState &,
@@ -189,34 +205,164 @@ namespace ecs {
         >;
 
     namespace detail {
-        template<typename Func, typename T, typename... Tn>
-        inline static auto GetComponentType(std::type_index type, Func &&func) {
-            if (type == std::type_index(typeid(T))) return std::invoke(func, (T *)nullptr);
-            if constexpr (sizeof...(Tn) > 0) {
-                return GetComponentType<Func, Tn...>(type, std::forward<Func>(func));
+        template<typename T0, typename... Tn, template<typename...> typename ECSType, typename Func>
+        inline static auto GetComponentType(ECSType<T0, Tn...> *, const std::type_index &type, Func &&func) {
+            using ResultType = std::invoke_result_t<Func, T0 *>;
+            if constexpr (std::is_same<ResultType, void>()) {
+                if (type == typeid(T0)) {
+                    std::invoke(func, (T0 *)nullptr);
+                } else {
+                    bool found = ((type == typeid(Tn) ? (std::invoke(func, (Tn *)nullptr), true) : false) || ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %s", type.name());
+                }
             } else {
-                Abortf("Type missing from FieldTypes definition: %s", type.name());
+                if (type == typeid(T0)) {
+                    return std::invoke(func, (T0 *)nullptr);
+                } else {
+                    std::optional<ResultType> result;
+                    bool found = ((type == typeid(Tn) ? (result = std::invoke(func, (Tn *)nullptr))
+                                                      : std::optional<ResultType>{}) ||
+                                  ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %s", type.name());
+                    return *result;
+                }
             }
         }
 
-        template<uint32_t I, typename Func, typename T, typename... Tn>
-        inline static auto GetComponentType(uint32_t typeIndex, Func &&func) {
-            if (typeIndex == I) return std::invoke(func, (T *)nullptr);
-            if constexpr (sizeof...(Tn) > 0) {
-                return GetComponentType<I + 1, Func, Tn...>(typeIndex, std::forward<Func>(func));
+        template<typename T0,
+            typename... Tn,
+            typename... AllComponentTypes,
+            template<typename...> typename TupleType,
+            template<typename...> typename ECSType,
+            typename Func>
+        inline static auto GetFieldType(TupleType<T0, Tn...> *,
+            ECSType<AllComponentTypes...> *,
+            const std::type_index &type,
+            Func &&func) {
+            using ResultType = std::invoke_result_t<Func, T0 *>;
+            if constexpr (std::is_same<ResultType, void>()) {
+                if (type == typeid(T0)) {
+                    std::invoke(func, (T0 *)nullptr);
+                } else {
+                    bool found = ((type == typeid(Tn) ? (std::invoke(func, (Tn *)nullptr), true) : false) || ...) ||
+                                 ((type == typeid(AllComponentTypes)
+                                          ? (std::invoke(func, (AllComponentTypes *)nullptr), true)
+                                          : false) ||
+                                     ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %s", type.name());
+                }
             } else {
-                Abortf("Type missing from FieldTypes definition: %u", typeIndex);
+                std::optional<ResultType> result;
+                if (type == typeid(T0)) {
+                    return std::invoke(func, (T0 *)nullptr);
+                } else {
+                    bool found = ((type == typeid(Tn) ? (result = std::invoke(func, (Tn *)nullptr))
+                                                      : std::optional<ResultType>{}) ||
+                                     ...) ||
+                                 ((type == typeid(AllComponentTypes)
+                                          ? (result = std::invoke(func, (AllComponentTypes *)nullptr))
+                                          : std::optional<ResultType>{}) ||
+                                     ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %s", type.name());
+                    return *result;
+                }
             }
         }
 
-        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
-        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, std::type_index type, Func &&func) {
-            return GetComponentType<Func, AllComponentTypes...>(type, std::forward<Func>(func));
+        template<typename T0,
+            typename... Tn,
+            typename... AllComponentTypes,
+            template<typename...> typename TupleType,
+            template<typename...> typename ECSType,
+            typename Func>
+        inline static auto GetFieldType(TupleType<T0, Tn...> *,
+            ECSType<AllComponentTypes...> *,
+            uint32_t typeIndex,
+            Func &&func) {
+            using ResultType = std::invoke_result_t<Func, T0 *>;
+            if constexpr (std::is_same<ResultType, void>()) {
+                if (typeIndex == 1) {
+                    std::invoke(func, (T0 *)nullptr);
+                } else {
+                    uint32_t i = 1;
+                    bool found = (((typeIndex == ++i) ? (std::invoke(func, (Tn *)nullptr), true) : false) || ...) ||
+                                 (((typeIndex == ++i) ? (std::invoke(func, (AllComponentTypes *)nullptr), true)
+                                                      : false) ||
+                                     ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %u", typeIndex);
+                }
+            } else {
+                if (typeIndex == 1) {
+                    return std::invoke(func, (T0 *)nullptr);
+                } else {
+                    std::optional<ResultType> result;
+                    uint32_t i = 1;
+                    bool found = (((typeIndex == ++i) ? (result = std::invoke(func, (Tn *)nullptr))
+                                                      : std::optional<ResultType>{}) ||
+                                     ...) ||
+                                 (((typeIndex == ++i) ? (result = std::invoke(func, (AllComponentTypes *)nullptr))
+                                                      : std::optional<ResultType>{}) ||
+                                     ...);
+                    Assertf(found, "Type missing from FieldTypes definition: %u", typeIndex);
+                    return *result;
+                }
+            }
         }
 
-        template<typename... AllComponentTypes, template<typename...> typename ECSType, typename Func>
-        inline static auto GetComponentType(ECSType<AllComponentTypes...> *, uint32_t typeIndex, Func &&func) {
-            return GetComponentType<0, Func, AllComponentTypes...>(typeIndex, std::forward<Func>(func));
+        template<typename T,
+            typename... Tn,
+            typename... AllComponentTypes,
+            template<typename...> typename TupleType,
+            template<typename...> typename ECSType>
+        inline static uint32_t GetFieldTypeIndex(TupleType<Tn...> *, ECSType<AllComponentTypes...> *) {
+            if constexpr (std::is_same<T, void>()) {
+                return 0;
+            } else {
+                uint32_t i = 0;
+                uint32_t result = 0;
+                bool found = (((i++, std::is_same<T, Tn>() ? (result = i, true) : false)) || ...) ||
+                             (((i++, std::is_same<T, AllComponentTypes>() ? (result = i, true) : false)) || ...);
+                Assertf(found, "Type missing from FieldTypes definition: %s", typeid(T).name());
+                return result;
+            }
+        }
+
+        template<typename... Tn,
+            typename... AllComponentTypes,
+            template<typename...> typename TupleType,
+            template<typename...> typename ECSType>
+        inline static uint32_t GetFieldTypeIndex(TupleType<Tn...> *,
+            ECSType<AllComponentTypes...> *,
+            const std::type_index &type) {
+            if (type == typeid(void)) {
+                return 0;
+            } else {
+                uint32_t i = 0;
+                uint32_t result = 0;
+                bool found = (((i++, type == typeid(Tn) ? (result = i, true) : false)) || ...) ||
+                             (((i++, type == typeid(AllComponentTypes) ? (result = i, true) : false)) || ...);
+                Assertf(found, "Type missing from FieldTypes definition: %s", type.name());
+                return result;
+            }
+        }
+
+        template<typename... Tn,
+            typename... AllComponentTypes,
+            template<typename...> typename TupleType,
+            template<typename...> typename ECSType>
+        inline static std::type_index GetFieldTypeIndex(TupleType<Tn...> *,
+            ECSType<AllComponentTypes...> *,
+            uint32_t typeIndex) {
+            if (typeIndex == 0) {
+                return typeid(void);
+            } else {
+                uint32_t i = 0;
+                std::optional<std::type_index> result;
+                bool found = (((typeIndex == ++i) ? (result = typeid(Tn), true) : false) || ...) ||
+                             (((typeIndex == ++i) ? (result = typeid(AllComponentTypes), true) : false) || ...);
+                Assertf(found, "Type missing from FieldTypes definition: %u", typeIndex);
+                return *result;
+            }
         }
     } // namespace detail
 
@@ -225,16 +371,14 @@ namespace ecs {
         return detail::GetComponentType((ECS *)nullptr, type, std::forward<Func>(func));
     }
 
-    template<typename Func, size_t I = 0>
+    template<typename Func>
     inline static auto GetFieldType(std::type_index type, Func &&func) {
-        if (type == std::type_index(typeid(std::tuple_element_t<I, FieldTypes>))) {
-            return std::invoke(func, (std::tuple_element_t<I, FieldTypes> *)nullptr);
-        }
-        if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
-            return GetFieldType<Func, I + 1>(type, std::forward<Func>(func));
-        } else {
-            return detail::GetComponentType((ECS *)nullptr, type, std::forward<Func>(func));
-        }
+        return detail::GetFieldType((FieldTypes *)nullptr, (ECS *)nullptr, type, std::forward<Func>(func));
+    }
+
+    template<typename Func>
+    inline static auto GetFieldType(uint32_t typeIndex, Func &&func) {
+        return detail::GetFieldType((FieldTypes *)nullptr, (ECS *)nullptr, typeIndex, std::forward<Func>(func));
     }
 
     template<typename ArgType, typename Func>
@@ -249,30 +393,8 @@ namespace ecs {
         });
     }
 
-    template<typename T, uint32_t I = 0>
+    template<typename T>
     inline static uint32_t GetFieldTypeIndex() {
-        if constexpr (std::is_same<T, void>()) {
-            return 0;
-        } else if constexpr (std::is_same<T, std::tuple_element_t<I, FieldTypes>>()) {
-            return I + 1;
-        } else if constexpr (I + 1 < std::tuple_size_v<FieldTypes>) {
-            return GetFieldTypeIndex<T, I + 1>();
-        } else {
-            return I + 2 + ECS::GetComponentIndex<T>();
-        }
-    }
-
-    template<typename Func, uint32_t I = 0>
-    inline static auto GetFieldType(uint32_t typeIndex, Func &&func) {
-        if constexpr (I == 0) {
-            if (typeIndex == 0) return std::invoke(func, (void *)nullptr);
-        } else if (typeIndex == I) {
-            return std::invoke(func, (std::tuple_element_t<I - 1, FieldTypes> *)nullptr);
-        }
-        if constexpr (I + 1 <= std::tuple_size_v<FieldTypes>) {
-            return GetFieldType<Func, I + 1>(typeIndex, std::forward<Func>(func));
-        } else {
-            return detail::GetComponentType((ECS *)nullptr, typeIndex - I - 1, std::forward<Func>(func));
-        }
+        return detail::GetFieldTypeIndex<T>((FieldTypes *)nullptr, (ECS *)nullptr);
     }
 } // namespace ecs

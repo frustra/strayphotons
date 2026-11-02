@@ -199,6 +199,7 @@ namespace sp {
                             hullSettings = make_async<HullSettings>(std::move(settings));
                         }
                     }
+                    if (!model || !hullSettings) continue;
                     if (model->Ready() && hullSettings->Ready()) {
                         if (!model->Get() || !hullSettings->Get()) continue;
                         Assertf(model->Get()->meshes.size() > 0,
@@ -256,9 +257,10 @@ namespace sp {
                     ecs::PhysicsQuery,
                     ecs::LaserLine,
                     ecs::LaserSensor,
-                    ecs::Signals>>();
+                    ecs::Signals>,
+                ecs::ReadPrevious>();
 
-            GameLogic::UpdateInputEvents(lock, windowInputQueue);
+            ecs::EventScriptManager::UpdateInputEvents(lock, windowInputQueue);
 
             characterControlSystem.Frame(lock);
 

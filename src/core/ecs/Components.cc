@@ -44,27 +44,4 @@ namespace ecs {
         if (it != componentTypeMap->end()) return it->second;
         return nullptr;
     }
-
-    template<typename... AllComponentTypes, template<typename...> typename ECSType>
-    void forEachComponent(ECSType<AllComponentTypes...> *,
-        std::function<void(const std::string &, const ComponentBase &)> &callback) {
-        ( // For each component:
-            [&] {
-                using T = AllComponentTypes;
-
-                if constexpr (std::is_same_v<T, Name> || std::is_same_v<T, SceneInfo>) {
-                    // Skip
-                } else if constexpr (!Tecs::is_global_component<T>()) {
-                    Assertf(componentTypeMap != nullptr, "ForEachComponent called before components registered.");
-                    auto base = LookupComponent(typeid(T));
-                    Assertf(base != nullptr, "ForEachComponent component lookup returned nullptr.");
-                    callback(base->name, *base);
-                }
-            }(),
-            ...);
-    }
-
-    void ForEachComponent(std::function<void(const std::string &, const ComponentBase &)> callback) {
-        forEachComponent((ecs::ECS *)nullptr, callback);
-    }
 } // namespace ecs

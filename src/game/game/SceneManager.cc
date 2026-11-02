@@ -15,6 +15,7 @@
 #include "ecs/EntityReferenceManager.hh"
 #include "ecs/ScriptManager.hh"
 #include "ecs/SignalManager.hh"
+#include "ecs/components/Signals.hh"
 #include "ecs/components/Transform.h"
 #include "game/GameEntities.hh"
 #include "game/Scene.hh"
@@ -153,6 +154,7 @@ namespace sp {
                     AddScene(item.scenePath, SceneType::System);
                 } else {
                     std::string sceneName(GetSceneName(item.scenePath));
+                    Assertf(!sceneName.empty(), "ApplySystemScene called with empty scene name");
 
                     auto scene = stagedScenes.Load(sceneName);
                     if (!scene) {
@@ -727,7 +729,7 @@ namespace sp {
             }
         }
 
-        std::vector<ecs::FlatEntity> entities;
+        std::deque<ecs::FlatEntity> entities;
         if (sceneObj.count("entities")) {
             auto &entityList = sceneObj["entities"];
             for (auto &value : entityList.get<picojson::array>()) {
@@ -758,7 +760,7 @@ namespace sp {
         auto scene = Scene::New(lock, sceneName, scenePath, sceneType, priority, asset, sceneProperties, libraries);
 
         std::vector<ecs::Entity> scriptEntities;
-        for (auto &flatEnt : entities) {
+        for (auto &&flatEnt : entities) {
             auto &name_ptr = std::get<std::optional<ecs::Name>>(flatEnt);
             auto name = name_ptr ? *name_ptr : ecs::Name();
 
@@ -769,8 +771,17 @@ namespace sp {
                 continue;
             }
 
-            ecs::ForEachComponent([&](const std::string &name, const ecs::ComponentBase &comp) {
-                comp.SetComponent(lock, scope, entity, flatEnt);
+            ecs::ForEachComponentType([&](auto *typePtr) {
+                using T = std::remove_pointer_t<decltype(typePtr)>;
+                if constexpr (std::is_same_v<T, ecs::Name> || std::is_same_v<T, ecs::SceneInfo>) {
+                    // Skip
+                } else if constexpr (!Tecs::is_global_component<T>()) {
+                    auto &&opt = std::get<std::optional<T>>(flatEnt);
+                    if (opt) {
+                        auto &comp = entity.Set<T>(lock, std::move(*opt));
+                        ecs::scope::SetScope(comp, scope);
+                    }
+                }
             });
 
             if (entity.Has<ecs::Scripts>(lock)) {
@@ -812,13 +823,6 @@ namespace sp {
 
         ecs::EntityScope scope("bindings", "");
 
-        // Only allow signal_output, signal_bindings, and event_bindings to be defined in bindings scene
-        static const std::array<const ecs::ComponentBase *, 3> allowedComponents = {
-            &ecs::LookupComponent<ecs::SignalOutput>(),
-            &ecs::LookupComponent<ecs::SignalBindings>(),
-            &ecs::LookupComponent<ecs::EventBindings>(),
-        };
-
         std::vector<ecs::FlatEntity> entities;
         for (auto &[nameStr, value] : root.get<picojson::object>()) {
             ecs::Name name(nameStr, ecs::Name());
@@ -834,14 +838,29 @@ namespace sp {
             auto &entDst = entities.emplace_back();
             std::get<std::optional<ecs::Name>>(entDst) = name;
 
-            for (auto *comp : allowedComponents) {
-                Assertf(comp,
-                    "Missing allowedComponents definition at index: %d",
-                    std::find(allowedComponents.begin(), allowedComponents.end(), comp) - allowedComponents.begin());
-                if (!entSrc.count(comp->name)) continue;
-
-                if (!comp->LoadEntity(entDst, entSrc[comp->name])) {
-                    Errorf("Failed to load binding entity component for '%s', ignoring: %s", nameStr, comp->name);
+            // Only allow signal_output, signal_bindings, and event_bindings to be defined in bindings scene
+            auto it = entSrc.find(ecs::ComponentSignalOutput.name);
+            if (it != entSrc.end()) {
+                if (!ecs::ComponentSignalOutput.LoadEntity(entDst, it->second)) {
+                    Errorf("Failed to load binding entity %s for '%s', ignoring",
+                        ecs::ComponentSignalOutput.name,
+                        nameStr);
+                }
+            }
+            it = entSrc.find(ecs::ComponentSignalBindings.name);
+            if (it != entSrc.end()) {
+                if (!ecs::ComponentSignalBindings.LoadEntity(entDst, it->second)) {
+                    Errorf("Failed to load binding entity %s for '%s', ignoring",
+                        ecs::ComponentSignalBindings.name,
+                        nameStr);
+                }
+            }
+            it = entSrc.find(ecs::ComponentEventBindings.name);
+            if (it != entSrc.end()) {
+                if (!ecs::ComponentEventBindings.LoadEntity(entDst, it->second)) {
+                    Errorf("Failed to load binding entity %s for '%s', ignoring",
+                        ecs::ComponentEventBindings.name,
+                        nameStr);
                 }
             }
         }
@@ -854,7 +873,7 @@ namespace sp {
             ScenePriority::Bindings,
             bindingConfig);
 
-        for (auto &flatEnt : entities) {
+        for (auto &&flatEnt : entities) {
             auto &name = std::get<std::optional<ecs::Name>>(flatEnt);
             if (!name || !*name) continue;
 
@@ -865,8 +884,20 @@ namespace sp {
                 continue;
             }
 
-            for (auto *comp : allowedComponents) {
-                if (comp) comp->SetComponent(lock, scope, entity, flatEnt);
+            auto &&optSignalOutput = std::get<std::optional<ecs::SignalOutput>>(flatEnt);
+            if (optSignalOutput) {
+                auto &comp = entity.Set<ecs::SignalOutput>(lock, std::move(*optSignalOutput));
+                ecs::scope::SetScope(comp, scope);
+            }
+            auto &&optSignalBindings = std::get<std::optional<ecs::SignalBindings>>(flatEnt);
+            if (optSignalBindings) {
+                auto &comp = entity.Set<ecs::SignalBindings>(lock, std::move(*optSignalBindings));
+                ecs::scope::SetScope(comp, scope);
+            }
+            auto &&optEventBindings = std::get<std::optional<ecs::EventBindings>>(flatEnt);
+            if (optEventBindings) {
+                auto &comp = entity.Set<ecs::EventBindings>(lock, std::move(*optEventBindings));
+                ecs::scope::SetScope(comp, scope);
             }
         }
         return scene;
