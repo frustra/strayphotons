@@ -43,45 +43,19 @@
 			"name": "pointer",
 			"transform": {
 				"parent": "flathead"
-			},
-			"physics_query": {},
-			"event_input": {},
-			"signal_output": {},
-			"light_cast": {},
-			"light": {
-				"illuminance": 1,
-				"spot_angle": 10,
-				"on": true
-			},
-			"script": [
-				{
-					"name": "interact_handler",
-					"parameters": {
-						"grab_distance": 1,
-						"noclip_entity": "player"
-					}
-				},
-				{
-					"name": "multi_interact_handler",
-					"parameters": {
-						"joint_entity": "player"
-					}
-				},
-				{
-					"name": "component_from_signal",
-					"parameters": {
-						"light.tint.r": "(pointer/interact_grab || pointer/interact_pull != 0) + min(0, pointer/interact_pull)",
-						"light.tint.g": "(pointer/interact_grab || pointer/interact_pull != 0) - max(0, pointer/interact_pull) + min(0, pointer/interact_pull)",
-						"light.tint.b": "(pointer/interact_grab || pointer/interact_pull != 0) - max(0, pointer/interact_pull)"
-					}
-				}
-			]
+			}
 		},
 		{
 			"name": "flathead",
 			"transform": {
 				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
+			},
+			"event_bindings": {
+				"/camera/rotate": {
+					"outputs": "flathead/script/camera_rotate",
+					"filter": "!flathead/freeze_camera"
+				}
 			},
 			"physics_query": {},
 			"event_input": {},

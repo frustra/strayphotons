@@ -1,6 +1,11 @@
 {
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_single_grabber": "1"
+			}
+		},
+		{
 			"name": "lot",
 			"transform": {
 				"translate": [0, 0, 0]

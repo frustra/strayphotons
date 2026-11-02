@@ -1,6 +1,11 @@
 {
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_multi_grabber": "1"
+			}
+		},
+		{
 			"transform": {
 				"scale": [0.99, 1, 0.99]
 			},

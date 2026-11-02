@@ -1,6 +1,11 @@
 {
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_single_grabber": "1"
+			}
+		},
+		{
 			"name": "global:airlock3-4",
 			"transform": {
 				"translate": [4.5, 0, 9],

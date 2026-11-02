@@ -2,6 +2,11 @@
 	"libraries": ["game_scripts"],
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_multi_grabber": "1"
+			}
+		},
+		{
 			"name": "sponza",
 			"transform": {
 				"rotate": [-90, 0, 1, 0],

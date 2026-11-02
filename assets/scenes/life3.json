@@ -2,6 +2,11 @@
 	"libraries": "life",
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_single_grabber": "1"
+			}
+		},
+		{
 			"name": "floor",
 			"transform": {
 				"scale": [10, 0.5, 10],

@@ -17,19 +17,9 @@
             ],
             "/mouse/move": [
                 {
-                    "outputs": "player:flathead/script/camera_rotate",
-                    "filter": "is_primary_focus(Game) && !player:pointer/interact_rotate",
-                    "modify": ["event.x * 0.001", "event.y * 0.001"]
-                },
-                {
                     "outputs": "player:flathead/camera/rotate",
-                    "filter": "is_primary_focus(Game) && !player:pointer/interact_rotate",
-                    "modify": ["event.x * 0.001", "event.y * 0.001"]
-                },
-                {
-                    "outputs": "player:pointer/interact/rotate",
                     "filter": "is_primary_focus(Game)",
-                    "modify": ["event.x * 0.01", "event.y * 0.01"]
+                    "modify": ["event.x * 0.001", "event.y * 0.001"]
                 }
             ],
             "/mouse/pos": [
@@ -170,7 +160,7 @@
                 },
                 {
                     "outputs": "player:pointer/interact/grab",
-                    "filter": "0 && is_primary_focus(Game) && event"
+                    "filter": "is_primary_focus(Game) && event"
                 }
             ],
             "/keyboard/key/q": {

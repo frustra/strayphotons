@@ -37,6 +37,8 @@ namespace sp::scripts {
         HeapVector<EntityRef> pointEntities;
         bool renderOutline = false;
         PhysicsQuery::Handle<PhysicsQuery::Mass> massQuery;
+        glm::vec3 centerOfMass = glm::vec3(0);
+        float actualMass = 0.0f;
 
         void OnEvent(ScriptState &state,
             Lock<ReadSignalsLock,
@@ -142,29 +144,28 @@ namespace sp::scripts {
                     auto &physics = ent.Get<Physics>(lock);
                     physics.constantForce = force;
                 }
-                // } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
-                //     if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) return;
+            } else if (event.name == INTERACT_EVENT_INTERACT_ROTATE) {
+                if (!ent.Has<Physics, PhysicsJoints>(lock) || !enableInteraction) return;
 
-                //     if (event.data.type == EventDataType::Vec2) {
-                //         if (!event.source.Has<TransformSnapshot>(lock)) return;
+                if (event.data.type == EventDataType::Vec2) {
+                    if (!event.source.Has<TransformSnapshot>(lock)) return;
 
-                //         auto &input = event.data.vec2;
-                //         auto &transform = event.source.Get<TransformSnapshot>(lock).globalPose;
+                    auto &input = event.data.vec2;
+                    auto &transform = event.source.Get<TransformSnapshot>(lock).globalPose;
 
-                //         auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
-                //         auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * glm::angleAxis(input.x,
-                //         upAxis);
+                    auto upAxis = glm::inverse(transform.GetRotation()) * glm::vec3(0, 1, 0);
+                    auto deltaRotate = glm::angleAxis(input.y, glm::vec3(1, 0, 0)) * glm::angleAxis(input.x, upAxis);
 
-                //         auto &joints = ent.Get<PhysicsJoints>(lock);
-                //         for (auto &joint : joints.joints) {
-                //             if (joint.target == event.source) {
-                //                 // Move the objects origin so it rotates around its center of mass
-                //                 auto center = joint.remoteOffset.GetRotation() * centerOfMass;
-                //                 joint.remoteOffset.Translate(center - (deltaRotate * center));
-                //                 joint.remoteOffset.SetRotation(deltaRotate * joint.remoteOffset.GetRotation());
-                //             }
-                //         }
-                //     }
+                    auto &joints = ent.Get<PhysicsJoints>(lock);
+                    for (auto &joint : joints.joints) {
+                        if (joint.target == event.source) {
+                            // Move the objects origin so it rotates around its center of mass
+                            auto center = joint.remoteOffset.GetRotation() * centerOfMass;
+                            joint.remoteOffset.Translate(center - (deltaRotate * center));
+                            joint.remoteOffset.SetRotation(deltaRotate * joint.remoteOffset.GetRotation());
+                        }
+                    }
+                }
             }
         }
 
@@ -182,8 +183,6 @@ namespace sp::scripts {
                 enableInteraction &= ph.type == PhysicsActorType::Dynamic;
             }
 
-            glm::vec3 centerOfMass = glm::vec3(0);
-            float actualMass = 0.0f;
             if (enableInteraction && ent.Has<PhysicsQuery>(lock)) {
                 auto &query = ent.Get<PhysicsQuery>(lock);
                 if (!massQuery) {
@@ -249,7 +248,7 @@ namespace sp::scripts {
         StructField::New("_render_outline", &InteractiveObject::renderOutline));
     BuiltInScript<InteractiveObject> interactiveObject("interactive_object",
         MetadataInteractiveObject,
-        true,
+        false,
         INTERACT_EVENT_INTERACT_POINT,
         INTERACT_EVENT_INTERACT_GRAB,
         INTERACT_EVENT_INTERACT_PUSH,
