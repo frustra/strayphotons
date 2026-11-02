@@ -56,7 +56,7 @@ namespace sp {
             ecs::EventQueue::CommitPendingEvents(commitId);
         });
 
-        ecs::World().SetAfterCommitCallback([](ecs::ECS &, [[maybe_unused]] uint64_t transactionId, uint64_t commitId) {
+        ecs::World().SetAfterCommitCallback([](ecs::ECS &, uint64_t, uint64_t) {
             ecs::Signals::AfterCommit();
         });
 

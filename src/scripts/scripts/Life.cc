@@ -54,6 +54,5 @@ namespace sp::scripts {
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-    // BuiltInScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, "/life/neighbor_alive",
-    // "/life/toggle_alive");
+    // BuiltInScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, "/life/neighbor_alive", "/life/toggle_alive");
 } // namespace sp::scripts

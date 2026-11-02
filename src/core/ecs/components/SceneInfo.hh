@@ -43,7 +43,9 @@ namespace ecs {
         // Staging IDs are stored in a singly-linked list, with highest priority first.
         Entity rootStagingId, nextStagingId;
 
+        // The staging id of the pregab that generated this entity
         Entity prefabStagingId;
+        // The script id of the prefab that generated this entity
         size_t prefabScriptId = 0;
 
         sp::ScenePriority priority = sp::ScenePriority::Scene;

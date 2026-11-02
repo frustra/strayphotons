@@ -601,10 +601,6 @@ namespace ecs {
             if (!ent) return 0.0;
             return GetComponentType(componentNode.component->metadata.type, [&](auto *typePtr) {
                 using T = std::remove_pointer_t<decltype(typePtr)>;
-                // if constexpr (!ECS::IsComponent<T>() || Tecs::is_global_component<T>()) {
-                //     Warnf("SignalExpression can't evaluate component type: %s", typeid(T).name());
-                //     return 0.0;
-                // } else
                 if constexpr (Tecs::is_read_allowed<T, ReadSignalsLock>()) {
                     if constexpr (Tecs::is_global_component<T>()) {
                         Warnf("SignalExpression accessing global component type %s with entity: %s",

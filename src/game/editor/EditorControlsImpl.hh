@@ -578,7 +578,7 @@ namespace sp {
         Assertf(target.Has<SceneInfo>(live), "CopyToStaging target has no SceneInfo: %s", ToString(live, target));
 
         auto &liveSceneInfo = target.Get<SceneInfo>(live);
-        auto stagingId = liveSceneInfo.rootStagingId;
+        Entity stagingId = liveSceneInfo.rootStagingId;
         SceneRef targetScene;
         while (stagingId.Has<SceneInfo>(staging)) {
             auto &sceneInfo = stagingId.Get<SceneInfo>(staging);
@@ -659,8 +659,8 @@ namespace sp {
                         } else {
                             auto &&opt = std::get<std::optional<T>>(flatStagingEntity);
                             if (opt) {
-                                auto &comp = stagingId.Set<T>(staging, std::move(*opt));
-                                scope::SetScope(comp, scope);
+                                auto &newComp = stagingId.Set<T>(staging, std::move(*opt));
+                                scope::SetScope(newComp, scope);
                             }
                         }
                     } else if (existingComp) {

@@ -16,8 +16,6 @@ target_include_directories(SPIRV-Reflect PUBLIC
     ./SPIRV-Reflect
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-target_compile_options(SPIRV-Reflect PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-overflow>)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(SPIRV-Reflect PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-overflow>)
 endif()

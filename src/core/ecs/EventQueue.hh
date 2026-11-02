@@ -23,9 +23,7 @@
 #include <variant>
 
 namespace ecs {
-    // using SendEventsLock = Lock<
-    //     Read<Name, FocusLock, EventBindings, EventInput, Scripts, Signals, SignalBindings, SignalOutput>>;
-    using SendEventsLock = Lock<ReadAll>;
+    using SendEventsLock = ReadAll;
 
     using EventName = sp::InlineString<127>;
     using EventString = sp::InlineString<255>;

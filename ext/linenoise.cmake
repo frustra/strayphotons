@@ -19,8 +19,6 @@ target_include_directories(linenoise PUBLIC
     linenoise
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
+if(CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang$")
     target_compile_options(linenoise PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-variadic-macro-arguments-omitted>)
 endif()

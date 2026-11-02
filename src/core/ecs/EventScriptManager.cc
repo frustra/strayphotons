@@ -103,7 +103,7 @@ namespace ecs {
             workQueue.Dispatch<void>(NewDispatchSource, [this, requiredReadPermissions, requiredWritePermissions]() {
                 ZoneScopedN("FlushEventScriptsAsync");
                 DynamicLock<> dynamicLock(World(),
-                    requiredReadPermissions | SendEventsLock::GetReadPermissions(),
+                    requiredReadPermissions | Lock<SendEventsLock>::GetReadPermissions(),
                     requiredWritePermissions);
                 auto tryLock = dynamicLock.TryLock<SendEventsLock>();
                 Assertf(tryLock.has_value(), "FlushEventScripts() returned dynamic lock with missing permissions");

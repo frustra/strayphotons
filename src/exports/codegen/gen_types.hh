@@ -561,7 +561,6 @@ void GenerateCppTypeFunctionImplementations(S &out, const std::string &full) {
             for (size_t i = 0; i < func.argTypes.size(); i++) {
                 if (i > 0) out << ", ";
                 if (func.argTypes[i].isTecsLock) {
-                    // out << "(const " << TypeToString(func.argTypes[i].typeIndex) << " &)*tryLock" << i;
                     out << "*tryLock" << i;
                 } else {
                     if (func.argTypes[i].isReference) out << "*";
