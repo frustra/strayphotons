@@ -7,6 +7,7 @@
 
 target_sources(${PROJECT_GAME_LIB} PRIVATE
     CGameContext.cc
+    EventScriptManager.cc
     Game.cc
     GameLogic.cc
     Scene.cc

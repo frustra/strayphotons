@@ -1,0 +1,30 @@
+{
+	"entities": [
+		{
+			"name": "player:pointer",
+			"light_cast": {},
+			"light": {
+				"illuminance": 1,
+				"spot_angle": 10,
+				"on": true,
+				"tint": [0, 0, 0]
+			},
+			"script": [
+				{
+					"name": "multi_interact_handler",
+					"parameters": {
+						"joint_entity": "player:player"
+					}
+				},
+				{
+					"name": "component_from_signal",
+					"parameters": {
+						"light.tint.r": "(player:pointer/interact_grab || player:pointer/interact_pull != 0) + min(0, player:pointer/interact_pull)",
+						"light.tint.g": "(player:pointer/interact_grab || player:pointer/interact_pull != 0) - max(0, player:pointer/interact_pull) + min(0, player:pointer/interact_pull)",
+						"light.tint.b": "(player:pointer/interact_grab || player:pointer/interact_pull != 0) - max(0, player:pointer/interact_pull)"
+					}
+				}
+			]
+		}
+	]
+}

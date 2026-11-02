@@ -32,6 +32,19 @@ namespace ecs {
     }
 
     template<typename... AllComponentTypes, template<typename...> typename ECSType>
+    int getComponentIndex(ECSType<AllComponentTypes...> *, const ComponentBase &component) {
+        static const std::array<const ComponentBase *, sizeof...(AllComponentTypes)> components = {[&] {
+            auto comp = LookupComponent(typeid(AllComponentTypes));
+            Assertf(comp, "Unknown component: %s", typeid(AllComponentTypes).name());
+            return comp;
+        }()...};
+
+        auto it = std::find(components.begin(), components.end(), &component);
+        if (it == components.end()) return -1;
+        return it - components.begin();
+    }
+
+    template<typename... AllComponentTypes, template<typename...> typename ECSType>
     int getComponentIndex(ECSType<AllComponentTypes...> *, const std::string &componentName) {
         static const std::array<std::string, sizeof...(AllComponentTypes)> componentNames = {[&] {
             auto comp = LookupComponent(typeid(AllComponentTypes));
@@ -42,6 +55,10 @@ namespace ecs {
         auto it = std::find(componentNames.begin(), componentNames.end(), componentName);
         if (it == componentNames.end()) return -1;
         return it - componentNames.begin();
+    }
+
+    int GetComponentIndex(const ComponentBase &component) {
+        return getComponentIndex((ECS *)nullptr, component);
     }
 
     int GetComponentIndex(const std::string &componentName) {

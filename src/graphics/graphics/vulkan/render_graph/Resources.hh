@@ -13,6 +13,7 @@
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/InlineVector.hh"
+#include "strayphotons/Logging.hh"
 
 #include <robin_hood.h>
 #include <string_view>
@@ -71,6 +72,11 @@ namespace sp::vulkan::render_graph {
         size_t BufferSize() const {
             Assert(type == Resource::Type::Buffer, "BufferSize resource is not a buffer");
             return bufferDesc.layout.size;
+        }
+
+        BufferLayout BufferLayout() const {
+            Assert(type == Resource::Type::Buffer, "BufferLayout resource is not a buffer");
+            return bufferDesc.layout;
         }
 
         ResourceID AliasID() const {

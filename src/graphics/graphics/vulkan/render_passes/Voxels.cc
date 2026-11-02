@@ -109,7 +109,7 @@ namespace sp::vulkan::renderer {
         if (voxelGridSize == glm::ivec3(0) || !CVarEnableVoxels.Get()) {
             graph.AddPass("Dummy")
                 .Build([&](rg::PassBuilder &builder) {
-                    ImageDesc desc;
+                    ImageDesc desc = {};
                     desc.extent = vk::Extent3D(1, 1, 1);
                     desc.primaryViewType = vk::ImageViewType::e3D;
                     desc.imageType = vk::ImageType::e3D;
@@ -191,7 +191,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
-                ImageDesc desc;
+                ImageDesc desc = {};
                 desc.extent = voxelGridExtents;
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;
@@ -297,7 +297,7 @@ namespace sp::vulkan::renderer {
             })
 
             .Execute([this, drawID, orthoAxes, voxelFillIndex](rg::Resources &resources, CommandContext &cmd) {
-                ImageDesc desc;
+                ImageDesc desc = {};
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
                     std::max(voxelGridSize.y, voxelGridSize.z),
                     1);
@@ -495,7 +495,7 @@ namespace sp::vulkan::renderer {
             for (size_t i = 0; i < VoxelLayers.size(); i++) {
                 graph.AddPass("Dummy" + std::to_string(i))
                     .Build([i](rg::PassBuilder &builder) {
-                        ImageDesc desc;
+                        ImageDesc desc = {};
                         desc.extent = vk::Extent3D(1, 1, 1);
                         desc.primaryViewType = vk::ImageViewType::e3D;
                         desc.imageType = vk::ImageType::e3D;
@@ -530,7 +530,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
-                ImageDesc desc;
+                ImageDesc desc = {};
                 desc.extent = vk::Extent3D(voxelGridSize.x, voxelGridSize.y, voxelGridSize.z);
                 desc.primaryViewType = vk::ImageViewType::e3D;
                 desc.imageType = vk::ImageType::e3D;

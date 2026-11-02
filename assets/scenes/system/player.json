@@ -43,16 +43,6 @@
 			"name": "pointer",
 			"transform": {
 				"parent": "flathead"
-			},
-			"physics_query": {},
-			"event_input": {},
-			"signal_output": {},
-			"script": {
-				"name": "interact_handler",
-				"parameters": {
-					"noclip_entity": "player",
-					"grab_distance": 2
-				}
 			}
 		},
 		{
@@ -60,6 +50,12 @@
 			"transform": {
 				"parent": "flatorigin",
 				"translate": [0, 1.5, 0]
+			},
+			"event_bindings": {
+				"/camera/rotate": {
+					"outputs": "flathead/script/camera_rotate",
+					"filter": "!flathead/freeze_camera"
+				}
 			},
 			"physics_query": {},
 			"event_input": {},
@@ -73,7 +69,7 @@
 					}
 				},
 				{
-					"name": "camera_view"
+					"name": "async_camera_view"
 				}
 			]
 		},
@@ -89,6 +85,7 @@
 				"shadow_map_size": 11,
 				"tint": [1, 1, 1]
 			},
+			"light_cast": {},
 			"event_input": {},
 			"signal_output": {
 				"angle": 30,

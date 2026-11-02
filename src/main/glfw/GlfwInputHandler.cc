@@ -9,6 +9,8 @@
 
 #include "GlfwKeyCodes.hh"
 #include "glm/gtx/string_cast.hpp"
+#include "input.h"
+#include "strayphotons/HeapString.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/input/BindingNames.hh"
 #include "strayphotons/input/KeyCodes.hh"
@@ -16,6 +18,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <strayphotons.h>
+#include <string>
 #include <tracy/Tracy.hpp>
 
 namespace sp {
@@ -29,6 +32,34 @@ namespace sp {
             glfwSetMouseButtonCallback(window, MouseButtonCallback);
             glfwSetCursorPosCallback(window, MouseMoveCallback);
             glfwSetCursorEnterCallback(window, MouseEnterCallback);
+
+            for (int jid = GLFW_JOYSTICK_1; jid <= GLFW_JOYSTICK_LAST; jid++) {
+                if (glfwJoystickPresent(jid)) {
+                    HeapString joystickName = "joystick" + std::to_string(jid);
+                    joysticks[jid] = sp_new_input_device(ctx, joystickName.c_str());
+                    int gamepad = glfwJoystickIsGamepad(jid);
+                    Logf("Joystick %d: gamepad %d", jid, gamepad);
+                    sp_send_input_bool(ctx, joysticks[jid], "/joystick/present", true);
+                }
+            }
+            static GlfwInputHandler *handler = this;
+            auto JoystickCallback = [](int jid, int event) {
+                if (event == GLFW_CONNECTED) {
+                    if (!handler->joysticks[jid]) {
+                        Logf("New controller detected: %d", jid);
+                        HeapString joystickName = "joystick" + std::to_string(jid);
+                        handler->joysticks[jid] = sp_new_input_device(handler->ctx, joystickName.c_str());
+                    }
+                    Logf("Controller connected: %d", jid);
+                    sp_send_input_bool(handler->ctx, handler->joysticks[jid], "/joystick/present", true);
+                } else if (event == GLFW_DISCONNECTED) {
+                    Logf("Controller disconnected: %d", jid);
+                    sp_send_input_bool(handler->ctx, handler->joysticks[jid], "/joystick/present", false);
+                } else {
+                    Errorf("Unknown glfw joystick callback: jid %d event %d", jid, event);
+                }
+            };
+            glfwSetJoystickCallback(JoystickCallback);
         }
 
         mouse = sp_new_input_device(ctx, "mouse");
@@ -51,6 +82,21 @@ namespace sp {
     void GlfwInputHandler::Frame() {
         ZoneScoped;
         glfwPollEvents();
+        for (int jid = GLFW_JOYSTICK_1; jid < joysticks.size(); jid++) {
+            if (!joysticks[jid]) continue;
+            int axisCount = 0;
+            const float *axes = glfwGetJoystickAxes(jid, &axisCount);
+            for (int axis = 0; axis < axisCount; axis++) {
+                HeapString axisName = "/joystick/axis" + std::to_string(axis);
+                sp_send_input_float(ctx, joysticks[jid], axisName.c_str(), axes[axis]);
+            }
+            int buttonCount = 0;
+            const uint8_t *buttons = glfwGetJoystickButtons(jid, &buttonCount);
+            for (int button = 0; button < buttonCount; button++) {
+                HeapString buttonName = "/joystick/button" + std::to_string(button);
+                sp_send_input_bool(ctx, joysticks[jid], buttonName.c_str(), buttons[button] == GLFW_PRESS);
+            }
+        }
     }
 
     void GlfwInputHandler::KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
@@ -68,15 +114,9 @@ namespace sp {
         }
 
         if (action == GLFW_PRESS) {
-            sp_send_input_int(handler->ctx,
-                (uint64_t)handler->keyboard,
-                INPUT_EVENT_KEYBOARD_KEY_DOWN.c_str(),
-                keyCode->second);
+            sp_send_input_int(handler->ctx, handler->keyboard, INPUT_EVENT_KEYBOARD_KEY_DOWN.c_str(), keyCode->second);
         } else if (action == GLFW_RELEASE) {
-            sp_send_input_int(handler->ctx,
-                (uint64_t)handler->keyboard,
-                INPUT_EVENT_KEYBOARD_KEY_UP.c_str(),
-                keyCode->second);
+            sp_send_input_int(handler->ctx, handler->keyboard, INPUT_EVENT_KEYBOARD_KEY_UP.c_str(), keyCode->second);
         }
     }
 
@@ -85,10 +125,7 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "CharInputCallback occured without valid context");
 
-        sp_send_input_uint(handler->ctx,
-            (uint64_t)handler->keyboard,
-            INPUT_EVENT_KEYBOARD_CHARACTERS.c_str(),
-            codepoint);
+        sp_send_input_uint(handler->ctx, handler->keyboard, INPUT_EVENT_KEYBOARD_CHARACTERS.c_str(), codepoint);
     }
 
     void GlfwInputHandler::MouseMoveCallback(GLFWwindow *window, double xPos, double yPos) {
@@ -101,7 +138,7 @@ namespace sp {
         glfwGetWindowContentScale(window, &windowScale.x, &windowScale.y);
 #endif
         sp_send_input_vec2(handler->ctx,
-            (uint64_t)handler->mouse,
+            handler->mouse,
             INPUT_EVENT_MOUSE_POSITION.c_str(),
             xPos * windowScale.x,
             yPos * windowScale.y);
@@ -109,7 +146,7 @@ namespace sp {
         int mouseMode = glfwGetInputMode(window, GLFW_CURSOR);
         if (!glm::any(glm::isinf(handler->prevMousePos)) && handler->prevMouseMode == mouseMode) {
             sp_send_input_vec2(handler->ctx,
-                (uint64_t)handler->mouse,
+                handler->mouse,
                 INPUT_EVENT_MOUSE_MOVE.c_str(),
                 xPos - handler->prevMousePos.x,
                 yPos - handler->prevMousePos.y);
@@ -125,17 +162,17 @@ namespace sp {
 
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
             sp_send_input_bool(handler->ctx,
-                (uint64_t)handler->mouse,
+                handler->mouse,
                 INPUT_EVENT_MOUSE_LEFT_CLICK.c_str(),
                 action == GLFW_PRESS);
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
             sp_send_input_bool(handler->ctx,
-                (uint64_t)handler->mouse,
+                handler->mouse,
                 INPUT_EVENT_MOUSE_MIDDLE_CLICK.c_str(),
                 action == GLFW_PRESS);
         } else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             sp_send_input_bool(handler->ctx,
-                (uint64_t)handler->mouse,
+                handler->mouse,
                 INPUT_EVENT_MOUSE_RIGHT_CLICK.c_str(),
                 action == GLFW_PRESS);
         }
@@ -146,7 +183,7 @@ namespace sp {
         auto handler = static_cast<GlfwInputHandler *>(glfwGetWindowUserPointer(window));
         Assert(handler, "MouseScrollCallback occured without valid context");
 
-        sp_send_input_vec2(handler->ctx, (uint64_t)handler->mouse, INPUT_EVENT_MOUSE_SCROLL.c_str(), xOffset, yOffset);
+        sp_send_input_vec2(handler->ctx, handler->mouse, INPUT_EVENT_MOUSE_SCROLL.c_str(), xOffset, yOffset);
     }
 
     void GlfwInputHandler::MouseEnterCallback(GLFWwindow *window, int entered) {

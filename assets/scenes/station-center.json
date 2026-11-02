@@ -14,7 +14,8 @@
 			},
 			"scene_connection": {
 				"overrides/player_gravity_spin": "1",
-				"overrides/game_state": "1"
+				"overrides/game_state": "1",
+				"overrides/player_single_grabber": "1"
 			}
 		},
 		{

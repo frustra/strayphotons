@@ -17,12 +17,14 @@
 namespace sp {
 
     class GameLogic : public RegisteredThread {
+        LogOnExit logOnExit = "GameLogic shut down ===================================================";
+
     public:
         GameLogic(LockFreeEventQueue<ecs::Event> &windowInputQueue);
 
         void StartThread(bool startPaused = false);
 
-        static void UpdateInputEvents(const ecs::Lock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
+        static void UpdateInputEvents(const ecs::DynamicLock<ecs::SendEventsLock, ecs::Write<ecs::Signals>> &lock,
             LockFreeEventQueue<ecs::Event> &inputQueue);
 
     private:

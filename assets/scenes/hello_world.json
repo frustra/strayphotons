@@ -1,5 +1,10 @@
 {
     "entities": [
+		{
+			"scene_connection": {
+				"overrides/player_single_grabber": "1"
+			}
+		},
         {
             "name": "global:spawn",
             "transform": {}

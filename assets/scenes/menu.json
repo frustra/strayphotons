@@ -3,7 +3,8 @@
 	"entities": [
 		{
 			"scene_connection": {
-				"overrides/game_state": "1"
+				"overrides/game_state": "1",
+				"overrides/player_single_grabber": "1"
 			}
 		},
 		{
@@ -108,8 +109,7 @@
 				"type": "Kinematic"
 			},
 			"script": [
-				{"name": "hello_world"},
-				{"name": "hello_world2"}
+				{"name": "hello_world"}
 			]
 		},
 		{

@@ -40,9 +40,10 @@ namespace sp {
         }
     }
 
-    void TriggerSystem::UpdateEntityTriggers(ecs::Lock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
-                                                 ecs::Write<ecs::TriggerArea, ecs::Signals>,
-                                                 ecs::SendEventsLock> lock,
+    void TriggerSystem::UpdateEntityTriggers(
+        ecs::DynamicLock<ecs::Read<ecs::Name, ecs::TriggerGroup, ecs::TransformSnapshot>,
+            ecs::Write<ecs::TriggerArea, ecs::Signals>,
+            ecs::SendEventsLock> lock,
         ecs::Entity entity) {
         if (!entity.Has<ecs::TriggerGroup, ecs::TransformSnapshot>(lock)) return;
         ZoneScoped;

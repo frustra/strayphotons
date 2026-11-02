@@ -18,7 +18,10 @@ namespace sp::scripts {
         bool alive = false;
         bool initialized = false;
 
-        void OnTick(ScriptState &state, Lock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!initialized) {
                 if (alive) EventBindings::SendEvent(lock, ent, Event{"/life/notify_neighbors", ent, alive});
                 initialized = true;
@@ -51,6 +54,6 @@ namespace sp::scripts {
         StructField::New("alive", &LifeCell::alive),
         StructField::New("initialized", &LifeCell::initialized, FieldAction::None),
         StructField::New("neighbor_count", &LifeCell::neighborCount, FieldAction::None));
-    // LogicScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive",
+    // BuiltInScript<LifeCell> lifeCell("life_cell", MetadataLifeCell, false, "/life/neighbor_alive",
     // "/life/toggle_alive");
 } // namespace sp::scripts

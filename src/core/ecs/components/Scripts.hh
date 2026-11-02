@@ -12,7 +12,12 @@
 #include "ecs/ScriptManager.hh"
 #include "strayphotons/HeapVector.hh"
 
+#include <memory>
+
 namespace ecs {
+    class ScriptState;
+    struct ScriptDefinition;
+
     class ScriptInstance {
     public:
         ScriptInstance() {}

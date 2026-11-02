@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <glm/glm.hpp>
 #include <strayphotons.h>
 
@@ -18,7 +19,7 @@ namespace sp {
         GlfwInputHandler(sp_game_t *ctx, GLFWwindow *window);
         ~GlfwInputHandler();
 
-        static void Frame();
+        void Frame();
 
         static void KeyInputCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
         static void CharInputCallback(GLFWwindow *window, unsigned int codepoint);
@@ -34,5 +35,6 @@ namespace sp {
         int prevMouseMode = -1;
         glm::vec2 prevMousePos = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
         sp_entity_t mouse, keyboard;
+        std::array<sp_entity_t, 16> joysticks = {};
     };
 } // namespace sp

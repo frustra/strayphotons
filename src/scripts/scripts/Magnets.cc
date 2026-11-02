@@ -38,7 +38,7 @@ namespace sp::scripts {
             }
         }
 
-        void OnTick(ScriptState &state,
+        void OnLogicTick(ScriptState &state,
             Lock<ReadSignalsLock, Read<TransformSnapshot>, Write<PhysicsJoints>> lock,
             Entity ent,
             chrono_clock::duration interval) {
@@ -121,7 +121,7 @@ namespace sp::scripts {
         "",
         StructField::New("attach", &MagneticPlug::attachedSocketEntity),
         StructField::New("disabled", &MagneticPlug::disabled));
-    LogicScript<MagneticPlug> magneticPlug("magnetic_plug",
+    BuiltInScript<MagneticPlug> magneticPlug("magnetic_plug",
         MetadataMagneticPlug,
         true,
         "/magnet/nearby",
@@ -130,7 +130,10 @@ namespace sp::scripts {
     struct MagneticSocket {
         robin_hood::unordered_flat_set<Entity> disabledEntities;
 
-        void OnTick(ScriptState &state, Lock<SendEventsLock> lock, Entity ent, chrono_clock::duration interval) {
+        void OnLogicTick(ScriptState &state,
+            DynamicLock<SendEventsLock> lock,
+            Entity ent,
+            chrono_clock::duration interval) {
             if (!ent.Has<TriggerArea>(lock)) return;
 
             EntityRef enableTriggerEntity = ecs::Name("enable_trigger", state.scope);
@@ -157,7 +160,7 @@ namespace sp::scripts {
         }
     };
     StructMetadata MetadataMagneticSocket(typeid(MagneticSocket), sizeof(MagneticSocket), "MagneticSocket", "");
-    LogicScript<MagneticSocket> magneticSocket("magnetic_socket",
+    BuiltInScript<MagneticSocket> magneticSocket("magnetic_socket",
         MetadataMagneticSocket,
         true,
         "/trigger/magnetic/enter",

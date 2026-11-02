@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Tecs_permissions.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 
@@ -35,6 +36,7 @@ namespace ecs {
     struct LaserLine;
     struct LaserSensor;
     struct Light;
+    struct LightCast;
     class LightSensor;
     struct OpticalElement;
     struct Physics;
@@ -78,6 +80,7 @@ namespace ecs {
         LaserLine,
         LaserSensor,
         Light,
+        LightCast,
         LightSensor,
         OpticalElement,
         PhysicsJoints,
@@ -111,6 +114,7 @@ namespace ecs {
     using Write = Tecs::Write<Components...>;
     using WriteAll = Tecs::WriteAll;
     using AddRemove = Tecs::AddRemove;
+    using PermissionBitset = Tecs::Lock<ECS>::PermissionBitset;
     template<typename Event>
     using Observer = Tecs::Observer<ECS, Event>;
     template<typename T>
@@ -147,6 +151,8 @@ namespace ecs {
     ECS &StagingWorld();
     sp::DispatchQueue &TransactionQueue();
 
+    class ComponentBase;
+    int GetComponentIndex(const ComponentBase &component);
     int GetComponentIndex(const std::string &componentName);
 
     template<typename... Permissions>
@@ -202,6 +208,23 @@ namespace ecs {
         });
     }
 
+    template<typename Fn>
+    inline auto QueueTransaction(const sp::DispatchSourceInfo &sourceInfo,
+        PermissionBitset readPermissions,
+        PermissionBitset writePermissions,
+        Fn &&callback) -> sp::AsyncPtr<std::invoke_result_t<Fn, const DynamicLock<> &>> {
+        using ReturnType = std::invoke_result_t<Fn, const DynamicLock<> &>;
+        return TransactionQueue().Dispatch<ReturnType>(sourceInfo,
+            [callback = std::move(callback), readPermissions, writePermissions]() {
+                DynamicLock<> dynamicLock(World(), readPermissions, writePermissions);
+                if constexpr (std::is_void_v<ReturnType>) {
+                    callback(dynamicLock);
+                } else {
+                    return std::make_shared<ReturnType>(callback(dynamicLock));
+                }
+            });
+    }
+
     static inline bool IsLive(const Entity &e) noexcept {
         return Tecs::IdentifierFromGeneration(e.generation) == World().GetInstanceId();
     }
@@ -232,6 +255,7 @@ TECS_NAME_COMPONENT(ecs::LaserEmitter, "LaserEmitter");
 TECS_NAME_COMPONENT(ecs::LaserLine, "LaserLine");
 TECS_NAME_COMPONENT(ecs::LaserSensor, "LaserSensor");
 TECS_NAME_COMPONENT(ecs::Light, "Light");
+TECS_NAME_COMPONENT(ecs::LightCast, "LightCast");
 TECS_NAME_COMPONENT(ecs::LightSensor, "LightSensor");
 TECS_NAME_COMPONENT(ecs::OpticalElement, "OpticalElement");
 TECS_NAME_COMPONENT(ecs::Physics, "Physics");

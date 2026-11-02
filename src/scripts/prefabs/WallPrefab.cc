@@ -103,5 +103,5 @@ namespace sp::scripts {
         StructField::New("stride", &WallPrefab::stride),
         StructField::New("segments", &WallPrefab::segmentPoints),
         StructField::New("segment_types", &WallPrefab::segmentTypes));
-    PrefabScript<WallPrefab> wallPrefab("prefab_wall", MetadataWallPrefab);
+    BuiltInScript<WallPrefab> wallPrefab("prefab_wall", MetadataWallPrefab);
 } // namespace sp::scripts

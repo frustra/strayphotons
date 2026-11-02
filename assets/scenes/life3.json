@@ -2,6 +2,11 @@
 	"libraries": "life",
 	"entities": [
 		{
+			"scene_connection": {
+				"overrides/player_single_grabber": "1"
+			}
+		},
+		{
 			"name": "floor",
 			"transform": {
 				"scale": [10, 0.5, 10],
@@ -138,7 +143,7 @@
 					}
 				},
 				{
-					"name": "signal_from_event",
+					"name": "async_signal_from_event",
 					"parameters": {
 						"outputs": "toggle_alive"
 					}
@@ -174,7 +179,7 @@
 					"name": "prefab_template"
 				},
 				{
-					"name": "signal_from_event",
+					"name": "async_signal_from_event",
 					"parameters": {
 						"outputs": "force_alive"
 					}

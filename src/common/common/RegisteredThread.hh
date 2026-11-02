@@ -10,15 +10,14 @@
 #include "strayphotons/Utility.hh"
 
 #include <atomic>
-#include <string>
 #include <string_view>
 #include <thread>
 
 namespace sp {
     class RegisteredThread : public NonCopyable {
     public:
-        RegisteredThread(std::string threadName, chrono_clock::duration interval, bool traceFrames = false);
-        RegisteredThread(std::string threadName, double framesPerSecond, bool traceFrames = false);
+        RegisteredThread(const char *threadName, chrono_clock::duration interval, bool traceFrames = false);
+        RegisteredThread(const char *threadName, double framesPerSecond, bool traceFrames = false);
         virtual ~RegisteredThread();
 
         void Pause(bool pause = true);
@@ -29,7 +28,7 @@ namespace sp {
             return measuredFps;
         }
 
-        const std::string threadName;
+        const char *threadName;
         chrono_clock::duration interval;
         std::atomic_uint64_t stepCount, maxStepCount;
         std::atomic_bool stepMode;

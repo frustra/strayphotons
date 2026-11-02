@@ -1,0 +1,28 @@
+{
+	"entities": [
+		{
+			"name": "player:flathead",
+			"signal_bindings": {
+				"freeze_camera": "player:pointer/interact_rotate"
+			},
+			"event_bindings": {
+				"/camera/rotate": {
+					"outputs": "player:pointer/interact/rotate",
+					"filter": "player:flathead/freeze_camera",
+					"modify": ["event.x * 10", "event.y * 10"]
+				}
+			}
+		},
+		{
+			"name": "player:pointer",
+			"physics_query": {},
+			"script": {
+				"name": "interact_handler",
+				"parameters": {
+					"grab_distance": 2,
+					"noclip_entity": "player:player"
+				}
+			}
+		}
+	]
+}

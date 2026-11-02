@@ -1,6 +1,17 @@
 
 <div class="component_definition">
 
+## `async_signal_from_event` Script
+
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **outputs** | vector&lt;string&gt; | [] | No description |
+
+</div>
+
+
+<div class="component_definition">
+
 ## `camera_view` Script
 
 The `camera_view` script has no configurable parameters
@@ -224,20 +235,24 @@ The `magnetic_socket` script has no configurable parameters
 
 <div class="component_definition">
 
-## `physics_collapse_events` Script
+## `multi_interact_handler` Script
 
-The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;
+| Parameter Name | Type | Default Value | Description |
+|------------|------|---------------|-------------|
+| **joint_entity** | [EntityRef](#EntityRef-type) | "" | No description |
+| **_grab_entities** | vector&lt;[EntityRef](#EntityRef-type)&gt; | [] | No description |
+
+**See Also:**
+[EntityRef](#EntityRef-type)
 
 </div>
 
 
 <div class="component_definition">
 
-## `physics_component_from_event` Script
+## `physics_collapse_events` Script
 
-| Parameter Name | Type | Default Value | Description |
-|------------|------|---------------|-------------|
-| **outputs** | vector&lt;string&gt; | [] | No description |
+The `physics_collapse_events` script has parameter type: map&lt;string (max 127 chars), string (max 127 chars)&gt;
 
 </div>
 

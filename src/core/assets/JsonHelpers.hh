@@ -277,6 +277,11 @@ namespace sp::json {
         }
         return true;
     }
+    template<typename T>
+    inline bool Load(EntityMap<T> &dst, const picojson::value &src) {
+        Errorf("json::Load unsupported type: ecs::EntityMap<T>: %s", src.to_str());
+        return false;
+    }
     template<typename K, typename T, typename H, typename E>
     inline bool Load(robin_hood::unordered_flat_map<K, T, H, E> &dst, const picojson::value &src) {
         if (!src.is<picojson::object>()) return false;
@@ -456,6 +461,16 @@ namespace sp::json {
             Save(s, vec[i], it[i]);
         }
         dst = picojson::value(vec);
+    }
+    template<typename T>
+    inline void Save(const ecs::EntityScope &s, picojson::value &dst, const EntityMap<T> &src) {
+        picojson::object obj = {};
+        for (auto &[key, value] : src) {
+            picojson::value entityName;
+            Save(s, entityName, ecs::EntityRef(key));
+            Save(s, obj[entityName.to_str()], value);
+        }
+        dst = picojson::value(obj);
     }
     template<typename T, typename H, typename E>
     inline void Save(const ecs::EntityScope &s,
