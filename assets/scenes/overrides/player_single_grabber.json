@@ -1,5 +1,5 @@
 {
-    "entities": [
+	"entities": [
 		{
 			"name": "player:flathead",
 			"signal_bindings": {
@@ -9,12 +9,12 @@
 				"/camera/rotate": {
 					"outputs": "player:pointer/interact/rotate",
 					"filter": "player:flathead/freeze_camera",
-                    "modify": ["event.x * 10", "event.y * 10"]
+					"modify": ["event.x * 10", "event.y * 10"]
 				}
 			}
 		},
-        {
-            "name": "player:pointer",
+		{
+			"name": "player:pointer",
 			"physics_query": {},
 			"script": {
 				"name": "interact_handler",
@@ -23,6 +23,6 @@
 					"noclip_entity": "player:player"
 				}
 			}
-        }
-    ]
+		}
+	]
 }

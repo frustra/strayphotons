@@ -1,12 +1,13 @@
 {
-    "entities": [
-        {
-            "name": "player:pointer",
+	"entities": [
+		{
+			"name": "player:pointer",
 			"light_cast": {},
 			"light": {
 				"illuminance": 1,
 				"spot_angle": 10,
-				"on": true
+				"on": true,
+				"tint": [0, 0, 0]
 			},
 			"script": [
 				{
@@ -24,6 +25,6 @@
 					}
 				}
 			]
-        }
-    ]
+		}
+	]
 }
