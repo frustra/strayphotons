@@ -134,6 +134,9 @@ namespace sp::vulkan {
                         state.voxelDataExtents = voxelData.extents;
                         state.voxelDataSeed = voxelData.seed;
                         bool isActive = state.renderableMesh == state.voxelDataMesh;
+                        Logf("Loading VoxelData mesh %s: isActive(%s)",
+                            ecs::EntityRef(voxelDataModifiedEvent).Name().String(),
+                            isActive ? "true" : "false");
                         state.voxelDataMesh = LoadMesh(voxelData);
                         if (isActive) state.renderableMesh = state.voxelDataMesh;
                     }
@@ -158,6 +161,11 @@ namespace sp::vulkan {
                         state.renderableMeshIndex = renderable.meshIndex;
                         if (!renderable.modelName.empty()) {
                             state.renderableMesh = LoadMesh(renderable);
+                            Logf("Loading Renderable mesh %s: %s.%u ready(%s)",
+                                ecs::EntityRef(renderableModifiedEvent).Name().String(),
+                                renderable.modelName,
+                                renderable.meshIndex,
+                                state.renderableMesh->Ready() ? "true" : "false");
                             if (state.renderableMesh &&
                                 (!state.renderableMesh->Ready() || state.renderableMesh->Get())) {
                                 if (state.renderableIndex < gpuRenderables.size()) {
@@ -175,6 +183,9 @@ namespace sp::vulkan {
                             }
                         } else if (state.voxelDataMesh &&
                                    (!state.voxelDataMesh->Ready() || state.voxelDataMesh->Get())) {
+                            Logf("Activating VoxelData mesh %s: ready(%s)",
+                                ecs::EntityRef(renderableModifiedEvent).Name().String(),
+                                state.voxelDataMesh->Ready() ? "true" : "false");
                             state.renderableMesh = state.voxelDataMesh;
                             if (state.renderableIndex < gpuRenderables.size()) {
                                 // Reuse existing index
