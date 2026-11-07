@@ -125,7 +125,8 @@ namespace sp::vulkan {
 
         // Releases *cmd back to the DeviceContext and resets cmd
         void Submit(CommandContextPtr &cmd);
-        void Submit(std::span<CommandContextPtr> cmds, bool lastSubmit = false);
+        void Submit(std::span<CommandContextPtr> cmds);
+        void AdvanceFrame();
 
         BufferPtr AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
@@ -366,6 +367,7 @@ namespace sp::vulkan {
         struct FrameContext {
             vk::UniqueSemaphore imageAvailableSemaphore, renderCompleteSemaphore;
             std::shared_ptr<vk::UniqueFence> inFlightFence;
+            bool fenceSubmitted = false;
 
             // Stores all command contexts created for this frame, so they can be reused in later frames
             std::array<FrameCommandContextPool, QUEUE_TYPES_COUNT> commandContexts;

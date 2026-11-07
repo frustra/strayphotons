@@ -149,7 +149,7 @@ namespace sp::vulkan {
 
         Access lastAccess = Access::None;
         uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        std::shared_ptr<vk::UniqueSemaphore> pendingCommand;
+        std::weak_ptr<vk::UniqueSemaphore> pendingCommand;
         uint64_t pendingSubmit = 0;
 
         friend class DeviceContext;

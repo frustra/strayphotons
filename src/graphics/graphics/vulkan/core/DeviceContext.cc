@@ -524,7 +524,7 @@ namespace sp::vulkan {
                             vk::SemaphoreCreateInfo createInfo = {};
                             new (semaphore) vk::UniqueSemaphore(device->createSemaphoreUnique(createInfo));
                         });
-                    threadContext->semaphorePool->Reserve(800);
+                    threadContext->semaphorePool->Reserve(512);
 
                     vk::CommandPoolCreateInfo poolInfo;
                     poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
@@ -964,7 +964,7 @@ namespace sp::vulkan {
         Submit({&cmd, 1});
     }
 
-    void DeviceContext::Submit(std::span<CommandContextPtr> cmds, bool lastSubmit) {
+    void DeviceContext::Submit(std::span<CommandContextPtr> cmds) {
         ZoneScoped;
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
@@ -973,13 +973,7 @@ namespace sp::vulkan {
         }
 
         QueueType queue = QUEUE_TYPES_COUNT;
-
         std::shared_ptr<vk::UniqueFence> fence;
-        if (lastSubmit) {
-            fence = Frame().inFlightFence;
-            device->resetFences({fence->get()});
-        }
-
         static thread_local std::vector<vk::Semaphore> signalSemArray;
         static thread_local std::vector<vk::Semaphore> waitSemArray;
         static thread_local std::vector<vk::PipelineStageFlags> waitStageArray;
@@ -991,7 +985,7 @@ namespace sp::vulkan {
                 waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
                 waitSemArray.push_back(*Frame().imageAvailableSemaphore);
                 signalSemArray.push_back(*Frame().renderCompleteSemaphore);
-                Assert(lastSubmit, "swapchain write must be in the last submit batch of the frame");
+                // Assert(lastSubmit, "swapchain write must be in the last submit batch of the frame");
             }
 
             if (cmdFence) {
@@ -1004,38 +998,40 @@ namespace sp::vulkan {
         }
 
         uint64_t submitNumber = ++submitCounter;
-        std::vector<vk::CommandBuffer> cmdBufs;
+        static thread_local std::vector<vk::CommandBuffer> cmdBufs;
         cmdBufs.reserve(cmds.size());
         for (auto &cmd : cmds) {
             for (auto &buffer : cmd->acquiredBuffers) {
-                if (buffer->pendingCommand) {
+                auto pending = buffer->pendingCommand.lock();
+                if (pending) {
                     if (buffer->pendingSubmit == submitNumber) continue;
-                    waitSemArray.emplace_back(buffer->pendingCommand->get());
+                    waitSemArray.emplace_back(pending->get());
                     waitStageArray.emplace_back(GetAccessInfo(buffer->LastAccess()).stageMask);
-                    PushInFlightObject(buffer->pendingCommand, fence);
+                    PushInFlightObject(pending, fence);
                 }
                 PushInFlightObject(buffer, fence);
-                buffer->pendingCommand = Thread().semaphorePool->Get();
-                PushInFlightObject(buffer->pendingCommand, fence);
-                signalSemArray.emplace_back(buffer->pendingCommand->get());
+                buffer->pendingCommand = pending = Thread().semaphorePool->Get();
+                PushInFlightObject(pending, fence);
+                signalSemArray.emplace_back(pending->get());
                 buffer->pendingSubmit = submitNumber;
             }
             for (auto &image : cmd->acquiredImages) {
-                if (image->pendingCommand) {
+                auto pending = image->pendingCommand.lock();
+                if (pending) {
                     if (image->pendingSubmit == submitNumber) continue;
-                    waitSemArray.emplace_back(image->pendingCommand->get());
+                    waitSemArray.emplace_back(pending->get());
                     waitStageArray.emplace_back(GetAccessInfo(image->LastAccess()).stageMask);
-                    PushInFlightObject(image->pendingCommand, fence);
+                    PushInFlightObject(pending, fence);
                 }
                 PushInFlightObject(image, fence);
-                image->pendingCommand = Thread().semaphorePool->Get();
-                PushInFlightObject(image->pendingCommand, fence);
-                signalSemArray.emplace_back(image->pendingCommand->get());
+                image->pendingCommand = pending = Thread().semaphorePool->Get();
+                PushInFlightObject(pending, fence);
+                signalSemArray.emplace_back(pending->get());
                 image->pendingSubmit = submitNumber;
             }
 
             if (cmd->recording) cmd->End();
-            cmdBufs.push_back(cmd->Raw());
+            cmdBufs.emplace_back(cmd->Raw());
         }
         DebugAssert(waitSemArray.size() == waitStageArray.size(),
             "must have exactly one wait stage per wait semaphore");
@@ -1052,6 +1048,13 @@ namespace sp::vulkan {
         queueLastSubmit[queue] = frameCounter;
         try {
             ZoneScopedN("VkQueueSubmit");
+            if (!fence) {
+                fence = Frame().inFlightFence;
+                if (!Frame().fenceSubmitted) {
+                    device->resetFences({Frame().inFlightFence->get()});
+                    Frame().fenceSubmitted = true;
+                }
+            }
             queues[queue].submit({submitInfo}, fence->get());
         } catch (const vk::DeviceLostError &err) {
             Errorf("Device lost! queue.submit() %s", err.what());
@@ -1064,6 +1067,11 @@ namespace sp::vulkan {
         signalSemArray.clear();
         waitSemArray.clear();
         waitStageArray.clear();
+        cmdBufs.clear();
+    }
+
+    void DeviceContext::AdvanceFrame() {
+        Frame().fenceSubmitted = false;
     }
 
     BufferPtr DeviceContext::AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {

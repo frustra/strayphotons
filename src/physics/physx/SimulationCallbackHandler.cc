@@ -9,6 +9,8 @@
 
 #include "common/Tracing.hh"
 #include "ecs/EcsImpl.hh"
+#include "ecs/EventQueue.hh"
+#include "ecs/components/Events.hh"
 #include "glm/geometric.hpp"
 #include "physx/PhysxManager.hh"
 #include "physx/PhysxUtils.hh"
@@ -75,9 +77,6 @@ namespace sp {
         auto thresholdForce0 = userData0->contactReportThreshold >= 0 ? userData0->contactReportThreshold : PX_MAX_F32;
         auto thresholdForce1 = userData1->contactReportThreshold >= 0 ? userData1->contactReportThreshold : PX_MAX_F32;
         float thresholdForce = std::min(thresholdForce0, thresholdForce1);
-
-        // TODO: store this on the local thread so all events can be batched in one transaction
-        auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
 
         PxContactPairExtraDataIterator iter(pairHeader.extraDataStream, pairHeader.extraDataStreamSize);
         while (iter.nextItemSet()) {
@@ -151,40 +150,32 @@ namespace sp {
                     pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_PERSISTS)) &&
                 maxForce >= thresholdForce) {
                 if (shapeUserData0->owner != shapeUserData0->parent) {
-                    ecs::EventBindings::SendEvent(lock,
-                        shapeUserData0->owner,
+                    pendingEvents.emplace_back(shapeUserData0->owner,
                         ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, maxForce});
                 }
                 if (shapeUserData1->owner != shapeUserData1->parent) {
-                    ecs::EventBindings::SendEvent(lock,
-                        shapeUserData1->owner,
+                    pendingEvents.emplace_back(shapeUserData1->owner,
                         ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, maxForce});
                 }
 
-                ecs::EventBindings::SendEvent(lock,
-                    shapeUserData0->parent,
+                pendingEvents.emplace_back(shapeUserData0->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData1->parent, maxForce});
-                ecs::EventBindings::SendEvent(lock,
-                    shapeUserData1->parent,
+                pendingEvents.emplace_back(shapeUserData1->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_FOUND, shapeUserData0->parent, maxForce});
             } else if ((pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_LOST) ||
                            pair.events.isSet(PxPairFlag::eNOTIFY_TOUCH_PERSISTS)) &&
                        maxForce < thresholdForce) {
-                ecs::EventBindings::SendEvent(lock,
-                    shapeUserData0->parent,
+                pendingEvents.emplace_back(shapeUserData0->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, maxForce});
-                ecs::EventBindings::SendEvent(lock,
-                    shapeUserData1->parent,
+                pendingEvents.emplace_back(shapeUserData1->parent,
                     ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, maxForce});
 
                 if (shapeUserData0->owner != shapeUserData0->parent) {
-                    ecs::EventBindings::SendEvent(lock,
-                        shapeUserData0->owner,
+                    pendingEvents.emplace_back(shapeUserData0->owner,
                         ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData1->parent, maxForce});
                 }
                 if (shapeUserData1->owner != shapeUserData1->parent) {
-                    ecs::EventBindings::SendEvent(lock,
-                        shapeUserData1->owner,
+                    pendingEvents.emplace_back(shapeUserData1->owner,
                         ecs::Event{PHYSICS_EVENT_COLLISION_FORCE_LOST, shapeUserData0->parent, maxForce});
                 }
             }
@@ -266,6 +257,16 @@ namespace sp {
             return PxFilterFlag::eSUPPRESS;
         }
         return PxFilterFlags();
+    }
+
+    void SimulationCallbackHandler::SendPendingEvents() {
+        if (pendingEvents.empty()) return;
+        ZoneScoped;
+        auto lock = ecs::StartTransaction<ecs::SendEventsLock>();
+        for (auto &[target, event] : pendingEvents) {
+            ecs::EventBindings::SendEvent(lock, target, event);
+        }
+        pendingEvents.clear();
     }
 
 } // namespace sp

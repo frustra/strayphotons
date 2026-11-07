@@ -78,14 +78,14 @@ namespace sp::vulkan::render_graph {
         std::vector<CommandContextPtr> pendingCmds;
         CommandContextPtr cmd;
 
-        auto submitPendingCmds = [&](bool lastSubmit) {
+        auto submitPendingCmds = [&] {
             if (cmd) {
                 pendingCmds.push_back(cmd);
                 cmd.reset();
             }
 
             if (!pendingCmds.empty()) {
-                device.Submit(pendingCmds, lastSubmit);
+                device.Submit(pendingCmds);
                 pendingCmds.clear();
             }
         };
@@ -134,7 +134,7 @@ namespace sp::vulkan::render_graph {
             frameScopeStack = pass.scopes;
 
             AddPreBarriers(cmd, pass); // creates cmd if necessary
-            if (pass.flushCommands) submitPendingCmds(false);
+            if (pass.flushCommands) submitPendingCmds();
 
             RenderPassInfo renderPassInfo = {};
 
@@ -224,7 +224,7 @@ namespace sp::vulkan::render_graph {
         }
         futureDependencies[resources.frameIndex].clear();
 
-        submitPendingCmds(true);
+        submitPendingCmds();
         AdvanceFrame();
     }
 
@@ -256,6 +256,7 @@ namespace sp::vulkan::render_graph {
 
     void RenderGraph::AdvanceFrame() {
         passes.clear();
+        device.AdvanceFrame();
         resources.AdvanceFrame();
     }
 
