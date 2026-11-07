@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,7 +11,6 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Hashing.hh"
-#include "strayphotons/HeapVector.hh"
 #include "strayphotons/Utility.hh"
 
 #include <cstdint>
@@ -142,12 +141,7 @@ namespace sp::vulkan {
 
     class SubBuffer : public NonMoveable, public HasUniqueID {
     public:
-        SubBuffer(BufferPtr buffer,
-            VmaVirtualBlock subAllocationBlock,
-            vk::DeviceSize offsetBytes,
-            vk::DeviceSize size,
-            size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
-            size_t arrayCount = 0);
+        SubBuffer();
         ~SubBuffer();
 
         static SubBufferPtr New(BufferPtr buffer,
@@ -177,6 +171,8 @@ namespace sp::vulkan {
 
         operator vk::Buffer() const;
 
+        void AcquireAccess(CommandContext &cmd, Access newAccess);
+
     private:
         std::weak_ptr<SubBuffer> handle;
         BufferPtr parentBuffer;
@@ -187,11 +183,7 @@ namespace sp::vulkan {
 
     class Buffer : public UniqueMemory {
     public:
-        Buffer(vk::BufferCreateInfo bufferInfo,
-            VmaAllocationCreateInfo allocInfo,
-            VmaAllocator allocator,
-            size_t arrayStride = 0,
-            size_t arrayCount = 0);
+        Buffer();
         ~Buffer();
 
         static BufferPtr New(vk::BufferCreateInfo bufferInfo,
@@ -246,6 +238,8 @@ namespace sp::vulkan {
 
         void SetAccess(Access oldAccess, Access newAccess);
 
+        void AcquireAccess(CommandContext &cmd, Access newAccess);
+
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
@@ -257,6 +251,11 @@ namespace sp::vulkan {
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
         Access lastAccess = Access::None;
+        uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        std::shared_ptr<vk::UniqueSemaphore> pendingCommand;
+        uint64_t pendingSubmit = 0;
+
+        friend class DeviceContext;
     };
 } // namespace sp::vulkan
 

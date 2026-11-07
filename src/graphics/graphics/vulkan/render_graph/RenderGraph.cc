@@ -85,7 +85,7 @@ namespace sp::vulkan::render_graph {
             }
 
             if (!pendingCmds.empty()) {
-                device.Submit({(uint32_t)pendingCmds.size(), pendingCmds.data()}, {}, {}, {}, {}, lastSubmit);
+                device.Submit(pendingCmds, lastSubmit);
                 pendingCmds.clear();
             }
         };
@@ -233,7 +233,6 @@ namespace sp::vulkan::render_graph {
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
             if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
-            auto &next = GetAccessInfo(nextAccess);
 
             auto &res = resources.resources[access.id];
             Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", access.id);
@@ -242,40 +241,15 @@ namespace sp::vulkan::render_graph {
                 auto view = resources.GetImageView(access.id);
                 if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                auto &image = view->Image();
-                auto lastAccess = image->LastAccess();
-                if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::None) continue;
-
-                auto last = GetAccessInfo(lastAccess);
-                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-                if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
-
                 if (!cmd) cmd = device.GetFrameCommandContext(resources);
 
-                cmd->ImageBarrier(image,
-                    last.imageLayout,
-                    next.imageLayout,
-                    last.stageMask,
-                    last.accessMask,
-                    next.stageMask,
-                    next.accessMask);
-
-                image->SetAccess(Access::None, nextAccess);
+                view->Image()->AcquireAccess(*cmd, nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
                 auto buffer = resources.GetBuffer(access.id);
-                auto lastAccess = buffer->LastAccess();
-                buffer->SetAccess(Access::None, nextAccess);
-
-                if (nextAccess == Access::HostWrite) continue;
-                if (lastAccess == Access::None) continue;
 
                 if (!cmd) cmd = device.GetFrameCommandContext(resources);
 
-                auto last = GetAccessInfo(lastAccess);
-                vk::MemoryBarrier barrier;
-                barrier.srcAccessMask = last.accessMask;
-                barrier.dstAccessMask = next.accessMask;
-                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
+                buffer->AcquireAccess(*cmd, nextAccess);
             }
         }
     }

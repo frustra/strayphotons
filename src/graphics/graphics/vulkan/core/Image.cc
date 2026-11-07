@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,7 +9,10 @@
 
 #include "assets/GltfImpl.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/Access.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Logging.hh"
 
 #include <robin_hood.h>
@@ -17,26 +20,97 @@
 namespace sp::vulkan {
     Image::Image() : UniqueMemory(VK_NULL_HANDLE) {}
 
-    Image::Image(vk::ImageCreateInfo imageInfo,
-        VmaAllocationCreateInfo allocInfo,
-        VmaAllocator allocator,
-        vk::ImageUsageFlags declaredUsage)
-        : UniqueMemory(allocator), format(imageInfo.format), extent(imageInfo.extent), mipLevels(imageInfo.mipLevels),
-          arrayLayers(imageInfo.arrayLayers), usage(imageInfo.usage), declaredUsage(declaredUsage) {
-
-        VkImageCreateInfo vkImageInfo = (const VkImageCreateInfo &)imageInfo;
-        VkImage vkImage;
-
-        auto result = vmaCreateImage(allocator, &vkImageInfo, &allocInfo, &vkImage, &allocation, nullptr);
-        AssertVKSuccess(result, "creating image");
-        image = vkImage;
-    }
-
     Image::~Image() {
+        Assertf(handle.use_count() == 0, "Image destroyed while referenced");
         if (allocator != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
             UnmapPersistent();
             vmaDestroyImage(allocator, image, allocation);
         }
+    }
+
+    ImagePtr Image::New(vk::ImageCreateInfo imageInfo,
+        VmaAllocationCreateInfo allocInfo,
+        VmaAllocator allocator,
+        vk::ImageUsageFlags declaredUsage) {
+        ZoneScoped;
+        ZoneValue(imageInfo.extent.width);
+        ZoneValue(imageInfo.extent.height);
+        ZoneValue(imageInfo.extent.depth);
+        auto handle = std::make_shared<Image>();
+        handle->handle = handle;
+        handle->allocator = allocator;
+        handle->format = imageInfo.format;
+        handle->extent = imageInfo.extent;
+        handle->mipLevels = imageInfo.mipLevels;
+        handle->arrayLayers = imageInfo.arrayLayers;
+        handle->usage = imageInfo.usage;
+        handle->declaredUsage = declaredUsage;
+
+        VkImage vkImage;
+        auto result = vmaCreateImage(allocator,
+            &static_cast<const VkImageCreateInfo &>(imageInfo),
+            &allocInfo,
+            &vkImage,
+            &handle->allocation,
+            nullptr);
+        AssertVKSuccess(result, "creating image");
+        handle->image = vkImage;
+        return handle;
+    }
+
+    ImagePtr Image::New(vk::Image image,
+        vk::Format format,
+        vk::Extent3D extent,
+        uint32_t mipLevels,
+        uint32_t arrayLayers) {
+        auto handle = std::make_shared<Image>();
+        handle->handle = handle;
+        handle->image = image;
+        handle->format = format;
+        handle->extent = extent;
+        handle->mipLevels = mipLevels;
+        handle->arrayLayers = arrayLayers;
+        return handle;
+    }
+
+    void Image::AcquireAccess(CommandContext &cmd, Access newAccess) {
+        auto imagePtr = handle.lock();
+        Assertf(imagePtr, "Image::AcquireAccess called on image with invalid handle");
+
+        DeviceContext &device = cmd.Device();
+        uint32_t queueFamilyIndex = device.QueueFamilyIndex(cmd.GetType());
+
+        if (lastQueueFamilyIndex != queueFamilyIndex) {
+            DebugZoneScopedN("AcquireImage");
+            if (lastQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) {
+                ZoneScopedN("TransferQueueFamily");
+                auto subCmd = device.GetFencedCommandContext(device.GetQueueType(lastQueueFamilyIndex));
+
+                ImageBarrierInfo options = {};
+                options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+                options.dstQueueFamilyIndex = queueFamilyIndex;
+                const AccessInfo &lastInfo = GetAccessInfo(lastAccess);
+                subCmd->ImageBarrier(imagePtr, lastLayout, lastInfo.stageMask, lastInfo.accessMask, options);
+                subCmd->acquiredImages.emplace_back(imagePtr);
+
+                device.Submit(subCmd);
+            }
+
+            // Acquire new queue family
+            ImageBarrierInfo options = {};
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
+            cmd.ImageBarrier(imagePtr, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask, options);
+            lastQueueFamilyIndex = queueFamilyIndex;
+            lastAccess = newAccess;
+        } else {
+            // No queue ownership transfer required
+            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
+            cmd.ImageBarrier(imagePtr, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
+            lastAccess = newAccess;
+        }
+        cmd.acquiredImages.emplace_back(imagePtr);
     }
 
     void Image::SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {

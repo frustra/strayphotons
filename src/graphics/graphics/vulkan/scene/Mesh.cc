@@ -23,6 +23,7 @@
 #include "graphics/vulkan/scene/MarchingCubesData.h"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/InlineVector.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
@@ -58,6 +59,8 @@ namespace sp::vulkan {
         auto indexData = (uint32_t *)staging.indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
+        staging.indexBuffer->SetAccess(Access::None, Access::HostWrite);
+
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
         staging.vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), vertexCount},
             vk::BufferUsageFlagBits::eTransferSrc,
@@ -66,6 +69,8 @@ namespace sp::vulkan {
 
         auto vertexData = (SceneVertex *)staging.vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
+
+        staging.vertexBuffer->SetAccess(Access::None, Access::HostWrite);
 
         JointVertex *jointsData = nullptr, *jointsDataStart = nullptr;
 
@@ -79,6 +84,8 @@ namespace sp::vulkan {
 
             jointsData = (JointVertex *)stagingJointsBuffer->Mapped();
             jointsDataStart = jointsData;
+
+            stagingJointsBuffer->SetAccess(Access::None, Access::HostWrite);
         }
 
         for (auto &assetPrimitive : mesh->primitives) {
@@ -144,8 +151,10 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_CPU_ONLY);
         Assertf(modelEntry->ByteSize() == staging.modelEntry->ByteSize(), "model staging buffer size mismatch");
 
-        auto meshModel = (GPUMeshModel *)staging.modelEntry->Mapped();
         auto gpuPrimitives = (GPUMeshPrimitive *)staging.primitiveList->Mapped();
+        auto meshModel = (GPUMeshModel *)staging.modelEntry->Mapped();
+        staging.primitiveList->SetAccess(Access::None, Access::HostWrite);
+        staging.modelEntry->SetAccess(Access::None, Access::HostWrite);
         {
             ZoneScopedN("CopyPrimitives");
             auto gpuPrim = gpuPrimitives;
@@ -167,15 +176,41 @@ namespace sp::vulkan {
             meshModel->vertexOffset = vertexBuffer->ArrayOffset();
         }
 
-        InlineVector<DeviceContext::BufferTransfer, 5> transfer;
-        transfer.emplace_back(staging.indexBuffer, indexBuffer);
-        transfer.emplace_back(staging.vertexBuffer, vertexBuffer);
-        if (stagingJointsBuffer) transfer.emplace_back(stagingJointsBuffer, jointsBuffer);
-        transfer.emplace_back(staging.primitiveList, primitiveList);
-        transfer.emplace_back(staging.modelEntry, modelEntry);
+        std::shared_ptr<vk::UniqueFence> transferFence;
+        {
+            ZoneScopedN("TransferBuffers");
+            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::TransferAsync);
+            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+            staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+            staging.primitiveList->AcquireAccess(*cmd, Access::TransferRead);
+            staging.modelEntry->AcquireAccess(*cmd, Access::TransferRead);
+            if (stagingJointsBuffer) {
+                stagingJointsBuffer->AcquireAccess(*cmd, Access::TransferRead);
+                jointsBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            }
+            indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            vertexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            primitiveList->AcquireAccess(*cmd, Access::TransferWrite);
+            modelEntry->AcquireAccess(*cmd, Access::TransferWrite);
 
-        // TODO replace with span constructor in vk-hpp v1.2.189
-        staging.transferComplete = device.TransferBuffers({(uint32_t)transfer.size(), transfer.data()});
+            vk::BufferCopy indexRegion{0, indexBuffer->ByteOffset(), staging.indexBuffer->ByteSize()};
+            cmd->Raw().copyBuffer(*staging.indexBuffer, *indexBuffer, {indexRegion});
+            vk::BufferCopy vertexRegion{0, vertexBuffer->ByteOffset(), staging.vertexBuffer->ByteSize()};
+            cmd->Raw().copyBuffer(*staging.vertexBuffer, *vertexBuffer, {vertexRegion});
+            if (stagingJointsBuffer) {
+                vk::BufferCopy jointsRegion{0, jointsBuffer->ByteOffset(), stagingJointsBuffer->ByteSize()};
+                cmd->Raw().copyBuffer(*stagingJointsBuffer, *jointsBuffer, {jointsRegion});
+            }
+            vk::BufferCopy primitiveRegion{0, primitiveList->ByteOffset(), staging.primitiveList->ByteSize()};
+            cmd->Raw().copyBuffer(*staging.primitiveList, *primitiveList, {primitiveRegion});
+            vk::BufferCopy modelRegion{0, modelEntry->ByteOffset(), staging.modelEntry->ByteSize()};
+            cmd->Raw().copyBuffer(*staging.modelEntry, *modelEntry, {modelRegion});
+
+            transferFence = cmd->Fence();
+            device.Submit(cmd);
+        }
+
+        staging.transferComplete = device.ExecuteAfterFence(NewDispatchSource, transferFence, [] {});
     }
 
     Mesh::Mesh(std::string_view algorithm, glm::uvec3 extents, uint32_t seed, GPUScene &scene, DeviceContext &device)
@@ -235,12 +270,11 @@ namespace sp::vulkan {
             VMA_MEMORY_USAGE_CPU_ONLY);
         Assertf(modelEntry->ByteSize() == staging.modelEntry->ByteSize(), "model staging buffer size mismatch");
 
-        std::shared_ptr<vk::UniqueSemaphore> bufferInitComplete, vertexMarchComplete, triangleMarchComplete;
         {
             ZoneScopedN("InitStagingBuffers");
             CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            staging.lookupBuffer->SetAccess(Access::None, Access::TransferWrite);
-            staging.indexBuffer->SetAccess(Access::None, Access::TransferWrite);
+            staging.lookupBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
 
             // Set seed
             cmd->Raw().fillBuffer(*staging.lookupBuffer, 0, sizeof(uint32_t), seed);
@@ -249,21 +283,13 @@ namespace sp::vulkan {
             // Set indexCount to 0
             cmd->Raw().fillBuffer(*staging.indexBuffer, 0, sizeof(uint32_t), 0u);
 
-            bufferInitComplete = device.GetEmptySemaphore(cmd->Fence());
-            device.Submit(cmd, {bufferInitComplete->get()}, {}, {});
+            device.Submit(cmd);
         }
         {
             ZoneScopedN("MarchChunkVertex");
             CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            cmd->BufferBarrier(staging.vertexBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderWrite);
-            cmd->BufferBarrier(staging.lookupBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(staging.lookupBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderWrite);
+            staging.vertexBuffer->AcquireAccess(*cmd, Access::ComputeShaderWrite);
+            staging.lookupBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
 
             cmd->SetComputeShader("marching_cubes_vertex2.comp");
             cmd->SetShaderConstant(ShaderStage::Compute, "GRID_SIZE_X", extents.x);
@@ -276,37 +302,20 @@ namespace sp::vulkan {
             glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
             cmd->Dispatch(groups.x, groups.y, groups.z);
 
-            vertexMarchComplete = device.GetEmptySemaphore(cmd->Fence());
-            device.Submit(cmd,
-                {vertexMarchComplete->get()},
-                {bufferInitComplete->get()},
-                {vk::PipelineStageFlagBits::eTransfer});
+            staging.lookupBuffer->SetAccess(Access::ComputeShaderReadStorage, Access::ComputeShaderWrite);
+
+            device.Submit(cmd);
         }
         {
             ZoneScopedN("MarchChunkTriangle");
             CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            cmd->BufferBarrier(constants.triangleIndexBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(constants.caseInteriorEdges,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(constants.triangleCaseOffsets,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(constants.caseTests,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
+            constants.triangleIndexBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            constants.caseInteriorEdges->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            constants.triangleCaseOffsets->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            constants.caseTests->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
 
-            cmd->BufferBarrier(staging.lookupBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(staging.indexBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderRead);
-            cmd->BufferBarrier(staging.indexBuffer,
-                vk::PipelineStageFlagBits::eComputeShader,
-                vk::AccessFlagBits::eShaderWrite);
+            staging.lookupBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            staging.indexBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
 
             cmd->SetComputeShader("marching_cubes_triangle2.comp");
             cmd->SetShaderConstant(ShaderStage::Compute, "GRID_SIZE_X", extents.x);
@@ -324,26 +333,18 @@ namespace sp::vulkan {
             glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
             cmd->Dispatch(groups.x, groups.y, groups.z);
 
-            triangleMarchComplete = device.GetEmptySemaphore(cmd->Fence());
-            device.Submit(cmd,
-                {triangleMarchComplete->get()},
-                {vertexMarchComplete->get()},
-                {vk::PipelineStageFlagBits::eComputeShader});
+            staging.indexBuffer->SetAccess(Access::ComputeShaderReadStorage, Access::ComputeShaderWrite);
+
+            device.Submit(cmd);
         }
-        vk::Fence readbackFence;
+        std::shared_ptr<vk::UniqueFence> readbackFence;
         {
             ZoneScopedN("BufferReadback");
             CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            cmd->BufferBarrier(staging.vertexBuffer,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferRead);
-            cmd->BufferBarrier(staging.lookupBuffer,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferRead);
-            cmd->BufferBarrier(staging.indexBuffer,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferRead);
-            staging.readbackBuffer->SetAccess(Access::None, Access::TransferWrite);
+            staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+            staging.lookupBuffer->AcquireAccess(*cmd, Access::TransferRead);
+            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+            staging.readbackBuffer->AcquireAccess(*cmd, Access::TransferWrite);
 
             vk::BufferCopy vertexCountRegion(sizeof(uint32_t), 0, sizeof(uint32_t));
             vk::BufferCopy indexCountRegion(0, sizeof(uint32_t), sizeof(uint32_t));
@@ -358,7 +359,7 @@ namespace sp::vulkan {
             cmd->BufferBarrier(staging.readbackBuffer, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostRead);
 
             readbackFence = cmd->Fence();
-            device.Submit(cmd, {}, {triangleMarchComplete->get()}, {vk::PipelineStageFlagBits::eComputeShader});
+            device.Submit(cmd);
         }
         asset = std::make_shared<Gltf>(modelName);
         staging.transferComplete = device.ExecuteAfterFence(NewDispatchSource, readbackFence, [this, &scene, &device] {
@@ -425,18 +426,14 @@ namespace sp::vulkan {
             {
                 ZoneScopedN("TransferBuffers");
                 CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-                cmd->BufferBarrier(staging.vertexBuffer,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead);
-                cmd->BufferBarrier(staging.indexBuffer,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead);
-                cmd->BufferBarrier(staging.primitiveList,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead);
-                cmd->BufferBarrier(staging.modelEntry,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead);
+                staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+                staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
+                staging.primitiveList->AcquireAccess(*cmd, Access::TransferRead);
+                staging.modelEntry->AcquireAccess(*cmd, Access::TransferRead);
+                vertexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+                indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+                primitiveList->AcquireAccess(*cmd, Access::TransferWrite);
+                modelEntry->AcquireAccess(*cmd, Access::TransferWrite);
 
                 vk::BufferCopy vertexRegion(0, vertexBuffer->ByteOffset(), sizeof(SceneVertex) * vertexCount);
                 vk::BufferCopy indexRegion(sizeof(uint32_t), indexBuffer->ByteOffset(), sizeof(uint32_t) * indexCount);
@@ -448,6 +445,7 @@ namespace sp::vulkan {
                 cmd->Raw().copyBuffer(*staging.modelEntry, *modelEntry, {modelRegion});
 
                 device.Submit(cmd);
+
                 Logf("Buffer transfer submitted %s", modelName);
                 Assertf(!staging.transferComplete->Ready(), "Transfer complete too early: %s", modelName);
             }

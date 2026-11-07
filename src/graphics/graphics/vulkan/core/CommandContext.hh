@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/Util.hh"
@@ -17,8 +18,10 @@
 #include <bit>
 #include <glm/glm.hpp>
 #include <memory>
+#include <memory_resource>
 #include <robin_hood.h>
 #include <string_view>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan::CommandContextFlags {
@@ -69,6 +72,7 @@ namespace sp::vulkan {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
 
+        CommandContext(DeviceContext &device, vk::CommandPool pool, CommandContextType type, CommandContextScope scope);
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
             CommandContextType type,
@@ -78,9 +82,6 @@ namespace sp::vulkan {
         CommandContextType GetType() {
             return type;
         }
-
-        // A CommandContext MUST be submitted to the device or abandoned before destroying the object.
-        void Abandon();
 
         void Reset();
         void BeginRenderPass(const RenderPassInfo &info);
@@ -490,7 +491,7 @@ namespace sp::vulkan {
             return device;
         }
 
-        vk::Fence Fence();
+        const std::shared_ptr<vk::UniqueFence> &Fence();
 
     protected:
         friend class DeviceContext;
@@ -540,9 +541,9 @@ namespace sp::vulkan {
         CommandContextScope scope;
         render_graph::Resources *resources;
 
-        vk::UniqueFence fence;
+        std::shared_ptr<vk::UniqueFence> fence;
 
-        bool recording = false, abandoned = false;
+        bool recording = false;
 
         YDirection viewportYDirection = YDirection::Up;
         std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
@@ -565,5 +566,13 @@ namespace sp::vulkan {
 
         ShaderDataBindings shaderData;
         std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;
+
+        std::vector<ImagePtr> acquiredImages;
+        std::vector<BufferPtr> acquiredBuffers;
+
+        friend class Buffer;
+        friend class SubBuffer;
+        friend class Image;
+        friend class DeviceContext;
     };
 } // namespace sp::vulkan

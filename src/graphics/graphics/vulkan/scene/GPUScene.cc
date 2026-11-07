@@ -16,6 +16,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Scene.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
@@ -134,9 +135,6 @@ namespace sp::vulkan {
                         state.voxelDataExtents = voxelData.extents;
                         state.voxelDataSeed = voxelData.seed;
                         bool isActive = state.renderableMesh == state.voxelDataMesh;
-                        Logf("Loading VoxelData mesh %s: isActive(%s)",
-                            ecs::EntityRef(voxelDataModifiedEvent).Name().String(),
-                            isActive ? "true" : "false");
                         state.voxelDataMesh = LoadMesh(voxelData);
                         if (isActive) state.renderableMesh = state.voxelDataMesh;
                     }
@@ -161,11 +159,6 @@ namespace sp::vulkan {
                         state.renderableMeshIndex = renderable.meshIndex;
                         if (!renderable.modelName.empty()) {
                             state.renderableMesh = LoadMesh(renderable);
-                            Logf("Loading Renderable mesh %s: %s.%u ready(%s)",
-                                ecs::EntityRef(renderableModifiedEvent).Name().String(),
-                                renderable.modelName,
-                                renderable.meshIndex,
-                                state.renderableMesh->Ready() ? "true" : "false");
                             if (state.renderableMesh &&
                                 (!state.renderableMesh->Ready() || state.renderableMesh->Get())) {
                                 if (state.renderableIndex < gpuRenderables.size()) {
@@ -183,9 +176,6 @@ namespace sp::vulkan {
                             }
                         } else if (state.voxelDataMesh &&
                                    (!state.voxelDataMesh->Ready() || state.voxelDataMesh->Get())) {
-                            Logf("Activating VoxelData mesh %s: ready(%s)",
-                                ecs::EntityRef(renderableModifiedEvent).Name().String(),
-                                state.voxelDataMesh->Ready() ? "true" : "false");
                             state.renderableMesh = state.voxelDataMesh;
                             if (state.renderableIndex < gpuRenderables.size()) {
                                 // Reuse existing index
@@ -600,6 +590,8 @@ namespace sp::vulkan {
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
+                models->AcquireAccess(cmd, Access::ComputeShaderReadStorage);
+                primitiveLists->AcquireAccess(cmd, Access::ComputeShaderReadStorage);
                 cmd.SetComputeShader("generate_draws_for_view.comp");
                 cmd.SetStorageBuffer("Renderables", "RenderableEntities");
                 cmd.SetStorageBuffer("MeshModels", models);
@@ -720,9 +712,11 @@ namespace sp::vulkan {
                     reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr + 1));
                 commandsBuffer->Unmap();
                 commandsBuffer->Flush();
+                commandsBuffer->SetAccess(Access::None, Access::HostWrite);
 
                 auto paramsBuffer = resources.GetBuffer(bufferIDs.drawParamsBuffer);
                 paramsBuffer->CopyFrom(drawParams.data(), drawParams.size());
+                paramsBuffer->SetAccess(Access::None, Access::HostWrite);
             });
         return bufferIDs;
     }
@@ -732,6 +726,11 @@ namespace sp::vulkan {
         BufferPtr drawCommandsBuffer,
         BufferPtr drawParamsBuffer) {
         if (primitiveCount == 0 || vertexCount == 0) return;
+
+        indexBuffer->AcquireAccess(cmd, Access::IndexBuffer);
+        vertexBuffer->AcquireAccess(cmd, Access::VertexBuffer);
+        if (drawParamsBuffer) drawParamsBuffer->AcquireAccess(cmd, Access::VertexShaderReadStorage);
+        drawCommandsBuffer->AcquireAccess(cmd, Access::IndirectBuffer);
 
         cmd.SetBindlessDescriptors(2, textures.GetDescriptorSet());
 
@@ -775,6 +774,8 @@ namespace sp::vulkan {
                     Access::ComputeShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
+                models->AcquireAccess(cmd, Access::ComputeShaderReadStorage);
+                primitiveLists->AcquireAccess(cmd, Access::ComputeShaderReadStorage);
                 cmd.SetComputeShader("generate_warp_geometry_draws.comp");
                 cmd.SetStorageBuffer("Renderables", "RenderableEntities");
                 cmd.SetStorageBuffer("MeshModels", models);
@@ -807,6 +808,9 @@ namespace sp::vulkan {
                 auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
                 auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
                 auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
+
+                vertexBuffer->AcquireAccess(cmd, Access::VertexBuffer);
+                jointsBuffer->AcquireAccess(cmd, Access::VertexShaderReadStorage);
 
                 cmd.BeginRenderPass({});
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});

@@ -21,6 +21,7 @@
     #define DebugZoneScoped
     #define DebugZoneScopedN(str)
     #define DebugZoneStr(str)
+    #define DebugZoneValue(value)
 
 #else
 
@@ -33,10 +34,12 @@
         #define DebugZoneScoped ZoneScoped
         #define DebugZoneScopedN(str) ZoneScopedN(str)
         #define DebugZoneStr(str) ZoneStr(str)
+        #define DebugZoneValue(value) ZoneValue(value);
     #else
         #define DebugZoneScoped
         #define DebugZoneScopedN(str)
         #define DebugZoneStr(str)
+        #define DebugZoneValue(value)
     #endif
 
 // size_t SampleAllocationCount();

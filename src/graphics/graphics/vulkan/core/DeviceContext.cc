@@ -1,14 +1,20 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+#include "common/ObjectPool.hh"
+#include "common/Tracing.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "strayphotons/DispatchQueue.hh"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
-#include <variant>
+#include <memory_resource>
+#include <vulkan/vulkan_core.h>
 #define VULKAN_HPP_USE_REFLECT
 
 #include "DeviceContext.hh"
@@ -32,7 +38,6 @@
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "gui/MenuGuiManager.hh"
 #include "strayphotons/Async.hh"
-#include "strayphotons/InlineVector.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
@@ -435,10 +440,11 @@ namespace sp::vulkan {
 #endif
 
             for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-                auto familyIndex = queueFamilyIndex[queueType];
+                uint32_t familyIndex = queueFamilyIndex[queueType];
                 auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
                 queues[queueType] = queue;
                 queueLastSubmit[queueType] = 0;
+                queueTypes[familyIndex] = (QueueType)queueType;
 
 #ifdef TRACY_ENABLE_GRAPHICS
                 if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
@@ -473,7 +479,7 @@ namespace sp::vulkan {
             for (auto &frame : frameContexts) {
                 frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
                 frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
-                frame.inFlightFence = device->createFenceUnique(fenceInfo);
+                frame.inFlightFence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
 
                 for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
                     vk::CommandPoolCreateInfo poolInfo;
@@ -502,25 +508,6 @@ namespace sp::vulkan {
                 if (alloc) vmaDestroyAllocator(alloc);
             });
 
-            semaphorePool = std::make_unique<HandlePool<vk::Semaphore>>(
-                [&]() {
-                    return device->createSemaphore({});
-                },
-                [&](vk::Semaphore sem) {
-                    device->destroySemaphore(sem);
-                });
-
-            fencePool = std::make_unique<HandlePool<vk::Fence>>(
-                [&]() {
-                    return device->createFence({});
-                },
-                [&](vk::Fence fence) {
-                    device->destroyFence(fence);
-                },
-                [&](vk::Fence fence) {
-                    device->resetFences({fence});
-                });
-
             pipelinePool = std::make_unique<PipelineManager>(*this);
             renderPassPool = std::make_unique<RenderPassManager>(*this);
             framebufferPool = std::make_unique<FramebufferManager>(*this);
@@ -532,40 +519,48 @@ namespace sp::vulkan {
                 threadContext->bufferPool = std::make_unique<BufferPool>(*this);
 
                 for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                    threadContext->semaphorePool = std::make_unique<ObjectPool<vk::UniqueSemaphore>>(
+                        [this](vk::UniqueSemaphore *semaphore) {
+                            vk::SemaphoreCreateInfo createInfo = {};
+                            new (semaphore) vk::UniqueSemaphore(device->createSemaphoreUnique(createInfo));
+                        });
+                    threadContext->semaphorePool->Reserve(800);
+
                     vk::CommandPoolCreateInfo poolInfo;
                     poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
                     poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
                                      vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
                     threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
 
-                    threadContext->commandContexts[queueType] = std::make_unique<HandlePool<CommandContextPtr>>(
-                        [this, threadContext, queueType]() {
-                            vk::CommandBufferAllocateInfo allocInfo;
-                            allocInfo.commandPool = *threadContext->commandPools[queueType];
-                            allocInfo.level = vk::CommandBufferLevel::ePrimary;
-                            allocInfo.commandBufferCount = 1;
-                            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
-
-                            return std::make_shared<CommandContext>(*this,
-                                std::move(buffers[0]),
+                    threadContext->commandContexts[queueType] = std::make_unique<ObjectPool<CommandContext>>(
+                        [this, threadContext, queueType](CommandContext *cmd) {
+                            new (cmd) CommandContext(*this,
+                                *threadContext->commandPools[queueType],
                                 CommandContextType(queueType),
                                 CommandContextScope::Fence);
                         },
-                        [](CommandContextPtr) {
-                            // destroy happens via ~CommandContext
-                        },
-                        [this](CommandContextPtr cmd) {
-                            auto type = cmd->GetType();
-                            auto buffer = std::move(cmd->RawRef());
-                            auto fence = std::move(cmd->fence);
+                        [this](CommandContext &cmd) {
+                            auto type = cmd.GetType();
+                            auto buffer = std::move(cmd.RawRef());
+                            auto fence = std::move(cmd.fence);
+                            Assertf(fence.use_count() == 1,
+                                "CommandContext Fence still in use on reset: %ld",
+                                fence.use_count());
+                            auto acquiredImages = std::move(cmd.acquiredImages);
+                            auto acquiredBuffers = std::move(cmd.acquiredBuffers);
+                            acquiredImages.clear();
+                            acquiredBuffers.clear();
 
-                            cmd->~CommandContext();
-                            new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
-                            cmd->fence = std::move(fence);
+                            cmd.~CommandContext();
+                            new (&cmd) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
+                            cmd.fence = std::move(fence);
+                            cmd.acquiredImages = std::move(acquiredImages);
+                            cmd.acquiredBuffers = std::move(acquiredBuffers);
 
-                            cmd->Raw().reset();
-                            if (cmd->fence) device->resetFences({cmd->Fence()});
+                            cmd.Raw().reset();
+                            if (cmd.fence) device->resetFences({cmd.fence->get()});
                         });
+                    threadContext->commandContexts[queueType]->Reserve(64);
                 }
             }
 
@@ -700,9 +695,7 @@ namespace sp::vulkan {
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             ImageViewCreateInfo imageViewInfo = {};
-            imageViewInfo.image = std::make_shared<Image>(swapchainImages[i],
-                swapchainInfo.imageFormat,
-                swapchainInfo.imageExtent);
+            imageViewInfo.image = Image::New(swapchainImages[i], swapchainInfo.imageFormat, swapchainInfo.imageExtent);
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
         }
@@ -775,7 +768,7 @@ namespace sp::vulkan {
 
             {
                 ZoneScopedN("WaitForFrameFence");
-                auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
+                auto result = device->waitForFences({Frame().inFlightFence->get()}, true, FENCE_WAIT_TIME);
                 AssertVKSuccess(result, "timed out waiting for fence");
             }
 
@@ -809,7 +802,7 @@ namespace sp::vulkan {
                     auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
                     AssertVKSuccess(result, "timed out waiting for fence");
                 }
-                SwapchainImage().inFlightFence = *Frame().inFlightFence;
+                SwapchainImage().inFlightFence = Frame().inFlightFence->get();
             }
 
             vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
@@ -834,7 +827,7 @@ namespace sp::vulkan {
             erase_if(pendingFences, [this](auto &pair) {
                 if (!pair.first || pair.first->Ready()) {
                     return true;
-                } else if (device->getFenceStatus(pair.second) == vk::Result::eSuccess) {
+                } else if (device->getFenceStatus(pair.second->get()) == vk::Result::eSuccess) {
                     pair.first->Set(nullptr);
                     return true;
                 } else {
@@ -862,7 +855,7 @@ namespace sp::vulkan {
         }
 
         erase_if(Frame().inFlightObjects, [&](auto &entry) {
-            return device->getFenceStatus(entry.fence) == vk::Result::eSuccess;
+            return device->getFenceStatus(entry.fence->get()) == vk::Result::eSuccess;
         });
 
         Thread().ReleaseAvailableResources();
@@ -936,8 +929,14 @@ namespace sp::vulkan {
 
             // Reset cmd to default state
             auto buffer = std::move(cmd->RawRef());
+            auto acquiredImages = std::move(cmd->acquiredImages);
+            auto acquiredBuffers = std::move(cmd->acquiredBuffers);
+            acquiredImages.clear();
+            acquiredBuffers.clear();
             cmd->~CommandContext();
             new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Frame);
+            cmd->acquiredImages = std::move(acquiredImages);
+            cmd->acquiredBuffers = std::move(acquiredBuffers);
         } else {
             vk::CommandBufferAllocateInfo allocInfo;
             allocInfo.commandPool = *pool.commandPool;
@@ -955,52 +954,35 @@ namespace sp::vulkan {
 
     CommandContextPtr DeviceContext::GetFencedCommandContext(CommandContextType type) {
         auto &thr = Thread();
-        auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
-        thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
-        cmdHandle.Get()->Begin();
-        return cmdHandle;
+        auto cmd = thr.commandContexts[QueueType(type)]->Get();
+        thr.pendingCommandContexts[QueueType(type)].push_back(cmd);
+        cmd->Begin();
+        return cmd;
     }
 
-    void DeviceContext::Submit(CommandContextPtr &cmd,
-        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
-        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence,
-        bool lastSubmit) {
-        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence, lastSubmit);
+    void DeviceContext::Submit(CommandContextPtr &cmd) {
+        Submit({&cmd, 1});
     }
 
-    void DeviceContext::Submit(vk::ArrayProxyNoTemporaries<CommandContextPtr> cmds,
-        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
-        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence,
-        bool lastSubmit) {
+    void DeviceContext::Submit(std::span<CommandContextPtr> cmds, bool lastSubmit) {
         ZoneScoped;
         if (renderThread == std::thread::id()) {
             renderThread = std::this_thread::get_id();
         } else {
             Assert(std::this_thread::get_id() == renderThread, "must call Submit from a single thread");
         }
-        Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
-
-        InlineVector<vk::Semaphore, 8> signalSemArray;
-        signalSemArray.insert(signalSemArray.end(), signalSemaphores.begin(), signalSemaphores.end());
-
-        InlineVector<vk::Semaphore, 8> waitSemArray;
-        waitSemArray.insert(waitSemArray.end(), waitSemaphores.begin(), waitSemaphores.end());
-
-        InlineVector<vk::PipelineStageFlags, 8> waitStageArray;
-        waitStageArray.insert(waitStageArray.end(), waitStages.begin(), waitStages.end());
 
         QueueType queue = QUEUE_TYPES_COUNT;
 
+        std::shared_ptr<vk::UniqueFence> fence;
         if (lastSubmit) {
-            Assert(!fence, "can't use custom fence on frame's last submit call");
-            fence = *Frame().inFlightFence;
-            device->resetFences({fence});
+            fence = Frame().inFlightFence;
+            device->resetFences({fence->get()});
         }
 
+        static thread_local std::vector<vk::Semaphore> signalSemArray;
+        static thread_local std::vector<vk::Semaphore> waitSemArray;
+        static thread_local std::vector<vk::PipelineStageFlags> waitStageArray;
         for (auto &cmd : cmds) {
             auto cmdFence = cmd->Fence();
             auto cmdQueue = QueueType(cmd->GetType());
@@ -1013,7 +995,7 @@ namespace sp::vulkan {
             }
 
             if (cmdFence) {
-                Assert(!fence, "can't submit with multiple fences");
+                Assert(!fence || fence == cmdFence, "can't submit with multiple fences");
                 fence = cmdFence;
             }
 
@@ -1021,12 +1003,42 @@ namespace sp::vulkan {
             queue = cmdQueue;
         }
 
+        uint64_t submitNumber = ++submitCounter;
         std::vector<vk::CommandBuffer> cmdBufs;
         cmdBufs.reserve(cmds.size());
         for (auto &cmd : cmds) {
+            for (auto &buffer : cmd->acquiredBuffers) {
+                if (buffer->pendingCommand) {
+                    if (buffer->pendingSubmit == submitNumber) continue;
+                    waitSemArray.emplace_back(buffer->pendingCommand->get());
+                    waitStageArray.emplace_back(GetAccessInfo(buffer->LastAccess()).stageMask);
+                    PushInFlightObject(buffer->pendingCommand, fence);
+                }
+                PushInFlightObject(buffer, fence);
+                buffer->pendingCommand = Thread().semaphorePool->Get();
+                PushInFlightObject(buffer->pendingCommand, fence);
+                signalSemArray.emplace_back(buffer->pendingCommand->get());
+                buffer->pendingSubmit = submitNumber;
+            }
+            for (auto &image : cmd->acquiredImages) {
+                if (image->pendingCommand) {
+                    if (image->pendingSubmit == submitNumber) continue;
+                    waitSemArray.emplace_back(image->pendingCommand->get());
+                    waitStageArray.emplace_back(GetAccessInfo(image->LastAccess()).stageMask);
+                    PushInFlightObject(image->pendingCommand, fence);
+                }
+                PushInFlightObject(image, fence);
+                image->pendingCommand = Thread().semaphorePool->Get();
+                PushInFlightObject(image->pendingCommand, fence);
+                signalSemArray.emplace_back(image->pendingCommand->get());
+                image->pendingSubmit = submitNumber;
+            }
+
             if (cmd->recording) cmd->End();
             cmdBufs.push_back(cmd->Raw());
         }
+        DebugAssert(waitSemArray.size() == waitStageArray.size(),
+            "must have exactly one wait stage per wait semaphore");
 
         vk::SubmitInfo submitInfo = {};
         submitInfo.waitSemaphoreCount = waitSemArray.size();
@@ -1040,15 +1052,18 @@ namespace sp::vulkan {
         queueLastSubmit[queue] = frameCounter;
         try {
             ZoneScopedN("VkQueueSubmit");
-            queues[queue].submit({submitInfo}, fence);
+            queues[queue].submit({submitInfo}, fence->get());
         } catch (const vk::DeviceLostError &err) {
             Errorf("Device lost! queue.submit() %s", err.what());
             deviceResetRequired = true;
         }
 
-        for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
-            cmdPtr->reset();
+        for (size_t i = 0; i < cmds.size(); i++) {
+            cmds[i].reset();
         }
+        signalSemArray.clear();
+        waitSemArray.clear();
+        waitStageArray.clear();
     }
 
     BufferPtr DeviceContext::AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency) {
@@ -1069,9 +1084,11 @@ namespace sp::vulkan {
         return Thread().bufferPool->Get(desc);
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const InitialData &data, vk::BufferUsageFlags usage) {
+    AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
+        vk::BufferUsageFlags usage) {
         if (!data.data) return nullptr;
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [data, usage, this] {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [data, usage, this] {
             vk::BufferCreateInfo bufferInfo = {};
             bufferInfo.size = data.dataSize;
             bufferInfo.usage = usage;
@@ -1082,75 +1099,32 @@ namespace sp::vulkan {
             Assertf(data.data, "DeviceContext::CreateBuffer null initial buffer data");
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
+            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
         });
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
         vk::BufferCreateInfo bufferInfo,
         VmaAllocationCreateInfo allocInfo) {
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
+            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
         });
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
         vk::BufferUsageFlags usage,
         VmaMemoryUsage residency) {
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(data.dataSize, usage, residency);
             buf->CopyFrom(data.data, data.dataSize);
+            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
-        });
-    }
-
-    AsyncPtr<void> DeviceContext::TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch) {
-        auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
-
-        for (auto &transfer : batch) {
-            vk::BufferCopy region;
-            region.srcOffset = 0;
-            region.dstOffset = 0;
-
-            vk::Buffer srcBuf, dstBuf;
-
-            if (std::holds_alternative<SubBufferPtr>(transfer.src)) {
-                auto &subBuf = std::get<SubBufferPtr>(transfer.src);
-                region.srcOffset = subBuf->ByteOffset();
-                region.size = subBuf->ByteSize();
-                srcBuf = (vk::Buffer)*subBuf;
-            } else {
-                auto &buf = std::get<BufferPtr>(transfer.src);
-                region.size = buf->ByteSize();
-                srcBuf = (vk::Buffer)*buf;
-            }
-
-            vk::DeviceSize dstSize;
-            if (std::holds_alternative<SubBufferPtr>(transfer.dst)) {
-                auto &subBuf = std::get<SubBufferPtr>(transfer.dst);
-                region.dstOffset = subBuf->ByteOffset();
-                dstSize = subBuf->ByteSize();
-                dstBuf = (vk::Buffer)*subBuf;
-            } else {
-                auto &buf = std::get<BufferPtr>(transfer.dst);
-                dstSize = buf->ByteSize();
-                dstBuf = (vk::Buffer)*buf;
-            }
-            Assertf(dstSize == region.size,
-                "must transfer between buffers of the same size, src: %llu, dst: %llu",
-                region.size,
-                dstSize);
-
-            transferCmd->Raw().copyBuffer(srcBuf, dstBuf, {region});
-        }
-
-        transferCmd->End();
-
-        return frameEndQueue.Dispatch<void>(NewDispatchSource, [this, transferCmd]() {
-            auto cmd = transferCmd;
-            Submit(cmd);
         });
     }
 
@@ -1161,48 +1135,23 @@ namespace sp::vulkan {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         if (!declaredUsage) declaredUsage = info.usage;
-        return std::make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
+        return Image::New(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    void transferImageQueueType(DeviceContext &device,
-        const std::shared_ptr<Image> &image,
-        CommandContextType type = CommandContextType::General,
-        Access access = Access::FragmentShaderSampleImage) {
-        ImageBarrierInfo transferToQueue = {};
-        transferToQueue.srcQueueFamilyIndex = image->LastQueueFamily();
-        transferToQueue.dstQueueFamilyIndex = device.QueueFamilyIndex(type);
-        auto waitSemaphore = image->GetWaitSemaphore(transferToQueue.dstQueueFamilyIndex);
-        if (transferToQueue.srcQueueFamilyIndex == transferToQueue.dstQueueFamilyIndex ||
-            transferToQueue.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-            transferToQueue.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            transferToQueue.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        }
-
-        auto cmd = device.GetFencedCommandContext(type);
-        auto info = GetAccessInfo(access);
-        cmd->ImageBarrier(image, info.imageLayout, info.stageMask, info.accessMask, transferToQueue);
-        auto fence = cmd->Fence();
-        device.PushInFlightObject(image, fence);
-        auto transferComplete = image->SetPendingCommand(device.GetEmptySemaphore(fence),
-            transferToQueue.dstQueueFamilyIndex);
-        if (waitSemaphore) {
-            device.Submit(cmd, {transferComplete}, {waitSemaphore}, {info.stageMask});
-        } else {
-            device.Submit(cmd, {transferComplete}, {}, {});
-        }
-        image->SetLayout(vk::ImageLayout::eUndefined, info.imageLayout);
-    }
-
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const InitialData &initialData) {
+    AsyncPtr<Image> DeviceContext::CreateImage(const DispatchSourceInfo &sourceInfo,
+        ImageCreateInfo createInfo,
+        const InitialData &initialData) {
         if (!initialData.data) {
             Assert(!createInfo.genMipmap, "DeviceContext::CreateImage must pass initial data to generate a mipmap");
-            return CreateImage(createInfo, AsyncPtr<Buffer>());
+            return CreateImage(sourceInfo, createInfo, AsyncPtr<Buffer>());
         } else {
-            return CreateImage(createInfo, CreateUploadBuffer(initialData));
+            return CreateImage(sourceInfo, createInfo, CreateUploadBuffer(sourceInfo, initialData));
         }
     }
 
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer) {
+    AsyncPtr<Image> DeviceContext::CreateImage(const DispatchSourceInfo &sourceInfo,
+        ImageCreateInfo createInfo,
+        const AsyncPtr<Buffer> &uploadBuffer) {
         ZoneScoped;
 
         bool genMipmap = createInfo.genMipmap;
@@ -1233,7 +1182,7 @@ namespace sp::vulkan {
             }
         }
 
-        auto futImage = allocatorQueue.Dispatch<Image>(NewDispatchSource, [this, createInfo, declaredUsage]() {
+        auto futImage = allocatorQueue.Dispatch<Image>(sourceInfo, [this, createInfo, declaredUsage]() {
             auto actualCreateInfo = createInfo.GetVkCreateInfo();
             auto formatInfo = createInfo.GetVkFormatList();
             if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
@@ -1242,169 +1191,111 @@ namespace sp::vulkan {
         });
 
         if (uploadBuffer) {
-            futImage = UpdateImage(futImage, uploadBuffer, genMipmap && !genFactor);
+            futImage = UpdateImage(sourceInfo, futImage, uploadBuffer, false);
 
             if (genFactor) {
-                futImage = frameEndQueue.Dispatch<Image>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
-                    if (!image) return std::shared_ptr<Image>();
+                futImage = frameEndQueue.Dispatch<Image>(sourceInfo,
+                    futImage,
+                    [this, factorFormat, createInfo](ImagePtr image) {
+                        if (!image) return std::shared_ptr<Image>();
 
-                    ZoneScopedN("ApplyFactor");
-                    auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
+                        ZoneScopedN("ApplyFactor");
+                        auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
+                        image->AcquireAccess(*factorCmd, Access::ComputeShaderReadStorage);
 
-                    ImageBarrierInfo transferToCompute = {};
-                    transferToCompute.srcQueueFamilyIndex = image->LastQueueFamily();
-                    transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
-                    auto waitSemaphore = image->GetWaitSemaphore(transferToCompute.dstQueueFamilyIndex);
-                    if (transferToCompute.srcQueueFamilyIndex == transferToCompute.dstQueueFamilyIndex ||
-                        transferToCompute.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                        transferToCompute.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        transferToCompute.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    }
+                        ImageViewPtr factorView;
+                        {
+                            GPUZone(this, factorCmd, "ApplyFactor");
 
-                    ImageViewPtr factorView;
-                    {
-                        GPUZone(this, factorCmd, "ApplyFactor");
+                            ImageViewCreateInfo factorViewInfo = {};
+                            factorViewInfo.image = image;
+                            factorViewInfo.format = factorFormat;
+                            factorViewInfo.mipLevelCount = 1;
+                            factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+                            factorView = CreateImageView(factorViewInfo);
 
-                        factorCmd->ImageBarrier(image,
-                            vk::ImageLayout::eGeneral,
-                            vk::PipelineStageFlagBits::eComputeShader,
-                            vk::AccessFlagBits::eShaderRead,
-                            transferToCompute);
-                        image->SetAccess(Access::None, Access::ComputeShaderReadStorage);
+                            factorCmd->SetComputeShader("texture_factor.comp");
+                            factorCmd->SetImageView("texture", factorView);
 
-                        ImageViewCreateInfo factorViewInfo = {};
-                        factorViewInfo.image = image;
-                        factorViewInfo.format = factorFormat;
-                        factorViewInfo.mipLevelCount = 1;
-                        factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-                        factorView = CreateImageView(factorViewInfo);
+                            struct {
+                                glm::vec4 factor;
+                                int components;
+                                bool srgb;
+                            } factorPushConstants;
 
-                        factorCmd->SetComputeShader("texture_factor.comp");
-                        factorCmd->SetImageView("texture", factorView);
+                            for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                                factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                            }
+                            factorPushConstants.components = createInfo.factor.size();
+                            factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+                            factorCmd->PushConstants(factorPushConstants);
 
-                        struct {
-                            glm::vec4 factor;
-                            int components;
-                            bool srgb;
-                        } factorPushConstants;
-
-                        for (size_t i = 0; i < createInfo.factor.size(); i++) {
-                            factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                            factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
+                                (createInfo.extent.height + 15) / 16,
+                                1);
+                            image->SetAccess(Access::ComputeShaderReadStorage, Access::ComputeShaderWrite);
                         }
-                        factorPushConstants.components = createInfo.factor.size();
-                        factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
-                        factorCmd->PushConstants(factorPushConstants);
-
-                        factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
-                            (createInfo.extent.height + 15) / 16,
-                            1);
-                    }
-                    auto fence = factorCmd->Fence();
-                    PushInFlightObject(factorView, fence);
-                    auto factorComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                        transferToCompute.dstQueueFamilyIndex);
-                    if (waitSemaphore) {
-                        Submit(factorCmd,
-                            {factorComplete},
-                            {waitSemaphore},
-                            {vk::PipelineStageFlagBits::eComputeShader});
-                    } else {
-                        Submit(factorCmd, {factorComplete}, {}, {});
-                    }
-                    if (!genMipmap) {
-                        transferImageQueueType(*this, image);
-                    }
-                    return image;
-                });
+                        Submit(factorCmd);
+                        return image;
+                    });
             }
-            if (genMipmap) futImage = UpdateImageMipmap(futImage);
+            if (genMipmap) futImage = UpdateImageMipmap(sourceInfo, futImage);
         }
         return futImage;
     }
 
-    AsyncPtr<Image> DeviceContext::UpdateImage(const AsyncPtr<Image> &dstImage,
+    AsyncPtr<Image> DeviceContext::UpdateImage(const DispatchSourceInfo &sourceInfo,
+        const AsyncPtr<Image> &dstImage,
         const AsyncPtr<Buffer> &srcBuffer,
         bool updateMipmap) {
-        auto futImage = frameEndQueue.Dispatch<
-            Image>(NewDispatchSource, dstImage, srcBuffer, [updateMipmap, this](ImagePtr image, BufferPtr stagingBuf) {
-            if (!image) return std::shared_ptr<Image>();
+        auto futImage = frameEndQueue.Dispatch<Image>(sourceInfo,
+            dstImage,
+            srcBuffer,
+            [this](ImagePtr image, BufferPtr stagingBuf) {
+                if (!image) return std::shared_ptr<Image>();
 
-            ZoneScopedN("PrepareImage");
-            auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+                ZoneScopedN("PrepareImage");
+                auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+                stagingBuf->AcquireAccess(*transferCmd, Access::TransferRead);
+                image->AcquireAccess(*transferCmd, Access::TransferWrite);
 
-            ImageBarrierInfo transferToTransferAsync = {};
-            transferToTransferAsync.srcQueueFamilyIndex = image->LastQueueFamily();
-            transferToTransferAsync.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-            auto waitSemaphore = image->GetWaitSemaphore(transferToTransferAsync.dstQueueFamilyIndex);
-            if (transferToTransferAsync.srcQueueFamilyIndex == transferToTransferAsync.dstQueueFamilyIndex ||
-                transferToTransferAsync.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                transferToTransferAsync.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                transferToTransferAsync.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            }
+                vk::BufferImageCopy region;
+                region.bufferOffset = 0;
+                region.bufferRowLength = 0;
+                region.bufferImageHeight = 0;
+                region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
+                region.imageSubresource.mipLevel = 0;
+                region.imageSubresource.baseArrayLayer = 0;
+                region.imageSubresource.layerCount = 1;
+                region.imageOffset = vk::Offset3D{0, 0, 0};
+                region.imageExtent = image->Extent();
 
-            transferCmd->ImageBarrier(image,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
-                transferToTransferAsync);
+                transferCmd->Raw().copyBufferToImage(*stagingBuf,
+                    *image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    {region});
 
-            vk::BufferImageCopy region;
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-            region.imageOffset = vk::Offset3D{0, 0, 0};
-            region.imageExtent = image->Extent();
-
-            transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
-
-            auto fence = transferCmd->Fence();
-            PushInFlightObject(stagingBuf, fence);
-            auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                transferToTransferAsync.dstQueueFamilyIndex);
-            {
-                ZoneScopedN("CopyBufferToImage");
-                if (waitSemaphore) {
-                    Submit(transferCmd, {transferComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
-                } else {
-                    Submit(transferCmd, {transferComplete}, {}, {});
+                {
+                    ZoneScopedN("CopyBufferToImage");
+                    Submit(transferCmd);
                 }
-            }
 
-            if (!updateMipmap) transferImageQueueType(*this, image);
-            return image;
-        });
-        if (updateMipmap) futImage = UpdateImageMipmap(futImage);
+                return image;
+            });
+        if (updateMipmap) futImage = UpdateImageMipmap(sourceInfo, futImage);
         return futImage;
     }
 
-    AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const AsyncPtr<Image> &image) {
+    AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const DispatchSourceInfo &sourceInfo,
+        const AsyncPtr<Image> &image) {
         ZoneScoped;
-        return frameEndQueue.Dispatch<Image>(NewDispatchSource, image, [this](ImagePtr image) {
+        return frameEndQueue.Dispatch<Image>(sourceInfo, image, [this](ImagePtr image) {
             if (!image) return std::shared_ptr<Image>();
             auto graphicsCmd = GetFencedCommandContext(CommandContextType::General); // TODO: Add GraphicsAsync
-
-            ImageBarrierInfo transferToGeneral = {};
-            transferToGeneral.srcQueueFamilyIndex = image->LastQueueFamily();
-            transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-            auto waitSemaphore = image->GetWaitSemaphore(transferToGeneral.dstQueueFamilyIndex);
-            if (transferToGeneral.srcQueueFamilyIndex == transferToGeneral.dstQueueFamilyIndex ||
-                transferToGeneral.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                transferToGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                transferToGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            }
+            image->AcquireAccess(*graphicsCmd, Access::TransferRead);
 
             {
                 GPUZone(this, graphicsCmd, "Mipmap");
-
-                graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    transferToGeneral);
 
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
@@ -1458,21 +1349,8 @@ namespace sp::vulkan {
 
                 // Each mip has now been transitioned to TransferSrc.
                 image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-
-                graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eShaderReadOnlyOptimal,
-                    vk::PipelineStageFlagBits::eFragmentShader,
-                    vk::AccessFlagBits::eShaderRead);
             }
-            auto fence = graphicsCmd->Fence();
-            PushInFlightObject(image, fence);
-            auto mipmapComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                transferToGeneral.dstQueueFamilyIndex);
-            if (waitSemaphore) {
-                Submit(graphicsCmd, {mipmapComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
-            } else {
-                Submit(graphicsCmd, {mipmapComplete}, {}, {});
-            }
+            Submit(graphicsCmd);
             return image;
         });
     }
@@ -1515,13 +1393,14 @@ namespace sp::vulkan {
         return std::make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
-    AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
+    AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const DispatchSourceInfo &sourceInfo,
+        const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
         const InitialData &data) {
         ZoneScoped;
-        auto futImage = CreateImage(imageInfo, data);
+        auto futImage = CreateImage(sourceInfo, imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageView>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
+        return allocatorQueue.Dispatch<ImageView>(sourceInfo, futImage, [=, this](ImagePtr image) {
             auto viewI = viewInfo;
             viewI.image = image;
             return CreateImageView(viewI);
@@ -1563,7 +1442,7 @@ namespace sp::vulkan {
         } else {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
-        return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+        return CreateImageAndView(NewDispatchSource, createInfo, viewInfo, {data, image->ByteSize(), image});
     }
 
     AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(color_alpha_t color) {
@@ -1577,7 +1456,7 @@ namespace sp::vulkan {
 
         ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
-        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
+        return CreateImageAndView(NewDispatchSource, imageInfo, viewInfo, {&value[0], sizeof(value)});
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
@@ -1723,30 +1602,17 @@ namespace sp::vulkan {
         return bindlessImageSamplerDescriptorPool->CreateBindlessDescriptorSet();
     }
 
-    SharedHandle<vk::Fence> DeviceContext::GetEmptyFence() {
-        return fencePool->Get();
-    }
-
-    std::shared_ptr<vk::UniqueSemaphore> DeviceContext::GetEmptySemaphore(vk::Fence inUseUntilFence) {
-        // auto sem = semaphorePool->Get();
-        vk::SemaphoreCreateInfo semaphoreInfo = {};
-        auto sem = std::make_shared<vk::UniqueSemaphore>(device->createSemaphoreUnique(semaphoreInfo));
-        PushInFlightObject(sem, inUseUntilFence);
-        return sem;
-    }
-
-    void DeviceContext::PushInFlightObject(TemporaryObject object, vk::Fence fence) {
-        if (!fence) fence = *Frame().inFlightFence;
-        Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
+    void DeviceContext::PushInFlightObject(TemporaryObject object, const std::shared_ptr<vk::UniqueFence> &fence) {
+        Frame().inFlightObjects.emplace_back(InFlightObject{object, fence ? fence : Frame().inFlightFence});
     }
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
         ZoneScoped;
         for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-            erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
-                auto &cmd = cmdHandle.Get();
-                auto fence = cmd->Fence();
-                return !fence || cmd->Device()->getFenceStatus(fence) == vk::Result::eSuccess;
+            erase_if(pendingCommandContexts[queueType], [](auto &cmd) {
+                auto &fence = cmd->Fence();
+                Assertf(fence, "Pending CommandContext is missing a fence");
+                return fence.use_count() == 1 && cmd->Device()->getFenceStatus(fence->get()) == vk::Result::eSuccess;
             });
         }
 

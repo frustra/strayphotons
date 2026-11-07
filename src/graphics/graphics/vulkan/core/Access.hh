@@ -63,11 +63,7 @@ namespace sp::vulkan {
         vk::BufferUsageFlags bufferUsageMask;
         vk::ImageUsageFlags imageUsageMask;
         vk::ImageLayout imageLayout;
-
-        static const AccessInfo Map[(size_t)Access::AccessTypesCount];
     };
 
-    inline const AccessInfo &GetAccessInfo(Access type) {
-        return AccessInfo::Map[(size_t)type];
-    }
+    const AccessInfo &GetAccessInfo(Access type);
 } // namespace sp::vulkan

@@ -30,6 +30,7 @@
 #include "gui/GuiContext.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/Defer.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/gui/GuiDrawData.hh"
 #include "vulkan/vulkan.hpp"
 
@@ -83,7 +84,8 @@ namespace sp::vulkan {
         ImageViewCreateInfo fontViewInfo = {};
         fontViewInfo.defaultSampler = device.GetSampler(SamplerType::BilinearClampEdge);
 
-        fontView = device.CreateImageAndView(fontImageInfo,
+        fontView = device.CreateImageAndView(NewDispatchSource,
+            fontImageInfo,
             fontViewInfo,
             InitialData(fontData, size_t(fontWidth * fontHeight * 4)));
 
@@ -596,7 +598,8 @@ namespace sp::vulkan {
                         createInfo.format = vk::Format::eR8G8B8A8Unorm;
                         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
                         createInfo.genMipmap = createInfo.mipLevels > 1;
-                        source.pendingUploads.emplace_back(device.CreateImage(createInfo,
+                        source.pendingUploads.emplace_back(device.CreateImage(NewDispatchSource,
+                            createInfo,
                             InitialData(cpuImage.GetImage().get(), cpuImage.ByteSize(), cpuImage.GetImage())));
                         sourcesModified = true;
                     }

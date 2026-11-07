@@ -39,7 +39,7 @@ namespace sp::vulkan {
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
         const InitialData &data) {
-        return Add(device.CreateImageAndView(imageInfo, viewInfo, data));
+        return Add(device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo, data));
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {

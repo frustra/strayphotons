@@ -35,7 +35,7 @@ namespace sp::vulkan {
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);
 
-    enum QueueType { QUEUE_TYPE_GRAPHICS, QUEUE_TYPE_COMPUTE, QUEUE_TYPE_TRANSFER, QUEUE_TYPES_COUNT };
+    enum QueueType { QUEUE_TYPE_GRAPHICS = 0, QUEUE_TYPE_COMPUTE, QUEUE_TYPE_TRANSFER, QUEUE_TYPES_COUNT };
 
     enum class CommandContextType {
         General = QUEUE_TYPE_GRAPHICS,

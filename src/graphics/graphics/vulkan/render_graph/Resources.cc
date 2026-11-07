@@ -575,7 +575,7 @@ namespace sp::vulkan::render_graph {
         viewInfo.viewType = createDesc.primaryViewType;
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
-        auto imageView = device.CreateImageAndView(imageInfo, viewInfo)->Get();
+        auto imageView = device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo)->Get();
         auto ptr = std::make_shared<PooledImage>(device, createDesc, imageView);
 
         list.push_back(ptr);

@@ -1,17 +1,19 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#include "graphics/vulkan/core/VkCommon.hh"
-
-#include <string>
+#include "strayphotons/Logging.hh"
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
+#include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 #include <memory>
+#include <string>
 
 namespace sp::vulkan {
     vk::Result UniqueMemory::MapPersistent(void **data) {
@@ -56,16 +58,7 @@ namespace sp::vulkan {
         }
     }
 
-    SubBuffer::SubBuffer(BufferPtr buffer,
-        VmaVirtualBlock subAllocationBlock,
-        vk::DeviceSize offsetBytes,
-        vk::DeviceSize size,
-        size_t arrayOffset,
-        size_t arrayCount)
-        : parentBuffer(buffer), subAllocationBlock(subAllocationBlock), offsetBytes(offsetBytes), size(size),
-          arrayOffset(arrayOffset), arrayCount(arrayCount) {
-        Assertf(buffer, "SubBuffer created from null parent bufffer");
-    }
+    SubBuffer::SubBuffer() {}
 
     SubBuffer::~SubBuffer() {
         Assertf(handle.use_count() == 0, "SubBuffer destroyed while referenced");
@@ -78,13 +71,15 @@ namespace sp::vulkan {
         vk::DeviceSize size,
         size_t arrayOffset,
         size_t arrayCount) {
-        auto handle = std::make_shared<SubBuffer>(buffer,
-            subAllocationBlock,
-            offsetBytes,
-            size,
-            arrayOffset,
-            arrayCount);
+        Assertf(buffer, "SubBuffer created from null parent bufffer");
+        auto handle = std::make_shared<SubBuffer>();
         handle->handle = handle;
+        handle->parentBuffer = buffer;
+        handle->subAllocationBlock = subAllocationBlock;
+        handle->offsetBytes = offsetBytes;
+        handle->size = size;
+        handle->arrayOffset = arrayOffset;
+        handle->arrayCount = arrayCount;
         return handle;
     }
 
@@ -93,27 +88,16 @@ namespace sp::vulkan {
     }
 
     SubBuffer::operator vk::Buffer() const {
+        Assertf(parentBuffer, "SubBuffer dereferencing null parent buffer");
         return (vk::Buffer)*parentBuffer;
     }
 
-    Buffer::Buffer(vk::BufferCreateInfo bufferInfo,
-        VmaAllocationCreateInfo allocInfo,
-        VmaAllocator allocator,
-        size_t arrayStride,
-        size_t arrayCount)
-        : UniqueMemory(allocator), bufferInfo(bufferInfo), arrayStride(arrayStride), arrayCount(arrayCount) {
-        ZoneScoped;
-        ZoneValue(bufferInfo.size);
-
-        if (bufferInfo.size == 0) return; // allow creating empty buffers for convenience
-
-        VkBufferCreateInfo vkBufferInfo = (const VkBufferCreateInfo &)bufferInfo;
-        VkBuffer vkBuffer;
-
-        auto result = vmaCreateBuffer(allocator, &vkBufferInfo, &allocInfo, &vkBuffer, &allocation, nullptr);
-        AssertVKSuccess(result, "creating buffer");
-        buffer = vkBuffer;
+    void SubBuffer::AcquireAccess(CommandContext &cmd, Access newAccess) {
+        Assertf(parentBuffer, "SubBuffer::AcquireAccess called no null buffer");
+        parentBuffer->AcquireAccess(cmd, newAccess);
     }
+
+    Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::~Buffer() {
         Assertf(handle.use_count() == 0, "Buffer destroyed while referenced");
@@ -130,9 +114,68 @@ namespace sp::vulkan {
         VmaAllocator allocator,
         size_t arrayStride,
         size_t arrayCount) {
-        auto handle = std::make_shared<Buffer>(bufferInfo, allocInfo, allocator, arrayStride, arrayCount);
+        ZoneScoped;
+        ZoneValue(bufferInfo.size);
+        auto handle = std::make_shared<Buffer>();
         handle->handle = handle;
+        handle->allocator = allocator;
+        handle->bufferInfo = bufferInfo;
+        handle->arrayStride = arrayStride;
+        handle->arrayCount = arrayCount;
+
+        // allow creating empty buffers for convenience
+        if (bufferInfo.size > 0) {
+            VkBuffer vkBuffer;
+            auto result = vmaCreateBuffer(allocator,
+                &static_cast<const VkBufferCreateInfo &>(bufferInfo),
+                &allocInfo,
+                &vkBuffer,
+                &handle->allocation,
+                nullptr);
+            AssertVKSuccess(result, "creating buffer");
+            handle->buffer = vkBuffer;
+        }
         return handle;
+    }
+
+    void Buffer::AcquireAccess(CommandContext &cmd, Access newAccess) {
+        auto bufferPtr = handle.lock();
+        Assertf(bufferPtr, "Buffer::AcquireAccess called on buffer with invalid handle");
+
+        DeviceContext &device = cmd.Device();
+        uint32_t queueFamilyIndex = device.QueueFamilyIndex(cmd.GetType());
+
+        if (lastQueueFamilyIndex != queueFamilyIndex) {
+            DebugZoneScopedN("AcquireBuffer");
+            if (lastQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) {
+                ZoneScopedN("TransferQueueFamily");
+                auto subCmd = device.GetFencedCommandContext(device.GetQueueType(lastQueueFamilyIndex));
+
+                BufferBarrierInfo options = {};
+                options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+                options.dstQueueFamilyIndex = queueFamilyIndex;
+                const AccessInfo &lastInfo = GetAccessInfo(lastAccess);
+                subCmd->BufferBarrier(bufferPtr, lastInfo.stageMask, lastInfo.accessMask, options);
+                subCmd->acquiredBuffers.emplace_back(bufferPtr);
+
+                device.Submit(subCmd);
+            }
+
+            // Acquire new queue family
+            BufferBarrierInfo options = {};
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
+            cmd.BufferBarrier(bufferPtr, accessInfo.stageMask, accessInfo.accessMask, options);
+            lastQueueFamilyIndex = queueFamilyIndex;
+            lastAccess = newAccess;
+        } else {
+            // No queue ownership transfer required
+            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
+            cmd.BufferBarrier(bufferPtr, accessInfo.stageMask, accessInfo.accessMask);
+            lastAccess = newAccess;
+        }
+        cmd.acquiredBuffers.emplace_back(bufferPtr);
     }
 
     static char *virtualAllocInfoString(VmaVirtualBlock block) {

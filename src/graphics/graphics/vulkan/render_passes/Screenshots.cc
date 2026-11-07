@@ -132,24 +132,8 @@ namespace sp::vulkan::renderer {
         auto outputImage = device.AllocateImage(outputDesc, VMA_MEMORY_USAGE_GPU_TO_CPU);
 
         auto transferCmd = device.GetFencedCommandContext(CommandContextType::General);
-        transferCmd->ImageBarrier(outputImage,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::PipelineStageFlagBits::eTransfer,
-            {},
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferWrite);
-
-        auto lastLayout = view->Image()->LastLayout();
-        if (lastLayout != vk::ImageLayout::eTransferSrcOptimal) {
-            transferCmd->ImageBarrier(view->Image(),
-                lastLayout,
-                vk::ImageLayout::eTransferSrcOptimal,
-                vk::PipelineStageFlagBits::eTransfer,
-                {},
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite);
-        }
+        view->Image()->AcquireAccess(*transferCmd, Access::TransferRead);
+        outputImage->AcquireAccess(*transferCmd, Access::TransferWrite);
 
         vk::ImageCopy imageCopyRegion;
         imageCopyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -165,28 +149,10 @@ namespace sp::vulkan::renderer {
             vk::ImageLayout::eTransferDstOptimal,
             {imageCopyRegion});
 
-        transferCmd->ImageBarrier(outputImage,
-            vk::ImageLayout::eTransferDstOptimal,
-            vk::ImageLayout::eGeneral,
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eTransferWrite,
-            vk::PipelineStageFlagBits::eTransfer,
-            vk::AccessFlagBits::eMemoryRead);
-
-        if (lastLayout != vk::ImageLayout::eTransferSrcOptimal) {
-            transferCmd->ImageBarrier(view->Image(),
-                vk::ImageLayout::eTransferSrcOptimal,
-                lastLayout,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eMemoryRead);
-        }
-
         auto fence = transferCmd->Fence();
-        device.Submit(transferCmd, {}, {}, {});
+        device.Submit(transferCmd);
 
-        AssertVKSuccess(device->waitForFences({fence}, true, 1e10), "waiting for fence");
+        AssertVKSuccess(device->waitForFences({fence->get()}, true, 1e10), "waiting for fence");
 
         vk::ImageSubresource subResource = {vk::ImageAspectFlagBits::eColor, 0, 0};
         auto subResourceLayout = device->getImageSubresourceLayout(*outputImage, subResource);

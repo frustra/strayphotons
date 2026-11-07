@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -8,11 +8,27 @@
 #include "CommandContext.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "vulkan/vulkan.hpp"
 
+#include <memory_resource>
 #include <string_view>
 
 namespace sp::vulkan {
+    CommandContext::CommandContext(DeviceContext &device,
+        vk::CommandPool pool,
+        CommandContextType type,
+        CommandContextScope scope)
+        : device(device), type(type), scope(scope) {
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.commandPool = pool;
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandBufferCount = 1;
+        auto buffers = device->allocateCommandBuffersUnique(allocInfo);
+        cmd = std::move(buffers[0]);
+        SetDefaultOpaqueState();
+    }
     CommandContext::CommandContext(DeviceContext &device,
         vk::UniqueCommandBuffer cmd,
         CommandContextType type,
@@ -111,14 +127,6 @@ namespace sp::vulkan {
         Assert(recording, "command buffer not recording");
         cmd->end();
         recording = false;
-    }
-
-    void CommandContext::Abandon() {
-        if (recording) {
-            cmd->end();
-            recording = false;
-            abandoned = true;
-        }
     }
 
     void CommandContext::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
@@ -768,14 +776,12 @@ namespace sp::vulkan {
         FlushDescriptorSets(vk::PipelineBindPoint::eGraphics);
     }
 
-    vk::Fence CommandContext::Fence() {
-        if (abandoned) return {};
-
+    const std::shared_ptr<vk::UniqueFence> &CommandContext::Fence() {
         if (!fence && scope == CommandContextScope::Fence) {
             vk::FenceCreateInfo fenceInfo;
-            fence = device->createFenceUnique(fenceInfo);
+            fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
         }
-        return *fence;
+        return fence;
     }
 
 } // namespace sp::vulkan
