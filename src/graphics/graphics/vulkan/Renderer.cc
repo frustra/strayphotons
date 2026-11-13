@@ -35,6 +35,7 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
@@ -72,7 +73,7 @@ namespace sp::vulkan {
     }
 
     Renderer::~Renderer() {
-        if (!device.RequiresReset()) device->waitIdle();
+        if (!device.RequiresReset()) device.WaitIdle(NewDispatchSource);
     }
 
     void Renderer::AttachWindow(const std::shared_ptr<GuiContext> &context) {
@@ -279,6 +280,20 @@ namespace sp::vulkan {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
             }
+            graph.AddPass("ImageBarrier")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.RequirePass();
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                    auto imageView = resources.GetImageView(resources.LastOutputID());
+                    if (imageView) {
+                        auto &image = imageView->Image();
+                        cmd.ImageBarrier(image,
+                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                            vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
+                            vk::AccessFlagBits::eShaderRead);
+                    }
+                });
         }
 
         if (game.xr) {
@@ -341,6 +356,7 @@ namespace sp::vulkan {
                 builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
@@ -481,6 +497,7 @@ namespace sp::vulkan {
                 builder.CreateUniform("ViewState", sizeof(GPUViewState) * viewsByEye.size());
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })

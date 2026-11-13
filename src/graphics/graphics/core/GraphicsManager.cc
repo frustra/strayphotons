@@ -18,8 +18,10 @@
 #include "graphics/core/GraphicsContext.hh"
 #include "gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 
+#include <cctype>
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
@@ -37,8 +39,10 @@ namespace sp {
         if (game.options.count("window-size")) {
             std::istringstream ss(game.options["window-size"].as<std::string>());
             glm::ivec2 size = glm::ivec2(0);
-            ss >> size.x >> size.y;
-
+            ss >> size.x;
+            char sep = 'x';
+            if (!std::isspace(ss.peek())) ss >> sep;
+            ss >> size.y;
             if (size.x > 0 && size.y > 0) {
                 CVarWindowSize.Set(size);
             }
@@ -100,7 +104,7 @@ namespace sp {
             windowGuiContext.reset();
             menuGui.reset();
             profilerGui.reset();
-            context->WaitIdle();
+            context->WaitIdle(NewDispatchSource);
             context.reset();
         }
     }
@@ -205,7 +209,7 @@ namespace sp {
 
         if (stepMode) {
             // Wait for graphics queue to complete so GPU readback is deterministic
-            context->WaitIdle();
+            context->WaitIdle(NewDispatchSource);
         }
     }
 } // namespace sp

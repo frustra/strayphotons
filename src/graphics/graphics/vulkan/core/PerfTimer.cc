@@ -123,7 +123,7 @@ namespace sp::vulkan {
         if (frame.queryPool && frame.queryCount > 0) {
             auto cmd = device.GetFencedCommandContext();
             cmd->Raw().resetQueryPool(*frame.queryPool, 0, frame.queryCount);
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
             frame.queryOffset = 0;
         }
     }

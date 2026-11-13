@@ -17,6 +17,7 @@ struct VoxelFragment {
     u16vec3 position;
     f16vec3 radiance;
     f16vec3 normal;
+    uint _padding[2];
 };
 
 const uint MipmapWorkGroupSize = 256;

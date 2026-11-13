@@ -106,16 +106,8 @@ namespace sp::vulkan::renderer {
     }
 
     bool SMAA::PreloadTextures(DeviceContext &device) {
-        bool flush = false;
-        if (!areaTex) {
-            areaTex = device.LoadAssetImage("textures/smaa/AreaTex.tga", false, false);
-            flush = true;
-        }
-        if (!searchTex) {
-            searchTex = device.LoadAssetImage("textures/smaa/SearchTex.tga", false, false);
-            flush = true;
-        }
-        if (flush) device.FlushMainQueue();
+        if (!areaTex) areaTex = device.LoadAssetImage("textures/smaa/AreaTex.tga", false, false);
+        if (!searchTex) searchTex = device.LoadAssetImage("textures/smaa/SearchTex.tga", false, false);
         return areaTex->Ready() && searchTex->Ready();
     }
 } // namespace sp::vulkan::renderer

@@ -179,19 +179,19 @@ namespace sp::vulkan {
         std::shared_ptr<vk::UniqueFence> transferFence;
         {
             ZoneScopedN("TransferBuffers");
-            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::TransferAsync);
-            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-            staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-            staging.primitiveList->AcquireAccess(*cmd, Access::TransferRead);
-            staging.modelEntry->AcquireAccess(*cmd, Access::TransferRead);
+            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::TransferAsync);
+            cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
+            cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
+            cmd->AcquireBuffer(staging.primitiveList, Access::TransferRead);
+            cmd->AcquireBuffer(staging.modelEntry, Access::TransferRead);
             if (stagingJointsBuffer) {
-                stagingJointsBuffer->AcquireAccess(*cmd, Access::TransferRead);
-                jointsBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+                cmd->AcquireBuffer(stagingJointsBuffer, Access::TransferRead);
+                cmd->AcquireBuffer(jointsBuffer, Access::TransferWrite);
             }
-            indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
-            vertexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
-            primitiveList->AcquireAccess(*cmd, Access::TransferWrite);
-            modelEntry->AcquireAccess(*cmd, Access::TransferWrite);
+            cmd->AcquireBuffer(indexBuffer, Access::TransferWrite);
+            cmd->AcquireBuffer(vertexBuffer, Access::TransferWrite);
+            cmd->AcquireBuffer(primitiveList, Access::TransferWrite);
+            cmd->AcquireBuffer(modelEntry, Access::TransferWrite);
 
             vk::BufferCopy indexRegion{0, indexBuffer->ByteOffset(), staging.indexBuffer->ByteSize()};
             cmd->Raw().copyBuffer(*staging.indexBuffer, *indexBuffer, {indexRegion});
@@ -207,7 +207,7 @@ namespace sp::vulkan {
             cmd->Raw().copyBuffer(*staging.modelEntry, *modelEntry, {modelRegion});
 
             transferFence = cmd->Fence();
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
         }
 
         staging.transferComplete = device.ExecuteAfterFence(NewDispatchSource, transferFence, [] {});
@@ -272,9 +272,9 @@ namespace sp::vulkan {
 
         {
             ZoneScopedN("InitStagingBuffers");
-            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            staging.lookupBuffer->AcquireAccess(*cmd, Access::TransferWrite);
-            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            cmd->AcquireBuffer(staging.lookupBuffer, Access::TransferWrite);
+            cmd->AcquireBuffer(staging.indexBuffer, Access::TransferWrite);
 
             // Set seed
             cmd->Raw().fillBuffer(*staging.lookupBuffer, 0, sizeof(uint32_t), seed);
@@ -283,13 +283,13 @@ namespace sp::vulkan {
             // Set indexCount to 0
             cmd->Raw().fillBuffer(*staging.indexBuffer, 0, sizeof(uint32_t), 0u);
 
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
         }
         {
             ZoneScopedN("MarchChunkVertex");
-            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            staging.vertexBuffer->AcquireAccess(*cmd, Access::ComputeShaderWrite);
-            staging.lookupBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            cmd->AcquireBuffer(staging.vertexBuffer, Access::ComputeShaderWrite);
+            cmd->AcquireBuffer(staging.lookupBuffer, Access::ComputeShaderReadWrite);
 
             cmd->SetComputeShader("marching_cubes_vertex2.comp");
             cmd->SetShaderConstant(ShaderStage::Compute, "GRID_SIZE_X", extents.x);
@@ -302,20 +302,18 @@ namespace sp::vulkan {
             glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
             cmd->Dispatch(groups.x, groups.y, groups.z);
 
-            staging.lookupBuffer->SetAccess(Access::ComputeShaderReadStorage, Access::ComputeShaderWrite);
-
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
         }
         {
             ZoneScopedN("MarchChunkTriangle");
-            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            constants.triangleIndexBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
-            constants.caseInteriorEdges->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
-            constants.triangleCaseOffsets->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
-            constants.caseTests->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            cmd->AcquireBuffer(constants.triangleIndexBuffer, Access::ComputeShaderReadStorage);
+            cmd->AcquireBuffer(constants.caseInteriorEdges, Access::ComputeShaderReadStorage);
+            cmd->AcquireBuffer(constants.triangleCaseOffsets, Access::ComputeShaderReadStorage);
+            cmd->AcquireBuffer(constants.caseTests, Access::ComputeShaderReadStorage);
 
-            staging.lookupBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
-            staging.indexBuffer->AcquireAccess(*cmd, Access::ComputeShaderReadStorage);
+            cmd->AcquireBuffer(staging.lookupBuffer, Access::ComputeShaderReadStorage);
+            cmd->AcquireBuffer(staging.indexBuffer, Access::ComputeShaderReadWrite);
 
             cmd->SetComputeShader("marching_cubes_triangle2.comp");
             cmd->SetShaderConstant(ShaderStage::Compute, "GRID_SIZE_X", extents.x);
@@ -333,18 +331,16 @@ namespace sp::vulkan {
             glm::uvec3 groups = (cubeGridSize + 7u) / 8u;
             cmd->Dispatch(groups.x, groups.y, groups.z);
 
-            staging.indexBuffer->SetAccess(Access::ComputeShaderReadStorage, Access::ComputeShaderWrite);
-
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
         }
         std::shared_ptr<vk::UniqueFence> readbackFence;
         {
             ZoneScopedN("BufferReadback");
-            CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-            staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-            staging.lookupBuffer->AcquireAccess(*cmd, Access::TransferRead);
-            staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-            staging.readbackBuffer->AcquireAccess(*cmd, Access::TransferWrite);
+            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
+            cmd->AcquireBuffer(staging.lookupBuffer, Access::TransferRead);
+            cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
+            cmd->AcquireBuffer(staging.readbackBuffer, Access::TransferWrite);
 
             vk::BufferCopy vertexCountRegion(sizeof(uint32_t), 0, sizeof(uint32_t));
             vk::BufferCopy indexCountRegion(0, sizeof(uint32_t), sizeof(uint32_t));
@@ -359,7 +355,7 @@ namespace sp::vulkan {
             cmd->BufferBarrier(staging.readbackBuffer, vk::PipelineStageFlagBits::eHost, vk::AccessFlagBits::eHostRead);
 
             readbackFence = cmd->Fence();
-            device.Submit(cmd);
+            device.Submit(NewDispatchSource, cmd);
         }
         asset = std::make_shared<Gltf>(modelName);
         staging.transferComplete = device.ExecuteAfterFence(NewDispatchSource, readbackFence, [this, &scene, &device] {
@@ -425,15 +421,15 @@ namespace sp::vulkan {
 
             {
                 ZoneScopedN("TransferBuffers");
-                CommandContextPtr cmd = device.GetFencedCommandContext(CommandContextType::ComputeAsync);
-                staging.vertexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-                staging.indexBuffer->AcquireAccess(*cmd, Access::TransferRead);
-                staging.primitiveList->AcquireAccess(*cmd, Access::TransferRead);
-                staging.modelEntry->AcquireAccess(*cmd, Access::TransferRead);
-                vertexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
-                indexBuffer->AcquireAccess(*cmd, Access::TransferWrite);
-                primitiveList->AcquireAccess(*cmd, Access::TransferWrite);
-                modelEntry->AcquireAccess(*cmd, Access::TransferWrite);
+                CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+                cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
+                cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
+                cmd->AcquireBuffer(staging.primitiveList, Access::TransferRead);
+                cmd->AcquireBuffer(staging.modelEntry, Access::TransferRead);
+                cmd->AcquireBuffer(vertexBuffer, Access::TransferWrite);
+                cmd->AcquireBuffer(indexBuffer, Access::TransferWrite);
+                cmd->AcquireBuffer(primitiveList, Access::TransferWrite);
+                cmd->AcquireBuffer(modelEntry, Access::TransferWrite);
 
                 vk::BufferCopy vertexRegion(0, vertexBuffer->ByteOffset(), sizeof(SceneVertex) * vertexCount);
                 vk::BufferCopy indexRegion(sizeof(uint32_t), indexBuffer->ByteOffset(), sizeof(uint32_t) * indexCount);
@@ -444,7 +440,7 @@ namespace sp::vulkan {
                 cmd->Raw().copyBuffer(*staging.primitiveList, *primitiveList, {primitiveRegion});
                 cmd->Raw().copyBuffer(*staging.modelEntry, *modelEntry, {modelRegion});
 
-                device.Submit(cmd);
+                device.Submit(NewDispatchSource, cmd);
 
                 Logf("Buffer transfer submitted %s", modelName);
                 Assertf(!staging.transferComplete->Ready(), "Transfer complete too early: %s", modelName);

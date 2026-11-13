@@ -166,9 +166,21 @@ namespace sp::vulkan {
                 {},
                 vk::ImageUsageFlagBits::eDepthStencilAttachment,
                 vk::ImageLayout::eDepthStencilAttachmentOptimal},
+            // DepthStencilAttachmentReadWrite
+            {vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
+                vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+                {},
+                vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled,
+                vk::ImageLayout::eDepthStencilAttachmentOptimal},
             // ComputeShaderWrite
             {vk::PipelineStageFlagBits::eComputeShader,
                 vk::AccessFlagBits::eShaderWrite,
+                vk::BufferUsageFlagBits::eStorageBuffer,
+                vk::ImageUsageFlagBits::eStorage,
+                vk::ImageLayout::eGeneral},
+            // ComputeShaderReadWrite
+            {vk::PipelineStageFlagBits::eComputeShader,
+                vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite,
                 vk::BufferUsageFlagBits::eStorageBuffer,
                 vk::ImageUsageFlagBits::eStorage,
                 vk::ImageLayout::eGeneral},
@@ -184,6 +196,12 @@ namespace sp::vulkan {
                 vk::BufferUsageFlagBits::eTransferDst,
                 vk::ImageUsageFlagBits::eTransferDst,
                 vk::ImageLayout::eTransferDstOptimal},
+            // TransferReadWrite
+            {vk::PipelineStageFlagBits::eTransfer,
+                vk::AccessFlagBits::eTransferWrite,
+                vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+                vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
+                vk::ImageLayout::eTransferSrcOptimal},
             // HostPreinitialized
             {vk::PipelineStageFlagBits::eHost,
                 vk::AccessFlagBits::eHostWrite,

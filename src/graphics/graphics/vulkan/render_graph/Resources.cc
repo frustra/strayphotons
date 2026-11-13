@@ -8,6 +8,8 @@
 #include "Resources.hh"
 
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Logging.hh"
 
 #include <cstddef>
@@ -268,7 +270,6 @@ namespace sp::vulkan::render_graph {
             Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
         }
 
-        Assertf(view, "Resources::AddExternalImageView called with null view");
         Assert(view->BaseArrayLayer() == 0, "RenderGraph::AddImageView can't target a specific layer");
 
         ImageDesc desc = {};
@@ -293,6 +294,41 @@ namespace sp::vulkan::render_graph {
             externalIDs.emplace_back(resource.id);
             IncrementRef(resource.id);
             images[resource.id] = std::make_shared<PooledImage>(device, desc, view);
+        }
+        return resource.id;
+    }
+
+    ResourceID Resources::AddExternalBuffer(std::string_view name, BufferPtr buffer, bool allowReplace) {
+        if (renderThread == std::thread::id()) {
+            renderThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == renderThread, "Resources must be used in a single thread");
+        }
+
+        BufferDesc desc = {};
+        desc.layout.size = buffer->ByteSize();
+        desc.layout.arrayStride = buffer->ArrayStride();
+        desc.layout.arrayCount = buffer->ArraySize();
+        desc.residency = Residency::UNKNOWN;
+        desc.usage = buffer->Usage();
+
+        if (!name.empty() && !allowReplace) {
+            ResourceID existingID = GetID(name);
+            if (existingID != InvalidResource) {
+                const Resource &resource = GetResource(existingID, false);
+                Assertf(resource.type == Resource::Type::Alias,
+                    "Resources::AddExternalBuffer called with existing name: %s",
+                    name);
+                // TODO: Make sure Alias references don't leak
+            }
+        }
+
+        Resource resource(desc);
+        resource.externalResource = true;
+        if (Register(name, resource)) {
+            externalIDs.emplace_back(resource.id);
+            IncrementRef(resource.id);
+            buffers[resource.id] = buffer;
         }
         return resource.id;
     }
@@ -563,7 +599,7 @@ namespace sp::vulkan::render_graph {
         if (createDesc.primaryViewType == vk::ImageViewType::e2D)
             createDesc.primaryViewType = createDesc.DeriveViewType();
 
-        ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo = {};
         imageInfo.imageType = createDesc.imageType;
         imageInfo.extent = createDesc.extent;
         imageInfo.mipLevels = createDesc.mipLevels;
@@ -575,7 +611,9 @@ namespace sp::vulkan::render_graph {
         viewInfo.viewType = createDesc.primaryViewType;
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
-        auto imageView = device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo)->Get();
+        auto fut = device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo);
+        device.FlushMainQueue();
+        auto imageView = fut->Get();
         auto ptr = std::make_shared<PooledImage>(device, createDesc, imageView);
 
         list.push_back(ptr);

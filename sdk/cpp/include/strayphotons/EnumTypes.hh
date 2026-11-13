@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include "strayphotons/Logging.hh"
+
 #include <array>
-#include <bitset>
 #include <magic_enum.hpp>
 #include <type_traits>
 
@@ -16,6 +17,18 @@ namespace sp {
     template<typename T, class EnumType, typename ArrayT = std::array<T, magic_enum::enum_count<EnumType>()>>
     class EnumArray : public ArrayT {
     public:
+        EnumArray() : ArrayT() {}
+        EnumArray(std::initializer_list<T> init) : ArrayT() {
+            DebugAssertf(init.size() == ArrayT::size(),
+                "EnumArray not initialized with correct count: %u != expected %u",
+                init.size(),
+                ArrayT::size());
+            size_t i = 0;
+            for (const T &value : init) {
+                ArrayT::operator[](i++) = value;
+            }
+        }
+
         constexpr T &operator[](const EnumType &e) {
             return ArrayT::at(static_cast<size_t>(e));
         }

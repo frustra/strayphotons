@@ -9,6 +9,7 @@
 
 #include "strayphotons/Utility.hh"
 
+#include <mutex>
 #include <sstream>
 
 #ifdef TRACY_ENABLE
@@ -42,13 +43,13 @@ namespace sp {
         }
     }
 
-    void DispatchQueue::Flush(bool blockUntilReady, chrono_clock::duration timeLimit) {
+    bool DispatchQueue::Flush(bool blockUntilReady, chrono_clock::duration timeLimit) {
 #ifdef TRACY_ENABLE
         ZoneScoped;
 #endif
         std::unique_lock<std::mutex> lock(mutex);
         size_t maxWorkItems = workQueue.size();
-        if (maxWorkItems == 0) return;
+        if (maxWorkItems == 0) return true;
         if (blockUntilReady || timeLimit.count() == 0) {
             FlushInternal(lock, maxWorkItems, blockUntilReady);
         } else {
@@ -58,6 +59,12 @@ namespace sp {
                 maxWorkItems--;
             }
         }
+        return workQueue.empty();
+    }
+
+    size_t DispatchQueue::WorkItems() const {
+        std::unique_lock<std::mutex> lock(mutex);
+        return workQueue.size();
     }
 
     void DispatchQueue::ThreadMain() {

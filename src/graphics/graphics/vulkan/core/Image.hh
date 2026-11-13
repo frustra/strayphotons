@@ -13,6 +13,8 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "vulkan/vulkan.hpp"
 
+#include <memory>
+
 namespace sp::vulkan {
     enum class LoadOp {
         DontCare,
@@ -115,14 +117,6 @@ namespace sp::vulkan {
             return arrayLayers;
         }
 
-        vk::ImageLayout LastLayout() const {
-            return lastLayout;
-        }
-
-        Access LastAccess() const {
-            return lastAccess;
-        }
-
         vk::ImageUsageFlags Usage() const {
             return usage;
         }
@@ -133,8 +127,7 @@ namespace sp::vulkan {
             return declaredUsage;
         }
 
-        void AcquireAccess(CommandContext &cmd, Access newAccess);
-
+        vk::ImageLayout LastLayout() const;
         void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
         void SetAccess(Access oldAccess, Access newAccess);
 
@@ -147,12 +140,14 @@ namespace sp::vulkan {
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 
+        LockFreeMutex accessMutex;
         Access lastAccess = Access::None;
-        uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        std::weak_ptr<vk::UniqueSemaphore> pendingCommand;
-        uint64_t pendingSubmit = 0;
+        std::optional<QueueID> lastQueueId;
+        std::weak_ptr<CommandContext> lastCommand;
+        mutable std::thread::id callThread;
 
         friend class DeviceContext;
+        friend class CommandContext;
     };
 
     struct ImageViewCreateInfo {

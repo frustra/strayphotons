@@ -62,14 +62,18 @@ namespace sp::vulkan::renderer {
         uint16_t _padding1[1];
         float16_t normal[3];
         uint16_t _padding2[1];
+        uint32_t _padding[2];
     };
+    static_assert(sizeof(GPUVoxelFragment) % 16 == 0, "Device minStorageBufferOffsetAlignment == 16");
 
     struct GPUVoxelFragmentList {
         uint32_t count;
         uint32_t capacity;
         uint32_t offset;
         VkDispatchIndirectCommand cmd;
+        uint32_t _padding[2];
     };
+    static_assert(sizeof(GPUVoxelFragmentList) % 16 == 0, "Device minStorageBufferOffsetAlignment == 16");
 
     Voxels::Voxels(GPUScene &scene) : scene(scene) {
         funcs.Register("printgraphics", "Print graphics debug information", [this]() {
@@ -292,6 +296,7 @@ namespace sp::vulkan::renderer {
                 builder.Write("FragmentLists", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawID.drawParamsBuffer, Access::VertexShaderReadStorage);
             })

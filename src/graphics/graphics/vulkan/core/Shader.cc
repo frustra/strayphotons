@@ -7,6 +7,8 @@
 
 #include "Shader.hh"
 
+#include "magic_enum.hpp"
+#include "spirv_reflect.h"
 #include "strayphotons/InlineVector.hh"
 
 #include <string>
@@ -28,6 +30,7 @@ namespace sp::vulkan {
             name,
             result);
 
+        // Logf("Reflection: %s", name);
         InlineVector<Shader::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> descriptorSets;
         for (auto *descriptorSet : reflectBuffer) {
             auto &set = descriptorSets.emplace_back(Shader::DescriptorSet{descriptorSet->set, {}});
@@ -38,6 +41,9 @@ namespace sp::vulkan {
                     bindingName = binding->type_description->type_name ? binding->type_description->type_name : "";
                 }
 
+                // Logf("Binding %s: %s",
+                //     bindingName,
+                //     magic_enum::enum_flags_name((SpvReflectDecorationFlagBits)binding->decoration_flags));
                 set.bindings.emplace_back(Shader::DescriptorSetBinding{
                     bindingName,
                     (vk::DescriptorType)binding->descriptor_type,

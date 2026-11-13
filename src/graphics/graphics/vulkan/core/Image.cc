@@ -8,10 +8,7 @@
 #include "Image.hh"
 
 #include "assets/GltfImpl.hh"
-#include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/CommandContext.hh"
-#include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Logging.hh"
 
@@ -73,53 +70,32 @@ namespace sp::vulkan {
         return handle;
     }
 
-    void Image::AcquireAccess(CommandContext &cmd, Access newAccess) {
-        auto imagePtr = handle.lock();
-        Assertf(imagePtr, "Image::AcquireAccess called on image with invalid handle");
-
-        DeviceContext &device = cmd.Device();
-        uint32_t queueFamilyIndex = device.QueueFamilyIndex(cmd.GetType());
-
-        if (lastQueueFamilyIndex != queueFamilyIndex) {
-            DebugZoneScopedN("AcquireImage");
-            if (lastQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) {
-                ZoneScopedN("TransferQueueFamily");
-                auto subCmd = device.GetFencedCommandContext(device.GetQueueType(lastQueueFamilyIndex));
-
-                ImageBarrierInfo options = {};
-                options.srcQueueFamilyIndex = lastQueueFamilyIndex;
-                options.dstQueueFamilyIndex = queueFamilyIndex;
-                const AccessInfo &lastInfo = GetAccessInfo(lastAccess);
-                subCmd->ImageBarrier(imagePtr, lastLayout, lastInfo.stageMask, lastInfo.accessMask, options);
-                subCmd->acquiredImages.emplace_back(imagePtr);
-
-                device.Submit(subCmd);
-            }
-
-            // Acquire new queue family
-            ImageBarrierInfo options = {};
-            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
-            options.dstQueueFamilyIndex = queueFamilyIndex;
-            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
-            cmd.ImageBarrier(imagePtr, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask, options);
-            lastQueueFamilyIndex = queueFamilyIndex;
-            lastAccess = newAccess;
+    vk::ImageLayout Image::LastLayout() const {
+        if (callThread == std::thread::id()) {
+            callThread = std::this_thread::get_id();
         } else {
-            // No queue ownership transfer required
-            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
-            cmd.ImageBarrier(imagePtr, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
-            lastAccess = newAccess;
+            Assert(std::this_thread::get_id() == callThread, "Image must be used in a single thread");
         }
-        cmd.acquiredImages.emplace_back(imagePtr);
+        return lastLayout;
     }
 
     void Image::SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+        if (callThread == std::thread::id()) {
+            callThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == callThread, "Image must be used in a single thread");
+        }
         Assert(oldLayout == vk::ImageLayout::eUndefined || oldLayout == lastLayout,
             "image had layout: " + vk::to_string(lastLayout) + ", expected: " + vk::to_string(oldLayout));
         lastLayout = newLayout;
     }
 
     void Image::SetAccess(Access oldAccess, Access newAccess) {
+        if (callThread == std::thread::id()) {
+            callThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == callThread, "Image must be used in a single thread");
+        }
         DebugAssert(oldAccess == Access::None || oldAccess == lastAccess, "unexpected access");
         lastAccess = newAccess;
     }

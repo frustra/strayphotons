@@ -90,6 +90,8 @@ namespace sp::vulkan {
         void AddGraphTextures(rg::RenderGraph &graph);
         void Flush();
 
+        bool Ready();
+
     private:
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();

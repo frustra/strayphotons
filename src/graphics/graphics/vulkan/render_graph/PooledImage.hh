@@ -64,7 +64,7 @@ namespace sp::vulkan::render_graph {
 
     private:
         DeviceContext *device;
-        ImageDesc desc;
+        ImageDesc desc = {};
         ImageViewPtr imageView;
         std::vector<ImageViewPtr> layerImageViews;
         std::vector<ImageViewPtr> mipImageViews;

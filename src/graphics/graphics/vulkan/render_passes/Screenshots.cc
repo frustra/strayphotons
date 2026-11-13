@@ -105,7 +105,7 @@ namespace sp::vulkan::renderer {
         auto fullPath = std::filesystem::weakly_canonical(base / path);
         Logf("Saving %ux%u screenshot to: %s", extent.width, extent.height, fullPath.string());
 
-        vk::ImageCreateInfo outputDesc;
+        vk::ImageCreateInfo outputDesc = {};
         outputDesc.imageType = vk::ImageType::e2D;
         outputDesc.extent = extent;
         outputDesc.usage = vk::ImageUsageFlagBits::eTransferDst;
@@ -131,9 +131,9 @@ namespace sp::vulkan::renderer {
 
         auto outputImage = device.AllocateImage(outputDesc, VMA_MEMORY_USAGE_GPU_TO_CPU);
 
-        auto transferCmd = device.GetFencedCommandContext(CommandContextType::General);
-        view->Image()->AcquireAccess(*transferCmd, Access::TransferRead);
-        outputImage->AcquireAccess(*transferCmd, Access::TransferWrite);
+        auto transferCmd = device.GetFencedCommandContext(QueueID::TransferAsync);
+        transferCmd->AcquireImage(view->Image(), Access::TransferRead);
+        transferCmd->AcquireImage(outputImage, Access::TransferWrite);
 
         vk::ImageCopy imageCopyRegion;
         imageCopyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
@@ -150,7 +150,7 @@ namespace sp::vulkan::renderer {
             {imageCopyRegion});
 
         auto fence = transferCmd->Fence();
-        device.Submit(transferCmd);
+        device.Submit(NewDispatchSource, transferCmd);
 
         AssertVKSuccess(device->waitForFences({fence->get()}, true, 1e10), "waiting for fence");
 

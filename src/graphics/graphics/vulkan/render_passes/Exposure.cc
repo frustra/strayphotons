@@ -82,7 +82,7 @@ namespace sp::vulkan::renderer {
             .Build([&](rg::PassBuilder &builder) {
                 graph.AddPass("Clear")
                     .Build([&](rg::PassBuilder &builder) {
-                        ImageDesc histogramDesc;
+                        ImageDesc histogramDesc = {};
                         histogramDesc.extent = vk::Extent3D(bins, 1, 1);
                         histogramDesc.format = vk::Format::eR32Uint;
                         builder.CreateImage("LuminanceHistogram", histogramDesc, Access::TransferWrite);

@@ -13,6 +13,7 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 
@@ -78,16 +79,14 @@ namespace sp::vulkan::render_graph {
         std::vector<CommandContextPtr> pendingCmds;
         CommandContextPtr cmd;
 
-        auto submitPendingCmds = [&] {
+        auto submitPendingCmds = [&](const DispatchSourceInfo &sourceInfo) {
             if (cmd) {
+                cmd->End();
                 pendingCmds.push_back(cmd);
                 cmd.reset();
             }
 
-            if (!pendingCmds.empty()) {
-                device.Submit(pendingCmds);
-                pendingCmds.clear();
-            }
+            if (!pendingCmds.empty()) device.Submit(sourceInfo, std::move(pendingCmds));
         };
 
         for (auto &pass : passes) {
@@ -134,7 +133,7 @@ namespace sp::vulkan::render_graph {
             frameScopeStack = pass.scopes;
 
             AddPreBarriers(cmd, pass); // creates cmd if necessary
-            if (pass.flushCommands) submitPendingCmds();
+            if (pass.flushCommands) submitPendingCmds(NewDispatchSource);
 
             RenderPassInfo renderPassInfo = {};
 
@@ -177,7 +176,7 @@ namespace sp::vulkan::render_graph {
 #endif
 
             if (pass.isRenderPass) {
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                 RenderPhase phase(pass.name);
                 phase.StartTimer(*cmd);
@@ -189,7 +188,7 @@ namespace sp::vulkan::render_graph {
                 if (timer) phase.StartTimer(*timer);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
                 GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
                 RenderPhase phase(pass.name);
                 phase.StartTimer(*cmd);
@@ -199,15 +198,23 @@ namespace sp::vulkan::render_graph {
             }
 
             if (cmd) {
-                // Preserve external image view resources until the frame is complete
                 for (auto &access : pass.accesses) {
                     auto &res = resources.resources[access.id];
-                    if (res.type == Resource::Type::Image && res.externalResource) {
+                    if (res.type == Resource::Type::Image) {
                         auto view = resources.GetImageView(access.id);
-                        if (!view || view->IsSwapchain()) continue;
-                        device.PushInFlightObject(view, cmd->Fence());
+                        if (!view) continue;
+                        if (view->IsSwapchain()) {
+                            cmd->ImageBarrier(view->Image(),
+                                vk::ImageLayout::ePresentSrcKHR,
+                                vk::PipelineStageFlagBits::eBottomOfPipe,
+                                {});
+                        } else if (res.externalResource) {
+                            // Preserve external image view resources until the frame is complete
+                            // device.PushInFlightObject(view, cmd->Fence());
+                        }
                     }
                 }
+                cmd->End();
                 pendingCmds.push_back(std::move(cmd));
             }
             cmd.reset();
@@ -224,7 +231,7 @@ namespace sp::vulkan::render_graph {
         }
         futureDependencies[resources.frameIndex].clear();
 
-        submitPendingCmds();
+        submitPendingCmds(NewDispatchSource);
         AdvanceFrame();
     }
 
@@ -239,24 +246,23 @@ namespace sp::vulkan::render_graph {
 
             if (res.type == Resource::Type::Image) {
                 auto view = resources.GetImageView(access.id);
-                if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                // if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
 
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
 
-                view->Image()->AcquireAccess(*cmd, nextAccess);
+                cmd->AcquireImage(view->Image(), nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
                 auto buffer = resources.GetBuffer(access.id);
 
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
 
-                buffer->AcquireAccess(*cmd, nextAccess);
+                cmd->AcquireBuffer(buffer, nextAccess);
             }
         }
     }
 
     void RenderGraph::AdvanceFrame() {
         passes.clear();
-        device.AdvanceFrame();
         resources.AdvanceFrame();
     }
 
@@ -270,6 +276,10 @@ namespace sp::vulkan::render_graph {
 
     ResourceID RenderGraph::AddImageView(std::string_view name, ImageViewPtr view) {
         return resources.AddExternalImageView(name, view);
+    }
+
+    ResourceID RenderGraph::AddBuffer(std::string_view name, BufferPtr buffer) {
+        return resources.AddExternalBuffer(name, buffer);
     }
 
     std::vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {

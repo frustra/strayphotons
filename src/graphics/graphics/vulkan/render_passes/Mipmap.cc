@@ -17,8 +17,7 @@ namespace sp::vulkan::renderer {
         if (id == InvalidResource) id = graph.LastOutputID();
         graph.AddPass("Mipmap")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Write(id, Access::TransferWrite);
-                builder.Read(id, Access::TransferRead);
+                builder.Read(id, Access::TransferReadWrite);
             })
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
@@ -26,7 +25,7 @@ namespace sp::vulkan::renderer {
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
                 transferMips.baseMipLevel = 1;
-                transferMips.mipLevelCount = 1;
+                transferMips.mipLevelCount = image->MipLevels() - 1;
 
                 cmd.ImageBarrier(image,
                     vk::ImageLayout::eUndefined,
@@ -40,6 +39,7 @@ namespace sp::vulkan::renderer {
                 vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
                     (int32_t)image->Extent().height,
                     (int32_t)image->Extent().depth};
+                transferMips.mipLevelCount = 1;
 
                 for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;

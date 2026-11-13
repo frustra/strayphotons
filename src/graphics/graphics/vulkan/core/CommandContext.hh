@@ -18,7 +18,6 @@
 #include <bit>
 #include <glm/glm.hpp>
 #include <memory>
-#include <memory_resource>
 #include <robin_hood.h>
 #include <string_view>
 #include <vector>
@@ -72,12 +71,16 @@ namespace sp::vulkan {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
 
-        CommandContext(DeviceContext &device, vk::CommandPool pool, CommandContextType type, CommandContextScope scope);
+        CommandContext(DeviceContext &device, vk::CommandPool pool, QueueID queueId, CommandContextType type);
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
-            CommandContextType type,
-            CommandContextScope scope) noexcept;
+            QueueID queueId,
+            CommandContextType type) noexcept;
         ~CommandContext();
+
+        QueueID GetQueueID() {
+            return queueId;
+        }
 
         CommandContextType GetType() {
             return type;
@@ -493,10 +496,15 @@ namespace sp::vulkan {
 
         const std::shared_ptr<vk::UniqueFence> &Fence();
 
+        void AcquireImage(const ImagePtr &image, Access nextAccess);
+        void AcquireBuffer(const BufferPtr &buffer, Access nextAccess);
+        void AcquireBuffer(const SubBufferPtr &buffer, Access nextAccess);
+
+        void End();
+
     protected:
         friend class DeviceContext;
         void Begin(render_graph::Resources *resources = nullptr);
-        void End();
 
         vk::UniqueCommandBuffer &RawRef() {
             return cmd;
@@ -536,14 +544,14 @@ namespace sp::vulkan {
         }
 
         DeviceContext &device;
+        std::weak_ptr<CommandContext> handle;
         vk::UniqueCommandBuffer cmd;
+        QueueID queueId;
         CommandContextType type;
-        CommandContextScope scope;
         render_graph::Resources *resources;
 
         std::shared_ptr<vk::UniqueFence> fence;
-
-        bool recording = false;
+        std::atomic_bool recording, submitted;
 
         YDirection viewportYDirection = YDirection::Up;
         std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
@@ -569,10 +577,8 @@ namespace sp::vulkan {
 
         std::vector<ImagePtr> acquiredImages;
         std::vector<BufferPtr> acquiredBuffers;
-
-        friend class Buffer;
-        friend class SubBuffer;
-        friend class Image;
-        friend class DeviceContext;
+        std::vector<ImageViewPtr> activeImageViews;
+        std::vector<SemaphorePtr> waitSemaphores, signalSemaphores;
+        std::vector<vk::PipelineStageFlags> waitStages;
     };
 } // namespace sp::vulkan

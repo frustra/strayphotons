@@ -11,6 +11,7 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Hashing.hh"
+#include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Utility.hh"
 
 #include <cstdint>
@@ -95,6 +96,7 @@ namespace sp::vulkan {
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
         vk::MemoryPropertyFlags Properties() const;
+        Residency Residency() const;
 
         const size_t CopyBlockSize = 512 * 1024;
 
@@ -171,14 +173,14 @@ namespace sp::vulkan {
 
         operator vk::Buffer() const;
 
-        void AcquireAccess(CommandContext &cmd, Access newAccess);
-
     private:
         std::weak_ptr<SubBuffer> handle;
         BufferPtr parentBuffer;
         VmaVirtualBlock subAllocationBlock;
         vk::DeviceSize offsetBytes, size;
         size_t arrayOffset, arrayCount;
+
+        friend class CommandContext;
     };
 
     class Buffer : public UniqueMemory {
@@ -232,13 +234,7 @@ namespace sp::vulkan {
          */
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
-        Access LastAccess() const {
-            return lastAccess;
-        }
-
         void SetAccess(Access oldAccess, Access newAccess);
-
-        void AcquireAccess(CommandContext &cmd, Access newAccess);
 
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
@@ -250,12 +246,14 @@ namespace sp::vulkan {
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
+        LockFreeMutex accessMutex;
         Access lastAccess = Access::None;
-        uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        std::weak_ptr<vk::UniqueSemaphore> pendingCommand;
-        uint64_t pendingSubmit = 0;
+        std::optional<QueueID> lastQueueId;
+        std::weak_ptr<CommandContext> lastCommand;
+        std::thread::id callThread;
 
         friend class DeviceContext;
+        friend class CommandContext;
     };
 } // namespace sp::vulkan
 

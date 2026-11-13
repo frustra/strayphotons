@@ -23,7 +23,6 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <string>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -159,7 +158,9 @@ namespace sp {
 
         ~DispatchQueue();
         void Shutdown();
-        void Flush(bool blockUntilReady = false, chrono_clock::duration timeLimit = {});
+
+        // Returns true if all work was completed and the queue is empty
+        bool Flush(bool blockUntilReady = false, chrono_clock::duration timeLimit = {});
 
         /**
          * Queues a function.
@@ -217,6 +218,8 @@ namespace sp {
             return item->returnValue;
         }
 
+        size_t WorkItems() const;
+
         const HeapString name;
         const chrono_clock::duration flushSleepInterval;
 
@@ -224,7 +227,7 @@ namespace sp {
         size_t FlushInternal(std::unique_lock<std::mutex> &lock, size_t maxWorkItems, bool blockUntilReady);
         void ThreadMain();
 
-        std::mutex mutex;
+        mutable std::mutex mutex;
         std::vector<std::thread> threads;
 
         std::queue<std::shared_ptr<DispatchQueueWorkItemBase>> workQueue;

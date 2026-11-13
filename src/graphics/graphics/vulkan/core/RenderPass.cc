@@ -112,22 +112,6 @@ namespace sp::vulkan {
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 0;
 
-        vk::SubpassDependency dependency;
-        if (state.colorAttachmentCount > 0 && info.colorAttachments[0]->IsSwapchain()) {
-            // TODO: this external dependency is specifically for the swapchain renderpass, make it configurable
-            dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-            dependency.dstSubpass = 0;
-            dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                                      vk::PipelineStageFlagBits::eEarlyFragmentTests;
-            dependency.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
-            dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                                      vk::PipelineStageFlagBits::eEarlyFragmentTests;
-            dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite |
-                                       vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-            renderPassInfo.pDependencies = &dependency;
-            renderPassInfo.dependencyCount = 1;
-        }
-
         vk::RenderPassMultiviewCreateInfo multiviewInfo;
         if (state.multiviewMask) {
             multiviewInfo.pViewMasks = &state.multiviewMask;

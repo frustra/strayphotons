@@ -13,7 +13,6 @@
 #include "strayphotons/Utility.hh"
 
 #include <atomic>
-#include <deque>
 #include <functional>
 #include <memory>
 #include <memory_resource>
@@ -55,8 +54,8 @@ namespace sp {
             {
                 std::unique_lock lock(freeMutex);
                 if (!freeObjects.empty()) {
-                    available = freeObjects.front();
-                    freeObjects.pop_front();
+                    available = freeObjects.back();
+                    freeObjects.pop_back();
                 }
             }
 
@@ -81,7 +80,7 @@ namespace sp {
         std::pmr::polymorphic_allocator<T> allocator;
 
         LockFreeMutex freeMutex;
-        std::pmr::deque<T *> freeObjects;
+        std::pmr::vector<T *> freeObjects;
         std::atomic_uint32_t objectCount = 0;
 
         std::function<void(T *)> constructObject;

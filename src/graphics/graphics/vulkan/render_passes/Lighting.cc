@@ -470,6 +470,7 @@ namespace sp::vulkan::renderer {
                 builder.Write("RenderableVisibility", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
@@ -526,8 +527,9 @@ namespace sp::vulkan::renderer {
                     builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
 
                     builder.Write("OpticVisibility", Access::FragmentShaderWrite);
-                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
+                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                    builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                     builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
                     builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
                 })

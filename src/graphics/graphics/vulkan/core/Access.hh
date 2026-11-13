@@ -43,10 +43,13 @@ namespace sp::vulkan {
         FragmentShaderWrite,
         ColorAttachmentWrite,
         ColorAttachmentReadWrite,
+        DepthStencilAttachmentReadWrite,
         DepthStencilAttachmentWrite,
         ComputeShaderWrite,
+        ComputeShaderReadWrite,
         AnyShaderWrite,
         TransferWrite,
+        TransferReadWrite,
         HostPreinitialized,
         HostWrite,
 

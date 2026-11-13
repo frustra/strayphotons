@@ -75,7 +75,7 @@ namespace sp::vulkan {
         int fontWidth, fontHeight;
         fontAtlas->GetTexDataAsRGBA32(&fontData, &fontWidth, &fontHeight);
 
-        ImageCreateInfo fontImageInfo;
+        ImageCreateInfo fontImageInfo = {};
         fontImageInfo.imageType = vk::ImageType::e2D;
         fontImageInfo.extent = vk::Extent3D{(uint32_t)fontWidth, (uint32_t)fontHeight, 1};
         fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
@@ -162,7 +162,7 @@ namespace sp::vulkan {
             "Compositor::UploadStaticImage called with unsupported component count: %d",
             image->GetComponents());
         auto view = device.LoadImage(image, genMipmap, srgb);
-        device.FlushMainQueue();
+        if (genMipmap) device.FlushMainQueue();
         return view->Get();
     }
 
@@ -194,6 +194,10 @@ namespace sp::vulkan {
     }
 
     void Compositor::BeforeFrame(rg::RenderGraph &graph) {
+        if (fontView) {
+            if (!fontView->Ready()) device.FlushMainQueue();
+            graph.AddImageView("FontAtlas", fontView->Get());
+        }
         {
             bool renderOutputsChanged = false;
             auto lock = ecs::StartTransaction<ecs::Read<ecs::Name, ecs::RenderOutput>>();
@@ -468,6 +472,7 @@ namespace sp::vulkan {
                                 Assertf(output.sourceResourceID != rg::InvalidResource,
                                     "Failed to add asset image view to graph: %s",
                                     resourceName);
+                                builder.Read(output.sourceResourceID, Access::FragmentShaderSampleImage);
                             } else {
                                 output.sourceResourceID = builder.GetID("ErrorColor");
                             }
@@ -549,7 +554,7 @@ namespace sp::vulkan {
             }
 
             ImGui::SetCurrentContext(nullptr); // Don't leak contexts between render outputs
-            if (output.guiContext && output.enableGui && fontView->Ready()) {
+            if (output.guiContext && output.enableGui && fontView) {
                 GuiContext &context = *output.guiContext;
 
                 glm::ivec4 viewport(0, 0, outputDesc.extent.width, outputDesc.extent.height);
@@ -559,6 +564,20 @@ namespace sp::vulkan {
             }
 
             if (outputDesc.mipLevels > 1) renderer::AddMipmap(graph);
+            graph.AddPass("ImageBarrier")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.RequirePass();
+                })
+                .Execute([](rg::Resources &resources, CommandContext &cmd) {
+                    auto imageView = resources.GetImageView(resources.LastOutputID());
+                    if (imageView) {
+                        auto &image = imageView->Image();
+                        cmd.ImageBarrier(image,
+                            vk::ImageLayout::eShaderReadOnlyOptimal,
+                            vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
+                            vk::AccessFlagBits::eShaderRead);
+                    }
+                });
         }
     }
 
@@ -570,7 +589,7 @@ namespace sp::vulkan {
         ephemeralGuiContexts.Tick(std::chrono::milliseconds(33));
         staticAssetImages.Tick(std::chrono::milliseconds(33));
 
-        bool sourcesModified = false;
+        bool flushMainQueue = false;
         {
             std::lock_guard l(dynamicSourceMutex);
             auto it = dynamicImageSources.begin();
@@ -601,14 +620,14 @@ namespace sp::vulkan {
                         source.pendingUploads.emplace_back(device.CreateImage(NewDispatchSource,
                             createInfo,
                             InitialData(cpuImage.GetImage().get(), cpuImage.ByteSize(), cpuImage.GetImage())));
-                        sourcesModified = true;
+                        if (createInfo.genMipmap) flushMainQueue = true;
                     }
                     source.cpuImageModified = false;
                 }
                 it++;
             }
         }
-        if (sourcesModified) device.FlushMainQueue();
+        if (flushMainQueue) device.FlushMainQueue();
     }
 
     void Compositor::internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale) {
@@ -625,20 +644,21 @@ namespace sp::vulkan {
                     }
                 }
                 builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
+                builder.Read("FontAtlas", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this, drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
                 size_t totalVtxSize = CeilToPowerOfTwo(drawData.vertexBuffer.size() * sizeof(GuiDrawVertex));
                 size_t totalIdxSize = CeilToPowerOfTwo(drawData.indexBuffer.size() * sizeof(GuiDrawIndex));
                 if (totalVtxSize == 0 || totalIdxSize == 0) return;
 
-                BufferDesc vtxDesc;
+                BufferDesc vtxDesc = {};
                 vtxDesc.layout = totalVtxSize;
                 vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
                 vtxDesc.residency = Residency::CPU_TO_GPU;
                 auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
 
-                BufferDesc idxDesc;
+                BufferDesc idxDesc = {};
                 idxDesc.layout = totalIdxSize;
                 idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
                 idxDesc.residency = Residency::CPU_TO_GPU;
@@ -677,7 +697,7 @@ namespace sp::vulkan {
                 uint32_t idxOffset = 0;
                 for (const auto &pcmd : drawData.drawCommands) {
                     if (pcmd.textureId == FontAtlasID) {
-                        cmd.SetImageView("tex", fontView->Get());
+                        cmd.SetImageView("tex", "FontAtlas");
                     } else if (pcmd.textureId <= std::numeric_limits<rg::ResourceID>::max()) {
                         rg::ResourceID resourceID = (rg::ResourceID)pcmd.textureId;
                         if (resourceID != rg::InvalidResource) {
@@ -730,9 +750,10 @@ namespace sp::vulkan {
                     }
                 }
                 builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
+                builder.Read("FontAtlas", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([this, drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
                 size_t totalVtxSize = 0, totalIdxSize = 0;
                 for (const auto &cmdList : drawData->CmdLists) {
                     totalVtxSize += cmdList->VtxBuffer.size_in_bytes();
@@ -743,13 +764,13 @@ namespace sp::vulkan {
                 totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
                 if (totalVtxSize == 0 || totalIdxSize == 0) return;
 
-                BufferDesc vtxDesc;
+                BufferDesc vtxDesc = {};
                 vtxDesc.layout = totalVtxSize;
                 vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
                 vtxDesc.residency = Residency::CPU_TO_GPU;
                 auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
 
-                BufferDesc idxDesc;
+                BufferDesc idxDesc = {};
                 idxDesc.layout = totalIdxSize;
                 idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
                 idxDesc.residency = Residency::CPU_TO_GPU;
@@ -789,7 +810,7 @@ namespace sp::vulkan {
                     for (const auto &pcmd : cmdList->CmdBuffer) {
                         if (pcmd.UserCallback) continue;
                         if (pcmd.TextureId == FontAtlasID) {
-                            cmd.SetImageView("tex", fontView->Get());
+                            cmd.SetImageView("tex", "FontAtlas");
                         } else if (pcmd.TextureId <= std::numeric_limits<rg::ResourceID>::max()) {
                             rg::ResourceID resourceID = (rg::ResourceID)pcmd.TextureId;
                             if (resourceID != rg::InvalidResource) {

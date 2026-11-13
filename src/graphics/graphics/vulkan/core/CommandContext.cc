@@ -7,20 +7,24 @@
 
 #include "CommandContext.hh"
 
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "magic_enum.hpp"
+#include "strayphotons/Logging.hh"
 #include "vulkan/vulkan.hpp"
 
-#include <memory_resource>
+#include <mutex>
 #include <string_view>
+#include <vulkan/vulkan_core.h>
 
 namespace sp::vulkan {
     CommandContext::CommandContext(DeviceContext &device,
         vk::CommandPool pool,
-        CommandContextType type,
-        CommandContextScope scope)
-        : device(device), type(type), scope(scope) {
+        QueueID queueId,
+        CommandContextType type)
+        : device(device), queueId(queueId), type(type) {
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.commandPool = pool;
         allocInfo.level = vk::CommandBufferLevel::ePrimary;
@@ -31,9 +35,9 @@ namespace sp::vulkan {
     }
     CommandContext::CommandContext(DeviceContext &device,
         vk::UniqueCommandBuffer cmd,
-        CommandContextType type,
-        CommandContextScope scope) noexcept
-        : device(device), cmd(std::move(cmd)), type(type), scope(scope) {
+        QueueID queueId,
+        CommandContextType type) noexcept
+        : device(device), cmd(std::move(cmd)), queueId(queueId), type(type) {
         SetDefaultOpaqueState();
     }
 
@@ -115,18 +119,16 @@ namespace sp::vulkan {
     }
 
     void CommandContext::Begin(render_graph::Resources *resources) {
-        Assert(!recording, "command buffer already recording");
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
         cmd->begin(beginInfo);
-        recording = true;
+        Assert(!recording.exchange(true), "command buffer already recording");
         this->resources = resources;
     }
 
     void CommandContext::End() {
-        Assert(recording, "command buffer not recording");
         cmd->end();
-        recording = false;
+        Assert(recording.exchange(false), "command buffer not recording");
     }
 
     void CommandContext::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
@@ -248,6 +250,8 @@ namespace sp::vulkan {
         vk::PipelineStageFlags dstStages,
         vk::AccessFlags dstAccess,
         const ImageBarrierInfo &options) {
+        Assert(std::this_thread::get_id() == device.renderThread, "ImageBarrier must be used in a single thread");
+
         vk::ImageMemoryBarrier barrier;
         barrier.image = *image;
         barrier.oldLayout = oldLayout;
@@ -277,7 +281,7 @@ namespace sp::vulkan {
         vk::AccessFlags dstAccess,
         const ImageBarrierInfo &options) {
         Assertf(options.trackImageLayout, "CommandContext::ImageBarrier requires trackImageLayout or oldLayout");
-        auto last = GetAccessInfo(image->LastAccess());
+        auto last = GetAccessInfo(image->lastAccess);
         if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
         ImageBarrier(image,
             image->LastLayout(),
@@ -295,8 +299,12 @@ namespace sp::vulkan {
         vk::PipelineStageFlags dstStages,
         vk::AccessFlags dstAccess,
         const BufferBarrierInfo &options) {
+        Assert(std::this_thread::get_id() == device.renderThread, "BufferBarrier must be used in a single thread");
+
         vk::BufferMemoryBarrier barrier;
         barrier.buffer = *buffer;
+        barrier.offset = 0;
+        barrier.size = VK_WHOLE_SIZE;
         barrier.srcAccessMask = srcAccess;
         barrier.dstAccessMask = dstAccess;
         barrier.srcQueueFamilyIndex = options.srcQueueFamilyIndex;
@@ -308,7 +316,7 @@ namespace sp::vulkan {
         vk::PipelineStageFlags dstStages,
         vk::AccessFlags dstAccess,
         const BufferBarrierInfo &options) {
-        auto last = GetAccessInfo(buffer->LastAccess());
+        auto last = GetAccessInfo(buffer->lastAccess);
         if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
         BufferBarrier(buffer, last.stageMask, last.accessMask, dstStages, dstAccess, options);
     }
@@ -440,6 +448,7 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetImageView(uint32_t set, uint32_t binding, const ImageViewPtr &view) {
+        activeImageViews.emplace_back(view);
         SetImageView(set, binding, view.get());
     }
 
@@ -449,9 +458,15 @@ namespace sp::vulkan {
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
         bindingDesc.uniqueID = view->GetUniqueID();
 
-        auto &image = bindingDesc.image;
-        image.imageView = **view;
-        image.imageLayout = (VkImageLayout)view->Image()->LastLayout();
+        auto &image = view->Image();
+        DebugAssertf(image->LastLayout() == vk::ImageLayout::eShaderReadOnlyOptimal ||
+                         image->LastLayout() == vk::ImageLayout::eDepthStencilReadOnlyOptimal ||
+                         image->LastLayout() == vk::ImageLayout::eGeneral,
+            "SetImageView image sampler has invalid layout: %s",
+            image->LastLayout());
+
+        bindingDesc.image.imageView = **view;
+        bindingDesc.image.imageLayout = (VkImageLayout)image->LastLayout();
         SetDescriptorDirty(set);
 
         auto defaultSampler = view->DefaultSampler();
@@ -459,6 +474,7 @@ namespace sp::vulkan {
     }
 
     void CommandContext::SetImageView(std::string_view bindingName, const ImageViewPtr &view) {
+        activeImageViews.emplace_back(view);
         SetImageView(bindingName, view.get());
     }
 
@@ -638,7 +654,7 @@ namespace sp::vulkan {
     }
 
     BufferPtr CommandContext::AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size) {
-        BufferDesc desc;
+        BufferDesc desc = {};
         desc.layout = size;
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
@@ -648,7 +664,7 @@ namespace sp::vulkan {
     }
 
     BufferPtr CommandContext::AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size) {
-        BufferDesc desc;
+        BufferDesc desc = {};
         desc.layout = size;
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
@@ -777,11 +793,113 @@ namespace sp::vulkan {
     }
 
     const std::shared_ptr<vk::UniqueFence> &CommandContext::Fence() {
-        if (!fence && scope == CommandContextScope::Fence) {
-            vk::FenceCreateInfo fenceInfo;
+        if (type == CommandContextType::Frame) {
+            return device.Frame().inFlightFence;
+        } else if (!fence && type == CommandContextType::Fence) {
+            vk::FenceCreateInfo fenceInfo = {};
+            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
             fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
         }
         return fence;
+    }
+
+    void CommandContext::AcquireImage(const ImagePtr &image, Access nextAccess) {
+        DebugZoneScoped;
+        Assert(image, "CommandContext::AcquireImage called on null image");
+
+        std::lock_guard l(image->accessMutex);
+#ifdef SP_DEBUG
+        CommandContextPtr lastCommand = image->lastCommand.lock();
+        if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
+            Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
+        }
+#endif
+
+        uint32_t lastQueueFamilyIndex = image->lastQueueId ? device.QueueFamilyIndex(*image->lastQueueId) : ~0u;
+        uint32_t queueFamilyIndex = device.QueueFamilyIndex(queueId);
+        if (lastQueueFamilyIndex == queueFamilyIndex || lastQueueFamilyIndex == ~0u) {
+            // No queue ownership transfer required
+            const AccessInfo &accessInfo = GetAccessInfo(nextAccess);
+            ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
+        } else {
+            ZoneScopedN("TransferQueueFamily");
+            Logf("Transfering image 0x%llx from %s to %s",
+                (uint64_t)(VkImage)image.get(),
+                *image->lastQueueId,
+                queueId);
+
+            const AccessInfo &lastInfo = GetAccessInfo(image->lastAccess);
+            auto subCmd = device.GetFencedCommandContext(*image->lastQueueId);
+            ImageBarrierInfo options = {};
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            subCmd->ImageBarrier(image, image->lastLayout, lastInfo.stageMask, lastInfo.accessMask, options);
+            waitSemaphores.emplace_back(subCmd->signalSemaphores.emplace_back(device.GetEmptySemaphore()));
+            waitStages.emplace_back(lastInfo.stageMask);
+            device.Submit(NewDispatchSource, subCmd);
+
+            // Acquire new queue family
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            const AccessInfo &accessInfo = GetAccessInfo(nextAccess);
+            ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask, options);
+        }
+        image->lastAccess = nextAccess;
+        image->lastQueueId = queueId;
+        image->lastCommand = handle;
+        acquiredImages.emplace_back(image);
+    }
+
+    void CommandContext::AcquireBuffer(const BufferPtr &buffer, Access nextAccess) {
+        DebugZoneScoped;
+        Assert(buffer, "CommandContext::AcquireBuffer called on null buffer");
+
+        std::lock_guard l(buffer->accessMutex);
+#ifdef SP_DEBUG
+        CommandContextPtr lastCommand = buffer->lastCommand.lock();
+        if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
+            Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
+        }
+#endif
+
+        uint32_t lastQueueFamilyIndex = buffer->lastQueueId ? device.QueueFamilyIndex(*buffer->lastQueueId) : ~0u;
+        uint32_t queueFamilyIndex = device.QueueFamilyIndex(queueId);
+        if (lastQueueFamilyIndex == queueFamilyIndex || lastQueueFamilyIndex == ~0u) {
+            // No queue ownership transfer required
+            const AccessInfo &accessInfo = GetAccessInfo(nextAccess);
+            BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask);
+        } else {
+            ZoneScopedN("TransferQueueFamily");
+            Logf("Transfering buffer 0x%llx from %s to %s",
+                (uint64_t)(VkBuffer)buffer.get(),
+                *buffer->lastQueueId,
+                queueId);
+
+            const AccessInfo &lastInfo = GetAccessInfo(buffer->lastAccess);
+            auto subCmd = device.GetFencedCommandContext(*buffer->lastQueueId);
+            BufferBarrierInfo options = {};
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            subCmd->BufferBarrier(buffer, lastInfo.stageMask, lastInfo.accessMask, options);
+            waitSemaphores.emplace_back(subCmd->signalSemaphores.emplace_back(device.GetEmptySemaphore()));
+            waitStages.emplace_back(lastInfo.stageMask);
+            device.Submit(NewDispatchSource, subCmd);
+
+            // Acquire new queue family
+            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
+            options.dstQueueFamilyIndex = queueFamilyIndex;
+            const AccessInfo &accessInfo = GetAccessInfo(nextAccess);
+            BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask, options);
+        }
+        buffer->lastAccess = nextAccess;
+        buffer->lastQueueId = queueId;
+        buffer->lastCommand = handle;
+        acquiredBuffers.emplace_back(buffer);
+    }
+
+    void CommandContext::AcquireBuffer(const SubBufferPtr &buffer, Access nextAccess) {
+        Assert(buffer, "CommandContext::AcquireBuffer called on null sub-buffer");
+        AcquireBuffer(buffer->parentBuffer, nextAccess);
     }
 
 } // namespace sp::vulkan

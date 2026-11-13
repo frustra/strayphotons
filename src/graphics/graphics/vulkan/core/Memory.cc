@@ -8,8 +8,6 @@
 #include "strayphotons/Logging.hh"
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
-#include "graphics/vulkan/core/CommandContext.hh"
-#include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 #include <memory>
@@ -92,11 +90,6 @@ namespace sp::vulkan {
         return (vk::Buffer)*parentBuffer;
     }
 
-    void SubBuffer::AcquireAccess(CommandContext &cmd, Access newAccess) {
-        Assertf(parentBuffer, "SubBuffer::AcquireAccess called no null buffer");
-        parentBuffer->AcquireAccess(cmd, newAccess);
-    }
-
     Buffer::Buffer() : UniqueMemory(VK_NULL_HANDLE) {}
 
     Buffer::~Buffer() {
@@ -136,46 +129,6 @@ namespace sp::vulkan {
             handle->buffer = vkBuffer;
         }
         return handle;
-    }
-
-    void Buffer::AcquireAccess(CommandContext &cmd, Access newAccess) {
-        auto bufferPtr = handle.lock();
-        Assertf(bufferPtr, "Buffer::AcquireAccess called on buffer with invalid handle");
-
-        DeviceContext &device = cmd.Device();
-        uint32_t queueFamilyIndex = device.QueueFamilyIndex(cmd.GetType());
-
-        if (lastQueueFamilyIndex != queueFamilyIndex) {
-            DebugZoneScopedN("AcquireBuffer");
-            if (lastQueueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) {
-                ZoneScopedN("TransferQueueFamily");
-                auto subCmd = device.GetFencedCommandContext(device.GetQueueType(lastQueueFamilyIndex));
-
-                BufferBarrierInfo options = {};
-                options.srcQueueFamilyIndex = lastQueueFamilyIndex;
-                options.dstQueueFamilyIndex = queueFamilyIndex;
-                const AccessInfo &lastInfo = GetAccessInfo(lastAccess);
-                subCmd->BufferBarrier(bufferPtr, lastInfo.stageMask, lastInfo.accessMask, options);
-                subCmd->acquiredBuffers.emplace_back(bufferPtr);
-
-                device.Submit(subCmd);
-            }
-
-            // Acquire new queue family
-            BufferBarrierInfo options = {};
-            options.srcQueueFamilyIndex = lastQueueFamilyIndex;
-            options.dstQueueFamilyIndex = queueFamilyIndex;
-            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
-            cmd.BufferBarrier(bufferPtr, accessInfo.stageMask, accessInfo.accessMask, options);
-            lastQueueFamilyIndex = queueFamilyIndex;
-            lastAccess = newAccess;
-        } else {
-            // No queue ownership transfer required
-            const AccessInfo &accessInfo = GetAccessInfo(newAccess);
-            cmd.BufferBarrier(bufferPtr, accessInfo.stageMask, accessInfo.accessMask);
-            lastAccess = newAccess;
-        }
-        cmd.acquiredBuffers.emplace_back(bufferPtr);
     }
 
     static char *virtualAllocInfoString(VmaVirtualBlock block) {
@@ -237,6 +190,11 @@ namespace sp::vulkan {
     }
 
     void Buffer::SetAccess(Access oldAccess, Access newAccess) {
+        if (callThread == std::thread::id()) {
+            callThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == callThread, "Buffer must be used in a single thread");
+        }
         DebugAssert(oldAccess == Access::None || oldAccess == lastAccess, "unexpected access");
         lastAccess = newAccess;
     }

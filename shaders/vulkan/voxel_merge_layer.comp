@@ -21,6 +21,7 @@ layout(std430, binding = 1) readonly buffer VoxelFragmentListMetadata {
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
+    uint _padding[2];
 };
 
 layout(std430, binding = 2) readonly buffer VoxelFragmentList {

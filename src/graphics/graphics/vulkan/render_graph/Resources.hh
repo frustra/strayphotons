@@ -129,6 +129,7 @@ namespace sp::vulkan::render_graph {
         ResourceID GetID(std::string_view name, uint32_t framesAgo = 0) const;
 
         ResourceID AddExternalImageView(std::string_view name, ImageViewPtr view, bool allowReplace = false);
+        ResourceID AddExternalBuffer(std::string_view name, BufferPtr buffer, bool allowReplace = false);
 
         ResourceID LastOutputID() const {
             return lastOutputID;
