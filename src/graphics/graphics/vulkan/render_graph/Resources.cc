@@ -581,6 +581,9 @@ namespace sp::vulkan::render_graph {
         for (auto &elemRef : list) {
             if (elemRef.use_count() <= 1 && elemRef->Desc() == desc) {
                 elemRef->unusedFrames = 0;
+                auto &image = elemRef->ImageView()->Image();
+                image->SetLayout(vk::ImageLayout::eUndefined);
+                image->SetAccess(Access::None);
                 return elemRef;
             }
         }
@@ -612,7 +615,7 @@ namespace sp::vulkan::render_graph {
         viewInfo.defaultSampler = device.GetSampler(createDesc.sampler);
 
         auto fut = device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo);
-        device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         auto imageView = fut->Get();
         auto ptr = std::make_shared<PooledImage>(device, createDesc, imageView);
 

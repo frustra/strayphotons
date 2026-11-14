@@ -10,6 +10,8 @@
 #include "console/CVar.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 
+#include <thread>
+
 namespace sp::vulkan {
 
     BufferPtr BufferPool::Get(const BufferDesc &desc) {
@@ -21,6 +23,10 @@ namespace sp::vulkan {
 
             entry.unusedFrames = 0;
             bufferList.pending.push_back(entry);
+            entry.ptr->callThread = std::this_thread::get_id();
+            entry.ptr->lastQueueId.reset();
+            entry.ptr->lastCommand.reset();
+            entry.ptr->SetAccess(Access::None);
             return entry.ptr;
         }
 

@@ -303,6 +303,10 @@ namespace sp::vulkan {
         textures.Flush();
 
         graph.AddBuffer("SceneIndexBuffer", indexBuffer);
+        graph.AddBuffer("SceneVertexBuffer", vertexBuffer);
+        graph.AddBuffer("SceneJointsBuffer", jointsBuffer);
+        graph.AddBuffer("ScenePrimitiveLists", primitiveLists);
+        graph.AddBuffer("SceneModels", models);
 
         // TODO: Reuse or modify the previous frame's buffer to reduce upload bandwidth
         renderablesToFlush.clear();
@@ -584,6 +588,8 @@ namespace sp::vulkan {
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Read("SceneModels", Access::ComputeShaderReadStorage);
+                builder.Read("ScenePrimitiveLists", Access::ComputeShaderReadStorage);
                 builder.Read(bufferIDs.drawCommandsBuffer, Access::ComputeShaderReadStorage);
                 builder.Write(bufferIDs.drawCommandsBuffer, Access::ComputeShaderWrite);
 
@@ -593,12 +599,10 @@ namespace sp::vulkan {
                 bufferIDs.drawParamsBuffer = drawParams.id;
             })
             .Execute([this, viewMask, bufferIDs, instanceCount](rg::Resources &resources, CommandContext &cmd) {
-                cmd.AcquireBuffer(models, Access::ComputeShaderReadStorage);
-                cmd.AcquireBuffer(primitiveLists, Access::ComputeShaderReadStorage);
                 cmd.SetComputeShader("generate_draws_for_view.comp");
                 cmd.SetStorageBuffer("Renderables", "RenderableEntities");
-                cmd.SetStorageBuffer("MeshModels", models);
-                cmd.SetStorageBuffer("MeshPrimitives", primitiveLists);
+                cmd.SetStorageBuffer("MeshModels", "SceneModels");
+                cmd.SetStorageBuffer("MeshPrimitives", "ScenePrimitiveLists");
                 cmd.SetStorageBuffer("DrawCommands", bufferIDs.drawCommandsBuffer);
                 cmd.SetStorageBuffer("DrawParamsList", bufferIDs.drawParamsBuffer);
 
@@ -715,11 +719,9 @@ namespace sp::vulkan {
                     reinterpret_cast<VkDrawIndexedIndirectCommand *>(cmdBufferPtr + 1));
                 commandsBuffer->Unmap();
                 commandsBuffer->Flush();
-                commandsBuffer->SetAccess(Access::None, Access::HostWrite);
 
                 auto paramsBuffer = resources.GetBuffer(bufferIDs.drawParamsBuffer);
                 paramsBuffer->CopyFrom(drawParams.data(), drawParams.size());
-                paramsBuffer->SetAccess(Access::None, Access::HostWrite);
             });
         return bufferIDs;
     }
@@ -763,6 +765,8 @@ namespace sp::vulkan {
                     });
 
                 builder.Read("RenderableEntities", Access::ComputeShaderReadStorage);
+                builder.Read("SceneModels", Access::ComputeShaderReadStorage);
+                builder.Read("ScenePrimitiveLists", Access::ComputeShaderReadStorage);
                 builder.Read("WarpedVertexDrawCmds", Access::ComputeShaderReadStorage);
                 builder.Write("WarpedVertexDrawCmds", Access::ComputeShaderWrite);
 
@@ -772,12 +776,10 @@ namespace sp::vulkan {
                     Access::ComputeShaderWrite);
             })
             .Execute([this](rg::Resources &resources, CommandContext &cmd) {
-                cmd.AcquireBuffer(models, Access::ComputeShaderReadStorage);
-                cmd.AcquireBuffer(primitiveLists, Access::ComputeShaderReadStorage);
                 cmd.SetComputeShader("generate_warp_geometry_draws.comp");
                 cmd.SetStorageBuffer("Renderables", "RenderableEntities");
-                cmd.SetStorageBuffer("MeshModels", models);
-                cmd.SetStorageBuffer("MeshPrimitives", primitiveLists);
+                cmd.SetStorageBuffer("MeshModels", "SceneModels");
+                cmd.SetStorageBuffer("MeshPrimitives", "ScenePrimitiveLists");
                 cmd.SetStorageBuffer("DrawCommands", "WarpedVertexDrawCmds");
                 cmd.SetStorageBuffer("DrawParamsList", "WarpedVertexDrawParams");
 
@@ -794,6 +796,8 @@ namespace sp::vulkan {
                 builder.Read("WarpedVertexDrawCmds", Access::IndirectBuffer);
                 builder.Read("WarpedVertexDrawParams", Access::VertexShaderReadStorage);
                 builder.Read("JointPoses", Access::VertexShaderReadUniform);
+                builder.Read("SceneJointsBuffer", Access::VertexShaderReadStorage);
+                builder.Read("SceneVertexBuffer", Access::VertexBuffer);
 
                 builder.CreateBuffer("WarpedVertexBuffer",
                     {sizeof(SceneVertex), std::max(1u, vertexCount)},
@@ -806,16 +810,14 @@ namespace sp::vulkan {
                 auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
                 auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
                 auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
-
-                cmd.AcquireBuffer(vertexBuffer, Access::VertexBuffer);
-                cmd.AcquireBuffer(jointsBuffer, Access::VertexShaderReadStorage);
+                auto vertexBuffer = resources.GetBuffer("SceneVertexBuffer");
 
                 cmd.BeginRenderPass({});
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
                 cmd.SetStorageBuffer("DrawParamsList", paramBuffer);
                 cmd.SetStorageBuffer("VertexBufferOutput", warpedVertexBuffer);
                 cmd.SetUniformBuffer("JointPoses", "JointPoses");
-                cmd.SetStorageBuffer("JointVertexData", jointsBuffer);
+                cmd.SetStorageBuffer("JointVertexData", "SceneJointsBuffer");
 
                 cmd.SetVertexLayout(SceneVertex::Layout());
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleFan);

@@ -11,6 +11,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "game/Scene.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -300,7 +301,8 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("LightState", sizeof(gpuData));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
+                auto stateBuf = resources.GetBuffer("LightState");
+                stateBuf->CopyFrom(&gpuData);
             });
     }
 
@@ -398,6 +400,8 @@ namespace sp::vulkan::renderer {
                 if (trackedLightCount > 0) cmd.Raw().fillBuffer(*indexBuffer, sizeof(uint32_t), vk::WholeSize, 0);
             });
 
+        graph.AddImageView("ShadowMapInitColor", scene.textures.GetSinglePixel(glm::vec4(1)));
+
         graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc = {};
@@ -412,6 +416,7 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
+                builder.Read("ShadowMapInitColor", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("Linear", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("LightState", Access::FragmentShaderReadUniform);
                 builder.ReadUniform("LightState");
@@ -426,7 +431,7 @@ namespace sp::vulkan::renderer {
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
-                    cmd.SetImageView("shadowMap", scene.textures.GetSinglePixel(glm::vec4(1)));
+                    cmd.SetImageView("shadowMap", "ShadowMapInitColor");
                 }
 
                 auto lastStateID = resources.GetID("LightState", 1);

@@ -126,11 +126,11 @@ namespace sp::vulkan {
 
     void RenderPass::RecordImplicitImageLayoutTransitions(const RenderPassInfo &info) {
         for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
-            info.colorAttachments[i]->Image()->SetLayout(vk::ImageLayout::eUndefined, finalLayouts[i]);
+            info.colorAttachments[i]->Image()->SetLayout(finalLayouts[i]);
         }
         if (info.HasDepthStencil()) {
             auto i = info.state.colorAttachmentCount;
-            info.depthStencilAttachment->Image()->SetLayout(vk::ImageLayout::eUndefined, finalLayouts[i]);
+            info.depthStencilAttachment->Image()->SetLayout(finalLayouts[i]);
         }
     }
 

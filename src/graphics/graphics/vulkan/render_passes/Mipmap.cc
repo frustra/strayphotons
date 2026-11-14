@@ -74,7 +74,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
             });
     }
 } // namespace sp::vulkan::renderer

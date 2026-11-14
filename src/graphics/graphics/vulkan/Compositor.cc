@@ -162,7 +162,7 @@ namespace sp::vulkan {
             "Compositor::UploadStaticImage called with unsupported component count: %d",
             image->GetComponents());
         auto view = device.LoadImage(image, genMipmap, srgb);
-        if (genMipmap) device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         return view->Get();
     }
 
@@ -195,7 +195,7 @@ namespace sp::vulkan {
 
     void Compositor::BeforeFrame(rg::RenderGraph &graph) {
         if (fontView) {
-            if (!fontView->Ready()) device.FlushMainQueue();
+            // if (!fontView->Ready()) device.FlushAllocatorQueue();
             graph.AddImageView("FontAtlas", fontView->Get());
         }
         {
@@ -316,7 +316,7 @@ namespace sp::vulkan {
                     assetImage = staticAssetImages.Load(assetName);
                     if (!assetImage) {
                         assetImage = device.LoadAssetImage(assetName, true);
-                        device.FlushMainQueue();
+                        // device.FlushAllocatorQueue();
                         staticAssetImages.Register(assetName, assetImage, true);
                     }
                 }
@@ -589,7 +589,7 @@ namespace sp::vulkan {
         ephemeralGuiContexts.Tick(std::chrono::milliseconds(33));
         staticAssetImages.Tick(std::chrono::milliseconds(33));
 
-        bool flushMainQueue = false;
+        // bool flushAllocatorQueue = false;
         {
             std::lock_guard l(dynamicSourceMutex);
             auto it = dynamicImageSources.begin();
@@ -620,14 +620,14 @@ namespace sp::vulkan {
                         source.pendingUploads.emplace_back(device.CreateImage(NewDispatchSource,
                             createInfo,
                             InitialData(cpuImage.GetImage().get(), cpuImage.ByteSize(), cpuImage.GetImage())));
-                        if (createInfo.genMipmap) flushMainQueue = true;
+                        // if (createInfo.genMipmap) flushAllocatorQueue = true;
                     }
                     source.cpuImageModified = false;
                 }
                 it++;
             }
         }
-        if (flushMainQueue) device.FlushMainQueue();
+        // if (flushAllocatorQueue) device.FlushAllocatorQueue();
     }
 
     void Compositor::internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale) {

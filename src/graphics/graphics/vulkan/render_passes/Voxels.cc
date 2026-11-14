@@ -412,6 +412,7 @@ namespace sp::vulkan::renderer {
                     builder.Write("Radiance", Access::ComputeShaderWrite);
                     builder.Write("Normals", Access::ComputeShaderWrite);
 
+                    builder.Read("VoxelState", Access::ComputeShaderReadUniform);
                     builder.Read("FillCounters", Access::ComputeShaderReadStorage);
                     builder.Read("FragmentListMetadata", Access::IndirectBuffer);
                     builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);

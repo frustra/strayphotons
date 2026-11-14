@@ -59,8 +59,6 @@ namespace sp::vulkan {
         auto indexData = (uint32_t *)staging.indexBuffer->Mapped();
         auto indexDataStart = indexData;
 
-        staging.indexBuffer->SetAccess(Access::None, Access::HostWrite);
-
         vertexBuffer = scene.vertexBuffer->ArrayAllocate(vertexCount);
         staging.vertexBuffer = device.AllocateBuffer({sizeof(SceneVertex), vertexCount},
             vk::BufferUsageFlagBits::eTransferSrc,
@@ -69,8 +67,6 @@ namespace sp::vulkan {
 
         auto vertexData = (SceneVertex *)staging.vertexBuffer->Mapped();
         auto vertexDataStart = vertexData;
-
-        staging.vertexBuffer->SetAccess(Access::None, Access::HostWrite);
 
         JointVertex *jointsData = nullptr, *jointsDataStart = nullptr;
 
@@ -84,8 +80,6 @@ namespace sp::vulkan {
 
             jointsData = (JointVertex *)stagingJointsBuffer->Mapped();
             jointsDataStart = jointsData;
-
-            stagingJointsBuffer->SetAccess(Access::None, Access::HostWrite);
         }
 
         for (auto &assetPrimitive : mesh->primitives) {
@@ -153,8 +147,6 @@ namespace sp::vulkan {
 
         auto gpuPrimitives = (GPUMeshPrimitive *)staging.primitiveList->Mapped();
         auto meshModel = (GPUMeshModel *)staging.modelEntry->Mapped();
-        staging.primitiveList->SetAccess(Access::None, Access::HostWrite);
-        staging.modelEntry->SetAccess(Access::None, Access::HostWrite);
         {
             ZoneScopedN("CopyPrimitives");
             auto gpuPrim = gpuPrimitives;
@@ -396,7 +388,6 @@ namespace sp::vulkan {
             {
                 ZoneScopedN("WritePrimitive");
                 GPUMeshPrimitive *gpuPrimitive;
-                staging.primitiveList->SetAccess(Access::None, Access::HostWrite);
                 staging.primitiveList->Map((void **)&gpuPrimitive);
                 gpuPrimitive->indexCount = vkPrimitive.indexCount;
                 gpuPrimitive->vertexCount = vkPrimitive.vertexCount;
@@ -409,7 +400,6 @@ namespace sp::vulkan {
                 staging.primitiveList->Flush();
 
                 GPUMeshModel *meshModel;
-                staging.modelEntry->SetAccess(Access::None, Access::HostWrite);
                 staging.modelEntry->Map((void **)&meshModel);
                 meshModel->primitiveCount = 1;
                 meshModel->primitiveOffset = primitiveList->ArrayOffset();
@@ -469,7 +459,6 @@ namespace sp::vulkan {
                 {sizeof(triangleIndexBuffer[0]), sizeof(triangleIndexBuffer) / sizeof(triangleIndexBuffer[0])},
                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
-            constants.triangleIndexBuffer->SetAccess(Access::None, Access::HostWrite);
             constants.triangleIndexBuffer->CopyFrom(&triangleIndexBuffer[0],
                 constants.triangleIndexBuffer->ArraySize());
         }
@@ -479,7 +468,6 @@ namespace sp::vulkan {
                 {sizeof(caseInteriorEdge[0][0]), sizeof(caseInteriorEdge) / sizeof(caseInteriorEdge[0][0])},
                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
-            constants.caseInteriorEdges->SetAccess(Access::None, Access::HostWrite);
             constants.caseInteriorEdges->CopyFrom(&caseInteriorEdge[0][0], constants.caseInteriorEdges->ArraySize());
         }
         if (!constants.triangleCaseOffsets) {
@@ -488,7 +476,6 @@ namespace sp::vulkan {
                 {sizeof(triangleCaseOffset[0][0][0]), sizeof(triangleCaseOffset) / sizeof(triangleCaseOffset[0][0][0])},
                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
-            constants.triangleCaseOffsets->SetAccess(Access::None, Access::HostWrite);
             constants.triangleCaseOffsets->CopyFrom(&triangleCaseOffset[0][0][0],
                 constants.triangleCaseOffsets->ArraySize());
         }
@@ -498,7 +485,6 @@ namespace sp::vulkan {
                 {sizeof(caseTests[0][0]), sizeof(caseTests) / sizeof(caseTests[0][0])},
                 vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
                 VMA_MEMORY_USAGE_CPU_TO_GPU);
-            constants.caseTests->SetAccess(Access::None, Access::HostWrite);
             constants.caseTests->CopyFrom(&caseTests[0][0], constants.caseTests->ArraySize());
         }
         return constants;

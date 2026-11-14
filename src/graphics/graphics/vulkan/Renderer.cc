@@ -182,10 +182,12 @@ namespace sp::vulkan {
 
         if (!logoTex) {
             logoTex = device.LoadAssetImage("logos/splash.png", true);
-            device.FlushMainQueue();
+            device.FlushAllocatorQueue();
+            Assert(logoTex->Ready(), "Splash logo failed to load");
         }
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
+        graph.AddImageView("SplashLogo", logoTex->Get());
 
         rg::ResourceID guiResourceID = rg::InvalidResource;
         if (activeGuiContext) {
@@ -239,6 +241,7 @@ namespace sp::vulkan {
                 if (guiResourceID != rg::InvalidResource) {
                     builder.Read(guiResourceID, Access::FragmentShaderSampleImage);
                 }
+                builder.Read("SplashLogo", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, "WindowFinalOutput", {loadOp, StoreOp::Store});
             })
             .Execute([this, sourceID, guiResourceID](rg::Resources &resources, CommandContext &cmd) {
@@ -246,9 +249,9 @@ namespace sp::vulkan {
                     auto view = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(view);
                     if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
-                } else if (logoTex->Ready()) {
+                } else {
                     cmd.SetBlending(true);
-                    cmd.DrawScreenCover(logoTex->Get());
+                    cmd.DrawScreenCover(resources.GetImageView("SplashLogo"));
                 }
                 if (guiResourceID != rg::InvalidResource) {
                     cmd.SetBlending(true);

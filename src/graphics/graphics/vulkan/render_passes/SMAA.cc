@@ -17,6 +17,9 @@ namespace sp::vulkan::renderer {
         auto sourceID = graph.LastOutputID();
         auto scope = graph.Scope("SMAA");
 
+        graph.AddImageView("SMAAAreaTex", areaTex->Get());
+        graph.AddImageView("SMAASearchTex", searchTex->Get());
+
         graph.AddPass("GammaCorrect")
             .Build([&](PassBuilder &builder) {
                 auto luminanceID = builder.Read("LinearLuminance", Access::FragmentShaderSampleImage);
@@ -62,6 +65,8 @@ namespace sp::vulkan::renderer {
         graph.AddPass("BlendingWeights")
             .Build([&](PassBuilder &builder) {
                 auto edgesID = builder.Read("edges", Access::FragmentShaderSampleImage);
+                builder.Read("SMAAAreaTex", Access::FragmentShaderSampleImage);
+                builder.Read("SMAASearchTex", Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(edgesID);
                 builder.OutputColorAttachment(0, "weights", desc, {LoadOp::Clear, StoreOp::Store});
@@ -69,11 +74,11 @@ namespace sp::vulkan::renderer {
                 builder.SetDepthAttachment("stencil", {LoadOp::Load, StoreOp::Store});
                 builder.ReadUniform("ViewState");
             })
-            .Execute([this](Resources &res, CommandContext &cmd) {
+            .Execute([](Resources &res, CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "smaa/blending_weights.frag");
                 cmd.SetImageView("edgesTex", "edges");
-                cmd.SetImageView("areaTex", areaTex->Get());
-                cmd.SetImageView("searchTex", searchTex->Get());
+                cmd.SetImageView("areaTex", "SMAAAreaTex");
+                cmd.SetImageView("searchTex", "SMAASearchTex");
                 cmd.SetDepthTest(false, false);
                 cmd.SetStencilTest(true);
                 cmd.SetStencilCompareOp(vk::CompareOp::eEqual);

@@ -65,6 +65,10 @@ namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
 
+    static CVar<uint32_t> CVarMaxFramesInFlight("r.MaxFramesInFlight",
+        3,
+        "The number of overlapping framebuffers allowed in flight per frame");
+
 #if VK_HEADER_VERSION >= 304
     static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
@@ -136,9 +140,8 @@ namespace sp::vulkan {
 
     DeviceContext::DeviceContext(Game &game)
         : game(game), graphics(*game.graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr),
-          threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
-          allocatorQueue("GPUAllocator", 0, {}), submitQueue("GPUSubmit", 1, std::chrono::milliseconds(1)),
-          graph(*this) {
+          threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), allocatorQueue("GPUAllocator", 0, {}),
+          submitQueue("GPUSubmit", 1, std::chrono::milliseconds(1)), graph(*this) {
         ZoneScoped;
 
         auto submitThreadInit = submitQueue.Dispatch<void>(NewDispatchSource, [this] {
@@ -462,7 +465,8 @@ namespace sp::vulkan {
             vk::FenceCreateInfo fenceInfo = {};
 
             for (auto &frame : frameContexts) {
-                frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+                frame.imageAvailableSemaphore = std::make_shared<vk::UniqueSemaphore>(
+                    device->createSemaphoreUnique(semaphoreInfo));
                 frame.inFlightFence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
 
                 vk::CommandPoolCreateInfo poolInfo;
@@ -660,9 +664,10 @@ namespace sp::vulkan {
         }
         Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
 
+        maxFramesInFlight = std::clamp(CVarMaxFramesInFlight.Get(true), 1u, MAX_FRAMES_IN_FLIGHT);
         vk::SwapchainCreateInfoKHR swapchainInfo;
         swapchainInfo.surface = surface;
-        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
+        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, maxFramesInFlight);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         swapchainInfo.imageExtent.width = glm::clamp(surfaceCapabilities.currentExtent.width,
@@ -696,7 +701,8 @@ namespace sp::vulkan {
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
             vk::SemaphoreCreateInfo semaphoreInfo = {};
-            swapchainImageContexts[i].submitCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
+            swapchainImageContexts[i].submitCompleteSemaphore = std::make_shared<vk::UniqueSemaphore>(
+                device->createSemaphoreUnique(semaphoreInfo));
         }
     }
 
@@ -773,7 +779,6 @@ namespace sp::vulkan {
                 ZoneScopedN("WaitForFrameFence");
                 auto result = device->waitForFences({fence->get()}, true, FENCE_WAIT_TIME);
                 AssertVKSuccess(result, "timed out waiting for fence");
-                device->resetFences({fence->get()});
                 Frame().fenceInUse = false;
             }
 
@@ -782,7 +787,7 @@ namespace sp::vulkan {
                     ZoneScopedN("AcquireNextImage");
                     auto acquireResult = device->acquireNextImageKHR(*swapchain,
                         FENCE_WAIT_TIME,
-                        *Frame().imageAvailableSemaphore,
+                        Frame().imageAvailableSemaphore->get(),
                         nullptr);
                     if (acquireResult.result == vk::Result::eTimeout) {
                         Warnf("vkAcquireNextImageKHR timeout");
@@ -836,8 +841,9 @@ namespace sp::vulkan {
             frameBeginQueue.Flush();
 
             Assertf(fence.use_count() == 1, "Frame Fence still in use on reset: %ld", fence.use_count());
+            device->resetFences({fence->get()});
         } catch (const vk::DeviceLostError &err) {
-            Errorf("Device lost! BeginFrame() %s", err.what());
+            Abortf("Device lost! BeginFrame() %s", err.what());
             deviceResetRequired = true;
             return false;
         }
@@ -862,20 +868,20 @@ namespace sp::vulkan {
 
         vk::PresentInfoKHR presentInfo = {};
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &SwapchainImage().submitCompleteSemaphore.get();
+        presentInfo.pWaitSemaphores = &SwapchainImage().submitCompleteSemaphore->get();
 
         vk::SwapchainKHR swapchains[] = {*swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapchains;
         presentInfo.pImageIndices = &swapchainImageIndex;
 
+        auto swapchainView = SwapchainImageView();
         bool requiresNewSwapchain = false;
         AsyncPtr<void> presentComplete = submitQueue.Dispatch<void>(NewDispatchSource,
-            [this, presentInfo, &requiresNewSwapchain] {
+            [this, presentInfo, swapchainView, &requiresNewSwapchain] {
                 ZoneScopedN("PresentKHR");
                 try {
                     auto presentResult = queues[QueueID::General].queue.presentKHR(presentInfo);
-                    auto swapchainView = SwapchainImageView();
                     vk::Extent3D swapchainExtent = swapchainView ? swapchainView->Extent() : vk::Extent3D();
                     bool extentsMatch = swapchainExtent.width == outputExtents.x &&
                                         swapchainExtent.height == outputExtents.y;
@@ -885,7 +891,7 @@ namespace sp::vulkan {
                 }
             });
         presentComplete->Get();
-        if (requiresNewSwapchain) RecreateSwapchain();
+        if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed()) RecreateSwapchain();
     }
 
     void DeviceContext::EndFrame() {
@@ -895,9 +901,9 @@ namespace sp::vulkan {
             Thread().ReleaseAvailableResources();
         });
 
-        FlushMainQueue(false, std::chrono::milliseconds(5));
+        FlushAllocatorQueue(false, std::chrono::milliseconds(5));
 
-        frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        frameIndex = (frameIndex + 1) % maxFramesInFlight;
 
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
@@ -920,33 +926,31 @@ namespace sp::vulkan {
         ZoneScoped;
         if (!deviceResetRequired) {
             auto waitComplete = submitQueue.Dispatch<void>(sourceInfo, [this] {
-                device->waitIdle();
+                try {
+                    device->waitIdle();
+                } catch (const vk::DeviceLostError &err) {
+                    Abortf("Device lost! device.waitIdle() %s", err.what());
+                    deviceResetRequired = true;
+                }
             });
             waitComplete->Get();
         }
     }
 
-    void DeviceContext::FlushMainQueue(bool blockUntilReady, chrono_clock::duration timeLimit) {
+    void DeviceContext::FlushAllocatorQueue(bool blockUntilReady, chrono_clock::duration timeLimit) {
         ZoneScoped;
         ZoneValue(blockUntilReady);
-        bool allReady = false;
         if (timeLimit.count() == 0) {
-            do {
-                allReady = true;
-                if (!allocatorQueue.Flush(false)) allReady = false;
-                if (!frameEndQueue.Flush(false)) allReady = false;
-            } while (blockUntilReady && !allReady);
+            while (!allocatorQueue.Flush(blockUntilReady)) {
+                std::this_thread::yield();
+            }
         } else {
+            chrono_clock::duration elapsed = {};
             chrono_clock::time_point start = chrono_clock::now();
-            do {
-                allReady = true;
-                auto elapsed = chrono_clock::now() - start;
-                if (elapsed >= timeLimit) break;
-                if (!allocatorQueue.Flush(false, timeLimit - elapsed)) allReady = false;
+            while (elapsed < timeLimit && !allocatorQueue.Flush(blockUntilReady, timeLimit - elapsed)) {
+                std::this_thread::yield();
                 elapsed = chrono_clock::now() - start;
-                if (elapsed >= timeLimit) break;
-                if (!frameEndQueue.Flush(false, timeLimit - elapsed)) allReady = false;
-            } while (blockUntilReady && !allReady);
+            }
         }
     }
 
@@ -996,6 +1000,7 @@ namespace sp::vulkan {
             Frame().nextIndex++;
         }
         cmd->handle = cmd;
+        cmd->fence = Frame().inFlightFence;
         cmd->Begin(resources);
         return cmd;
     }
@@ -1023,12 +1028,6 @@ namespace sp::vulkan {
         for (auto &cmd : cmds) {
             auto cmdFence = cmd->Fence();
             auto cmdQueueId = cmd->GetQueueID();
-
-            if (cmd->WritesToSwapchain()) {
-                waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-                waitSemArray.push_back(*Frame().imageAvailableSemaphore);
-                signalSemArray.push_back(*SwapchainImage().submitCompleteSemaphore);
-            }
 
             signalSemArray.reserve(signalSemArray.size() + cmd->signalSemaphores.size());
             for (SemaphorePtr &sem : cmd->signalSemaphores) {
@@ -1079,10 +1078,11 @@ namespace sp::vulkan {
                 "VkQueueSubmit previous fence is already used");
             queues[*queueId].queue.submit({submitInfo}, fence->get());
         } catch (const vk::DeviceLostError &err) {
-            Errorf("Device lost! queue.submit() %s", err.what());
+            Abortf("Device lost! queue.submit() %s", err.what());
             deviceResetRequired = true;
         }
         for (auto &cmd : cmds) {
+            cmd->fence.reset();
             Assert(!cmd->submitted.exchange(true), "CommandContext submitted twice");
             cmd->submitted.notify_all();
         }
@@ -1151,7 +1151,6 @@ namespace sp::vulkan {
             Assertf(data.data, "DeviceContext::CreateBuffer null initial buffer data");
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
-            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
         });
     }
@@ -1163,7 +1162,6 @@ namespace sp::vulkan {
         return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
-            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
         });
     }
@@ -1175,7 +1173,6 @@ namespace sp::vulkan {
         return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(data.dataSize, usage, residency);
             buf->CopyFrom(data.data, data.dataSize);
-            buf->SetAccess(Access::None, Access::HostWrite);
             return buf;
         });
     }
@@ -1403,7 +1400,7 @@ namespace sp::vulkan {
                 }
 
                 // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
             }
             Submit(NewDispatchSource, graphicsCmd);
             return image;
@@ -1468,13 +1465,13 @@ namespace sp::vulkan {
                     vk::ImageLayout::eShaderReadOnlyOptimal,
                     vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
                     vk::AccessFlagBits::eShaderRead);
-                image->SetAccess(Access::None, Access::FragmentShaderSampleImage);
+                image->SetAccess(Access::FragmentShaderSampleImage);
             } else if (image->Usage() & vk::ImageUsageFlagBits::eStorage) {
                 cmd->ImageBarrier(image,
                     vk::ImageLayout::eGeneral,
                     vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
                     vk::AccessFlagBits::eShaderRead);
-                image->SetAccess(Access::None, Access::FragmentShaderReadStorage);
+                image->SetAccess(Access::FragmentShaderReadStorage);
             }
             Submit(NewDispatchSource, cmd);
             return imageView;
@@ -1653,6 +1650,7 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr DeviceContext::SwapchainImageView() {
+        Assert(std::this_thread::get_id() == renderThread, "SwapchainImageView() must be called from render thread");
         return swapchain ? SwapchainImage().imageView : nullptr;
     }
 
@@ -1711,8 +1709,13 @@ namespace sp::vulkan {
         bufferPool->Tick();
         if (printBufferStats.exchange(false)) bufferPool->LogStats();
     }
+    DeviceContext::SwapchainImageContext &DeviceContext::SwapchainImage() {
+        Assert(std::this_thread::get_id() == renderThread, "SwapchainImage() must be called from render thread");
+        return swapchainImageContexts[swapchainImageIndex];
+    }
 
     DeviceContext::FrameContext &DeviceContext::Frame() {
+        Assert(std::this_thread::get_id() == renderThread, "DeviceContext::Frame() must be called from render thread");
         return frameContexts[frameIndex];
     }
 

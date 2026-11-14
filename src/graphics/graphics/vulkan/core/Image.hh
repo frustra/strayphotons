@@ -66,7 +66,7 @@ namespace sp::vulkan {
         }
     };
 
-    class Image : public UniqueMemory {
+    class Image final : public UniqueMemory {
     public:
         Image();
         ~Image();
@@ -128,8 +128,7 @@ namespace sp::vulkan {
         }
 
         vk::ImageLayout LastLayout() const;
-        void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
-        void SetAccess(Access oldAccess, Access newAccess);
+        void SetLayout(vk::ImageLayout newLayout);
 
     private:
         std::weak_ptr<Image> handle;
@@ -140,11 +139,8 @@ namespace sp::vulkan {
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 
-        LockFreeMutex accessMutex;
-        Access lastAccess = Access::None;
         std::optional<QueueID> lastQueueId;
         std::weak_ptr<CommandContext> lastCommand;
-        mutable std::thread::id callThread;
 
         friend class DeviceContext;
         friend class CommandContext;

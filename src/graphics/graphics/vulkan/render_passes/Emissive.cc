@@ -65,6 +65,7 @@ namespace sp::vulkan::renderer {
                 }
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.ReadUniform("ViewState");
+                builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
 
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
@@ -85,7 +86,7 @@ namespace sp::vulkan::renderer {
                     }
 
                     Screen screen;
-                    screen.texture = scene.textures.GetSinglePixelIndex(ERROR_COLOR);
+                    screen.texture = builder.GetID("ErrorColor");
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
@@ -195,7 +196,7 @@ namespace sp::vulkan::renderer {
                                     cmd.SetImageView("tex", imageView);
                                 }
                             } else {
-                                cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                                cmd.SetImageView("tex", "ErrorColor");
                             }
                         } else {
                             cmd.SetImageView("tex", scene.textures.Get(std::get<TextureIndex>(screen.texture)));

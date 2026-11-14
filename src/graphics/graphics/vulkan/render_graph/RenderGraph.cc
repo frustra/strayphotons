@@ -208,9 +208,6 @@ namespace sp::vulkan::render_graph {
                                 vk::ImageLayout::ePresentSrcKHR,
                                 vk::PipelineStageFlagBits::eBottomOfPipe,
                                 {});
-                        } else if (res.externalResource) {
-                            // Preserve external image view resources until the frame is complete
-                            // device.PushInFlightObject(view, cmd->Fence());
                         }
                     }
                 }
@@ -241,18 +238,22 @@ namespace sp::vulkan::render_graph {
             auto nextAccess = access.access;
             if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
 
-            auto &res = resources.resources[access.id];
-            Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", access.id);
+            std::vector<Resource> &resList = resources.resources;
+            ResourceID accessId = access.id;
+            while (accessId < resList.size() && resList[accessId].type == Resource::Type::Alias) {
+                accessId = resList[accessId].AliasID();
+            }
+            Resource &res = resList[accessId];
+            Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", accessId);
 
             if (res.type == Resource::Type::Image) {
-                auto view = resources.GetImageView(access.id);
-                // if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                auto view = resources.GetImageView(accessId);
 
                 if (!cmd) cmd = device.GetFrameCommandContext(&resources);
 
                 cmd->AcquireImage(view->Image(), nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
-                auto buffer = resources.GetBuffer(access.id);
+                auto buffer = resources.GetBuffer(accessId);
 
                 if (!cmd) cmd = device.GetFrameCommandContext(&resources);
 

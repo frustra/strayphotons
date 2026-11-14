@@ -79,25 +79,18 @@ namespace sp::vulkan {
         return lastLayout;
     }
 
-    void Image::SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout) {
+    void Image::SetLayout(vk::ImageLayout newLayout) {
         if (callThread == std::thread::id()) {
             callThread = std::this_thread::get_id();
         } else {
             Assert(std::this_thread::get_id() == callThread, "Image must be used in a single thread");
         }
-        Assert(oldLayout == vk::ImageLayout::eUndefined || oldLayout == lastLayout,
-            "image had layout: " + vk::to_string(lastLayout) + ", expected: " + vk::to_string(oldLayout));
+        if (newLayout == vk::ImageLayout::eUndefined) {
+            callThread = std::this_thread::get_id();
+            lastQueueId.reset();
+            lastCommand.reset();
+        }
         lastLayout = newLayout;
-    }
-
-    void Image::SetAccess(Access oldAccess, Access newAccess) {
-        if (callThread == std::thread::id()) {
-            callThread = std::this_thread::get_id();
-        } else {
-            Assert(std::this_thread::get_id() == callThread, "Image must be used in a single thread");
-        }
-        DebugAssert(oldAccess == Access::None || oldAccess == lastAccess, "unexpected access");
-        lastAccess = newAccess;
     }
 
     vk::Format FormatFromTraits(uint32_t components, uint32_t bits, bool preferSrgb, bool logErrors) {

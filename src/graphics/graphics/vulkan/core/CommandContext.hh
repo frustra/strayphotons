@@ -473,10 +473,6 @@ namespace sp::vulkan {
 
         void SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet);
 
-        bool WritesToSwapchain() {
-            return writesToSwapchain;
-        }
-
         bool IsCompute() const {
             return pipelineInput.state.shaders[ShaderStage::Compute] > 0;
         }
@@ -567,7 +563,6 @@ namespace sp::vulkan {
 
         std::shared_ptr<RenderPass> renderPass;
         std::shared_ptr<Framebuffer> framebuffer;
-        bool writesToSwapchain = false;
 
         DirtyFlags dirty;
         uint32_t dirtyDescriptorSets = 0;

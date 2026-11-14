@@ -84,6 +84,7 @@ namespace sp::vulkan {
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
         virtual ~UniqueMemory() = default;
 
+        // TODO: Persistent map has no good way of flushing, should switch to explicit upload passes
         void *Mapped() {
             void *data;
             AssertVKSuccess(MapPersistent(&data), "MapPersistent failed");
@@ -134,14 +135,19 @@ namespace sp::vulkan {
         }
 
         void Flush();
+        void SetAccess(Access nextAccess);
 
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
         void *persistentMap = nullptr;
+
+        LockFreeMutex accessMutex;
+        Access lastAccess = Access::None;
+        mutable std::thread::id callThread;
     };
 
-    class SubBuffer : public NonMoveable, public HasUniqueID {
+    class SubBuffer final : public NonMoveable, public HasUniqueID {
     public:
         SubBuffer();
         ~SubBuffer();
@@ -183,7 +189,7 @@ namespace sp::vulkan {
         friend class CommandContext;
     };
 
-    class Buffer : public UniqueMemory {
+    class Buffer final : public UniqueMemory {
     public:
         Buffer();
         ~Buffer();
@@ -234,8 +240,6 @@ namespace sp::vulkan {
          */
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
-        void SetAccess(Access oldAccess, Access newAccess);
-
     private:
         vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
@@ -246,13 +250,10 @@ namespace sp::vulkan {
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
-        LockFreeMutex accessMutex;
-        Access lastAccess = Access::None;
         std::optional<QueueID> lastQueueId;
         std::weak_ptr<CommandContext> lastCommand;
-        std::thread::id callThread;
 
-        friend class DeviceContext;
+        friend class BufferPool;
         friend class CommandContext;
     };
 } // namespace sp::vulkan

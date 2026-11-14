@@ -15,6 +15,7 @@
 #include "strayphotons/Logging.hh"
 #include "vulkan/vulkan.hpp"
 
+#include <cstdint>
 #include <mutex>
 #include <string_view>
 #include <vulkan/vulkan_core.h>
@@ -87,12 +88,17 @@ namespace sp::vulkan {
 
         vk::ClearValue clearValues[MAX_COLOR_ATTACHMENTS + 1];
         uint32_t clearValueCount = info.state.colorAttachmentCount;
-
+        bool writesToSwapchain = false;
         for (uint32_t i = 0; i < info.state.colorAttachmentCount; i++) {
             if (info.state.ShouldClear(i)) {
                 clearValues[i].color = info.clearColors[i];
             }
             if (info.colorAttachments[i]->IsSwapchain()) writesToSwapchain = true;
+        }
+        if (writesToSwapchain) {
+            waitStages.emplace_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+            waitSemaphores.emplace_back(device.Frame().imageAvailableSemaphore);
+            signalSemaphores.emplace_back(device.SwapchainImage().submitCompleteSemaphore);
         }
 
         if (info.HasDepthStencil() && info.state.ShouldClear(RenderPassState::DEPTH_STENCIL_INDEX)) {
@@ -271,7 +277,9 @@ namespace sp::vulkan {
             Assert(
                 !options.baseMipLevel && !options.mipLevelCount && !options.baseArrayLayer && !options.arrayLayerCount,
                 "can't track image layout when specifying a subresource range");
-            image->SetLayout(oldLayout, newLayout);
+            Assert(oldLayout == vk::ImageLayout::eUndefined || oldLayout == image->LastLayout(),
+                "image had layout: " + vk::to_string(image->LastLayout()) + ", expected: " + vk::to_string(oldLayout));
+            image->SetLayout(newLayout);
         }
     }
 
@@ -459,6 +467,8 @@ namespace sp::vulkan {
         bindingDesc.uniqueID = view->GetUniqueID();
 
         auto &image = view->Image();
+        Assert(!image->lastCommand.owner_before(handle) && !handle.owner_before(image->lastCommand),
+            "SetImageView called without acquiring image first");
         DebugAssertf(image->LastLayout() == vk::ImageLayout::eShaderReadOnlyOptimal ||
                          image->LastLayout() == vk::ImageLayout::eDepthStencilReadOnlyOptimal ||
                          image->LastLayout() == vk::ImageLayout::eGeneral,
@@ -526,6 +536,8 @@ namespace sp::vulkan {
         vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        Assert(!buffer->lastCommand.owner_before(handle) && !handle.owner_before(buffer->lastCommand),
+            "SetUniformBuffer called without acquiring buffer first");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
         bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
@@ -593,6 +605,8 @@ namespace sp::vulkan {
         vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
+        Assert(!buffer->lastCommand.owner_before(handle) && !handle.owner_before(buffer->lastCommand),
+            "SetStorageBuffer called without acquiring buffer first");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
         bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
@@ -659,6 +673,7 @@ namespace sp::vulkan {
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
+        AcquireBuffer(buffer, Access::AnyShaderReadUniform);
         SetUniformBuffer(set, binding, buffer);
         return buffer;
     }
@@ -669,6 +684,7 @@ namespace sp::vulkan {
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
+        AcquireBuffer(buffer, Access::AnyShaderReadUniform);
         SetUniformBuffer(bindingName, buffer);
         return buffer;
     }
@@ -793,9 +809,7 @@ namespace sp::vulkan {
     }
 
     const std::shared_ptr<vk::UniqueFence> &CommandContext::Fence() {
-        if (type == CommandContextType::Frame) {
-            return device.Frame().inFlightFence;
-        } else if (!fence && type == CommandContextType::Fence) {
+        if (!fence && type == CommandContextType::Fence) {
             vk::FenceCreateInfo fenceInfo = {};
             fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
             fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
@@ -808,6 +822,7 @@ namespace sp::vulkan {
         Assert(image, "CommandContext::AcquireImage called on null image");
 
         std::lock_guard l(image->accessMutex);
+        DebugAssert(handle.lock().get() == this, "CommandContext handle invalid");
 #ifdef SP_DEBUG
         CommandContextPtr lastCommand = image->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
@@ -855,6 +870,7 @@ namespace sp::vulkan {
         Assert(buffer, "CommandContext::AcquireBuffer called on null buffer");
 
         std::lock_guard l(buffer->accessMutex);
+        DebugAssert(handle.lock().get() == this, "CommandContext handle invalid");
 #ifdef SP_DEBUG
         CommandContextPtr lastCommand = buffer->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {

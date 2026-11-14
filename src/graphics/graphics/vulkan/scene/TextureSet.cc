@@ -33,7 +33,7 @@ namespace sp::vulkan {
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
 
         auto fut = device.CreateSinglePixel(ERROR_COLOR);
-        device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         textures[0] = fut->Get();
         texturesToFlush.push_back(0);
     }
@@ -75,6 +75,7 @@ namespace sp::vulkan {
             i = textures.size();
             textures.emplace_back();
         }
+        texturesPendingLoad.emplace_back(i);
         return i;
     }
 
@@ -92,7 +93,7 @@ namespace sp::vulkan {
         if (resourceName.length() > 6 && starts_with(resourceName, "asset:")) {
             auto path = resourceName.substr(6);
             auto imageView = device.LoadAssetImage(path, true);
-            // device.FlushMainQueue();
+            // device.FlushAllocatorQueue();
             auto pending = Add(imageView);
             textureCache[resourceName] = pending;
             return pending;
@@ -118,7 +119,7 @@ namespace sp::vulkan {
         if (it != textureCache.end()) return it->second;
 
         auto imageView = device.LoadAssetImage(path, genMipmap, srgb);
-        if (genMipmap) device.FlushMainQueue();
+        // if (genMipmap) device.FlushAllocatorQueue();
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;
@@ -287,7 +288,7 @@ namespace sp::vulkan {
                         imageView = GetSinglePixel(ERROR_COLOR);
                     }
                     textures[tex.second.index] = imageView;
-                    texturesToFlush.push_back(tex.second.index);
+                    texturesToFlush.emplace_back(tex.second.index);
                     if (tex.second.ref && !tex.second.Ready()) tex.second.ref->Set(nullptr);
                 }
                 Flush();
@@ -326,6 +327,8 @@ namespace sp::vulkan {
         descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 
         for (auto descriptorIndex : texturesToFlush) {
+            auto it = std::find(texturesPendingLoad.begin(), texturesPendingLoad.end(), descriptorIndex);
+            if (it != texturesPendingLoad.end()) texturesPendingLoad.erase(it);
             auto tex = textures[descriptorIndex];
             if (!tex) {
                 // Texture has been released, change the descriptor to a blank pixel
@@ -359,7 +362,7 @@ namespace sp::vulkan {
     }
 
     bool TextureSet::Ready() {
-        return workQueue.WorkItems() == 0;
+        return texturesPendingLoad.empty();
     }
 
     TextureIndex TextureSet::GetSinglePixelIndex(color_alpha_t color) {
@@ -371,7 +374,7 @@ namespace sp::vulkan {
 
         auto i = AllocateTextureIndex();
         auto fut = device.CreateSinglePixel(color);
-        device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         textures[i] = fut->Get();
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);

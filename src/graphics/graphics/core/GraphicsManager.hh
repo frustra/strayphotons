@@ -51,6 +51,7 @@ namespace sp {
         void StopThread();
         bool HasActiveContext();
         bool InputFrame();
+        bool RequiresReset() const;
 
         GenericCompositor &GetCompositor();
 

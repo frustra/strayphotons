@@ -101,6 +101,7 @@ namespace sp::vulkan {
         HeapVector<ImageViewPtr> texturesPendingDelete;
 
         HeapVector<TextureIndex> freeTextureIndexes;
+        HeapVector<TextureIndex> texturesPendingLoad;
         HeapVector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
 

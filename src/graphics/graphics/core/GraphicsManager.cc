@@ -7,6 +7,7 @@
 
 #include "GraphicsManager.hh"
 
+#include "common/RegisteredThread.hh"
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
@@ -15,6 +16,7 @@
 #include "game/CGameContext.hh"
 #include "game/Game.hh"
 #include "game/GameLogic.hh"
+#include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
@@ -165,6 +167,10 @@ namespace sp {
         return true;
     }
 
+    bool GraphicsManager::RequiresReset() const {
+        return context && context->RequiresReset();
+    }
+
     GenericCompositor &GraphicsManager::GetCompositor() {
         return context->GetCompositor();
     }
@@ -176,7 +182,13 @@ namespace sp {
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;
-        if (context->RequiresReset()) return false;
+        if (context->RequiresReset()) {
+            GetSceneManager().PreloadSceneGraphics([&](auto lock, auto scene) {
+                // Prevent SceneManager locking up when graphics has halted.
+                return true;
+            });
+            return false;
+        }
 
         return context->BeginFrame();
     }

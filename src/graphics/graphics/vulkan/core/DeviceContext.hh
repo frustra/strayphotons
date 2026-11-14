@@ -15,7 +15,6 @@
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
-#include "magic_enum.hpp"
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/EnumTypes.hh"
@@ -46,7 +45,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    const uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+    const uint32_t MAX_FRAMES_IN_FLIGHT = 4;
 
     class DescriptorPool;
     class PerfTimer;
@@ -227,7 +226,7 @@ namespace sp::vulkan {
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 #endif
 
-        void FlushMainQueue(bool blockUntilReady = true, chrono_clock::duration timeLimit = {});
+        void FlushAllocatorQueue(bool blockUntilReady = true, chrono_clock::duration timeLimit = {});
 
         template<typename CallbackFn>
         AsyncPtr<void> ExecuteAfterFence(const DispatchSourceInfo &sourceInfo,
@@ -314,7 +313,7 @@ namespace sp::vulkan {
         vk::UniqueSwapchainKHR swapchain;
 
         struct SwapchainImageContext {
-            vk::UniqueSemaphore submitCompleteSemaphore;
+            SemaphorePtr submitCompleteSemaphore;
             ImageViewPtr imageView;
         };
 
@@ -322,9 +321,7 @@ namespace sp::vulkan {
         std::vector<SwapchainImageContext> swapchainImageContexts;
         uint32_t swapchainImageIndex = 0;
 
-        SwapchainImageContext &SwapchainImage() {
-            return swapchainImageContexts[swapchainImageIndex];
-        }
+        SwapchainImageContext &SwapchainImage();
 
         struct ThreadContext {
             struct Queue {
@@ -347,7 +344,7 @@ namespace sp::vulkan {
         ThreadContext &Thread();
 
         struct FrameContext {
-            vk::UniqueSemaphore imageAvailableSemaphore;
+            SemaphorePtr imageAvailableSemaphore;
             std::shared_ptr<vk::UniqueFence> inFlightFence;
             bool fenceInUse = false;
 
@@ -358,6 +355,7 @@ namespace sp::vulkan {
         };
 
         std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
+        uint32_t maxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
         uint32_t frameIndex = 0;
 
         FrameContext &Frame();
@@ -381,7 +379,7 @@ namespace sp::vulkan {
         std::atomic_uint32_t measuredFrameRate;
 
         std::vector<std::pair<AsyncPtr<void>, std::shared_ptr<vk::UniqueFence>>> pendingFences;
-        DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue, submitQueue;
+        DispatchQueue frameBeginQueue, allocatorQueue, submitQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
 

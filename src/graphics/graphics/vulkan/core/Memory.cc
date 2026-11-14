@@ -22,6 +22,7 @@ namespace sp::vulkan {
     }
 
     vk::Result UniqueMemory::Map(void **data) {
+        SetAccess(Access::HostWrite);
         if (persistentMap) {
             *data = persistentMap;
             return vk::Result::eSuccess;
@@ -54,6 +55,16 @@ namespace sp::vulkan {
         if (allocator->IsMemoryTypeNonCoherent(allocation->GetMemoryTypeIndex())) {
             vmaFlushAllocation(allocator, allocation, 0, VK_WHOLE_SIZE);
         }
+        SetAccess(Access::HostWrite);
+    }
+
+    void UniqueMemory::SetAccess(Access newAccess) {
+        if (callThread == std::thread::id()) {
+            callThread = std::this_thread::get_id();
+        } else {
+            Assert(std::this_thread::get_id() == callThread, "Buffer must be used in a single thread");
+        }
+        lastAccess = newAccess;
     }
 
     SubBuffer::SubBuffer() {}
@@ -187,15 +198,5 @@ namespace sp::vulkan {
 
         auto offsetBytes = SubAllocateRaw(size, alignment);
         return SubBuffer::New(handle.lock(), subAllocationBlock, offsetBytes, size);
-    }
-
-    void Buffer::SetAccess(Access oldAccess, Access newAccess) {
-        if (callThread == std::thread::id()) {
-            callThread = std::this_thread::get_id();
-        } else {
-            Assert(std::this_thread::get_id() == callThread, "Buffer must be used in a single thread");
-        }
-        DebugAssert(oldAccess == Access::None || oldAccess == lastAccess, "unexpected access");
-        lastAccess = newAccess;
     }
 } // namespace sp::vulkan
