@@ -30,5 +30,5 @@ namespace sp::vulkan::renderer {
         std::vector<PendingScreenshot> pendingScreenshots;
     };
 
-    void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view);
+    void WriteScreenshot(const std::string &path, vk::Extent3D extent, vk::Format format, const BufferPtr &buffer);
 } // namespace sp::vulkan::renderer

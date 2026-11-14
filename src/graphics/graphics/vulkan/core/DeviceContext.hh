@@ -315,7 +315,6 @@ namespace sp::vulkan {
 
         struct SwapchainImageContext {
             vk::UniqueSemaphore submitCompleteSemaphore;
-            // vk::Fence inFlightFence; // points at a fence owned by FrameContext
             ImageViewPtr imageView;
         };
 

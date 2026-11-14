@@ -891,11 +891,11 @@ namespace sp::vulkan {
     void DeviceContext::EndFrame() {
         if (vkRenderer) vkRenderer->EndFrame();
 
-        FlushMainQueue(false, std::chrono::milliseconds(5));
-
         allocatorQueue.Dispatch<void>(NewDispatchSource, [this]() {
             Thread().ReleaseAvailableResources();
         });
+
+        FlushMainQueue(false, std::chrono::milliseconds(5));
 
         frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 

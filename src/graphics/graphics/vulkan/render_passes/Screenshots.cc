@@ -11,10 +11,14 @@
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Memory.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <filesystem>
 #include <fpng.h>
@@ -46,7 +50,8 @@ namespace sp::vulkan::renderer {
             if (!starts_with(screenshotResource, "/")) screenshotResource = "/" + screenshotResource;
 
             rg::ResourceID sourceID = rg::InvalidResource;
-
+            vk::Extent3D extent = {};
+            vk::Format format = vk::Format::eUndefined;
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
                     auto resourceID = builder.GetID(screenshotResource, pending.assert);
@@ -66,32 +71,36 @@ namespace sp::vulkan::renderer {
                                 resource.type);
                         }
                     } else {
-                        auto format = resource.ImageFormat();
+                        extent = resource.ImageExtents();
+                        format = resource.ImageFormat();
                         if (FormatByteSize(format) == FormatComponentCount(format)) {
                             sourceID = resource.id;
                         } else {
                             sourceID = VisualizeBuffer(graph, resource.id);
+                            format = vk::Format::eR8G8B8A8Srgb;
                         }
-                        builder.Read(sourceID, Access::TransferRead);
-                        builder.RequirePass();
-                        builder.FlushCommands();
                     }
                 })
-                .Execute([screenshotPath, assert = pending.assert, sourceID](rg::Resources &resources,
-                             DeviceContext &device) {
-                    auto &res = resources.GetResource(sourceID, true);
-                    if (res.type == rg::Resource::Type::Image) {
-                        auto target = resources.GetImageView(res.id);
-                        renderer::WriteScreenshot(device, screenshotPath, target);
-                    } else if (assert) {
-                        Abortf("Failed to save screenshot, invalid resource type: %s", res.type);
-                    }
+                .Execute([](rg::Resources &resources, DeviceContext &device) {});
+
+            if (sourceID == rg::InvalidResource) continue;
+
+            vk::ImageSubresourceLayers subresource = {};
+            subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+            subresource.layerCount = 1;
+            AddImageReadback(graph,
+                sourceID,
+                subresource,
+                {},
+                extent,
+                [screenshotPath, extent, format](BufferPtr buffer) {
+                    renderer::WriteScreenshot(screenshotPath, extent, format, buffer);
                 });
         }
         pendingScreenshots.clear();
     }
 
-    void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view) {
+    void WriteScreenshot(const std::string &path, vk::Extent3D extent, vk::Format format, const BufferPtr &buffer) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
             if (!std::filesystem::create_directory(base)) {
@@ -99,7 +108,6 @@ namespace sp::vulkan::renderer {
                 return;
             }
         }
-        auto extent = view->Extent();
         extent.depth = 1;
 
         auto fullPath = std::filesystem::weakly_canonical(base / path);
@@ -113,7 +121,7 @@ namespace sp::vulkan::renderer {
         outputDesc.arrayLayers = 1;
         outputDesc.tiling = vk::ImageTiling::eLinear;
 
-        uint32_t components = FormatComponentCount(view->Format());
+        uint32_t components = FormatComponentCount(format);
         if (components == 1) {
             outputDesc.format = vk::Format::eR8Srgb;
         } else if (components == 2) {
@@ -126,36 +134,7 @@ namespace sp::vulkan::renderer {
             Abortf("format has unsupported component count: %u", components);
         }
 
-        Assert(FormatByteSize(view->Format()) == FormatByteSize(outputDesc.format),
-            "format must have 1 byte per component");
-
-        auto outputImage = device.AllocateImage(outputDesc, VMA_MEMORY_USAGE_GPU_TO_CPU);
-
-        auto transferCmd = device.GetFencedCommandContext(QueueID::TransferAsync);
-        transferCmd->AcquireImage(view->Image(), Access::TransferRead);
-        transferCmd->AcquireImage(outputImage, Access::TransferWrite);
-
-        vk::ImageCopy imageCopyRegion;
-        imageCopyRegion.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-        imageCopyRegion.srcSubresource.mipLevel = view->BaseMipLevel();
-        imageCopyRegion.srcSubresource.baseArrayLayer = view->BaseArrayLayer();
-        imageCopyRegion.srcSubresource.layerCount = 1;
-        imageCopyRegion.dstSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
-        imageCopyRegion.extent = extent;
-
-        transferCmd->Raw().copyImage(*view->Image(),
-            vk::ImageLayout::eTransferSrcOptimal,
-            *outputImage,
-            vk::ImageLayout::eTransferDstOptimal,
-            {imageCopyRegion});
-
-        auto fence = transferCmd->Fence();
-        device.Submit(NewDispatchSource, transferCmd);
-
-        AssertVKSuccess(device->waitForFences({fence->get()}, true, 1e10), "waiting for fence");
-
-        vk::ImageSubresource subResource = {vk::ImageAspectFlagBits::eColor, 0, 0};
-        auto subResourceLayout = device->getImageSubresourceLayout(*outputImage, subResource);
+        Assert(FormatByteSize(format) == FormatByteSize(outputDesc.format), "format must have 1 byte per component");
 
         static bool fpng_init = false;
         if (!fpng_init) {
@@ -163,24 +142,15 @@ namespace sp::vulkan::renderer {
             fpng_init = true;
         }
 
-        uint8_t *data;
-        outputImage->Map((void **)&data);
-
-        size_t fpngInputRowPitch = extent.width * components;
-        std::vector<uint8_t> fpngInput(extent.height * fpngInputRowPitch);
-
-        data += subResourceLayout.offset;
-        for (size_t row = 0; row < extent.height; row++) {
-            std::copy(data, data + fpngInputRowPitch, &fpngInput[row * fpngInputRowPitch]);
-            data += subResourceLayout.rowPitch;
-        }
+        uint8_t *data = nullptr;
+        buffer->Map((void **)&data);
 
         fpng::fpng_encode_image_to_file(fullPath.string().c_str(),
-            fpngInput.data(),
+            data,
             extent.width,
             extent.height,
             components,
             fpng::FPNG_ENCODE_SLOWER); // FPNG_ENCODE_SLOWER = 2-pass compression for smaller files
-        outputImage->Unmap();
+        buffer->Unmap();
     }
 } // namespace sp::vulkan::renderer
