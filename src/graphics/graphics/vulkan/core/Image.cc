@@ -8,7 +8,6 @@
 #include "Image.hh"
 
 #include "assets/GltfImpl.hh"
-#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Logging.hh"
 

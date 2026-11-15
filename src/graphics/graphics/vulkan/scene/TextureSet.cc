@@ -327,8 +327,6 @@ namespace sp::vulkan {
         descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 
         for (auto descriptorIndex : texturesToFlush) {
-            auto it = std::find(texturesPendingLoad.begin(), texturesPendingLoad.end(), descriptorIndex);
-            if (it != texturesPendingLoad.end()) texturesPendingLoad.erase(it);
             auto tex = textures[descriptorIndex];
             if (!tex) {
                 // Texture has been released, change the descriptor to a blank pixel
@@ -358,6 +356,10 @@ namespace sp::vulkan {
         }
 
         device->updateDescriptorSets(descriptorWrites, {});
+        for (auto descriptorIndex : texturesToFlush) {
+            auto it = std::find(texturesPendingLoad.begin(), texturesPendingLoad.end(), descriptorIndex);
+            if (it != texturesPendingLoad.end()) texturesPendingLoad.erase(it);
+        }
         texturesToFlush.clear();
     }
 

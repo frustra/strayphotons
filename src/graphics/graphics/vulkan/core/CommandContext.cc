@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "magic_enum.hpp"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 #include "vulkan/vulkan.hpp"
 
@@ -838,13 +839,13 @@ namespace sp::vulkan {
             ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            Logf("Transfering image 0x%llx from %s to %s",
-                (uint64_t)(VkImage)image.get(),
-                *image->lastQueueId,
-                queueId);
+            // Logf("Transfering image 0x%llx from %s to %s",
+            //     (uint64_t)(VkImage)image.get(),
+            //     *image->lastQueueId,
+            //     queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(image->lastAccess);
-            auto subCmd = device.GetFencedCommandContext(*image->lastQueueId);
+            auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *image->lastQueueId);
             ImageBarrierInfo options = {};
             options.srcQueueFamilyIndex = lastQueueFamilyIndex;
             options.dstQueueFamilyIndex = queueFamilyIndex;
@@ -886,13 +887,13 @@ namespace sp::vulkan {
             BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            Logf("Transfering buffer 0x%llx from %s to %s",
-                (uint64_t)(VkBuffer)buffer.get(),
-                *buffer->lastQueueId,
-                queueId);
+            // Logf("Transfering buffer 0x%llx from %s to %s",
+            //     (uint64_t)(VkBuffer)buffer.get(),
+            //     *buffer->lastQueueId,
+            //     queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(buffer->lastAccess);
-            auto subCmd = device.GetFencedCommandContext(*buffer->lastQueueId);
+            auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *buffer->lastQueueId);
             BufferBarrierInfo options = {};
             options.srcQueueFamilyIndex = lastQueueFamilyIndex;
             options.dstQueueFamilyIndex = queueFamilyIndex;

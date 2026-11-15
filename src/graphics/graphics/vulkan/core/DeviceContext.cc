@@ -141,12 +141,8 @@ namespace sp::vulkan {
     DeviceContext::DeviceContext(Game &game)
         : game(game), graphics(*game.graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr),
           threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), allocatorQueue("GPUAllocator", 0, {}),
-          submitQueue("GPUSubmit", 1, std::chrono::milliseconds(1)), graph(*this) {
+          submitQueue("GPUSubmit", 0, {}), graph(*this) {
         ZoneScoped;
-
-        auto submitThreadInit = submitQueue.Dispatch<void>(NewDispatchSource, [this] {
-            submitThread = std::this_thread::get_id();
-        });
 
         try {
             Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
@@ -611,7 +607,6 @@ namespace sp::vulkan {
             Errorf("Device initialization failed! %s", err.what());
             deviceResetRequired = true;
         }
-        submitThreadInit->Get();
     }
 
     DeviceContext::~DeviceContext() {
@@ -820,7 +815,7 @@ namespace sp::vulkan {
                 auto trctx = tracing.tracyContexts[queueId];
                 if (!trctx) continue;
 
-                auto ctx = GetFencedCommandContext(queueId);
+                auto ctx = GetFencedCommandContext(NewDispatchSource, queueId);
                 TracyVkCollect(trctx, ctx->Raw());
                 Submit(NewDispatchSource, ctx);
 
@@ -890,6 +885,7 @@ namespace sp::vulkan {
                     requiresNewSwapchain = true;
                 }
             });
+        submitQueue.Flush(true);
         presentComplete->Get();
         if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed()) RecreateSwapchain();
     }
@@ -901,7 +897,8 @@ namespace sp::vulkan {
             Thread().ReleaseAvailableResources();
         });
 
-        FlushAllocatorQueue(false, std::chrono::milliseconds(5));
+        allocatorQueue.Flush(false, std::chrono::milliseconds(5));
+        submitQueue.Flush(true);
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
 
@@ -925,32 +922,22 @@ namespace sp::vulkan {
     void DeviceContext::WaitIdle(const DispatchSourceInfo &sourceInfo) {
         ZoneScoped;
         if (!deviceResetRequired) {
-            auto waitComplete = submitQueue.Dispatch<void>(sourceInfo, [this] {
-                try {
-                    device->waitIdle();
-                } catch (const vk::DeviceLostError &err) {
-                    Abortf("Device lost! device.waitIdle() %s", err.what());
-                    deviceResetRequired = true;
-                }
-            });
-            waitComplete->Get();
+            try {
+                device->waitIdle();
+            } catch (const vk::DeviceLostError &err) {
+                Abortf("Device lost! device.waitIdle() %s", err.what());
+                deviceResetRequired = true;
+            }
         }
     }
 
-    void DeviceContext::FlushAllocatorQueue(bool blockUntilReady, chrono_clock::duration timeLimit) {
+    void DeviceContext::FlushAllocatorQueue() {
         ZoneScoped;
-        ZoneValue(blockUntilReady);
-        if (timeLimit.count() == 0) {
-            while (!allocatorQueue.Flush(blockUntilReady)) {
-                std::this_thread::yield();
-            }
-        } else {
-            chrono_clock::duration elapsed = {};
-            chrono_clock::time_point start = chrono_clock::now();
-            while (elapsed < timeLimit && !allocatorQueue.Flush(blockUntilReady, timeLimit - elapsed)) {
-                std::this_thread::yield();
-                elapsed = chrono_clock::now() - start;
-            }
+        bool allFlushed = false;
+        while (!allFlushed) {
+            allFlushed = true;
+            if (!allocatorQueue.Flush(true)) allFlushed = false;
+            if (!submitQueue.Flush(true)) allFlushed = false;
         }
     }
 
@@ -999,16 +986,25 @@ namespace sp::vulkan {
             Frame().commandContexts.push_back(cmd);
             Frame().nextIndex++;
         }
+        // Logf("GetFrameCommandContext: allocatorQueue: %llu, submitQueue: %llu",
+        //     allocatorQueue.WorkItems(),
+        //     submitQueue.WorkItems());
         cmd->handle = cmd;
         cmd->fence = Frame().inFlightFence;
         cmd->Begin(resources);
         return cmd;
     }
 
-    CommandContextPtr DeviceContext::GetFencedCommandContext(QueueID queueId) {
+    CommandContextPtr DeviceContext::GetFencedCommandContext(const DispatchSourceInfo &sourceInfo, QueueID queueId) {
         auto &thr = Thread();
-        queueId = QueueID::General;
         auto cmd = thr.queues[queueId].commandContexts->Get();
+
+        // Logf("GetFencedCommandContext %s:%u: cmd 0x%llx pending %llu, submitQueue: %llu",
+        //     sourceInfo.filename.substr(sourceInfo.filename.size() > 16 ? sourceInfo.filename.size() - 17 : 0),
+        //     sourceInfo.lineNumber,
+        //     (uint64_t)(VkCommandBuffer)*cmd->cmd,
+        //     thr.queues[queueId].pendingCommandContexts.size() + 1,
+        //     submitQueue.WorkItems());
         thr.queues[queueId].pendingCommandContexts.push_back(cmd);
         cmd->handle = cmd;
         cmd->Begin();
@@ -1017,7 +1013,7 @@ namespace sp::vulkan {
 
     void DeviceContext::SubmitInternal(std::span<const CommandContextPtr> cmds) {
         ZoneScoped;
-        Assert(std::this_thread::get_id() == submitThread, "Submit must be called from a single thread");
+        Assert(std::this_thread::get_id() == renderThread, "Submit must be called from a single thread");
         Assert(!cmds.empty(), "DeviceContext::SubmitInternal called with empty command list");
 
         std::optional<QueueID> queueId;
@@ -1026,6 +1022,7 @@ namespace sp::vulkan {
         static thread_local std::vector<vk::Semaphore> waitSemArray;
         static thread_local std::vector<vk::PipelineStageFlags> waitStageArray;
         for (auto &cmd : cmds) {
+            // Logf("Submitting cmd 0x%llx", (uint64_t)(VkCommandBuffer)*cmd->cmd);
             auto cmdFence = cmd->Fence();
             auto cmdQueueId = cmd->GetQueueID();
 
@@ -1095,7 +1092,7 @@ namespace sp::vulkan {
 
     void DeviceContext::Submit(const DispatchSourceInfo &sourceInfo, const CommandContextPtr &cmd) {
         if (cmd->recording) cmd->End();
-        if (std::this_thread::get_id() == submitThread) {
+        if (std::this_thread::get_id() == renderThread) {
             SubmitInternal({&cmd, 1});
         } else {
             submitQueue.Dispatch<void>(sourceInfo, [this, cmd = cmd] {
@@ -1108,7 +1105,7 @@ namespace sp::vulkan {
         for (auto &cmd : cmds) {
             if (cmd->recording) cmd->End();
         }
-        if (std::this_thread::get_id() == submitThread) {
+        if (std::this_thread::get_id() == renderThread) {
             SubmitInternal(cmds);
             cmds.clear();
         } else {
@@ -1242,7 +1239,7 @@ namespace sp::vulkan {
         });
 
         if (uploadBuffer) {
-            futImage = UpdateImage(sourceInfo, futImage, uploadBuffer, false);
+            futImage = UpdateImage(sourceInfo, futImage, uploadBuffer);
 
             if (genFactor) {
                 futImage = allocatorQueue.Dispatch<Image>(sourceInfo,
@@ -1251,7 +1248,7 @@ namespace sp::vulkan {
                         if (!image) return std::shared_ptr<Image>();
 
                         ZoneScopedN("ApplyFactor");
-                        auto factorCmd = GetFencedCommandContext(QueueID::ComputeAsync);
+                        auto factorCmd = GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
                         factorCmd->AcquireImage(image, Access::ComputeShaderReadWrite);
 
                         ImageViewPtr factorView;
@@ -1296,8 +1293,7 @@ namespace sp::vulkan {
 
     AsyncPtr<Image> DeviceContext::UpdateImage(const DispatchSourceInfo &sourceInfo,
         const AsyncPtr<Image> &dstImage,
-        const AsyncPtr<Buffer> &srcBuffer,
-        bool updateMipmap) {
+        const AsyncPtr<Buffer> &srcBuffer) {
         auto futImage = allocatorQueue.Dispatch<Image>(sourceInfo,
             dstImage,
             srcBuffer,
@@ -1305,7 +1301,7 @@ namespace sp::vulkan {
                 if (!image) return std::shared_ptr<Image>();
 
                 ZoneScopedN("PrepareImage");
-                auto transferCmd = GetFencedCommandContext(QueueID::TransferAsync);
+                auto transferCmd = GetFencedCommandContext(NewDispatchSource, QueueID::TransferAsync);
                 transferCmd->AcquireBuffer(stagingBuf, Access::TransferRead);
                 transferCmd->AcquireImage(image, Access::TransferWrite);
 
@@ -1332,7 +1328,6 @@ namespace sp::vulkan {
 
                 return image;
             });
-        if (updateMipmap) futImage = UpdateImageMipmap(sourceInfo, futImage);
         return futImage;
     }
 
@@ -1342,7 +1337,7 @@ namespace sp::vulkan {
         return allocatorQueue.Dispatch<Image>(sourceInfo, image, [this](ImagePtr image) {
             if (!image) return std::shared_ptr<Image>();
             // TODO: Add GraphicsAsync
-            auto graphicsCmd = GetFencedCommandContext(QueueID::General);
+            auto graphicsCmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
             graphicsCmd->AcquireImage(image, Access::TransferReadWrite);
 
             {
@@ -1458,20 +1453,16 @@ namespace sp::vulkan {
             return CreateImageView(viewI);
         });
         return allocatorQueue.Dispatch<ImageView>(sourceInfo, futView, [this](ImageViewPtr imageView) {
-            auto cmd = GetFencedCommandContext(QueueID::General);
+            auto cmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
             auto &image = imageView->Image();
             if (image->Usage() & vk::ImageUsageFlagBits::eSampled) {
-                cmd->ImageBarrier(image,
-                    vk::ImageLayout::eShaderReadOnlyOptimal,
-                    vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
-                    vk::AccessFlagBits::eShaderRead);
-                image->SetAccess(Access::FragmentShaderSampleImage);
+                cmd->AcquireImage(image, Access::AnyShaderSampleImage);
             } else if (image->Usage() & vk::ImageUsageFlagBits::eStorage) {
-                cmd->ImageBarrier(image,
-                    vk::ImageLayout::eGeneral,
-                    vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
-                    vk::AccessFlagBits::eShaderRead);
-                image->SetAccess(Access::FragmentShaderReadStorage);
+                cmd->AcquireImage(image, Access::AnyShaderReadStorage);
+            } else if (image->Usage() & vk::ImageUsageFlagBits::eColorAttachment) {
+                cmd->AcquireImage(image, Access::ColorAttachmentReadWrite);
+            } else {
+                Abortf("Unexpected image usage flags: %u", (uint32_t)(VkImageUsageFlags)image->Usage());
             }
             Submit(NewDispatchSource, cmd);
             return imageView;

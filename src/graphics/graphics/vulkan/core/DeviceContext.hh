@@ -115,7 +115,8 @@ namespace sp::vulkan {
         CommandContextPtr GetFrameCommandContext(render_graph::Resources *resources);
 
         // Returns a CommandContext that can be recorded on any thread, and isn't reset until its fence is signalled.
-        CommandContextPtr GetFencedCommandContext(QueueID queueId = QueueID::General);
+        CommandContextPtr GetFencedCommandContext(const DispatchSourceInfo &sourceInfo,
+            QueueID queueId = QueueID::General);
 
         // Releases *cmd back to the DeviceContext and resets cmd
         void Submit(const DispatchSourceInfo &sourceInfo, const CommandContextPtr &cmd);
@@ -158,8 +159,7 @@ namespace sp::vulkan {
             const AsyncPtr<Buffer> &uploadBuffer);
         AsyncPtr<Image> UpdateImage(const DispatchSourceInfo &sourceInfo,
             const AsyncPtr<Image> &dstImage,
-            const AsyncPtr<Buffer> &srcData,
-            bool updateMipmap = true);
+            const AsyncPtr<Buffer> &srcData);
         AsyncPtr<Image> UpdateImageMipmap(const DispatchSourceInfo &sourceInfo, const AsyncPtr<Image> &image);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
         AsyncPtr<ImageView> CreateImageAndView(const DispatchSourceInfo &sourceInfo,
@@ -226,7 +226,7 @@ namespace sp::vulkan {
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 #endif
 
-        void FlushAllocatorQueue(bool blockUntilReady = true, chrono_clock::duration timeLimit = {});
+        void FlushAllocatorQueue();
 
         template<typename CallbackFn>
         AsyncPtr<void> ExecuteAfterFence(const DispatchSourceInfo &sourceInfo,
@@ -274,7 +274,7 @@ namespace sp::vulkan {
         Game &game;
         GraphicsManager &graphics;
 
-        std::thread::id mainThread, renderThread, submitThread;
+        std::thread::id mainThread, renderThread;
 
         vk::Instance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;

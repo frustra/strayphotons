@@ -96,8 +96,8 @@ namespace sp::vulkan {
         if (!any) return;
 
         for (auto &[key, ent] : stats) {
-            Logf("%s\n%llu count allocated, %llu count free, %llu count pending free\n%llu bytes allocated, %llu bytes "
-                 "free, %llu bytes pending free",
+            Logf("BufferPool stats: %s\n%llu count allocated, %llu count free, %llu count pending free\n%llu bytes "
+                 "allocated, %llu bytes free, %llu bytes pending free",
                 vk::to_string(vk::MemoryPropertyFlags(key)),
                 ent.allocated.count,
                 ent.free.count,

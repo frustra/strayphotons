@@ -198,7 +198,7 @@ namespace sp::vulkan {
                 vk::ImageLayout::eTransferDstOptimal},
             // TransferReadWrite
             {vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
+                vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite,
                 vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
                 vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
                 vk::ImageLayout::eTransferSrcOptimal},

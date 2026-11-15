@@ -171,7 +171,7 @@ namespace sp::vulkan {
         std::shared_ptr<vk::UniqueFence> transferFence;
         {
             ZoneScopedN("TransferBuffers");
-            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::TransferAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::TransferAsync);
             cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.primitiveList, Access::TransferRead);
@@ -264,7 +264,7 @@ namespace sp::vulkan {
 
         {
             ZoneScopedN("InitStagingBuffers");
-            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
             cmd->AcquireBuffer(staging.lookupBuffer, Access::TransferWrite);
             cmd->AcquireBuffer(staging.indexBuffer, Access::TransferWrite);
 
@@ -279,7 +279,7 @@ namespace sp::vulkan {
         }
         {
             ZoneScopedN("MarchChunkVertex");
-            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
             cmd->AcquireBuffer(staging.vertexBuffer, Access::ComputeShaderWrite);
             cmd->AcquireBuffer(staging.lookupBuffer, Access::ComputeShaderReadWrite);
 
@@ -298,7 +298,7 @@ namespace sp::vulkan {
         }
         {
             ZoneScopedN("MarchChunkTriangle");
-            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
             cmd->AcquireBuffer(constants.triangleIndexBuffer, Access::ComputeShaderReadStorage);
             cmd->AcquireBuffer(constants.caseInteriorEdges, Access::ComputeShaderReadStorage);
             cmd->AcquireBuffer(constants.triangleCaseOffsets, Access::ComputeShaderReadStorage);
@@ -328,7 +328,7 @@ namespace sp::vulkan {
         std::shared_ptr<vk::UniqueFence> readbackFence;
         {
             ZoneScopedN("BufferReadback");
-            CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
             cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.lookupBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
@@ -411,7 +411,7 @@ namespace sp::vulkan {
 
             {
                 ZoneScopedN("TransferBuffers");
-                CommandContextPtr cmd = device.GetFencedCommandContext(QueueID::ComputeAsync);
+                CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
                 cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
                 cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
                 cmd->AcquireBuffer(staging.primitiveList, Access::TransferRead);
