@@ -823,13 +823,11 @@ namespace sp::vulkan {
         Assert(image, "CommandContext::AcquireImage called on null image");
 
         std::lock_guard l(image->accessMutex);
-        DebugAssert(handle.lock().get() == this, "CommandContext handle invalid");
-#ifdef SP_DEBUG
+        Assert(handle.lock().get() == this, "CommandContext handle invalid");
         CommandContextPtr lastCommand = image->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
             Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
         }
-#endif
 
         uint32_t lastQueueFamilyIndex = image->lastQueueId ? device.QueueFamilyIndex(*image->lastQueueId) : ~0u;
         uint32_t queueFamilyIndex = device.QueueFamilyIndex(queueId);
@@ -839,10 +837,10 @@ namespace sp::vulkan {
             ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            // Logf("Transfering image 0x%llx from %s to %s",
-            //     (uint64_t)(VkImage)image.get(),
-            //     *image->lastQueueId,
-            //     queueId);
+            Debugf("Transfering image 0x%llx from %s to %s",
+                (uint64_t)(VkImage)image.get(),
+                *image->lastQueueId,
+                queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(image->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *image->lastQueueId);
@@ -871,13 +869,11 @@ namespace sp::vulkan {
         Assert(buffer, "CommandContext::AcquireBuffer called on null buffer");
 
         std::lock_guard l(buffer->accessMutex);
-        DebugAssert(handle.lock().get() == this, "CommandContext handle invalid");
-#ifdef SP_DEBUG
+        Assert(handle.lock().get() == this, "CommandContext handle invalid");
         CommandContextPtr lastCommand = buffer->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
             Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
         }
-#endif
 
         uint32_t lastQueueFamilyIndex = buffer->lastQueueId ? device.QueueFamilyIndex(*buffer->lastQueueId) : ~0u;
         uint32_t queueFamilyIndex = device.QueueFamilyIndex(queueId);
@@ -887,10 +883,10 @@ namespace sp::vulkan {
             BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            // Logf("Transfering buffer 0x%llx from %s to %s",
-            //     (uint64_t)(VkBuffer)buffer.get(),
-            //     *buffer->lastQueueId,
-            //     queueId);
+            Debugf("Transfering buffer 0x%llx from %s to %s",
+                (uint64_t)(VkBuffer)buffer.get(),
+                *buffer->lastQueueId,
+                queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(buffer->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *buffer->lastQueueId);

@@ -93,7 +93,6 @@ namespace sp::vulkan {
         if (resourceName.length() > 6 && starts_with(resourceName, "asset:")) {
             auto path = resourceName.substr(6);
             auto imageView = device.LoadAssetImage(path, true);
-            // device.FlushAllocatorQueue();
             auto pending = Add(imageView);
             textureCache[resourceName] = pending;
             return pending;
@@ -119,7 +118,6 @@ namespace sp::vulkan {
         if (it != textureCache.end()) return it->second;
 
         auto imageView = device.LoadAssetImage(path, genMipmap, srgb);
-        // if (genMipmap) device.FlushAllocatorQueue();
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;
