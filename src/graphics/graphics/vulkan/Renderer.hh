@@ -78,6 +78,7 @@ namespace sp::vulkan {
 
         CFuncCollection funcs;
         vk::Format depthStencilFormat;
+        chrono_clock::time_point frameStart;
 
         GPUScene scene;
 

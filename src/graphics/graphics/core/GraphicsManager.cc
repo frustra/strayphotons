@@ -34,7 +34,7 @@ namespace sp {
         "player:flatview",
         "The entity with a View component to display");
 
-    static CVar<uint32_t> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
+    CVar<uint32_t> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
 
     GraphicsManager::GraphicsManager(Game &game)
         : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
@@ -206,11 +206,7 @@ namespace sp {
 
     void GraphicsManager::PostFrame(bool stepMode) {
         auto maxFPS = CVarMaxFPS.Get();
-        if (maxFPS > 0) {
-            interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));
-        } else {
-            interval = std::chrono::nanoseconds(0);
-        }
+        interval = std::chrono::nanoseconds(maxFPS > 0 ? (int64_t)(1e9 / maxFPS) : 0);
 
         if (!HasActiveContext()) return;
 

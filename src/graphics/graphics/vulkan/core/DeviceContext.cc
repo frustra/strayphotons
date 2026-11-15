@@ -900,12 +900,11 @@ namespace sp::vulkan {
 
         {
             ZoneScopedN("EndFrameFlush");
-            bool allFlushed = false;
-            while (!allFlushed) {
-                allFlushed = true;
-                if (!allocatorQueue.Flush(false, stepMode ? chrono_clock::duration() : std::chrono::milliseconds(5)))
-                    allFlushed = false;
-                if (!submitQueue.Flush(true)) allFlushed = false;
+            if (stepMode) {
+                FlushAllocatorQueue();
+            } else {
+                allocatorQueue.Flush(false, std::chrono::milliseconds(5));
+                submitQueue.Flush(true);
             }
         }
 

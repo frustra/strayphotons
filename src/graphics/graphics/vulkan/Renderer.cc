@@ -13,6 +13,7 @@
 #include "ecs/components/VoxelData.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
@@ -41,6 +42,7 @@
 #include "vulkan/vulkan.hpp"
 #include "xr/XrSystem.hh"
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -85,6 +87,8 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
+        frameStart = chrono_clock::now();
+
         if (CVarMirrorXR.Changed()) {
             bool mirrorXR = CVarMirrorXR.Get(true);
             CVarWindowViewTarget.Set(mirrorXR ? CVarXrViewTarget.Get() : defaultWindowViewTarget);
@@ -623,6 +627,12 @@ namespace sp::vulkan {
             return complete;
         });
 
-        scene.Flush();
+        auto targetTime = game.graphics->interval;
+        auto lastFrameTime = chrono_clock::now() - frameStart;
+        auto timeLimit = std::clamp<chrono_clock::duration>(targetTime - std::min(targetTime, lastFrameTime),
+            std::chrono::microseconds(500),
+            std::chrono::milliseconds(5));
+        scene.Flush(timeLimit);
+        frameStart = chrono_clock::now();
     }
 } // namespace sp::vulkan

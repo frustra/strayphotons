@@ -837,10 +837,10 @@ namespace sp::vulkan {
             ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            Debugf("Transfering image 0x%llx from %s to %s",
-                (uint64_t)(VkImage)image.get(),
-                *image->lastQueueId,
-                queueId);
+            // Debugf("Transfering image 0x%llx from %s to %s",
+            //     (uint64_t)(VkImage)image.get(),
+            //     *image->lastQueueId,
+            //     queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(image->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *image->lastQueueId);
@@ -883,10 +883,10 @@ namespace sp::vulkan {
             BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            Debugf("Transfering buffer 0x%llx from %s to %s",
-                (uint64_t)(VkBuffer)buffer.get(),
-                *buffer->lastQueueId,
-                queueId);
+            // Debugf("Transfering buffer 0x%llx from %s to %s",
+            //     (uint64_t)(VkBuffer)buffer.get(),
+            //     *buffer->lastQueueId,
+            //     queueId);
 
             const AccessInfo &lastInfo = GetAccessInfo(buffer->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *buffer->lastQueueId);

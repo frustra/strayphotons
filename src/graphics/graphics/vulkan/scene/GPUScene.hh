@@ -23,6 +23,7 @@
 #include "strayphotons/Hashing.hh"
 #include "strayphotons/HeapVector.hh"
 #include "strayphotons/InlineString.hh"
+#include "strayphotons/Utility.hh"
 
 #include <cstdint>
 #include <limits>
@@ -98,7 +99,7 @@ namespace sp::vulkan {
     public:
         GPUScene(DeviceContext &device);
         ~GPUScene();
-        void Flush();
+        void Flush(chrono_clock::duration timeLimit);
         void LoadState(rg::RenderGraph &graph,
             ecs::Lock<ecs::Read<ecs::Renderable,
                 ecs::VoxelData,
@@ -195,7 +196,7 @@ namespace sp::vulkan {
         ecs::ComponentModifiedObserver<ecs::VoxelData> voxelDataObserver;
         ecs::ComponentModifiedObserver<ecs::Light> lightObserver;
 
-        void FlushMeshes();
+        void FlushMeshes(chrono_clock::duration timeLimit);
         struct MeshKey {
             rg::ResourceName modelName;
             MeshIndex meshIndex;

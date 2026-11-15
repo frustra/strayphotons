@@ -16,6 +16,7 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Scene.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
@@ -74,9 +75,9 @@ namespace sp::vulkan {
         reflect = optic.reflectTint != glm::vec3(0);
     }
 
-    void GPUScene::Flush() {
+    void GPUScene::Flush(chrono_clock::duration timeLimit) {
         textures.Flush();
-        FlushMeshes();
+        FlushMeshes(timeLimit);
     }
 
     RenderableIndex GPUScene::AllocateRenderableIndex(ecs::Entity ent) {
@@ -539,7 +540,7 @@ namespace sp::vulkan {
         });
     }
 
-    void GPUScene::FlushMeshes() {
+    void GPUScene::FlushMeshes(chrono_clock::duration timeLimit) {
         ZoneScoped;
         erase_if(pendingMeshes, [](auto &pair) {
             if (!pair.first || pair.first->Ready()) {
@@ -559,7 +560,7 @@ namespace sp::vulkan {
                 return false;
             }
         });
-        workQueue.Flush(false, std::chrono::milliseconds(5));
+        workQueue.Flush(false, timeLimit);
         activeModels.Tick(std::chrono::milliseconds(33));
         activeMeshes.Tick(std::chrono::milliseconds(33));
     }
