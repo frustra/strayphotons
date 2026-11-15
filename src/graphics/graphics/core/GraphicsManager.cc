@@ -217,7 +217,7 @@ namespace sp {
         context->SwapBuffers();
 
         FrameMark;
-        context->EndFrame();
+        context->EndFrame(stepMode);
 
         if (stepMode) {
             // Wait for graphics queue to complete so GPU readback is deterministic

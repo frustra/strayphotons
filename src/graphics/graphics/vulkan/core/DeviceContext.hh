@@ -92,7 +92,7 @@ namespace sp::vulkan {
         // Potential GraphicsContext function implementations
         bool BeginFrame() override;
         void SwapBuffers() override;
-        void EndFrame() override;
+        void EndFrame(bool stepMode) override;
         void WaitIdle(const DispatchSourceInfo &sourceInfo) override;
         bool RequiresReset() const override {
             return deviceResetRequired;

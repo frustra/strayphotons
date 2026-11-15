@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <sstream>
 #include <thread>
+#include <tracy/Tracy.hpp>
 #include <vulkan/vulkan_core.h>
 #define VULKAN_HPP_USE_REFLECT
 
@@ -890,15 +891,23 @@ namespace sp::vulkan {
         if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed()) RecreateSwapchain();
     }
 
-    void DeviceContext::EndFrame() {
+    void DeviceContext::EndFrame(bool stepMode) {
         if (vkRenderer) vkRenderer->EndFrame();
 
         allocatorQueue.Dispatch<void>(NewDispatchSource, [this]() {
             Thread().ReleaseAvailableResources();
         });
 
-        allocatorQueue.Flush(false, std::chrono::milliseconds(5));
-        submitQueue.Flush(true);
+        {
+            ZoneScopedN("EndFrameFlush");
+            bool allFlushed = false;
+            while (!allFlushed) {
+                allFlushed = true;
+                if (!allocatorQueue.Flush(false, stepMode ? chrono_clock::duration() : std::chrono::milliseconds(5)))
+                    allFlushed = false;
+                if (!submitQueue.Flush(true)) allFlushed = false;
+            }
+        }
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
 
