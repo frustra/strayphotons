@@ -34,7 +34,8 @@ namespace sp::vulkan::renderer {
                 builder.Read(luminanceID, Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(luminanceID);
-                desc.format = vk::Format::eR8G8B8A8Srgb;
+                ImageViewPtr swapchainView = graph.Device().SwapchainImageView();
+                desc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
             .Execute([whitePoint, gammaCurve, darkSaturation, brightSaturation](rg::Resources &resources,

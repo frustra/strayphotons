@@ -16,4 +16,5 @@ namespace sp {
     CVar<glm::ivec2> CVarWindowSize("r.WindowSize", {1920, 1080}, "Window width and height");
     CVar<glm::vec2> CVarWindowScale("r.WindowScale", {0, 0}, "Window scaling factor (0: auto)");
     CVar<bool> CVarWindowFullscreen("r.Fullscreen", false, "Fullscreen window (0: window, 1: fullscreen)");
+    CVar<bool> CVarHDR("r.HDR", false, "Enable HDR swapchain surface selection");
 } // namespace sp

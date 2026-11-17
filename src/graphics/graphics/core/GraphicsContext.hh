@@ -26,6 +26,7 @@ namespace sp {
     extern CVar<glm::ivec2> CVarWindowSize;
     extern CVar<glm::vec2> CVarWindowScale;
     extern CVar<bool> CVarWindowFullscreen;
+    extern CVar<bool> CVarHDR;
 
     class GraphicsContext {
     public:

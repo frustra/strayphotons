@@ -431,7 +431,8 @@ namespace sp::vulkan {
             graph.AddPass("Composite")
                 .Build([&](rg::PassBuilder &builder) {
                     bool inheritExtent = true;
-                    outputDesc.format = vk::Format::eR8G8B8A8Srgb;
+                    ImageViewPtr swapchainView = device.SwapchainImageView();
+                    outputDesc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                     outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
                     rg::ResourceName viewName = rg::ResourceName(output.entityName.String()) + "/View";

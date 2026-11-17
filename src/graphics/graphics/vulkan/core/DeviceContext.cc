@@ -652,15 +652,26 @@ namespace sp::vulkan {
             }
         }
 
+        InlineVector<vk::Format, 3> preferredFormats;
+        if (CVarHDR.Get(true)) {
+            preferredFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat);
+            preferredFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32);
+        }
+        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Srgb);
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+        int foundFormat = preferredFormats.size();
         for (auto &format : surfaceFormats) {
             if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-                if (format.format == vk::Format::eB8G8R8A8Srgb) {
-                    surfaceFormat = format;
-                    break;
+                for (int i = 0; i < foundFormat; i++) {
+                    if (format.format == preferredFormats[i]) {
+                        foundFormat = i;
+                        surfaceFormat = format;
+                    }
                 }
+                if (foundFormat == 0) break;
             }
         }
+        Debugf("Created swapchain with format: %s", surfaceFormat.format);
         Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
 
         maxFramesInFlight = std::clamp(CVarMaxFramesInFlight.Get(true), 1u, MAX_FRAMES_IN_FLIGHT);
@@ -892,7 +903,7 @@ namespace sp::vulkan {
             });
         submitQueue.Flush(true);
         presentComplete->Get();
-        if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed()) RecreateSwapchain();
+        if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed() || CVarHDR.Changed()) RecreateSwapchain();
     }
 
     void DeviceContext::EndFrame(bool stepMode) {

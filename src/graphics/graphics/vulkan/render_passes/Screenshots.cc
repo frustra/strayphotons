@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,8 +11,8 @@
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
-#include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Readback.hh"
 #include "graphics/vulkan/render_passes/VisualizeBuffer.hh"
@@ -49,9 +49,9 @@ namespace sp::vulkan::renderer {
             if (screenshotResource.empty()) screenshotResource = CVarWindowViewTarget.Get();
             if (!starts_with(screenshotResource, "/")) screenshotResource = "/" + screenshotResource;
 
+            rg::ResourceID screenshotID = rg::InvalidResource;
             rg::ResourceID sourceID = rg::InvalidResource;
-            vk::Extent3D extent = {};
-            vk::Format format = vk::Format::eUndefined;
+            ImageDesc screenshotDesc = {};
             graph.AddPass("Screenshot")
                 .Build([&](rg::PassBuilder &builder) {
                     auto resourceID = builder.GetID(screenshotResource, pending.assert);
@@ -70,37 +70,75 @@ namespace sp::vulkan::renderer {
                                 screenshotResource,
                                 resource.type);
                         }
-                    } else {
-                        extent = resource.ImageExtents();
-                        format = resource.ImageFormat();
-                        if (FormatByteSize(format) == FormatComponentCount(format)) {
-                            sourceID = resource.id;
-                        } else {
-                            sourceID = VisualizeBuffer(graph, resource.id);
-                            format = vk::Format::eR8G8B8A8Srgb;
-                        }
+                        return;
                     }
-                })
-                .Execute([](rg::Resources &resources, DeviceContext &device) {});
+                    screenshotDesc = resource.DeriveImage();
+                    screenshotDesc.imageType = vk::ImageType::e2D;
+                    screenshotDesc.extent.depth = 1;
+                    screenshotDesc.mipLevels = 1;
+                    screenshotDesc.arrayLayers = 1;
+                    if (FormatByteSize(screenshotDesc.format) == FormatComponentCount(screenshotDesc.format)) {
+                        sourceID = resource.id;
+                        uint32_t components = FormatComponentCount(screenshotDesc.format);
+                        if (components == 1) {
+                            screenshotDesc.format = vk::Format::eR8Srgb;
+                        } else if (components == 2) {
+                            screenshotDesc.format = vk::Format::eR8G8Srgb;
+                        } else if (components == 3) {
+                            screenshotDesc.format = vk::Format::eR8G8B8Srgb;
+                        } else if (components == 4) {
+                            screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
+                        } else {
+                            Abortf("format has unsupported component count: %u", components);
+                        }
 
-            if (sourceID == rg::InvalidResource) continue;
+                    } else {
+                        sourceID = VisualizeBuffer(graph, resource.id);
+                        screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
+                    }
+                    builder.Read(sourceID, Access::TransferRead);
+                    screenshotID = builder.CreateImage("", screenshotDesc, Access::TransferWrite).id;
+                })
+                .Execute([sourceID, screenshotID, screenshotDesc](rg::Resources &resources, CommandContext &cmd) {
+                    auto source = resources.GetImageView(sourceID);
+                    vk::ImageBlit blit;
+                    blit.srcSubresource = {vk::ImageAspectFlagBits::eColor,
+                        source->BaseMipLevel(),
+                        source->BaseArrayLayer(),
+                        1};
+                    blit.srcOffsets[0] = vk::Offset3D();
+                    blit.srcOffsets[1] = vk::Offset3D(screenshotDesc.extent.width, screenshotDesc.extent.height);
+                    blit.dstSubresource = {vk::ImageAspectFlagBits::eColor, 0, 0, 1};
+                    blit.dstOffsets[0] = vk::Offset3D();
+                    blit.dstOffsets[1] = vk::Offset3D(screenshotDesc.extent.width, screenshotDesc.extent.height);
+
+                    auto output = resources.GetImageView(screenshotID);
+                    cmd.Raw().blitImage(*source->Image(),
+                        vk::ImageLayout::eTransferSrcOptimal,
+                        *output->Image(),
+                        vk::ImageLayout::eTransferDstOptimal,
+                        {blit},
+                        vk::Filter::eNearest);
+                });
+
+            if (screenshotID == rg::InvalidResource) continue;
 
             vk::ImageSubresourceLayers subresource = {};
             subresource.aspectMask = vk::ImageAspectFlagBits::eColor;
             subresource.layerCount = 1;
             AddImageReadback(graph,
-                sourceID,
+                screenshotID,
                 subresource,
                 {},
-                extent,
-                [screenshotPath, extent, format](BufferPtr buffer) {
-                    renderer::WriteScreenshot(screenshotPath, extent, format, buffer);
+                screenshotDesc.extent,
+                [screenshotPath, screenshotDesc](BufferPtr buffer) {
+                    renderer::WriteScreenshot(screenshotPath, screenshotDesc, buffer);
                 });
         }
         pendingScreenshots.clear();
     }
 
-    void WriteScreenshot(const std::string &path, vk::Extent3D extent, vk::Format format, const BufferPtr &buffer) {
+    void WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
             if (!std::filesystem::create_directory(base)) {
@@ -108,33 +146,13 @@ namespace sp::vulkan::renderer {
                 return;
             }
         }
-        extent.depth = 1;
+        imageDesc.extent.depth = 1;
 
         auto fullPath = std::filesystem::weakly_canonical(base / path);
-        Logf("Saving %ux%u screenshot to: %s", extent.width, extent.height, fullPath.string());
+        Logf("Saving %ux%u screenshot to: %s", imageDesc.extent.width, imageDesc.extent.height, fullPath.string());
 
-        vk::ImageCreateInfo outputDesc = {};
-        outputDesc.imageType = vk::ImageType::e2D;
-        outputDesc.extent = extent;
-        outputDesc.usage = vk::ImageUsageFlagBits::eTransferDst;
-        outputDesc.mipLevels = 1;
-        outputDesc.arrayLayers = 1;
-        outputDesc.tiling = vk::ImageTiling::eLinear;
-
-        uint32_t components = FormatComponentCount(format);
-        if (components == 1) {
-            outputDesc.format = vk::Format::eR8Srgb;
-        } else if (components == 2) {
-            outputDesc.format = vk::Format::eR8G8Srgb;
-        } else if (components == 3) {
-            outputDesc.format = vk::Format::eR8G8B8Srgb;
-        } else if (components == 4) {
-            outputDesc.format = vk::Format::eR8G8B8A8Srgb;
-        } else {
-            Abortf("format has unsupported component count: %u", components);
-        }
-
-        Assert(FormatByteSize(format) == FormatByteSize(outputDesc.format), "format must have 1 byte per component");
+        uint32_t components = FormatComponentCount(imageDesc.format);
+        Assert(FormatByteSize(imageDesc.format) == components, "format must have 1 byte per component");
 
         static bool fpng_init = false;
         if (!fpng_init) {
@@ -147,8 +165,8 @@ namespace sp::vulkan::renderer {
 
         fpng::fpng_encode_image_to_file(fullPath.string().c_str(),
             data,
-            extent.width,
-            extent.height,
+            imageDesc.extent.width,
+            imageDesc.extent.height,
             components,
             fpng::FPNG_ENCODE_SLOWER); // FPNG_ENCODE_SLOWER = 2-pass compression for smaller files
         buffer->Unmap();
