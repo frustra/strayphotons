@@ -7,7 +7,6 @@
 
 #include "GPUScene.hh"
 
-#include "assets/Asset.hh"
 #include "assets/GltfImpl.hh"
 #include "common/Tracing.hh"
 #include "ecs/Ecs.hh"
@@ -16,7 +15,6 @@
 #include "ecs/components/Light.hh"
 #include "ecs/components/Renderable.hh"
 #include "game/Scene.hh"
-#include "graphics/core/GraphicsManager.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
