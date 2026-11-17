@@ -810,11 +810,6 @@ namespace sp::vulkan {
     }
 
     const std::shared_ptr<vk::UniqueFence> &CommandContext::Fence() {
-        if (!fence && type == CommandContextType::Fence) {
-            vk::FenceCreateInfo fenceInfo = {};
-            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-            fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
-        }
         return fence;
     }
 
@@ -837,11 +832,6 @@ namespace sp::vulkan {
             ImageBarrier(image, accessInfo.imageLayout, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            // Debugf("Transfering image 0x%llx from %s to %s",
-            //     (uint64_t)(VkImage)image.get(),
-            //     *image->lastQueueId,
-            //     queueId);
-
             const AccessInfo &lastInfo = GetAccessInfo(image->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *image->lastQueueId);
             ImageBarrierInfo options = {};
@@ -883,11 +873,6 @@ namespace sp::vulkan {
             BufferBarrier(buffer, accessInfo.stageMask, accessInfo.accessMask);
         } else {
             ZoneScopedN("TransferQueueFamily");
-            // Debugf("Transfering buffer 0x%llx from %s to %s",
-            //     (uint64_t)(VkBuffer)buffer.get(),
-            //     *buffer->lastQueueId,
-            //     queueId);
-
             const AccessInfo &lastInfo = GetAccessInfo(buffer->lastAccess);
             auto subCmd = device.GetFencedCommandContext(NewDispatchSource, *buffer->lastQueueId);
             BufferBarrierInfo options = {};

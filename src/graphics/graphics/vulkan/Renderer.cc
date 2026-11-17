@@ -191,7 +191,6 @@ namespace sp::vulkan {
         }
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
-        graph.AddImageView("SplashLogo", logoTex->Get());
 
         rg::ResourceID guiResourceID = rg::InvalidResource;
         if (activeGuiContext) {
@@ -229,8 +228,6 @@ namespace sp::vulkan {
                     sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
                 }
 
-                auto loadOp = LoadOp::DontCare;
-
                 if (sourceID != rg::InvalidResource) {
                     auto res = builder.GetResource(sourceID);
                     auto format = res.ImageFormat();
@@ -239,23 +236,21 @@ namespace sp::vulkan {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
                     builder.Read(sourceID, Access::FragmentShaderSampleImage);
-                } else {
-                    loadOp = LoadOp::Clear;
                 }
                 if (guiResourceID != rg::InvalidResource) {
                     builder.Read(guiResourceID, Access::FragmentShaderSampleImage);
                 }
-                builder.Read("SplashLogo", Access::FragmentShaderSampleImage);
-                builder.SetColorAttachment(0, "WindowFinalOutput", {loadOp, StoreOp::Store});
+                builder.SetColorAttachment(0, "WindowFinalOutput", {LoadOp::Clear, StoreOp::Store});
             })
             .Execute([this, sourceID, guiResourceID](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetBlending(true);
                 if (sourceID != rg::InvalidResource) {
                     auto view = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(view);
                     if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
                 } else {
-                    cmd.SetBlending(true);
-                    cmd.DrawScreenCover(resources.GetImageView("SplashLogo"));
+                    cmd.AcquireImage(logoTex->Get()->Image(), Access::FragmentShaderSampleImage);
+                    cmd.DrawScreenCover(logoTex->Get());
                 }
                 if (guiResourceID != rg::InvalidResource) {
                     cmd.SetBlending(true);
@@ -289,18 +284,10 @@ namespace sp::vulkan {
             }
             graph.AddPass("ImageBarrier")
                 .Build([&](rg::PassBuilder &builder) {
+                    builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
                     builder.RequirePass();
                 })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                    auto imageView = resources.GetImageView(resources.LastOutputID());
-                    if (imageView) {
-                        auto &image = imageView->Image();
-                        cmd.ImageBarrier(image,
-                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                            vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
-                            vk::AccessFlagBits::eShaderRead);
-                    }
-                });
+                .Execute([](rg::Resources &resources, DeviceContext &device) {});
         }
 
         if (game.xr) {

@@ -563,18 +563,10 @@ namespace sp::vulkan {
             if (outputDesc.mipLevels > 1) renderer::AddMipmap(graph);
             graph.AddPass("ImageBarrier")
                 .Build([&](rg::PassBuilder &builder) {
+                    builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
                     builder.RequirePass();
                 })
-                .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                    auto imageView = resources.GetImageView(resources.LastOutputID());
-                    if (imageView) {
-                        auto &image = imageView->Image();
-                        cmd.ImageBarrier(image,
-                            vk::ImageLayout::eShaderReadOnlyOptimal,
-                            vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
-                            vk::AccessFlagBits::eShaderRead);
-                    }
-                });
+                .Execute([](rg::Resources &resources, DeviceContext &device) {});
         }
     }
 
@@ -782,6 +774,9 @@ namespace sp::vulkan {
                 }
                 indexBuffer->Unmap();
                 vertexBuffer->Unmap();
+
+                cmd.AcquireBuffer(indexBuffer, Access::IndexBuffer);
+                cmd.AcquireBuffer(vertexBuffer, Access::VertexBuffer);
 
                 cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);

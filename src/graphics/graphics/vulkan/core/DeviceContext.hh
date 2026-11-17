@@ -65,6 +65,8 @@ namespace sp::vulkan {
         DeviceContext(Game &game);
         virtual ~DeviceContext();
 
+        void CreateDevice();
+
         // Access the underlying Vulkan device via the arrow operator
         vk::Device *operator->() {
             return &Device();
@@ -112,7 +114,7 @@ namespace sp::vulkan {
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
-        CommandContextPtr GetFrameCommandContext(render_graph::Resources *resources);
+        CommandContextPtr GetFrameCommandContext(std::string_view passName, render_graph::Resources *resources);
 
         // Returns a CommandContext that can be recorded on any thread, and isn't reset until its fence is signalled.
         CommandContextPtr GetFencedCommandContext(const DispatchSourceInfo &sourceInfo,
@@ -274,7 +276,7 @@ namespace sp::vulkan {
         Game &game;
         GraphicsManager &graphics;
 
-        std::thread::id mainThread, renderThread;
+        std::thread::id renderThread;
 
         vk::Instance instance;
         vk::UniqueDebugUtilsMessengerEXT debugMessenger;

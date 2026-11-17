@@ -154,6 +154,7 @@ namespace sp::vulkan {
 
         static SubBufferPtr New(BufferPtr buffer,
             VmaVirtualBlock subAllocationBlock,
+            VmaVirtualAllocation subAllocation,
             vk::DeviceSize offsetBytes,
             vk::DeviceSize size,
             size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
@@ -183,6 +184,7 @@ namespace sp::vulkan {
         std::weak_ptr<SubBuffer> handle;
         BufferPtr parentBuffer;
         VmaVirtualBlock subAllocationBlock;
+        VmaVirtualAllocation allocation = VK_NULL_HANDLE;
         vk::DeviceSize offsetBytes, size;
         size_t arrayOffset, arrayCount;
 
@@ -241,7 +243,7 @@ namespace sp::vulkan {
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
     private:
-        vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
+        std::pair<VmaVirtualAllocation, vk::DeviceSize> SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
         std::weak_ptr<Buffer> handle;
         vk::BufferCreateInfo bufferInfo;

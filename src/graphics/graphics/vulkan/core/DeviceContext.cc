@@ -140,26 +140,39 @@ namespace sp::vulkan {
 #endif
 
     DeviceContext::DeviceContext(Game &game)
-        : game(game), graphics(*game.graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr),
-          threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), allocatorQueue("GPUAllocator", 0, {}),
-          submitQueue("GPUSubmit", 0, {}), graph(*this) {
+        : game(game), graphics(*game.graphics), allocator(nullptr, nullptr), threadContexts(32),
+          frameBeginQueue("BeginFrame", 0, {}), allocatorQueue("GPUAllocator", 0, {}), submitQueue("GPUSubmit", 0, {}),
+          graph(*this) {}
+
+    DeviceContext::~DeviceContext() {
+        if (vkRenderer) vkRenderer.reset();
+        if (device && !deviceResetRequired) WaitIdle(NewDispatchSource);
+#ifdef TRACY_ENABLE_GRAPHICS
+        for (auto ctx : tracing.tracyContexts)
+            if (ctx) TracyVkDestroy(ctx);
+#endif
+        Debugf("Destroying DeviceContext");
+        swapchain.reset();
+        graphics.glfwWindow.reset();
+    }
+
+    void DeviceContext::CreateDevice() {
         ZoneScoped;
+        Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
+
+        bool enableSwapchain = true;
+        if (graphics.glfwWindow) {
+            Logf("Graphics starting up (Vulkan GLFW)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+        } else if (graphics.winitContext) {
+            Logf("Graphics starting up (Vulkan Winit)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+        } else {
+            Logf("Graphics starting up (Vulkan Headless)");
+            enableSwapchain = false;
+        }
 
         try {
-            Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
-
-            bool enableSwapchain = true;
-            if (graphics.glfwWindow) {
-                Logf("Graphics starting up (Vulkan GLFW)");
-                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-            } else if (graphics.winitContext) {
-                Logf("Graphics starting up (Vulkan Winit)");
-                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-            } else {
-                Logf("Graphics starting up (Vulkan Headless)");
-                enableSwapchain = false;
-            }
-
             VULKAN_HPP_DEFAULT_DISPATCHER.init(&vkGetInstanceProcAddr);
 
             instance = graphics.vkInstance.get();
@@ -290,7 +303,7 @@ namespace sp::vulkan {
                     queue.queueFamilyIndex = i;
                     queue.indexInFamily = allocatedQueuePriorities[i].size();
                     allocatedQueuePriorities[i].emplace_back(priority);
-                    Logf("Queue Family %s: %u", queueId, i);
+                    Logf("Queue %s: family %u, index %u", queueId, i, queue.indexInFamily);
                     return true;
                 }
                 return false;
@@ -478,7 +491,6 @@ namespace sp::vulkan {
             allocatorInfo.physicalDevice = selectedDevice;
             allocatorInfo.device = *device;
             allocatorInfo.instance = instance;
-            allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
             allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
@@ -522,6 +534,9 @@ namespace sp::vulkan {
                                 *threadContext->queues[queueId].commandPool,
                                 queueId,
                                 CommandContextType::Fence);
+                            vk::FenceCreateInfo fenceInfo = {};
+                            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+                            cmd->fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
                         },
                         [this](CommandContext &cmd) {
                             auto queueId = cmd.GetQueueID();
@@ -608,18 +623,6 @@ namespace sp::vulkan {
             Errorf("Device initialization failed! %s", err.what());
             deviceResetRequired = true;
         }
-    }
-
-    DeviceContext::~DeviceContext() {
-        if (vkRenderer) vkRenderer.reset();
-        if (device && !deviceResetRequired) WaitIdle(NewDispatchSource);
-#ifdef TRACY_ENABLE_GRAPHICS
-        for (auto ctx : tracing.tracyContexts)
-            if (ctx) TracyVkDestroy(ctx);
-#endif
-        Debugf("Destroying DeviceContext");
-        swapchain.reset();
-        graphics.glfwWindow.reset();
     }
 
     // Releases old swapchain after creating a new one
@@ -715,6 +718,7 @@ namespace sp::vulkan {
 
     void DeviceContext::InitRenderer(Game &game) {
         renderThread = std::this_thread::get_id();
+        CreateDevice();
         vkRenderer = std::make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
     }
 
@@ -930,12 +934,16 @@ namespace sp::vulkan {
     void DeviceContext::WaitIdle(const DispatchSourceInfo &sourceInfo) {
         ZoneScoped;
         if (!deviceResetRequired) {
-            try {
-                device->waitIdle();
-            } catch (const vk::DeviceLostError &err) {
-                Abortf("Device lost! device.waitIdle() %s", err.what());
-                deviceResetRequired = true;
-            }
+            auto waitComplete = submitQueue.Dispatch<void>(sourceInfo, [this] {
+                try {
+                    device->waitIdle();
+                } catch (const vk::DeviceLostError &err) {
+                    Abortf("Device lost! device.waitIdle() %s", err.what());
+                    deviceResetRequired = true;
+                }
+            });
+            FlushAllocatorQueue();
+            waitComplete->Get();
         }
     }
 
@@ -944,12 +952,13 @@ namespace sp::vulkan {
         bool allFlushed = false;
         while (!allFlushed) {
             allFlushed = true;
-            if (!allocatorQueue.Flush(true)) allFlushed = false;
+            if (!allocatorQueue.Flush(false)) allFlushed = false;
             if (!submitQueue.Flush(true)) allFlushed = false;
         }
     }
 
-    CommandContextPtr DeviceContext::GetFrameCommandContext(render_graph::Resources *resources) {
+    CommandContextPtr DeviceContext::GetFrameCommandContext(std::string_view passName,
+        render_graph::Resources *resources) {
         Assert(std::this_thread::get_id() == renderThread, "GetFrameCommandContext must be called from render thread");
 
         auto &fence = Frame().inFlightFence;
@@ -965,11 +974,13 @@ namespace sp::vulkan {
             auto buffer = std::move(cmd->RawRef());
             auto acquiredImages = std::move(cmd->acquiredImages);
             auto acquiredBuffers = std::move(cmd->acquiredBuffers);
+            auto activeImageViews = std::move(cmd->activeImageViews);
             auto waitSemaphores = std::move(cmd->waitSemaphores);
             auto signalSemaphores = std::move(cmd->signalSemaphores);
             auto waitStages = std::move(cmd->waitStages);
             acquiredImages.clear();
             acquiredBuffers.clear();
+            activeImageViews.clear();
             waitSemaphores.clear();
             signalSemaphores.clear();
             waitStages.clear();
@@ -977,6 +988,7 @@ namespace sp::vulkan {
             new (cmd.get()) CommandContext(*this, std::move(buffer), QueueID::General, CommandContextType::Frame);
             cmd->acquiredImages = std::move(acquiredImages);
             cmd->acquiredBuffers = std::move(acquiredBuffers);
+            cmd->activeImageViews = std::move(activeImageViews);
             cmd->waitSemaphores = std::move(waitSemaphores);
             cmd->signalSemaphores = std::move(signalSemaphores);
             cmd->waitStages = std::move(waitStages);
@@ -994,9 +1006,6 @@ namespace sp::vulkan {
             Frame().commandContexts.push_back(cmd);
             Frame().nextIndex++;
         }
-        // Logf("GetFrameCommandContext: allocatorQueue: %llu, submitQueue: %llu",
-        //     allocatorQueue.WorkItems(),
-        //     submitQueue.WorkItems());
         cmd->handle = cmd;
         cmd->fence = Frame().inFlightFence;
         cmd->Begin(resources);
@@ -1004,15 +1013,10 @@ namespace sp::vulkan {
     }
 
     CommandContextPtr DeviceContext::GetFencedCommandContext(const DispatchSourceInfo &sourceInfo, QueueID queueId) {
+        Assert(std::this_thread::get_id() == renderThread, "GetFencedCommandContext must be called from render thread");
         auto &thr = Thread();
         auto cmd = thr.queues[queueId].commandContexts->Get();
 
-        // Logf("GetFencedCommandContext %s:%u: cmd 0x%llx pending %llu, submitQueue: %llu",
-        //     sourceInfo.filename.substr(sourceInfo.filename.size() > 16 ? sourceInfo.filename.size() - 17 : 0),
-        //     sourceInfo.lineNumber,
-        //     (uint64_t)(VkCommandBuffer)*cmd->cmd,
-        //     thr.queues[queueId].pendingCommandContexts.size() + 1,
-        //     submitQueue.WorkItems());
         thr.queues[queueId].pendingCommandContexts.push_back(cmd);
         cmd->handle = cmd;
         cmd->Begin();
@@ -1030,7 +1034,6 @@ namespace sp::vulkan {
         static thread_local std::vector<vk::Semaphore> waitSemArray;
         static thread_local std::vector<vk::PipelineStageFlags> waitStageArray;
         for (auto &cmd : cmds) {
-            // Logf("Submitting cmd 0x%llx", (uint64_t)(VkCommandBuffer)*cmd->cmd);
             auto cmdFence = cmd->Fence();
             auto cmdQueueId = cmd->GetQueueID();
 
@@ -1087,7 +1090,7 @@ namespace sp::vulkan {
             deviceResetRequired = true;
         }
         for (auto &cmd : cmds) {
-            cmd->fence.reset();
+            if (cmd->type == CommandContextType::Frame) cmd->fence.reset();
             Assert(!cmd->submitted.exchange(true), "CommandContext submitted twice");
             cmd->submitted.notify_all();
         }
@@ -1151,6 +1154,7 @@ namespace sp::vulkan {
             bufferInfo.usage = usage;
             VmaAllocationCreateInfo allocInfo = {};
             allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
             allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
 
             Assertf(data.data, "DeviceContext::CreateBuffer null initial buffer data");
@@ -1461,18 +1465,13 @@ namespace sp::vulkan {
             return CreateImageView(viewI);
         });
         return allocatorQueue.Dispatch<ImageView>(sourceInfo, futView, [this](ImageViewPtr imageView) {
-            auto cmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
             auto &image = imageView->Image();
-            if (image->Usage() & vk::ImageUsageFlagBits::eSampled) {
-                cmd->AcquireImage(image, Access::AnyShaderSampleImage);
-            } else if (image->Usage() & vk::ImageUsageFlagBits::eStorage) {
-                cmd->AcquireImage(image, Access::AnyShaderReadStorage);
-            } else if (image->Usage() & vk::ImageUsageFlagBits::eColorAttachment) {
-                cmd->AcquireImage(image, Access::ColorAttachmentReadWrite);
-            } else {
-                Abortf("Unexpected image usage flags: %u", (uint32_t)(VkImageUsageFlags)image->Usage());
+            if ((image->Usage() & vk::ImageUsageFlagBits::eSampled) &&
+                image->lastAccess != Access::FragmentShaderSampleImage) {
+                auto cmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
+                cmd->AcquireImage(image, Access::FragmentShaderSampleImage);
+                Submit(NewDispatchSource, cmd);
             }
-            Submit(NewDispatchSource, cmd);
             return imageView;
         });
     }

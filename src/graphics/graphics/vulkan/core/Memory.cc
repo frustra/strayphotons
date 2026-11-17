@@ -6,6 +6,9 @@
  */
 
 #include "strayphotons/Logging.hh"
+
+#include <cstdint>
+#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
@@ -71,11 +74,12 @@ namespace sp::vulkan {
 
     SubBuffer::~SubBuffer() {
         Assertf(handle.use_count() == 0, "SubBuffer destroyed while referenced");
-        vmaVirtualFree(subAllocationBlock, offsetBytes);
+        vmaVirtualFree(subAllocationBlock, allocation);
     }
 
     SubBufferPtr SubBuffer::New(BufferPtr buffer,
         VmaVirtualBlock subAllocationBlock,
+        VmaVirtualAllocation subAllocation,
         vk::DeviceSize offsetBytes,
         vk::DeviceSize size,
         size_t arrayOffset,
@@ -85,6 +89,7 @@ namespace sp::vulkan {
         handle->handle = handle;
         handle->parentBuffer = buffer;
         handle->subAllocationBlock = subAllocationBlock;
+        handle->allocation = subAllocation;
         handle->offsetBytes = offsetBytes;
         handle->size = size;
         handle->arrayOffset = arrayOffset;
@@ -149,7 +154,8 @@ namespace sp::vulkan {
         return str;
     }
 
-    vk::DeviceSize Buffer::SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment) {
+    std::pair<VmaVirtualAllocation, vk::DeviceSize> Buffer::SubAllocateRaw(vk::DeviceSize size,
+        vk::DeviceSize alignment) {
         if (subAllocationBlock == VK_NULL_HANDLE) {
             VmaVirtualBlockCreateInfo blockCreateInfo = {};
             if (arrayStride > 0 && arrayCount > 0) {
@@ -167,26 +173,28 @@ namespace sp::vulkan {
         allocCreateInfo.size = size;
         allocCreateInfo.alignment = alignment;
 
+        VmaVirtualAllocation subAllocation = VK_NULL_HANDLE;
         vk::DeviceSize allocOffset;
-        auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &allocOffset);
+        auto result = vmaVirtualAllocate(subAllocationBlock, &allocCreateInfo, &subAllocation, &allocOffset);
         Assertf(result != VK_ERROR_OUT_OF_DEVICE_MEMORY,
             "out of memory in buffer, trying to suballocate %d bytes, buffer size %d bytes\n%s",
             size,
             bufferInfo.size,
             virtualAllocInfoString(subAllocationBlock));
         AssertVKSuccess(result, "creating virtual allocation");
-        return allocOffset;
+        return {subAllocation, allocOffset};
     }
 
     SubBufferPtr Buffer::ArrayAllocate(size_t elementCount) {
         Assertf(arrayStride > 0, "buffer is not an array");
 
         auto size = elementCount * arrayStride;
-        auto offsetBytes = SubAllocateRaw(size, 1);
+        auto [subAllocation, offsetBytes] = SubAllocateRaw(size, 1);
         DebugAssert(offsetBytes % arrayStride == 0, "suballocation was not aligned to the array");
         offsetBytes += bufferInfo.size - arrayCount * arrayStride; // align to end
         return SubBuffer::New(handle.lock(),
             subAllocationBlock,
+            subAllocation,
             offsetBytes,
             size,
             offsetBytes / arrayStride,
@@ -196,7 +204,7 @@ namespace sp::vulkan {
     SubBufferPtr Buffer::SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment) {
         Assertf(arrayStride == 0, "buffer is an array");
 
-        auto offsetBytes = SubAllocateRaw(size, alignment);
-        return SubBuffer::New(handle.lock(), subAllocationBlock, offsetBytes, size);
+        auto [subAllocation, offsetBytes] = SubAllocateRaw(size, alignment);
+        return SubBuffer::New(handle.lock(), subAllocationBlock, subAllocation, offsetBytes, size);
     }
 } // namespace sp::vulkan

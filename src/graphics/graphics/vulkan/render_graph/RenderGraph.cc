@@ -132,7 +132,8 @@ namespace sp::vulkan::render_graph {
             }
             frameScopeStack = pass.scopes;
 
-            AddPreBarriers(cmd, pass); // creates cmd if necessary
+            rg::ResourceName passName = resources.nameScopes[currScopeStack.back()].name + "/" + pass.name;
+            AddPreBarriers(cmd, pass, passName); // creates cmd if necessary
             if (pass.flushCommands) submitPendingCmds(NewDispatchSource);
 
             RenderPassInfo renderPassInfo = {};
@@ -170,31 +171,31 @@ namespace sp::vulkan::render_graph {
                 strlen(__FILE__),
                 __FUNCTION__,
                 strlen(__FUNCTION__),
-                pass.name.data(),
-                pass.name.size(),
+                passName.data(),
+                passName.size(),
                 true);
 #endif
 
             if (pass.isRenderPass) {
-                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
-                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                RenderPhase phase(pass.name);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
+                GPUZoneTransient(&device, cmd, traceVkZone, passName.data(), passName.size());
+                RenderPhase phase(passName);
                 phase.StartTimer(*cmd);
                 cmd->BeginRenderPass(renderPassInfo);
                 pass.Execute(resources, *cmd);
                 cmd->EndRenderPass();
             } else if (pass.ExecutesWithDeviceContext()) {
-                RenderPhase phase(pass.name);
+                RenderPhase phase(passName);
                 if (timer) phase.StartTimer(*timer);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
-                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                RenderPhase phase(pass.name);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
+                GPUZoneTransient(&device, cmd, traceVkZone, passName.data(), passName.size());
+                RenderPhase phase(passName);
                 phase.StartTimer(*cmd);
                 pass.Execute(resources, *cmd);
             } else {
-                Abortf("invalid render graph pass: %s", pass.name);
+                Abortf("invalid render graph pass: %s", passName);
             }
 
             if (cmd) {
@@ -232,7 +233,7 @@ namespace sp::vulkan::render_graph {
         AdvanceFrame();
     }
 
-    void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
+    void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass, std::string_view passName) {
         ZoneScoped;
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
@@ -249,13 +250,13 @@ namespace sp::vulkan::render_graph {
             if (res.type == Resource::Type::Image) {
                 auto view = resources.GetImageView(accessId);
 
-                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
 
                 cmd->AcquireImage(view->Image(), nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
                 auto buffer = resources.GetBuffer(accessId);
 
-                if (!cmd) cmd = device.GetFrameCommandContext(&resources);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
 
                 cmd->AcquireBuffer(buffer, nextAccess);
             }
