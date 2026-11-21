@@ -137,6 +137,10 @@ namespace sp::vulkan {
         void Flush();
         void SetAccess(Access nextAccess);
 
+        bool IsAcquired(const std::weak_ptr<CommandContext> &cmd) const;
+        bool IsAcquired(const std::shared_ptr<CommandContext> &cmd) const;
+        bool IsAcquired(const CommandContext &cmd) const;
+
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
@@ -144,7 +148,12 @@ namespace sp::vulkan {
 
         LockFreeMutex accessMutex;
         Access lastAccess = Access::None;
+        std::optional<QueueID> lastQueueId;
+        std::weak_ptr<CommandContext> lastCommand;
         mutable std::thread::id callThread;
+
+        friend class BufferPool;
+        friend class CommandContext;
     };
 
     class SubBuffer final : public NonMoveable, public HasUniqueID {
@@ -251,12 +260,6 @@ namespace sp::vulkan {
 
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
-
-        std::optional<QueueID> lastQueueId;
-        std::weak_ptr<CommandContext> lastCommand;
-
-        friend class BufferPool;
-        friend class CommandContext;
     };
 } // namespace sp::vulkan
 

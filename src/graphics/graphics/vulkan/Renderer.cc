@@ -191,6 +191,7 @@ namespace sp::vulkan {
         }
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
+        graph.AddImageView("SplashLogo", logoTex->Get());
 
         rg::ResourceID guiResourceID = rg::InvalidResource;
         if (activeGuiContext) {
@@ -240,6 +241,7 @@ namespace sp::vulkan {
                 if (guiResourceID != rg::InvalidResource) {
                     builder.Read(guiResourceID, Access::FragmentShaderSampleImage);
                 }
+                builder.Read("SplashLogo", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, "WindowFinalOutput", {LoadOp::Clear, StoreOp::Store});
             })
             .Execute([this, sourceID, guiResourceID](rg::Resources &resources, CommandContext &cmd) {
@@ -249,8 +251,7 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(view);
                     if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
                 } else {
-                    cmd.AcquireImage(logoTex->Get()->Image(), Access::FragmentShaderSampleImage);
-                    cmd.DrawScreenCover(logoTex->Get());
+                    cmd.DrawScreenCover(resources.GetImageView("SplashLogo"));
                 }
                 if (guiResourceID != rg::InvalidResource) {
                     cmd.SetBlending(true);
@@ -316,7 +317,7 @@ namespace sp::vulkan {
         }
         graph.AddPass("UpdateView")
             .Build([&](rg::PassBuilder &builder) {
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", {sizeof(GPUViewState), 2});
             })
             .Execute([view](rg::Resources &resources, DeviceContext &device) {
                 GPUViewState viewState[] = {{view}, {}};
@@ -369,9 +370,12 @@ namespace sp::vulkan {
                 auto vertexBuffer = resources.GetBuffer(vertexID);
                 auto indexBuffer = resources.GetBuffer(indexID);
                 if (vertexBuffer && indexBuffer) {
+                    Assert(indexBuffer->IsAcquired(cmd), "bindIndexBuffer called without acquiring index buffer first");
                     cmd.Raw().bindIndexBuffer(*indexBuffer,
                         sizeof(VkDrawIndexedIndirectCommand),
                         vk::IndexType::eUint32);
+                    Assert(vertexBuffer->IsAcquired(cmd),
+                        "bindVertexBuffers called without acquiring vertex buffer first");
                     cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                     cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
                 }
@@ -470,6 +474,26 @@ namespace sp::vulkan {
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[ecs::XrEye::Left].visibilityMask);
         if (!drawIDs) return {};
 
+        graph.AddPass("UpdateView")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("ViewState", {sizeof(GPUViewState), viewsByEye.size()});
+            })
+            .Execute([this, viewsByEye](rg::Resources &resources, DeviceContext &device) {
+                EnumArray<GPUViewState, ecs::XrEye> gpuViews;
+                for (auto &eye : magic_enum::enum_values<ecs::XrEye>()) {
+                    auto view = viewsByEye[eye];
+                    auto i = (size_t)eye;
+
+                    if (this->game.xr && this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
+                    }
+
+                    gpuViews[eye] = GPUViewState(view);
+                }
+                auto viewStateBuf = resources.GetBuffer("ViewState");
+                viewStateBuf->CopyFrom(gpuViews.data(), gpuViews.size());
+            });
+
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
                 rg::ImageDesc desc = {};
@@ -488,14 +512,14 @@ namespace sp::vulkan {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * viewsByEye.size());
+                builder.Read("ViewState", Access::VertexShaderReadUniform);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
-            .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                 cmd.SetStencilTest(true);
@@ -503,28 +527,12 @@ namespace sp::vulkan {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                auto viewStateBuf = resources.GetBuffer("ViewState");
-                cmd.SetUniformBuffer("ViewStates", viewStateBuf);
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
-
-                GPUViewState *viewState;
-                viewStateBuf->Map((void **)&viewState);
-                for (auto &eye : magic_enum::enum_values<ecs::XrEye>()) {
-                    auto view = viewsByEye[eye];
-                    auto i = (size_t)eye;
-
-                    if (this->game.xr && this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
-                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
-                    }
-
-                    viewState[i] = GPUViewState(view);
-                }
-                viewStateBuf->Unmap();
-                viewStateBuf->Flush();
             });
         return viewsByEye[ecs::XrEye::Left];
     }

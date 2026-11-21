@@ -854,8 +854,8 @@ namespace sp::vulkan {
             Assertf(fence.use_count() == 1, "Frame Fence still in use on reset: %ld", fence.use_count());
             device->resetFences({fence->get()});
         } catch (const vk::DeviceLostError &err) {
-            Abortf("Device lost! BeginFrame() %s", err.what());
             deviceResetRequired = true;
+            Abortf("Device lost! BeginFrame() %s", err.what());
             return false;
         }
         return true;
@@ -949,8 +949,8 @@ namespace sp::vulkan {
                 try {
                     device->waitIdle();
                 } catch (const vk::DeviceLostError &err) {
-                    Abortf("Device lost! device.waitIdle() %s", err.what());
                     deviceResetRequired = true;
+                    Abortf("Device lost! device.waitIdle() %s", err.what());
                 }
             });
             FlushAllocatorQueue();
@@ -1097,8 +1097,8 @@ namespace sp::vulkan {
                 "VkQueueSubmit previous fence is already used");
             queues[*queueId].queue.submit({submitInfo}, fence->get());
         } catch (const vk::DeviceLostError &err) {
-            Abortf("Device lost! queue.submit() %s", err.what());
             deviceResetRequired = true;
+            Abortf("Device lost! queue.submit() %s", err.what());
         }
         for (auto &cmd : cmds) {
             if (cmd->type == CommandContextType::Frame) cmd->fence.reset();

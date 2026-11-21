@@ -139,9 +139,6 @@ namespace sp::vulkan {
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 
-        std::optional<QueueID> lastQueueId;
-        std::weak_ptr<CommandContext> lastCommand;
-
         friend class DeviceContext;
         friend class CommandContext;
     };

@@ -65,9 +65,9 @@ namespace sp::vulkan::renderer {
         };
 
         std::array<ecs::View, MAX_LIGHTS> views;
-        HeapVector<VirtualLight> lights; // Current frame shadowmap lights
-        HeapVector<VirtualLight> previousLights; // Previous frame shadowmap lights
-        HeapVector<VirtualLight> readbackLights; // Optic visibility readback
+        InlineVector<VirtualLight, MAX_LIGHTS> lights; // Current frame shadowmap lights
+        InlineVector<VirtualLight, MAX_LIGHTS> previousLights; // Previous frame shadowmap lights
+        InlineVector<VirtualLight, MAX_LIGHTS> readbackLights; // Optic visibility readback
         HeapVector<std::pair<glm::ivec2, glm::ivec2>> freeRectangles;
 
         struct GPULight {

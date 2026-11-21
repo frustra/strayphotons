@@ -734,7 +734,9 @@ namespace sp::vulkan {
         cmd.SetBindlessDescriptors(2, textures.GetDescriptorSet());
 
         cmd.SetVertexLayout(SceneVertex::Layout());
+        Assert(indexBuffer->IsAcquired(cmd), "DrawSceneIndirect called without acquiring index buffer first");
         cmd.Raw().bindIndexBuffer(*indexBuffer, 0, vk::IndexType::eUint32);
+        Assert(vertexBuffer->IsAcquired(cmd), "DrawSceneIndirect called without acquiring vertex buffer first");
         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
         if (drawParamsBuffer) cmd.SetStorageBuffer(1, 0, drawParamsBuffer);
@@ -807,19 +809,18 @@ namespace sp::vulkan {
                 if (vertexCount == 0) return;
 
                 auto cmdBuffer = resources.GetBuffer("WarpedVertexDrawCmds");
-                auto paramBuffer = resources.GetBuffer("WarpedVertexDrawParams");
-                auto warpedVertexBuffer = resources.GetBuffer("WarpedVertexBuffer");
                 auto vertexBuffer = resources.GetBuffer("SceneVertexBuffer");
 
                 cmd.BeginRenderPass({});
                 cmd.SetShaders({{ShaderStage::Vertex, "warp_geometry.vert"}});
-                cmd.SetStorageBuffer("DrawParamsList", paramBuffer);
-                cmd.SetStorageBuffer("VertexBufferOutput", warpedVertexBuffer);
+                cmd.SetStorageBuffer("DrawParamsList", "WarpedVertexDrawParams");
+                cmd.SetStorageBuffer("VertexBufferOutput", "WarpedVertexBuffer");
                 cmd.SetUniformBuffer("JointPoses", "JointPoses");
                 cmd.SetStorageBuffer("JointVertexData", "SceneJointsBuffer");
 
                 cmd.SetVertexLayout(SceneVertex::Layout());
                 cmd.SetPrimitiveTopology(vk::PrimitiveTopology::eTriangleFan);
+                Assert(vertexBuffer->IsAcquired(cmd), "bindVertexBuffers called without acquiring vertex buffer first");
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                 cmd.DrawIndirect(cmdBuffer, sizeof(uint32_t), primitiveCount);
                 cmd.EndRenderPass();

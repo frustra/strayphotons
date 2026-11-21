@@ -499,12 +499,13 @@ namespace sp::vulkan {
         void End();
 
     protected:
-        friend class DeviceContext;
         void Begin(render_graph::Resources *resources = nullptr);
 
         vk::UniqueCommandBuffer &RawRef() {
             return cmd;
         }
+
+        friend class DeviceContext;
 
     private:
         void SetSingleShader(ShaderStage stage, ShaderHandle handle);
@@ -575,5 +576,7 @@ namespace sp::vulkan {
         std::vector<ImageViewPtr> activeImageViews;
         std::vector<SemaphorePtr> waitSemaphores, signalSemaphores;
         std::vector<vk::PipelineStageFlags> waitStages;
+
+        friend class UniqueMemory;
     };
 } // namespace sp::vulkan

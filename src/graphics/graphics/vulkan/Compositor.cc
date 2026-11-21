@@ -678,7 +678,9 @@ namespace sp::vulkan {
 
                 const vk::IndexType idxType = sizeof(GuiDrawIndex) == 2 ? vk::IndexType::eUint16
                                                                         : vk::IndexType::eUint32;
+                Assert(indexBuffer->IsAcquired(cmd), "bindIndexBuffer called without acquiring index buffer first");
                 cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
+                Assert(vertexBuffer->IsAcquired(cmd), "bindVertexBuffers called without acquiring vertex buffer first");
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
                 uint32_t idxOffset = 0;
@@ -792,7 +794,9 @@ namespace sp::vulkan {
                 cmd.PushConstants(proj);
 
                 const vk::IndexType idxType = sizeof(ImDrawIdx) == 2 ? vk::IndexType::eUint16 : vk::IndexType::eUint32;
+                Assert(indexBuffer->IsAcquired(cmd), "bindIndexBuffer called without acquiring index buffer first");
                 cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
+                Assert(vertexBuffer->IsAcquired(cmd), "bindVertexBuffers called without acquiring vertex buffer first");
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
                 uint32_t idxOffset = 0, vtxOffset = 0;

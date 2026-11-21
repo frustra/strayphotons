@@ -11,6 +11,7 @@
 #include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include "Memory.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 
 #include <memory>
@@ -68,6 +69,18 @@ namespace sp::vulkan {
             Assert(std::this_thread::get_id() == callThread, "Buffer must be used in a single thread");
         }
         lastAccess = newAccess;
+    }
+
+    bool UniqueMemory::IsAcquired(const std::weak_ptr<CommandContext> &cmd) const {
+        return !lastCommand.owner_before(cmd) && !cmd.owner_before(lastCommand);
+    }
+
+    bool UniqueMemory::IsAcquired(const std::shared_ptr<CommandContext> &cmd) const {
+        return !lastCommand.owner_before(cmd) && !cmd.owner_before(lastCommand);
+    }
+
+    bool UniqueMemory::IsAcquired(const CommandContext &cmd) const {
+        return !lastCommand.owner_before(cmd.handle) && !cmd.handle.owner_before(lastCommand);
     }
 
     SubBuffer::SubBuffer() {}

@@ -144,6 +144,7 @@ namespace sp::vulkan {
     }
 
     void CommandContext::DispatchIndirect(BufferPtr indirectBuffer, vk::DeviceSize offset) {
+        Assert(indirectBuffer->IsAcquired(handle), "DispatchIndirect called without acquiring indirect buffer first");
         FlushComputeState();
         cmd->dispatchIndirect(*indirectBuffer, offset);
     }
@@ -166,6 +167,7 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         uint32_t drawCount,
         uint32_t stride) {
+        Assert(drawCommands->IsAcquired(handle), "DrawIndirect called without acquiring draw commands buffer first");
         FlushGraphicsState();
         cmd->drawIndirect(*drawCommands, offset, drawCount, stride);
     }
@@ -176,6 +178,9 @@ namespace sp::vulkan {
         vk::DeviceSize countOffset,
         uint32_t maxDrawCount,
         uint32_t stride) {
+        Assert(drawCommands->IsAcquired(handle),
+            "DrawIndirectCount called without acquiring draw commands buffer first");
+        Assert(countBuffer->IsAcquired(handle), "DrawIndirectCount called without acquiring count buffer first");
         FlushGraphicsState();
         cmd->drawIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
     }
@@ -184,6 +189,8 @@ namespace sp::vulkan {
         vk::DeviceSize offset,
         uint32_t drawCount,
         uint32_t stride) {
+        Assert(drawCommands->IsAcquired(handle),
+            "DrawIndexedIndirect called without acquiring draw commands buffer first");
         FlushGraphicsState();
         cmd->drawIndexedIndirect(*drawCommands, offset, drawCount, stride);
     }
@@ -194,6 +201,9 @@ namespace sp::vulkan {
         vk::DeviceSize countOffset,
         uint32_t maxDrawCount,
         uint32_t stride) {
+        Assert(drawCommands->IsAcquired(handle),
+            "DrawIndexedIndirectCount called without acquiring draw commands buffer first");
+        Assert(countBuffer->IsAcquired(handle), "DrawIndexedIndirectCount called without acquiring count buffer first");
         FlushGraphicsState();
         cmd->drawIndexedIndirectCount(*drawCommands, offset, *countBuffer, countOffset, maxDrawCount, stride);
     }
@@ -468,8 +478,7 @@ namespace sp::vulkan {
         bindingDesc.uniqueID = view->GetUniqueID();
 
         auto &image = view->Image();
-        Assert(!image->lastCommand.owner_before(handle) && !handle.owner_before(image->lastCommand),
-            "SetImageView called without acquiring image first");
+        Assert(image->IsAcquired(handle), "SetImageView called without acquiring image first");
         DebugAssertf(image->LastLayout() == vk::ImageLayout::eShaderReadOnlyOptimal ||
                          image->LastLayout() == vk::ImageLayout::eDepthStencilReadOnlyOptimal ||
                          image->LastLayout() == vk::ImageLayout::eGeneral,
@@ -537,8 +546,7 @@ namespace sp::vulkan {
         vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-        Assert(!buffer->lastCommand.owner_before(handle) && !handle.owner_before(buffer->lastCommand),
-            "SetUniformBuffer called without acquiring buffer first");
+        Assert(buffer->IsAcquired(handle), "SetUniformBuffer called without acquiring buffer first");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
         bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
@@ -606,8 +614,7 @@ namespace sp::vulkan {
         vk::DeviceSize range) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         Assert(binding < MAX_BINDINGS_PER_DESCRIPTOR_SET, "binding index too high");
-        Assert(!buffer->lastCommand.owner_before(handle) && !handle.owner_before(buffer->lastCommand),
-            "SetStorageBuffer called without acquiring buffer first");
+        Assert(buffer->IsAcquired(handle), "SetStorageBuffer called without acquiring buffer first");
         auto &bindingDesc = shaderData.sets[set].bindings[binding];
         bindingDesc.uniqueID = buffer ? buffer->GetUniqueID() : 0;
 
@@ -674,7 +681,6 @@ namespace sp::vulkan {
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
-        AcquireBuffer(buffer, Access::AnyShaderReadUniform);
         SetUniformBuffer(set, binding, buffer);
         return buffer;
     }
@@ -685,7 +691,6 @@ namespace sp::vulkan {
         desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
         desc.residency = Residency::CPU_TO_GPU;
         auto buffer = device.GetBuffer(desc);
-        AcquireBuffer(buffer, Access::AnyShaderReadUniform);
         SetUniformBuffer(bindingName, buffer);
         return buffer;
     }

@@ -400,6 +400,9 @@ namespace sp::vulkan::renderer {
                 if (trackedLightCount > 0) cmd.Raw().fillBuffer(*indexBuffer, sizeof(uint32_t), vk::WholeSize, 0);
             });
 
+        auto defaultShadowView = scene.textures.GetSinglePixel(glm::vec4(1));
+        graph.AddImageView("DefaultShadowDepth", defaultShadowView);
+
         graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc = {};
@@ -414,6 +417,7 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
+                builder.Read("DefaultShadowDepth", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("Linear", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("LightState", Access::FragmentShaderReadUniform);
                 builder.ReadUniform("LightState");
@@ -428,9 +432,7 @@ namespace sp::vulkan::renderer {
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
-                    auto pixelView = scene.textures.GetSinglePixel(glm::vec4(1));
-                    cmd.AcquireImage(pixelView->Image(), Access::FragmentShaderSampleImage);
-                    cmd.SetImageView("shadowMap", pixelView);
+                    cmd.SetImageView("shadowMap", "DefaultShadowDepth");
                 }
 
                 auto lastStateID = resources.GetID("LightState", 1);
@@ -460,6 +462,18 @@ namespace sp::vulkan::renderer {
                 }
             });
 
+        graph.AddPass("UpdateLightViews")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("LightViews", {sizeof(GPUViewState), lights.size()});
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                InlineVector<GPUViewState, MAX_LIGHTS> gpuViews;
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    gpuViews.emplace_back(views[i]);
+                }
+                auto viewStateBuf = resources.GetBuffer("LightViews");
+                viewStateBuf->CopyFrom(gpuViews.data(), gpuViews.size());
+            });
         graph.AddPass("RenderDepth")
             .Build([&](rg::PassBuilder &builder) {
                 builder.SetColorAttachment(0, "Linear", {LoadOp::Load, StoreOp::Store});
@@ -472,6 +486,8 @@ namespace sp::vulkan::renderer {
 
                 builder.Read("RenderableVisibility", Access::FragmentShaderReadStorage);
                 builder.Write("RenderableVisibility", Access::FragmentShaderWrite);
+
+                builder.Read("LightViews", Access::AnyShaderReadUniform);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
                 builder.Read("SceneIndexBuffer", Access::IndexBuffer);
@@ -487,8 +503,8 @@ namespace sp::vulkan::renderer {
                 for (uint32_t i = 0; i < lights.size(); i++) {
                     cmd.SetShaderConstant(ShaderStage::Fragment, "TRACKED_LIGHT_INDEX", ~0u);
 
-                    GPUViewState lightViews[] = {{views[i]}, {}};
-                    cmd.UploadUniformData("ViewStates", lightViews, 2);
+                    // TODO: Change this to render using multiview
+                    cmd.SetUniformBuffer("ViewStates", "LightViews", sizeof(GPUViewState) * i, sizeof(GPUViewState));
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
@@ -507,9 +523,13 @@ namespace sp::vulkan::renderer {
                     auto vertexBuffer = resources.GetBuffer(vertexID);
                     auto indexBuffer = resources.GetBuffer(indexID);
                     if (vertexBuffer && indexBuffer) {
+                        Assert(indexBuffer->IsAcquired(cmd),
+                            "bindIndexBuffer called without acquiring index buffer first");
                         cmd.Raw().bindIndexBuffer(*indexBuffer,
                             sizeof(VkDrawIndexedIndirectCommand),
                             vk::IndexType::eUint32);
+                        Assert(vertexBuffer->IsAcquired(cmd),
+                            "bindVertexBuffers called without acquiring vertex buffer first");
                         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                         cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
                     }
