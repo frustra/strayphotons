@@ -58,7 +58,9 @@ namespace sp::vulkan {
         vk::BufferUsageFlags usage;
         Residency residency = Residency::UNKNOWN;
 
-        bool operator==(const BufferDesc &) const = default;
+        bool operator==(const BufferDesc &other) const {
+            return layout.size == other.layout.size && usage == other.usage && residency == other.residency;
+        }
     };
 
     struct InitialData {
@@ -260,6 +262,8 @@ namespace sp::vulkan {
 
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
+
+        friend class BufferPool;
     };
 } // namespace sp::vulkan
 
@@ -272,8 +276,6 @@ namespace std {
         result_type operator()(argument_type const &s) const {
             result_type h = 0;
             sp::hash_combine(h, s.layout.size);
-            sp::hash_combine(h, s.layout.arrayStride);
-            sp::hash_combine(h, s.layout.arrayCount);
             sp::hash_combine(h, VkBufferUsageFlags(s.usage));
             sp::hash_combine(h, s.residency);
             return h;

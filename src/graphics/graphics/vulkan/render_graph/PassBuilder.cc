@@ -32,7 +32,7 @@ namespace sp::vulkan::render_graph {
         pass.AddFutureRead(thisFrameID, access, framesAgo);
 
         auto prevFrameID = resources.GetID(name, framesAgo);
-        if (prevFrameID != InvalidResource) pass.AddAccess(prevFrameID, access);
+        if (FindResource(prevFrameID) != InvalidResource) pass.AddAccess(prevFrameID, access);
         return prevFrameID;
     }
 

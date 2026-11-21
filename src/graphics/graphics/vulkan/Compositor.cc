@@ -436,7 +436,7 @@ namespace sp::vulkan {
                     outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
                     rg::ResourceName viewName = rg::ResourceName(output.entityName.String()) + "/View";
-                    viewOutput = builder.GetID(viewName, false);
+                    viewOutput = builder.FindResource(viewName);
                     if (viewOutput != rg::InvalidResource) {
                         builder.Read(viewOutput, Access::FragmentShaderSampleImage);
                         outputDesc = builder.DeriveImage(viewOutput);
@@ -476,7 +476,7 @@ namespace sp::vulkan {
                             }
                         }
                     } else if (!output.sourceName.empty()) {
-                        auto resourceID = builder.GetID(output.sourceName, false);
+                        ResourceID resourceID = builder.FindResource(output.sourceName);
                         if (resourceID != rg::InvalidResource) {
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
                         } else {
@@ -502,7 +502,7 @@ namespace sp::vulkan {
                     }
 
                     auto sourceImageName = rg::ResourceName(output.entityName.String()) + "/Image";
-                    sourceImageOutput = builder.GetID(sourceImageName, false);
+                    sourceImageOutput = builder.FindResource(sourceImageName);
                     if (sourceImageOutput != rg::InvalidResource) {
                         builder.Read(sourceImageOutput, Access::FragmentShaderSampleImage);
                         if (inheritExtent) outputDesc = builder.DeriveImage(sourceImageOutput);
@@ -618,7 +618,22 @@ namespace sp::vulkan {
     }
 
     void Compositor::internalDrawGui(const GuiDrawData &drawData, vk::Rect2D viewport, glm::vec2 scale) {
-        if (drawData.drawCommands.empty()) return;
+        if (drawData.drawCommands.empty() || drawData.vertexBuffer.empty() || drawData.indexBuffer.empty()) return;
+        rg::ResourceID vertexBufferID = rg::InvalidResource;
+        rg::ResourceID indexBufferID = rg::InvalidResource;
+        graph.AddPass("GuiBufferUpload")
+            .Build([&](rg::PassBuilder &builder) {
+                size_t vertexBytes = CeilToPowerOfTwo(sizeof(GuiDrawVertex) * drawData.vertexBuffer.size());
+                vertexBufferID = builder.CreateBuffer(vertexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
+                size_t indexBytes = CeilToPowerOfTwo(sizeof(GuiDrawIndex) * drawData.indexBuffer.size());
+                indexBufferID = builder.CreateBuffer(indexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
+            })
+            .Execute([drawData, vertexBufferID, indexBufferID](rg::Resources &resources, DeviceContext &device) {
+                auto vertexBuffer = resources.GetBuffer(vertexBufferID);
+                vertexBuffer->CopyFrom(drawData.vertexBuffer.data(), drawData.vertexBuffer.size());
+                auto indexBuffer = resources.GetBuffer(indexBufferID);
+                indexBuffer->CopyFrom(drawData.indexBuffer.data(), drawData.indexBuffer.size());
+            });
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
                 for (const auto &cmd : drawData.drawCommands) {
@@ -630,38 +645,18 @@ namespace sp::vulkan {
                         }
                     }
                 }
+
+                builder.Read(vertexBufferID, Access::VertexBuffer);
+                builder.Read(indexBufferID, Access::IndexBuffer);
+
                 builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
                 builder.Read("FontAtlas", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
-                size_t totalVtxSize = CeilToPowerOfTwo(drawData.vertexBuffer.size() * sizeof(GuiDrawVertex));
-                size_t totalIdxSize = CeilToPowerOfTwo(drawData.indexBuffer.size() * sizeof(GuiDrawIndex));
-                if (totalVtxSize == 0 || totalIdxSize == 0) return;
-
-                BufferDesc vtxDesc = {};
-                vtxDesc.layout = totalVtxSize;
-                vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
-                vtxDesc.residency = Residency::CPU_TO_GPU;
-                auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
-
-                BufferDesc idxDesc = {};
-                idxDesc.layout = totalIdxSize;
-                idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
-                idxDesc.residency = Residency::CPU_TO_GPU;
-                auto indexBuffer = cmd.Device().GetBuffer(idxDesc);
-
+            .Execute([drawData, vertexBufferID, indexBufferID, viewport, scale](rg::Resources &resources,
+                         CommandContext &cmd) {
                 static_assert(sizeof(TextureColorVertex2D) == sizeof(GuiDrawVertex),
                     "Vulkan vertex layout doesn't match GuiDrawVertex");
-                GuiDrawVertex *vtxData;
-                GuiDrawIndex *idxData;
-                vertexBuffer->Map((void **)&vtxData);
-                indexBuffer->Map((void **)&idxData);
-                std::copy(drawData.vertexBuffer.begin(), drawData.vertexBuffer.end(), vtxData);
-                std::copy(drawData.indexBuffer.begin(), drawData.indexBuffer.end(), idxData);
-                indexBuffer->Unmap();
-                vertexBuffer->Unmap();
-
                 cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);
                 cmd.SetVertexLayout(TextureColorVertex2D::Layout());
@@ -678,8 +673,10 @@ namespace sp::vulkan {
 
                 const vk::IndexType idxType = sizeof(GuiDrawIndex) == 2 ? vk::IndexType::eUint16
                                                                         : vk::IndexType::eUint32;
+                auto indexBuffer = resources.GetBuffer(indexBufferID);
                 Assert(indexBuffer->IsAcquired(cmd), "bindIndexBuffer called without acquiring index buffer first");
                 cmd.Raw().bindIndexBuffer(*indexBuffer, 0, idxType);
+                auto vertexBuffer = resources.GetBuffer(vertexBufferID);
                 Assert(vertexBuffer->IsAcquired(cmd), "bindVertexBuffers called without acquiring vertex buffer first");
                 cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
 
@@ -721,6 +718,40 @@ namespace sp::vulkan {
         glm::vec2 scale,
         bool allowUserCallback) {
         if (!drawData) return;
+        size_t totalVertexBytes = 0, totalIndexBytes = 0;
+        for (const auto &cmdList : drawData->CmdLists) {
+            totalVertexBytes += cmdList->VtxBuffer.size_in_bytes();
+            totalIndexBytes += cmdList->IdxBuffer.size_in_bytes();
+        }
+        totalVertexBytes = CeilToPowerOfTwo(totalVertexBytes);
+        totalIndexBytes = CeilToPowerOfTwo(totalIndexBytes);
+        if (totalVertexBytes == 0 || totalIndexBytes == 0) return;
+
+        rg::ResourceID vertexBufferID = rg::InvalidResource;
+        rg::ResourceID indexBufferID = rg::InvalidResource;
+        graph.AddPass("GuiBufferUpload")
+            .Build([&](rg::PassBuilder &builder) {
+                vertexBufferID = builder.CreateBuffer(totalVertexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
+                indexBufferID = builder.CreateBuffer(totalIndexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
+            })
+            .Execute([drawData, vertexBufferID, indexBufferID](rg::Resources &resources, DeviceContext &device) {
+                auto vertexBuffer = resources.GetBuffer(vertexBufferID);
+                auto indexBuffer = resources.GetBuffer(indexBufferID);
+                ImDrawVert *vtxData;
+                ImDrawIdx *idxData;
+                vertexBuffer->Map((void **)&vtxData);
+                indexBuffer->Map((void **)&idxData);
+                for (const auto &cmdList : drawData->CmdLists) {
+                    std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
+                    vtxData += cmdList->VtxBuffer.size();
+                    std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
+                    idxData += cmdList->IdxBuffer.size();
+                }
+                indexBuffer->Unmap();
+                vertexBuffer->Unmap();
+                indexBuffer->Flush();
+                vertexBuffer->Flush();
+            });
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
                 for (const auto &cmdList : drawData->CmdLists) {
@@ -738,49 +769,21 @@ namespace sp::vulkan {
                         }
                     }
                 }
+
+                builder.Read(vertexBufferID, Access::VertexBuffer);
+                builder.Read(indexBufferID, Access::IndexBuffer);
+
                 builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
                 builder.Read("FontAtlas", Access::FragmentShaderSampleImage);
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
             })
-            .Execute([drawData, viewport, scale](rg::Resources &resources, CommandContext &cmd) {
-                size_t totalVtxSize = 0, totalIdxSize = 0;
-                for (const auto &cmdList : drawData->CmdLists) {
-                    totalVtxSize += cmdList->VtxBuffer.size_in_bytes();
-                    totalIdxSize += cmdList->IdxBuffer.size_in_bytes();
-                }
+            .Execute([drawData, vertexBufferID, indexBufferID, viewport, scale](rg::Resources &resources,
+                         CommandContext &cmd) {
+                auto vertexBuffer = resources.GetBuffer(vertexBufferID);
+                auto indexBuffer = resources.GetBuffer(indexBufferID);
 
-                totalVtxSize = CeilToPowerOfTwo(totalVtxSize);
-                totalIdxSize = CeilToPowerOfTwo(totalIdxSize);
-                if (totalVtxSize == 0 || totalIdxSize == 0) return;
-
-                BufferDesc vtxDesc = {};
-                vtxDesc.layout = totalVtxSize;
-                vtxDesc.usage = vk::BufferUsageFlagBits::eVertexBuffer;
-                vtxDesc.residency = Residency::CPU_TO_GPU;
-                auto vertexBuffer = cmd.Device().GetBuffer(vtxDesc);
-
-                BufferDesc idxDesc = {};
-                idxDesc.layout = totalIdxSize;
-                idxDesc.usage = vk::BufferUsageFlagBits::eIndexBuffer;
-                idxDesc.residency = Residency::CPU_TO_GPU;
-                auto indexBuffer = cmd.Device().GetBuffer(idxDesc);
-
-                ImDrawVert *vtxData;
-                ImDrawIdx *idxData;
-                vertexBuffer->Map((void **)&vtxData);
-                indexBuffer->Map((void **)&idxData);
-                for (const auto &cmdList : drawData->CmdLists) {
-                    std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
-                    vtxData += cmdList->VtxBuffer.size();
-                    std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
-                    idxData += cmdList->IdxBuffer.size();
-                }
-                indexBuffer->Unmap();
-                vertexBuffer->Unmap();
-
-                cmd.AcquireBuffer(indexBuffer, Access::IndexBuffer);
-                cmd.AcquireBuffer(vertexBuffer, Access::VertexBuffer);
-
+                static_assert(sizeof(TextureColorVertex2D) == sizeof(ImDrawVert),
+                    "Vulkan vertex layout doesn't match ImDrawVert");
                 cmd.SetYDirection(YDirection::Down);
                 cmd.SetViewport(viewport);
                 cmd.SetVertexLayout(TextureColorVertex2D::Layout());

@@ -60,10 +60,20 @@ namespace sp::vulkan::renderer {
 
         if (!data) return;
 
+        graph.AddPass("UpdateLightSensorData")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("LightSensorData", sizeof(LightSensorData));
+            })
+            .Execute([data](rg::Resources &resources, DeviceContext &device) {
+                auto sensorDataBuf = resources.GetBuffer("LightSensorData");
+                sensorDataBuf->CopyFrom(&data->gpu);
+            });
+
         graph.AddPass("LightSensors")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Read("ShadowMap/Linear", Access::ComputeShaderSampleImage);
                 builder.Read("LightState", Access::ComputeShaderReadUniform);
+                builder.Read("LightSensorData", Access::ComputeShaderReadUniform);
                 builder.CreateBuffer("LightSensorValues",
                     {sizeof(glm::vec4), MAX_LIGHT_SENSORS},
                     Residency::GPU_ONLY,
@@ -75,7 +85,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetImageView("shadowMap", "ShadowMap/Linear");
                 cmd.SetStorageBuffer("LightSensorResults", "LightSensorValues");
                 cmd.SetUniformBuffer("LightData", "LightState");
-                cmd.UploadUniformData("LightSensorData", &data->gpu);
+                cmd.SetUniformBuffer("LightSensorData", "LightSensorData");
                 cmd.SetBindlessDescriptors(1, textureSet->GetDescriptorSet());
 
                 cmd.Dispatch(1, 1, 1);

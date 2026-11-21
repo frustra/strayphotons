@@ -17,8 +17,9 @@ layout(location = 0) out flat uint outOpticID;
 
 #include "lib/draw_params.glsl"
 
-INCLUDE_LAYOUT(binding = 0)
-#include "lib/view_states_uniform.glsl"
+layout(binding = 0) uniform LightViews {
+    ViewState lightViews[];
+};
 
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
     DrawParams drawParams[];
@@ -26,5 +27,5 @@ layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
 
 void main() {
     outOpticID = uint(drawParams[gl_BaseInstance].opticID);
-    gl_Position = views[0].projMat * views[0].viewMat * vec4(inPos, 1.0);
+    gl_Position = lightViews[0].projMat * lightViews[0].viewMat * vec4(inPos, 1.0);
 }

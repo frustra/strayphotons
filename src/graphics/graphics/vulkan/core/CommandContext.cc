@@ -675,26 +675,6 @@ namespace sp::vulkan {
         SetStorageBuffer(bindingName, resources->GetBuffer(resourceID), offset, range);
     }
 
-    BufferPtr CommandContext::AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size) {
-        BufferDesc desc = {};
-        desc.layout = size;
-        desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-        desc.residency = Residency::CPU_TO_GPU;
-        auto buffer = device.GetBuffer(desc);
-        SetUniformBuffer(set, binding, buffer);
-        return buffer;
-    }
-
-    BufferPtr CommandContext::AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size) {
-        BufferDesc desc = {};
-        desc.layout = size;
-        desc.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-        desc.residency = Residency::CPU_TO_GPU;
-        auto buffer = device.GetBuffer(desc);
-        SetUniformBuffer(bindingName, buffer);
-        return buffer;
-    }
-
     void CommandContext::SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet) {
         Assert(set < MAX_BOUND_DESCRIPTOR_SETS, "descriptor set index too high");
         bindlessSets[set] = descriptorSet;

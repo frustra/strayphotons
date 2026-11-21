@@ -448,29 +448,6 @@ namespace sp::vulkan {
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
 
-        // Buffer is stored in a pool for this frame, and reused in later frames.
-        BufferPtr AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size);
-        BufferPtr AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size);
-
-        // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
-        template<typename T>
-        T *AllocUniformData(uint32_t set, uint32_t binding, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            return static_cast<T *>(buffer->Mapped());
-        }
-
-        template<typename T>
-        void UploadUniformData(uint32_t set, uint32_t binding, const T *data, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            buffer->CopyFrom(data, count);
-        }
-
-        template<typename T>
-        void UploadUniformData(std::string_view bindingName, const T *data, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(bindingName, sizeof(T) * count);
-            buffer->CopyFrom(data, count);
-        }
-
         void SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet);
 
         bool IsCompute() const {

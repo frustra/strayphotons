@@ -19,6 +19,7 @@
 #include "graphics/vulkan/render_passes/Voxels.hh"
 #include "graphics/vulkan/scene/MarchingCubesData.h"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
+#include "strayphotons/Utility.hh"
 
 #include <cstdint>
 #include <string>
@@ -59,17 +60,18 @@ namespace sp::vulkan::renderer {
         graph.AddPass("Init")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("VertexBuffer",
-                    {sizeof(SceneVertex), 4 * cubeCount},
+                    CeilToPowerOfTwo(sizeof(SceneVertex) * 4 * cubeCount),
                     Residency::GPU_ONLY,
                     Access::None);
 
                 builder.CreateBuffer("IndexLookup",
-                    {sizeof(uint32_t), 2 + 4 * cubeCount},
+                    CeilToPowerOfTwo(sizeof(uint32_t) * 2 + 4 * cubeCount),
                     Residency::GPU_ONLY,
                     Access::TransferWrite);
 
                 builder.CreateBuffer("IndexBuffer",
-                    {sizeof(uint32_t), (sizeof(VkDrawIndexedIndirectCommand) / sizeof(uint32_t)) + 5 * cubeCount},
+                    CeilToPowerOfTwo(
+                        sizeof(uint32_t) * (sizeof(VkDrawIndexedIndirectCommand) / sizeof(uint32_t)) + 5 * cubeCount),
                     Residency::GPU_ONLY,
                     Access::TransferWrite);
             })
@@ -86,6 +88,7 @@ namespace sp::vulkan::renderer {
                     sizeof(uint32_t),
                     1u);
             });
+        // TODO: Move these to static uniform buffers
         graph.AddPass("UploadTriangleData")
             .Build([&](rg::PassBuilder &builder) {
                 builder.CreateBuffer("TriangleIndexBuffer",

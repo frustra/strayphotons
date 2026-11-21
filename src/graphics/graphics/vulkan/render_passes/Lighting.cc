@@ -467,13 +467,16 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("LightViews", {sizeof(GPUViewState), lights.size()});
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                InlineVector<GPUViewState, MAX_LIGHTS> gpuViews;
-                for (uint32_t i = 0; i < lights.size(); i++) {
-                    gpuViews.emplace_back(views[i]);
-                }
                 auto viewStateBuf = resources.GetBuffer("LightViews");
-                viewStateBuf->CopyFrom(gpuViews.data(), gpuViews.size());
+                GPUViewState *viewStates;
+                viewStateBuf->Map((void **)&viewStates);
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    viewStates[i] = views[i];
+                }
+                viewStateBuf->Unmap();
+                viewStateBuf->Flush();
             });
+
         graph.AddPass("RenderDepth")
             .Build([&](rg::PassBuilder &builder) {
                 builder.SetColorAttachment(0, "Linear", {LoadOp::Load, StoreOp::Store});
@@ -504,7 +507,7 @@ namespace sp::vulkan::renderer {
                     cmd.SetShaderConstant(ShaderStage::Fragment, "TRACKED_LIGHT_INDEX", ~0u);
 
                     // TODO: Change this to render using multiview
-                    cmd.SetUniformBuffer("ViewStates", "LightViews", sizeof(GPUViewState) * i, sizeof(GPUViewState));
+                    cmd.SetUniformBuffer("LightViews", "LightViews", sizeof(GPUViewState) * i, sizeof(GPUViewState));
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
@@ -550,6 +553,7 @@ namespace sp::vulkan::renderer {
                 .Build([&](rg::PassBuilder &builder) {
                     builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
 
+                    builder.Read("LightViews", Access::VertexShaderReadUniform);
                     builder.Write("OpticVisibility", Access::FragmentShaderWrite);
 
                     builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
@@ -564,12 +568,14 @@ namespace sp::vulkan::renderer {
                         uint32_t lightIndex;
                     } constants;
 
-                    auto visBuffer = resources.GetBuffer("OpticVisibility");
+                    cmd.SetStorageBuffer("OpticVisibility", "OpticVisibility");
 
                     for (uint32_t i = 0; i < lights.size(); i++) {
-                        GPUViewState lightViews[] = {{views[i]}, {}};
-                        cmd.UploadUniformData("ViewStates", lightViews, 2);
-                        cmd.SetStorageBuffer("OpticVisibility", visBuffer);
+                        // TODO: Change this to render using multiview
+                        cmd.SetUniformBuffer("LightViews",
+                            "LightViews",
+                            sizeof(GPUViewState) * i,
+                            sizeof(GPUViewState));
 
                         vk::Rect2D viewport;
                         viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);

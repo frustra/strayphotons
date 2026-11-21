@@ -92,7 +92,7 @@ namespace sp::vulkan::renderer {
 
                     if (!textureName.empty()) {
                         if (!starts_with(textureName, "/")) textureName = "/" + textureName;
-                        auto resourceID = builder.GetID(textureName, false);
+                        ResourceID resourceID = builder.FindResource(textureName);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);

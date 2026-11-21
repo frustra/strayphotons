@@ -28,6 +28,14 @@ namespace sp::vulkan::render_graph {
         Resource GetResource(std::string_view name) const {
             return resources.GetResource(GetID(name), true);
         }
+        ResourceID FindResource(ResourceID id) const {
+            Resource *res = resources.GetResourcePtr(id, true);
+            if (!res) return InvalidResource;
+            return res->id;
+        }
+        ResourceID FindResource(std::string_view name) const {
+            return FindResource(GetID(name, false));
+        }
 
         void Read(ResourceID id, Access access);
         ResourceID Read(std::string_view name, Access access);

@@ -222,11 +222,11 @@ namespace sp::vulkan {
 
                 rg::ResourceName sourceName = CVarWindowViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
-                sourceID = builder.GetID(sourceName, false);
+                sourceID = builder.FindResource(sourceName);
                 if (sourceID == rg::InvalidResource && sourceName != "/" + defaultWindowViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                    sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
+                    sourceID = builder.FindResource("/" + defaultWindowViewTarget);
                 }
 
                 if (sourceID != rg::InvalidResource) {
@@ -548,11 +548,11 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 rg::ResourceName sourceName = CVarXrViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
-                sourceID = builder.GetID(sourceName, false);
+                sourceID = builder.FindResource(sourceName);
                 if (sourceID == rg::InvalidResource && sourceName != "/" + defaultXrViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
                     CVarXrViewTarget.Set(defaultXrViewTarget);
-                    sourceID = builder.GetID("/" + defaultXrViewTarget, false);
+                    sourceID = builder.FindResource("/" + defaultXrViewTarget);
                 }
 
                 if (sourceID != rg::InvalidResource) {

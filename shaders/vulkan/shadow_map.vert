@@ -18,15 +18,16 @@ layout(location = 1) flat out uint outRenderableIndex;
 
 #include "lib/draw_params.glsl"
 
-INCLUDE_LAYOUT(binding = 0)
-#include "lib/view_states_uniform.glsl"
+layout(binding = 0) uniform LightViews {
+    ViewState lightViews[];
+};
 
 layout(std430, set = 1, binding = 0) readonly buffer DrawParamsList {
     DrawParams drawParams[];
 };
 
 void main() {
-    outViewPos = vec3(views[0].viewMat * vec4(inPos, 1.0));
+    outViewPos = vec3(lightViews[0].viewMat * vec4(inPos, 1.0));
     outRenderableIndex = uint(drawParams[gl_BaseInstance].renderableIndex);
-    gl_Position = views[0].projMat * vec4(outViewPos, 1.0);
+    gl_Position = lightViews[0].projMat * vec4(outViewPos, 1.0);
 }

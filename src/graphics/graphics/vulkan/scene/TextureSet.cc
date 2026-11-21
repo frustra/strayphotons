@@ -266,7 +266,7 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &tex : renderGraphTextures) {
                     DebugAssertf(starts_with(tex.first, "/"), "Graph resource references must start with /");
-                    rg::ResourceID id = builder.GetID(tex.first, false);
+                    rg::ResourceID id = builder.FindResource(tex.first);
                     if (id == rg::InvalidResource) {
                         id = builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
                     } else {

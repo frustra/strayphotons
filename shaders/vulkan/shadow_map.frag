@@ -17,8 +17,9 @@ layout(location = 0) out float outLinearDepth;
 
 #include "../lib/types_common.glsl"
 
-INCLUDE_LAYOUT(binding = 0)
-#include "lib/view_states_uniform.glsl"
+layout(binding = 0) uniform LightViews {
+    ViewState lightViews[];
+};
 
 layout(constant_id = 0) const uint TRACKED_LIGHT_INDEX = ~0;
 
@@ -28,7 +29,7 @@ layout(binding = 1) buffer RenderableVisibility {
 };
 
 void main() {
-    outLinearDepth = LinearDepth(inViewPos, views[0].clip);
+    outLinearDepth = LinearDepth(inViewPos, lightViews[0].clip);
     if (TRACKED_LIGHT_INDEX < ~0) {
         atomicAdd(renderableBuckets[inRenderableIndex + TRACKED_LIGHT_INDEX * renderableCount], 1);
     }

@@ -244,6 +244,10 @@ namespace sp::vulkan::render_graph {
             while (accessId < resList.size() && resList[accessId].type == Resource::Type::Alias) {
                 accessId = resList[accessId].AliasID();
             }
+            Assertf(accessId < resList.size(),
+                "Pass %s references missing resource via alias %s",
+                passName,
+                access.id < resources.resourceNames.size() ? resources.resourceNames[access.id] : "<invalid>");
             Resource &res = resList[accessId];
             Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", accessId);
 
