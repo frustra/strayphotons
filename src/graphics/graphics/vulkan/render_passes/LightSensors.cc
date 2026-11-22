@@ -62,7 +62,7 @@ namespace sp::vulkan::renderer {
 
         graph.AddPass("UpdateLightSensorData")
             .Build([&](rg::PassBuilder &builder) {
-                builder.CreateUniform("LightSensorData", sizeof(LightSensorData));
+                builder.CreateUniform("LightSensorData", sizeof(LightSensorData::gpu));
             })
             .Execute([data](rg::Resources &resources, DeviceContext &device) {
                 auto sensorDataBuf = resources.GetBuffer("LightSensorData");

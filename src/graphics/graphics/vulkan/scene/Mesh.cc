@@ -171,7 +171,7 @@ namespace sp::vulkan {
         std::shared_ptr<vk::UniqueFence> transferFence;
         {
             ZoneScopedN("TransferBuffers");
-            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::TransferAsync);
+            CommandContextPtr cmd = device.GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
             cmd->AcquireBuffer(staging.indexBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.vertexBuffer, Access::TransferRead);
             cmd->AcquireBuffer(staging.primitiveList, Access::TransferRead);

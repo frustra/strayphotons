@@ -201,7 +201,7 @@ namespace sp::vulkan {
                 vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite,
                 vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
                 vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst,
-                vk::ImageLayout::eTransferSrcOptimal},
+                vk::ImageLayout::eTransferDstOptimal},
             // HostPreinitialized
             {vk::PipelineStageFlagBits::eHost,
                 vk::AccessFlagBits::eHostWrite,

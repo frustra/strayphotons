@@ -1362,28 +1362,28 @@ namespace sp::vulkan {
             // TODO: Add GraphicsAsync
             auto graphicsCmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
             graphicsCmd->AcquireImage(image, Access::TransferReadWrite);
+            // Image starts as eTransferDstOptimal
 
             {
                 GPUZone(this, graphicsCmd, "Mipmap");
 
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
-                transferMips.baseMipLevel = 1;
-                transferMips.mipLevelCount = image->MipLevels() - 1;
+                transferMips.baseMipLevel = 0;
+                transferMips.mipLevelCount = 1;
 
                 graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
                     vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    {},
+                    vk::ImageLayout::eTransferSrcOptimal,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
                     transferMips);
 
                 vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
                     (int32_t)image->Extent().height,
                     (int32_t)image->Extent().depth};
-                transferMips.mipLevelCount = 1;
 
                 for (uint32_t i = 1; i < image->MipLevels(); i++) {
                     auto prevMipExtent = currentExtent;
