@@ -148,7 +148,6 @@ namespace sp::vulkan {
         VmaAllocation allocation;
         void *persistentMap = nullptr;
 
-        LockFreeMutex accessMutex;
         Access lastAccess = Access::None;
         std::optional<QueueID> lastQueueId;
         std::weak_ptr<CommandContext> lastCommand;

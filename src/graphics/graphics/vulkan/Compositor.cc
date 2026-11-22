@@ -725,33 +725,36 @@ namespace sp::vulkan {
         }
         totalVertexBytes = CeilToPowerOfTwo(totalVertexBytes);
         totalIndexBytes = CeilToPowerOfTwo(totalIndexBytes);
-        if (totalVertexBytes == 0 || totalIndexBytes == 0) return;
 
         rg::ResourceID vertexBufferID = rg::InvalidResource;
         rg::ResourceID indexBufferID = rg::InvalidResource;
-        graph.AddPass("GuiBufferUpload")
-            .Build([&](rg::PassBuilder &builder) {
-                vertexBufferID = builder.CreateBuffer(totalVertexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
-                indexBufferID = builder.CreateBuffer(totalIndexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
-            })
-            .Execute([drawData, vertexBufferID, indexBufferID](rg::Resources &resources, DeviceContext &device) {
-                auto vertexBuffer = resources.GetBuffer(vertexBufferID);
-                auto indexBuffer = resources.GetBuffer(indexBufferID);
-                ImDrawVert *vtxData;
-                ImDrawIdx *idxData;
-                vertexBuffer->Map((void **)&vtxData);
-                indexBuffer->Map((void **)&idxData);
-                for (const auto &cmdList : drawData->CmdLists) {
-                    std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
-                    vtxData += cmdList->VtxBuffer.size();
-                    std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
-                    idxData += cmdList->IdxBuffer.size();
-                }
-                indexBuffer->Unmap();
-                vertexBuffer->Unmap();
-                indexBuffer->Flush();
-                vertexBuffer->Flush();
-            });
+        if (totalVertexBytes > 0 && totalIndexBytes > 0) {
+            graph.AddPass("GuiBufferUpload")
+                .Build([&](rg::PassBuilder &builder) {
+                    vertexBufferID = builder.CreateBuffer(totalVertexBytes, Residency::CPU_TO_GPU, Access::HostWrite)
+                                         .id;
+                    indexBufferID = builder.CreateBuffer(totalIndexBytes, Residency::CPU_TO_GPU, Access::HostWrite).id;
+                })
+                .Execute([drawData, vertexBufferID, indexBufferID](rg::Resources &resources, DeviceContext &device) {
+                    auto vertexBuffer = resources.GetBuffer(vertexBufferID);
+                    auto indexBuffer = resources.GetBuffer(indexBufferID);
+                    ImDrawVert *vtxData;
+                    ImDrawIdx *idxData;
+                    vertexBuffer->Map((void **)&vtxData);
+                    indexBuffer->Map((void **)&idxData);
+                    for (const auto &cmdList : drawData->CmdLists) {
+                        std::copy(cmdList->VtxBuffer.begin(), cmdList->VtxBuffer.end(), vtxData);
+                        vtxData += cmdList->VtxBuffer.size();
+                        std::copy(cmdList->IdxBuffer.begin(), cmdList->IdxBuffer.end(), idxData);
+                        idxData += cmdList->IdxBuffer.size();
+                    }
+                    indexBuffer->Unmap();
+                    vertexBuffer->Unmap();
+                    indexBuffer->Flush();
+                    vertexBuffer->Flush();
+                });
+        }
+
         graph.AddPass("GuiRender")
             .Build([&](rg::PassBuilder &builder) {
                 for (const auto &cmdList : drawData->CmdLists) {
@@ -770,6 +773,7 @@ namespace sp::vulkan {
                     }
                 }
 
+                if (vertexBufferID == rg::InvalidResource || indexBufferID == rg::InvalidResource) return;
                 builder.Read(vertexBufferID, Access::VertexBuffer);
                 builder.Read(indexBufferID, Access::IndexBuffer);
 
@@ -779,6 +783,7 @@ namespace sp::vulkan {
             })
             .Execute([drawData, vertexBufferID, indexBufferID, viewport, scale](rg::Resources &resources,
                          CommandContext &cmd) {
+                if (vertexBufferID == rg::InvalidResource || indexBufferID == rg::InvalidResource) return;
                 auto vertexBuffer = resources.GetBuffer(vertexBufferID);
                 auto indexBuffer = resources.GetBuffer(indexBufferID);
 

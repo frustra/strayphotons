@@ -267,6 +267,7 @@ namespace sp::vulkan {
         vk::PipelineStageFlags dstStages,
         vk::AccessFlags dstAccess,
         const ImageBarrierInfo &options) {
+        DebugZoneScoped;
         Assert(std::this_thread::get_id() == device.renderThread, "ImageBarrier must be used in a single thread");
 
         vk::ImageMemoryBarrier barrier;
@@ -318,6 +319,7 @@ namespace sp::vulkan {
         vk::PipelineStageFlags dstStages,
         vk::AccessFlags dstAccess,
         const BufferBarrierInfo &options) {
+        DebugZoneScoped;
         Assert(std::this_thread::get_id() == device.renderThread, "BufferBarrier must be used in a single thread");
 
         vk::BufferMemoryBarrier barrier;
@@ -802,8 +804,6 @@ namespace sp::vulkan {
         DebugZoneScoped;
         Assert(image, "CommandContext::AcquireImage called on null image");
 
-        std::lock_guard l(image->accessMutex);
-        Assert(handle.lock().get() == this, "CommandContext handle invalid");
         CommandContextPtr lastCommand = image->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
             Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
@@ -843,8 +843,6 @@ namespace sp::vulkan {
         DebugZoneScoped;
         Assert(buffer, "CommandContext::AcquireBuffer called on null buffer");
 
-        std::lock_guard l(buffer->accessMutex);
-        Assert(handle.lock().get() == this, "CommandContext handle invalid");
         CommandContextPtr lastCommand = buffer->lastCommand.lock();
         if (lastCommand && (lastCommand.owner_before(handle) || handle.owner_before(lastCommand))) {
             Assertf(!lastCommand->recording, "Vulkan commands queued out of order");
