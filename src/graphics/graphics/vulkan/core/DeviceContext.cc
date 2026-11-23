@@ -652,16 +652,32 @@ namespace sp::vulkan {
             }
         }
 
+        static const EnumArray<vk::ColorSpaceKHR, SwapchainColorSpace> colorSpaceLookup = {
+            vk::ColorSpaceKHR::eSrgbNonlinear, // SDR
+            vk::ColorSpaceKHR::eSrgbNonlinear, // sRGB
+            vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT, // esRGB
+            vk::ColorSpaceKHR::eDisplayP3NonlinearEXT, // DisplayP3
+            vk::ColorSpaceKHR::eDciP3NonlinearEXT, // DCIP3
+            vk::ColorSpaceKHR::eBt709NonlinearEXT, // BT709
+            vk::ColorSpaceKHR::eHdr10St2084EXT, // ST2084
+            vk::ColorSpaceKHR::eHdr10HlgEXT, // HLG
+            vk::ColorSpaceKHR::eAdobergbNonlinearEXT, // AdobeRGB
+            vk::ColorSpaceKHR::ePassThroughEXT, // Passthrough
+            vk::ColorSpaceKHR::eDisplayNativeAMD, // DisplayNativeAMD
+        };
+
         InlineVector<vk::Format, 3> preferredFormats;
-        if (CVarHDR.Get(true)) {
+        SwapchainColorSpace colorSpace = CVarHDR.Get(true);
+        vk::ColorSpaceKHR preferredColorSpace = colorSpaceLookup[colorSpace];
+        if (colorSpace != SwapchainColorSpace::SDR) {
             preferredFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat);
             preferredFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32);
         }
-        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Srgb);
+        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Unorm);
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
         int foundFormat = preferredFormats.size();
         for (auto &format : surfaceFormats) {
-            if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
+            if (format.colorSpace == preferredColorSpace) {
                 for (int i = 0; i < foundFormat; i++) {
                     if (format.format == preferredFormats[i]) {
                         foundFormat = i;
@@ -671,8 +687,17 @@ namespace sp::vulkan {
                 if (foundFormat == 0) break;
             }
         }
+        if (surfaceFormat.colorSpace != preferredColorSpace &&
+            preferredColorSpace != vk::ColorSpaceKHR::eSrgbNonlinear) {
+            Logf("surface color space not supported: %s", colorSpace);
+            CVarHDR.Set(SwapchainColorSpace::SDR);
+            CreateSwapchain();
+            return;
+        }
         Debugf("Created swapchain with format: %s", surfaceFormat.format);
-        Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
+        Assertf(surfaceFormat.colorSpace == preferredColorSpace,
+            "surface color space not supported: %s",
+            preferredColorSpace);
 
         maxFramesInFlight = std::clamp(CVarMaxFramesInFlight.Get(true), 1u, MAX_FRAMES_IN_FLIGHT);
         vk::SwapchainCreateInfoKHR swapchainInfo;

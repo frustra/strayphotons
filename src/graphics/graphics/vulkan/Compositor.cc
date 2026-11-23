@@ -11,7 +11,6 @@
 #include "assets/AssetManager.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptGuiDefinition.hh"
-#include "ecs/ScriptManager.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
 #include "graphics/core/GraphicsContext.hh"
@@ -26,6 +25,7 @@
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "graphics/vulkan/render_passes/Blur.hh"
 #include "graphics/vulkan/render_passes/Mipmap.hh"
+#include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/Async.hh"
@@ -432,7 +432,7 @@ namespace sp::vulkan {
                 .Build([&](rg::PassBuilder &builder) {
                     bool inheritExtent = true;
                     ImageViewPtr swapchainView = device.SwapchainImageView();
-                    outputDesc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
+                    outputDesc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Unorm;
                     outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
                     rg::ResourceName viewName = rg::ResourceName(output.entityName.String()) + "/View";
@@ -524,10 +524,10 @@ namespace sp::vulkan {
                     [output, outputDesc, viewOutput, sourceImageOutput](rg::Resources &resources, CommandContext &cmd) {
                         if (outputDesc.extent.width == 0 || outputDesc.extent.height == 0) return;
                         cmd.SetDepthTest(false, false);
+                        cmd.SetBlending(true);
                         if (viewOutput != rg::InvalidResource) {
                             cmd.DrawScreenCover(resources.GetImageView(viewOutput));
                         }
-                        cmd.SetBlending(true);
 
                         if (output.sourceResourceID != rg::InvalidResource) {
                             ImageViewPtr sourceImgView = resources.GetImageView(output.sourceResourceID);
@@ -666,6 +666,9 @@ namespace sp::vulkan {
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
+                float gammaCurve = renderer::CVarGammaCurve.Get();
+                cmd.SetShaderConstant(ShaderStage::Fragment, "CURVE_SCALE", gammaCurve);
+
                 auto zeroViewport = viewport;
                 zeroViewport.offset = vk::Offset2D();
                 glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, zeroViewport, scale);
@@ -797,6 +800,9 @@ namespace sp::vulkan {
                 cmd.SetBlending(true);
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
+
+                float gammaCurve = renderer::CVarGammaCurve.Get();
+                cmd.SetShaderConstant(ShaderStage::Fragment, "CURVE_SCALE", gammaCurve);
 
                 glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, viewport, scale);
                 cmd.PushConstants(proj);

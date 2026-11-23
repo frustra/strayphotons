@@ -343,6 +343,7 @@ namespace sp {
                 ImGui::TextUnformatted("Full Screen");
                 ImGui::TextUnformatted("Show FPS");
                 ImGui::TextUnformatted("Field of View");
+                ImGui::TextUnformatted("HDR");
                 ImGui::TextUnformatted("Tonemap White Point");
                 ImGui::TextUnformatted("Display Gamma");
                 ImGui::TextUnformatted("UI Scaling");
@@ -419,6 +420,13 @@ namespace sp {
                     }
                 }
                 {
+                    auto &hdrCVar = GetConsoleManager().GetCVar<SwapchainColorSpace>("r.hdr");
+                    bool hdrEnabled = hdrCVar.Get() != SwapchainColorSpace::SDR;
+                    if (ImGui::Checkbox("##enablehdr", &hdrEnabled)) {
+                        hdrCVar.Set(hdrEnabled ? SwapchainColorSpace::HLG : SwapchainColorSpace::SDR);
+                    }
+                }
+                {
                     auto &whitePointCVar = GetConsoleManager().GetCVar<glm::vec3>("r.tonemapwhitepoint");
                     float whitePoint = glm::compMax(whitePointCVar.Get());
                     ImGui::PushItemWidth(300.0f);
@@ -435,7 +443,7 @@ namespace sp {
                     auto &gammaCurveCVar = GetConsoleManager().GetCVar<float>("r.tonemapgammacurve");
                     float gammaCurve = gammaCurveCVar.Get();
                     ImGui::PushItemWidth(300.0f);
-                    if (ImGui::SliderFloat("##gammaCurve", &gammaCurve, 1.0f, 16.0f, "%.1f")) {
+                    if (ImGui::SliderFloat("##gammaCurve", &gammaCurve, 1.0f, 3.0f, "%.2f")) {
                         gammaCurveCVar.Set(gammaCurve);
                     }
                 }

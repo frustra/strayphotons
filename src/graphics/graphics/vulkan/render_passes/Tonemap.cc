@@ -8,24 +8,26 @@
 #include "Tonemap.hh"
 
 #include "console/CVar.hh"
+#include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/Shader.hh"
 
 namespace sp::vulkan::renderer {
-    static CVar<glm::vec3> CVarWhitePoint("r.TonemapWhitePoint",
+    CVar<glm::vec3> CVarWhitePoint("r.TonemapWhitePoint",
         glm::vec3(8),
         "The target whitepoint for HDR to SDR tonemapping.");
-    static CVar<float> CVarGammaCurve("r.TonemapGammaCurve", 2.9, "The gamma curve scale for your display.");
-    static CVar<float> CVarDarkSaturation("r.TonemapDarkSaturation",
+    CVar<float> CVarGammaCurve("r.TonemapGammaCurve", 2.2, "The gamma curve scale for your display.");
+    CVar<float> CVarDarkSaturation("r.TonemapDarkSaturation",
         0.75,
         "The HSV saturation scale for dark parts of the scene.");
-    static CVar<float> CVarBrightSaturation("r.TonemapBrightSaturation",
+    CVar<float> CVarBrightSaturation("r.TonemapBrightSaturation",
         1.1,
         "The HSV saturation scale for bright parts of the scene.");
 
     void AddTonemap(RenderGraph &graph) {
         glm::vec3 whitePoint = CVarWhitePoint.Get();
         float gammaCurve = CVarGammaCurve.Get();
+        SwapchainColorSpace hdrMode = CVarHDR.Get();
         float darkSaturation = CVarDarkSaturation.Get();
         float brightSaturation = CVarBrightSaturation.Get();
         graph.AddPass("Tonemap")
@@ -35,10 +37,10 @@ namespace sp::vulkan::renderer {
 
                 auto desc = builder.DeriveImage(luminanceID);
                 ImageViewPtr swapchainView = graph.Device().SwapchainImageView();
-                desc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
+                desc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Unorm;
                 builder.OutputColorAttachment(0, "TonemappedLuminance", desc, {LoadOp::DontCare, StoreOp::Store});
             })
-            .Execute([whitePoint, gammaCurve, darkSaturation, brightSaturation](rg::Resources &resources,
+            .Execute([whitePoint, gammaCurve, hdrMode, darkSaturation, brightSaturation](rg::Resources &resources,
                          CommandContext &cmd) {
                 cmd.SetShaders("screen_cover.vert", "tonemap.frag");
                 cmd.SetImageView("luminanceTex", resources.LastOutputID());
@@ -47,6 +49,7 @@ namespace sp::vulkan::renderer {
                 cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT_B", whitePoint.b);
 
                 cmd.SetShaderConstant(ShaderStage::Fragment, "CURVE_SCALE", gammaCurve);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", hdrMode == SwapchainColorSpace::SDR ? 0 : 1);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "DARK_SATURATION", darkSaturation);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "BRIGHT_SATURATION", brightSaturation);
 

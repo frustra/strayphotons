@@ -8,7 +8,13 @@
 #pragma once
 
 #include "Common.hh"
+#include "console/CVar.hh"
 
 namespace sp::vulkan::renderer {
+    extern CVar<glm::vec3> CVarWhitePoint;
+    extern CVar<float> CVarGammaCurve;
+    extern CVar<float> CVarDarkSaturation;
+    extern CVar<float> CVarBrightSaturation;
+
     void AddTonemap(RenderGraph &graph);
 } // namespace sp::vulkan::renderer

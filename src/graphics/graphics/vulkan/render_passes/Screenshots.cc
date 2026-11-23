@@ -81,20 +81,20 @@ namespace sp::vulkan::renderer {
                         sourceID = resource.id;
                         uint32_t components = FormatComponentCount(screenshotDesc.format);
                         if (components == 1) {
-                            screenshotDesc.format = vk::Format::eR8Srgb;
+                            screenshotDesc.format = vk::Format::eR8Unorm;
                         } else if (components == 2) {
-                            screenshotDesc.format = vk::Format::eR8G8Srgb;
+                            screenshotDesc.format = vk::Format::eR8G8Unorm;
                         } else if (components == 3) {
-                            screenshotDesc.format = vk::Format::eR8G8B8Srgb;
+                            screenshotDesc.format = vk::Format::eR8G8B8Unorm;
                         } else if (components == 4) {
-                            screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
+                            screenshotDesc.format = vk::Format::eR8G8B8A8Unorm;
                         } else {
                             Abortf("format has unsupported component count: %u", components);
                         }
 
                     } else {
                         sourceID = VisualizeBuffer(graph, resource.id);
-                        screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
+                        screenshotDesc.format = vk::Format::eR8G8B8A8Unorm;
                     }
                     builder.Read(sourceID, Access::TransferRead);
                     screenshotID = builder.CreateImage("", screenshotDesc, Access::TransferWrite).id;

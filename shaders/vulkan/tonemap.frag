@@ -24,27 +24,52 @@ layout(location = 0) out vec4 outFragColor;
 layout(constant_id = 0) const float WHITE_POINT_R = 8.0;
 layout(constant_id = 1) const float WHITE_POINT_G = 8.0;
 layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
-layout(constant_id = 3) const float CURVE_SCALE = 2.9;
-layout(constant_id = 4) const float DARK_SATURATION = 0.75;
-layout(constant_id = 5) const float BRIGHT_SATURATION = 1.1;
+layout(constant_id = 3) const float CURVE_SCALE = 2.2;
+layout(constant_id = 4) const uint HDR_MODE = 0;
+layout(constant_id = 5) const float DARK_SATURATION = 0.75;
+layout(constant_id = 6) const float BRIGHT_SATURATION = 1.1;
 const float ditherAmount = 0.25 / 255.0;
 
 void main() {
     vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
-    vec3 toneMapped = HableSDRTonemap(max(vec3(0), luminosity.rgb) * CURVE_SCALE) /
-                      HableSDRTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B));
-
-#ifdef ENABLE_DITHER
-    toneMapped += (InterleavedGradientNoise(gl_FragCoord.xy) - 0.5) * ditherAmount;
-#endif
-
-    vec3 hsv = RGBtoHSV(toneMapped);
+    vec3 hsv = RGBtoHSV(luminosity.rgb);
     float brightness = clamp(hsv.z, 0, 1);
     float x = (brightness - 1);
     float darkMix = 1 - x * x * x * x;
-    hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, darkMix), 0, 1);
-    outFragColor = vec4(HSVtoRGB(hsv), luminosity.a);
+
+    vec3 toneMapped;
+    if (HDR_MODE > 0) {
+        const float a = 0.17883277;
+        const float b = 1.0 - 4.0 * a;
+        const float c = 0.5 - a * log(4.0 * a);
+        const float r = 0.5;
+
+        hsv.y = clamp(hsv.y, 0, 1) *
+                clamp(mix(DARK_SATURATION, BRIGHT_SATURATION - BRIGHT_SATURATION / 7, darkMix), 0, 1);
+        vec3 linearToneMapped = HableTonemap(max(vec3(0), HSVtoRGB(hsv))) /
+                                HableTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B) / 16);
+
+        vec3 toneMappedGamma = r * sqrt(linearToneMapped);
+        vec3 toneMappedLog = a * log(linearToneMapped - b) + c;
+        toneMapped = mix(toneMappedGamma, toneMappedLog, greaterThan(linearToneMapped, vec3(1)));
+    } else {
+        hsv.y = clamp(hsv.y, 0, 1) * clamp(mix(DARK_SATURATION, BRIGHT_SATURATION, darkMix), 0, 1);
+        vec3 linearToneMapped = HableTonemap(max(vec3(0), HSVtoRGB(hsv))) /
+                                HableTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B));
+
+        toneMapped = pow(linearToneMapped, vec3(1.0 / CURVE_SCALE));
+    }
+    outFragColor = vec4(toneMapped, luminosity.a);
+
+#ifdef ENABLE_DITHER
+    outFragColor += (vec4(InterleavedGradientNoise(gl_FragCoord.xy),
+                         InterleavedGradientNoise(gl_FragCoord.xy * 2),
+                         InterleavedGradientNoise(gl_FragCoord.xy * 3),
+                         InterleavedGradientNoise(gl_FragCoord.xy * 5)) -
+                        0.5) *
+                    ditherAmount;
+#endif
 
 #ifdef DEBUG_OVEREXPOSED
     if (toneMapped.r > 1 || toneMapped.g > 1 || toneMapped.b > 1) {

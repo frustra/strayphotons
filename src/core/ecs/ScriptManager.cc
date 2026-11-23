@@ -266,14 +266,14 @@ namespace ecs {
                             .events = script->definition.events,
                             .context = script->definition.context,
                         };
+                        break;
                     }
                 }
             }
             for (auto &dynamicScript : dynamicLibrary->scripts) {
                 previousList.emplace_back(dynamicScript->definition);
                 GetScriptDefinitions().scripts.erase(dynamicScript->definition.name);
-                auto &reloadingCtx = dynamicScript->definition.context;
-                Assertf(reloadingCtx.expired(), "Expected old dynamic script library to be expired on reload");
+                dynamicScript->defaultContext = {};
             }
             dynamicLibrary->ReloadLibrary();
             for (auto &dynamicScript : dynamicLibrary->scripts) {

@@ -13,6 +13,7 @@
 #include "strayphotons/gui/GuiInputEvents.hh"
 
 #include <dynalo/dynalo.hpp>
+#include <memory>
 
 namespace ecs {
     void DynamicLibrary::RegisterScripts() const {
@@ -24,7 +25,20 @@ namespace ecs {
     void DynamicLibrary::ReloadLibrary() {
         ZoneScoped;
         ZoneStr(name);
+        std::vector<std::weak_ptr<ScriptDefinitionBase>> oldContexts;
+        for (auto &dynamicScript : scripts) {
+            oldContexts.emplace_back(dynamicScript->definition.context);
+        }
         scripts.clear(); // Free script contexts with old plugin library version
+        for (auto &context : oldContexts) {
+            if (!context.expired()) {
+                auto ctx = context.lock();
+                Abortf("Expected dynamic script %s from library %s to be expired on reload: 0x%llx",
+                    ctx->metadata.name,
+                    name,
+                    ctx.get());
+            }
+        }
         dynamicLib.reset();
         auto newLibrary = Load(name);
         if (!newLibrary) {

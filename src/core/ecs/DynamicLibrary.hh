@@ -55,11 +55,9 @@ namespace ecs {
         DynamicScriptContext() : context(nullptr), script(nullptr) {}
         DynamicScriptContext(const std::shared_ptr<DynamicScript> &script);
         DynamicScriptContext(const DynamicScriptContext &other);
-        DynamicScriptContext(DynamicScriptContext &&other) = default;
         ~DynamicScriptContext();
 
         DynamicScriptContext &operator=(const DynamicScriptContext &other);
-        DynamicScriptContext &operator=(DynamicScriptContext &&other) = default;
 
         void *context = nullptr;
 
@@ -212,5 +210,6 @@ namespace ecs {
 
         friend class DynamicScriptContext;
         friend class DynamicLibrary;
+        friend class ScriptManager;
     };
 } // namespace ecs

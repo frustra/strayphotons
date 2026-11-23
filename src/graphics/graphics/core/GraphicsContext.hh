@@ -26,7 +26,21 @@ namespace sp {
     extern CVar<glm::ivec2> CVarWindowSize;
     extern CVar<glm::vec2> CVarWindowScale;
     extern CVar<bool> CVarWindowFullscreen;
-    extern CVar<bool> CVarHDR;
+
+    enum class SwapchainColorSpace : uint32_t {
+        SDR = 0,
+        sRGB,
+        esRGB,
+        DisplayP3,
+        DCIP3,
+        BT709,
+        ST2084,
+        HLG,
+        AdobeRGB,
+        Passthrough,
+        DisplayNativeAMD,
+    };
+    extern CVar<SwapchainColorSpace> CVarHDR;
 
     class GraphicsContext {
     public:

@@ -16,6 +16,9 @@ layout(location = 1) in vec4 inColor;
 
 layout(location = 0) out vec4 outFragColor;
 
+layout(constant_id = 0) const float CURVE_SCALE = 1.0;
+
 void main() {
-    outFragColor = inColor * texture(tex, inTexCoord);
+    vec4 linearColor = inColor * texture(tex, inTexCoord);
+    outFragColor = vec4(pow(linearColor.rgb, vec3(1.0 / CURVE_SCALE)), linearColor.a);
 }

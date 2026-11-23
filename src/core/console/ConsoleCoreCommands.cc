@@ -37,23 +37,38 @@ void mutateEntityTransform(const ecs::EntityRef &entityRef, Callback callback) {
 }
 
 void sp::ConsoleManager::RegisterCoreCommands() {
-    funcs.Register("list", "Lists all CVar names, values, and descriptions", [this]() {
+    auto listCVars = [this]() {
         std::shared_lock lock(cvarReadLock);
 
+        logging::ConsoleWrite(logging::Level::Log, " Variables:");
+        bool hasFunctions = false;
         for (auto &kv : cvars) {
             auto cvar = kv.second;
             if (cvar->IsValueType()) {
                 logging::ConsoleWrite(logging::Level::Log, " > %s = %s", cvar->GetName(), cvar->StringValue());
+
+                auto desc = cvar->GetDescription();
+                if (desc.size() > 0) {
+                    logging::ConsoleWrite(logging::Level::Log, " >   %s", desc);
+                }
             } else {
-                logging::ConsoleWrite(logging::Level::Log, " > %s (func)", cvar->GetName());
+                hasFunctions = true;
             }
+        }
+        if (hasFunctions) logging::ConsoleWrite(logging::Level::Log, " Functions:");
+        for (auto &kv : cvars) {
+            auto cvar = kv.second;
+            if (cvar->IsValueType()) continue;
+            logging::ConsoleWrite(logging::Level::Log, " > %s", cvar->GetName());
 
             auto desc = cvar->GetDescription();
             if (desc.size() > 0) {
                 logging::ConsoleWrite(logging::Level::Log, " >   %s", desc);
             }
         }
-    });
+    };
+    funcs.Register("list", "Lists all CVar names, values, and descriptions", listCVars);
+    funcs.Register("help", "Lists all CVar names, values, and descriptions", listCVars);
 
     funcs.Register<uint64_t, std::string>("wait",
         "Queue command for later (wait <ms> <command>)",

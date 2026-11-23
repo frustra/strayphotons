@@ -23,7 +23,7 @@ namespace sp::vulkan::renderer {
                 builder.Read(sourceID, Access::FragmentShaderSampleImage);
 
                 auto desc = builder.DeriveImage(sourceID);
-                desc.format = vk::Format::eR8G8B8A8Srgb;
+                desc.format = vk::Format::eR8G8B8A8Unorm;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
             .Execute([sourceID, arrayLayer](Resources &resources, CommandContext &cmd) {
