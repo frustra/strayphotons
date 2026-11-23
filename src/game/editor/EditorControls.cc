@@ -476,7 +476,7 @@ namespace sp {
             ImGui::Separator();
             ImGui::Dummy(ImVec2(0, 6));
             const char *selectedName;
-            if (selectedComponent < 0 || selectedComponent >= missingComponents.size()) {
+            if (selectedComponent < 0 || selectedComponent >= (int)missingComponents.size()) {
                 ImGui::BeginDisabled();
                 ImGui::Button("Add##addComponentButton");
                 ImGui::EndDisabled();
@@ -505,7 +505,7 @@ namespace sp {
             }
             ImGui::SameLine();
             if (ImGui::BeginCombo("##componentSelector", selectedName)) {
-                for (size_t i = 0; i < missingComponents.size(); i++) {
+                for (int i = 0; i < (int)missingComponents.size(); i++) {
                     if (ImGui::Selectable(missingComponents[i].name, i == selectedComponent)) {
                         selectedComponent = i;
                     }

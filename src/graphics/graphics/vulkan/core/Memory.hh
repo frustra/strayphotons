@@ -99,7 +99,6 @@ namespace sp::vulkan {
         void UnmapPersistent();
         vk::DeviceSize ByteSize() const;
         vk::MemoryPropertyFlags Properties() const;
-        Residency Residency() const;
 
         const size_t CopyBlockSize = 512 * 1024;
 
