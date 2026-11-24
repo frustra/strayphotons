@@ -192,7 +192,8 @@ namespace sp::vulkan::renderer {
                             auto imageView = resources.GetImageView(resourceID);
                             if (imageView) {
                                 int32_t hdrMode = 0;
-                                if (imageView->Format() == cmd.Device().SwapchainImageView()->Format()) {
+                                auto swapchainImageView = cmd.Device().SwapchainImageView();
+                                if (swapchainImageView && imageView->Format() == swapchainImageView->Format()) {
                                     hdrMode = (int32_t)CVarHDR.Get();
                                 }
                                 cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", -hdrMode);

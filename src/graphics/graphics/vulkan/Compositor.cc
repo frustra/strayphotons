@@ -667,7 +667,8 @@ namespace sp::vulkan {
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
                 int32_t hdrMode = 0;
-                if (resources.LastOutput().ImageFormat() == cmd.Device().SwapchainImageView()->Format()) {
+                auto swapchainImageView = cmd.Device().SwapchainImageView();
+                if (swapchainImageView && resources.LastOutput().ImageFormat() == swapchainImageView->Format()) {
                     hdrMode = (int32_t)CVarHDR.Get();
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
@@ -806,7 +807,8 @@ namespace sp::vulkan {
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
                 int32_t hdrMode = 0;
-                if (resources.LastOutput().ImageFormat() == cmd.Device().SwapchainImageView()->Format()) {
+                auto swapchainImageView = cmd.Device().SwapchainImageView();
+                if (swapchainImageView && resources.LastOutput().ImageFormat() == swapchainImageView->Format()) {
                     hdrMode = (int32_t)CVarHDR.Get();
                 }
                 cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
