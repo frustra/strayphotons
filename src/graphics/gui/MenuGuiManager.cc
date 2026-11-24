@@ -345,7 +345,6 @@ namespace sp {
                 ImGui::TextUnformatted("Field of View");
                 ImGui::TextUnformatted("HDR");
                 ImGui::TextUnformatted("Tonemap White Point");
-                ImGui::TextUnformatted("Display Gamma");
                 ImGui::TextUnformatted("UI Scaling");
                 ImGui::TextUnformatted("Mirror VR View");
                 ImGui::TextUnformatted("Voxel Lighting Mode");
@@ -437,14 +436,6 @@ namespace sp {
                             "%.1f",
                             ImGuiSliderFlags_Logarithmic)) {
                         whitePointCVar.Set(glm::vec3(whitePoint));
-                    }
-                }
-                {
-                    auto &gammaCurveCVar = GetConsoleManager().GetCVar<float>("r.tonemapgammacurve");
-                    float gammaCurve = gammaCurveCVar.Get();
-                    ImGui::PushItemWidth(300.0f);
-                    if (ImGui::SliderFloat("##gammaCurve", &gammaCurve, 1.0f, 3.0f, "%.2f")) {
-                        gammaCurveCVar.Set(gammaCurve);
                     }
                 }
                 {

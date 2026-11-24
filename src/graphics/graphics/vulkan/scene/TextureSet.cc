@@ -194,7 +194,7 @@ namespace sp::vulkan {
             ImageCreateInfo imageInfo = {};
             imageInfo.imageType = vk::ImageType::e2D;
             imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-            imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+            imageInfo.format = vk::Format::eR8G8B8A8Srgb;
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
             ImageViewCreateInfo viewInfo = {};

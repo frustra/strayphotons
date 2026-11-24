@@ -78,7 +78,7 @@ namespace sp::vulkan {
         ImageCreateInfo fontImageInfo = {};
         fontImageInfo.imageType = vk::ImageType::e2D;
         fontImageInfo.extent = vk::Extent3D{(uint32_t)fontWidth, (uint32_t)fontHeight, 1};
-        fontImageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        fontImageInfo.format = vk::Format::eR8G8B8A8Srgb;
         fontImageInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
         ImageViewCreateInfo fontViewInfo = {};
@@ -432,7 +432,7 @@ namespace sp::vulkan {
                 .Build([&](rg::PassBuilder &builder) {
                     bool inheritExtent = true;
                     ImageViewPtr swapchainView = device.SwapchainImageView();
-                    outputDesc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Unorm;
+                    outputDesc.format = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                     outputDesc.sampler = SamplerType::TrilinearClampEdge;
 
                     rg::ResourceName viewName = rg::ResourceName(output.entityName.String()) + "/View";
@@ -603,7 +603,7 @@ namespace sp::vulkan {
                         createInfo.imageType = vk::ImageType::e2D;
                         createInfo.extent = vk::Extent3D(cpuImage.GetWidth(), cpuImage.GetHeight(), 1);
                         createInfo.mipLevels = CalculateMipmapLevels(createInfo.extent);
-                        createInfo.format = vk::Format::eR8G8B8A8Unorm;
+                        createInfo.format = vk::Format::eR8G8B8A8Srgb;
                         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
                         createInfo.genMipmap = createInfo.mipLevels > 1;
                         source.pendingUploads.emplace_back(device.CreateImage(NewDispatchSource,
@@ -666,8 +666,12 @@ namespace sp::vulkan {
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
-                float gammaCurve = renderer::CVarGammaCurve.Get();
-                cmd.SetShaderConstant(ShaderStage::Fragment, "CURVE_SCALE", gammaCurve);
+                int32_t hdrMode = 0;
+                if (resources.LastOutput().ImageFormat() == cmd.Device().SwapchainImageView()->Format()) {
+                    hdrMode = (int32_t)CVarHDR.Get();
+                }
+                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 1.0f);
 
                 auto zeroViewport = viewport;
                 zeroViewport.offset = vk::Offset2D();
@@ -801,8 +805,12 @@ namespace sp::vulkan {
 
                 cmd.SetShaders("basic_ortho.vert", "single_texture.frag");
 
-                float gammaCurve = renderer::CVarGammaCurve.Get();
-                cmd.SetShaderConstant(ShaderStage::Fragment, "CURVE_SCALE", gammaCurve);
+                int32_t hdrMode = 0;
+                if (resources.LastOutput().ImageFormat() == cmd.Device().SwapchainImageView()->Format()) {
+                    hdrMode = (int32_t)CVarHDR.Get();
+                }
+                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 1.0f);
 
                 glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, viewport, scale);
                 cmd.PushConstants(proj);

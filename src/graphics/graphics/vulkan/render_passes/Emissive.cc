@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "strayphotons/Utility.hh"
 
 namespace sp::vulkan::renderer {
@@ -190,6 +191,12 @@ namespace sp::vulkan::renderer {
                             auto &resourceID = std::get<ResourceID>(screen.texture);
                             auto imageView = resources.GetImageView(resourceID);
                             if (imageView) {
+                                int32_t hdrMode = 0;
+                                if (imageView->Format() == cmd.Device().SwapchainImageView()->Format()) {
+                                    hdrMode = (int32_t)CVarHDR.Get();
+                                }
+                                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", -hdrMode);
+                                cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 0.5f);
                                 if (imageView->ViewType() == vk::ImageViewType::e2DArray) {
                                     cmd.SetImageView("tex", resources.GetImageLayerView(resourceID, 0));
                                 } else {

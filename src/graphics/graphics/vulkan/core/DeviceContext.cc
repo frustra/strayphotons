@@ -673,7 +673,7 @@ namespace sp::vulkan {
             preferredFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat);
             preferredFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32);
         }
-        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Unorm);
+        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Srgb);
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
         int foundFormat = preferredFormats.size();
         for (auto &format : surfaceFormats) {
@@ -1556,7 +1556,7 @@ namespace sp::vulkan {
         ImageCreateInfo imageInfo = {};
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.format = vk::Format::eR8G8B8A8Srgb;
         imageInfo.extent = vk::Extent3D(1, 1, 1);
 
         ImageViewCreateInfo viewInfo = {};
