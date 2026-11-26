@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/PreservingMap.hh"
+#include "console/CVar.hh"
 #include "ecs/SignalExpression.hh"
 #include "graphics/GenericCompositor.hh"
 #include "graphics/core/Texture.hh"

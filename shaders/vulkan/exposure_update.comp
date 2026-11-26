@@ -14,11 +14,13 @@ layout(binding = 0, r32ui) uniform uimage2D histogram;
 
 layout(binding = 1) readonly buffer ExposureState {
     float exposure;
+    float hdrScale;
 }
 lastExposureState;
 
 layout(binding = 2) buffer NextExposureState {
     float exposure;
+    float hdrScale;
 }
 nextExposureState;
 
@@ -35,10 +37,12 @@ layout(push_constant) uniform PushConstants {
     float eyeAdaptationUpRate;
     float eyeAdaptationDownRate;
     float eyeAdaptationKeyComp;
+    float hdrScale;
 };
 
 void main() {
-    nextExposureState.exposure = lastExposureState.exposure;
+    nextExposureState.exposure = lastExposureState.exposure * hdrScale / lastExposureState.hdrScale;
+    nextExposureState.hdrScale = hdrScale;
 
     float sum = 0;
 
@@ -74,11 +78,11 @@ void main() {
     autoKeyComp = eyeAdaptationKeyComp * autoKeyComp + 1.0 - eyeAdaptationKeyComp;
 
     float ev100 = log2(luminance * 100.0 / 12.5) - exposureComp;
-    float newExposure = autoKeyComp / (1.2 * exp2(ev100));
+    float newExposure = autoKeyComp / (1.2 * exp2(ev100)) * hdrScale;
 
-    float alpha = newExposure < lastExposureState.exposure ? eyeAdaptationUpRate : eyeAdaptationDownRate;
+    float alpha = newExposure < nextExposureState.exposure ? eyeAdaptationUpRate : eyeAdaptationDownRate;
     alpha = max(min(alpha, 0.9999), 0.0001);
 
-    float blended = lastExposureState.exposure * (1 - alpha) + newExposure * alpha;
-    nextExposureState.exposure = max(min(blended, exposureMax), exposureMin);
+    float blended = nextExposureState.exposure * (1 - alpha) + newExposure * alpha;
+    nextExposureState.exposure = max(min(blended, exposureMax * hdrScale), exposureMin * hdrScale);
 }

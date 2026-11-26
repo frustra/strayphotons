@@ -19,7 +19,7 @@ layout(location = 1) in vec4 inColor;
 layout(location = 0) out vec4 outFragColor;
 
 layout(constant_id = 0) const int HDR_MODE = 0;
-layout(constant_id = 1) const float WHITE_POINT = 0.5;
+layout(constant_id = 1) const float WHITE_POINT = 1.0;
 
 void main() {
     vec4 linearColor = inColor * texture(tex, inTexCoord);

@@ -7,4 +7,5 @@
 
 readonly buffer ExposureState {
     float exposure;
+    float hdrScale;
 };

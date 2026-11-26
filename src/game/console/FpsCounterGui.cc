@@ -13,9 +13,9 @@
 #include <imgui.h>
 
 namespace sp {
-    static CVar<bool> CVarShowFPS("r.ShowFPS", false, "Show the frame rate of each system on screen");
-    static CVar<int> CVarShowFPSCorner("r.ShowFPSCorner",
-        1,
+    CVar<bool> CVarShowFPS("r.ShowFPS", false, "Show the frame rate of each system on screen");
+    CVar<WindowCorner> CVarShowFPSCorner("r.ShowFPSCorner",
+        WindowCorner::TopRight,
         "Specify which corner to draw show the FPS counter in (number from 0 to 3)");
 
     // Why is this window still resizable??
@@ -38,20 +38,20 @@ namespace sp {
         ImVec2 viewportPos = imguiViewport->WorkPos;
         ImVec2 viewportSize = imguiViewport->WorkSize;
         switch (CVarShowFPSCorner.Get()) {
-        case 1:
+        case WindowCorner::TopRight:
             viewportPos.x += viewportSize.x;
             ImGui::SetNextWindowPos(viewportPos, 0, ImVec2(1, 0));
             break;
-        case 2:
+        case WindowCorner::BottomLeft:
             viewportPos.y += viewportSize.y;
             ImGui::SetNextWindowPos(viewportPos, 0, ImVec2(0, 1));
             break;
-        case 3:
+        case WindowCorner::BottomRight:
             viewportPos.x += viewportSize.x;
             viewportPos.y += viewportSize.y;
             ImGui::SetNextWindowPos(viewportPos, 0, ImVec2(1, 1));
             break;
-        case 0:
+        case WindowCorner::TopLeft:
         default:
             ImGui::SetNextWindowPos(viewportPos);
             break;

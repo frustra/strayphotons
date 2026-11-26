@@ -12,6 +12,7 @@
 #include "audio/AudioManager.hh"
 #include "console/CVar.hh"
 #include "console/Console.hh"
+#include "console/FpsCounterGui.hh"
 #include "ecs/EcsImpl.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
@@ -21,6 +22,7 @@
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/core/GraphicsManager.hh"
 #include "graphics/core/Texture.hh"
+#include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "graphics/vulkan/scene/TextureSet.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/input/BindingNames.hh"
@@ -334,6 +336,8 @@ namespace sp {
             auto audio = audioPtr.lock();
             auto graphics = graphicsPtr.lock();
 
+            bool showFps = CVarShowFPS.Get();
+
             if (audio) {
                 ImGui::TextUnformatted("Audio Backend");
                 ImGui::TextUnformatted("Volume");
@@ -342,6 +346,7 @@ namespace sp {
                 ImGui::TextUnformatted("Resolution");
                 ImGui::TextUnformatted("Full Screen");
                 ImGui::TextUnformatted("Show FPS");
+                if (showFps) ImGui::TextUnformatted("FPS Corner");
                 ImGui::TextUnformatted("Field of View");
                 ImGui::TextUnformatted("HDR");
                 ImGui::TextUnformatted("Tonemap White Point");
@@ -404,39 +409,55 @@ namespace sp {
                     }
                 }
                 {
-                    auto &showFpsCVar = GetConsoleManager().GetCVar<bool>("r.showfps");
-                    bool showFps = showFpsCVar.Get();
                     if (ImGui::Checkbox("##showfpscheck", &showFps)) {
-                        showFpsCVar.Set(showFps);
+                        CVarShowFPS.Set(showFps);
+                    }
+                    if (showFps) {
+                        static const EnumArray<const char *, WindowCorner> windowCornerNames = {
+                            "Top Left",
+                            "Top Right",
+                            "Bottom Left",
+                            "Bottom Right",
+                        };
+
+                        WindowCorner corner = CVarShowFPSCorner.Get();
+                        ImGui::PushItemWidth(300.0f);
+                        if (ImGui::Combo(
+                                "##showfpscornercombo",
+                                (int *)&corner,
+                                [](void *, int i) {
+                                    return windowCornerNames.at(i);
+                                },
+                                nullptr,
+                                windowCornerNames.size())) {
+                            CVarShowFPSCorner.Set(corner);
+                        }
+                        ImGui::PopItemWidth();
                     }
                 }
                 {
-                    auto &fovCVar = GetConsoleManager().GetCVar<float>("r.fieldofview");
-                    float fovDegrees = fovCVar.Get();
+                    float fovDegrees = CVarFieldOfView.Get();
                     ImGui::PushItemWidth(300.0f);
                     if (ImGui::SliderFloat("##fovDegrees", &fovDegrees, 1.0f, 160.0f, "%.0f degrees")) {
-                        fovCVar.Set(fovDegrees);
+                        CVarFieldOfView.Set(fovDegrees);
                     }
                 }
+                SwapchainColorSpace hdrMode = CVarHDR.Get();
                 {
-                    auto &hdrCVar = GetConsoleManager().GetCVar<SwapchainColorSpace>("r.hdr");
-                    bool hdrEnabled = hdrCVar.Get() != SwapchainColorSpace::SDR;
+                    bool hdrEnabled = hdrMode != SwapchainColorSpace::SDR;
                     if (ImGui::Checkbox("##enablehdr", &hdrEnabled)) {
-                        hdrCVar.Set(hdrEnabled ? SwapchainColorSpace::HLG : SwapchainColorSpace::SDR);
+                        CVarHDR.Set(hdrEnabled ? SwapchainColorSpace::HLG : SwapchainColorSpace::SDR);
                     }
                 }
-                {
-                    auto &whitePointCVar = GetConsoleManager().GetCVar<glm::vec3>("r.tonemapwhitepoint");
-                    float whitePoint = glm::compMax(whitePointCVar.Get());
-                    ImGui::PushItemWidth(300.0f);
-                    if (ImGui::SliderFloat("##whitePoint",
-                            &whitePoint,
-                            1.0f,
-                            16.0f,
-                            "%.1f",
-                            ImGuiSliderFlags_Logarithmic)) {
-                        whitePointCVar.Set(glm::vec3(whitePoint));
-                    }
+                float whitePoint = glm::compMax(CVarWhitePoint.Get());
+                ImGui::PushItemWidth(300.0f);
+                if (ImGui::SliderFloat("##whitePoint",
+                        &whitePoint,
+                        0.1f,
+                        16.0f,
+                        "%.2f",
+                        ImGuiSliderFlags_Logarithmic)) {
+                    CVarWhitePoint.Set(glm::vec3(whitePoint));
                 }
                 {
                     float scale = CVarWindowScale.Get().x * 100.0f;

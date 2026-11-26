@@ -7,8 +7,10 @@
 
 #include "Exposure.hh"
 
+#include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 
 namespace sp::vulkan::renderer {
     // clang-format off
@@ -37,10 +39,12 @@ namespace sp::vulkan::renderer {
         float eyeAdaptationUpRate;
         float eyeAdaptationDownRate;
         float eyeAdaptationKeyComp;
+        float hdrScale;
     };
 
     struct ExposureState {
         float exposure = 1.0f;
+        float hdrScale = 1.0f;
     };
 
     void AddExposureState(RenderGraph &graph) {
@@ -54,17 +58,18 @@ namespace sp::vulkan::renderer {
                 builder.ReadPreviousFrame("NextExposureState", Access::TransferRead);
             })
             .Execute([](rg::Resources &resources, CommandContext &cmd) {
-                auto stateBuffer = resources.GetBuffer("ExposureState");
+                BufferPtr stateBuffer = resources.GetBuffer("ExposureState");
 
-                ExposureState state;
-                auto manualExposure = CVarExposure.Get();
+                ExposureState state = {};
+                state.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : 4.0f;
+                float manualExposure = CVarExposure.Get() * state.hdrScale;
                 if (manualExposure > 0) state.exposure = manualExposure;
 
-                auto lastStateID = resources.GetID("NextExposureState", 1);
+                ResourceID lastStateID = resources.GetID("NextExposureState", 1);
                 if (lastStateID == InvalidResource || manualExposure > 0) {
                     stateBuffer->CopyFrom(&state);
                 } else {
-                    auto lastStateBuffer = resources.GetBuffer(lastStateID);
+                    BufferPtr lastStateBuffer = resources.GetBuffer(lastStateID);
                     vk::BufferCopy region(0, 0, lastStateBuffer->ByteSize());
                     cmd.Raw().copyBuffer(*lastStateBuffer, *stateBuffer, {region});
                 }
@@ -137,6 +142,7 @@ namespace sp::vulkan::renderer {
                 constants.eyeAdaptationUpRate = CVarEyeAdaptationUpRate.Get();
                 constants.eyeAdaptationDownRate = CVarEyeAdaptationDownRate.Get();
                 constants.eyeAdaptationKeyComp = CVarEyeAdaptationKeyComp.Get();
+                constants.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : 4.0f;
 
                 cmd.SetComputeShader("exposure_update.comp");
                 cmd.SetImageView("histogram", "LuminanceHistogram");

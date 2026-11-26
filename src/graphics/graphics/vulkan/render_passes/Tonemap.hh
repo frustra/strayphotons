@@ -11,7 +11,6 @@
 #include "console/CVar.hh"
 
 namespace sp::vulkan::renderer {
-    extern CVar<glm::vec3> CVarWhitePoint;
     extern CVar<float> CVarDarkSaturation;
     extern CVar<float> CVarBrightSaturation;
 

@@ -7,9 +7,20 @@
 
 #pragma once
 
+#include "console/CVar.hh"
 #include "ecs/components/GuiElement.hh"
 
 namespace sp {
+    extern CVar<bool> CVarShowFPS;
+
+    enum class WindowCorner : int {
+        TopLeft = 0,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+    };
+    extern CVar<WindowCorner> CVarShowFPSCorner;
+
     class FpsCounterGui final : public ecs::GuiDefinition {
     public:
         FpsCounterGui();

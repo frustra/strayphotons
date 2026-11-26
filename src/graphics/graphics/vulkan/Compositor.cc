@@ -13,6 +13,7 @@
 #include "ecs/ScriptGuiDefinition.hh"
 #include "ecs/SignalRef.hh"
 #include "ecs/components/Events.hh"
+#include "glm/fwd.hpp"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/Renderer.hh"
 #include "graphics/vulkan/core/Access.hh"
@@ -671,7 +672,7 @@ namespace sp::vulkan {
                 if (swapchainImageView && resources.LastOutput().ImageFormat() == swapchainImageView->Format()) {
                     hdrMode = (int32_t)CVarHDR.Get();
                 }
-                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", hdrMode);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 1.0f);
 
                 auto zeroViewport = viewport;
@@ -811,7 +812,7 @@ namespace sp::vulkan {
                 if (swapchainImageView && resources.LastOutput().ImageFormat() == swapchainImageView->Format()) {
                     hdrMode = (int32_t)CVarHDR.Get();
                 }
-                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", (int32_t)hdrMode);
+                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", hdrMode);
                 cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 1.0f);
 
                 glm::mat4 proj = MakeOrthographicProjection(YDirection::Down, viewport, scale);

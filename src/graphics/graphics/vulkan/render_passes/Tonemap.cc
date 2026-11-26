@@ -13,9 +13,6 @@
 #include "graphics/vulkan/core/Shader.hh"
 
 namespace sp::vulkan::renderer {
-    CVar<glm::vec3> CVarWhitePoint("r.TonemapWhitePoint",
-        glm::vec3(8),
-        "The target whitepoint for HDR to SDR tonemapping.");
     CVar<float> CVarDarkSaturation("r.TonemapDarkSaturation",
         0.75,
         "The HSV saturation scale for dark parts of the scene.");

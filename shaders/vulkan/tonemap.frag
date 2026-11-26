@@ -21,9 +21,9 @@ layout(binding = 0) uniform sampler2DArray luminanceTex;
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
-layout(constant_id = 0) const float WHITE_POINT_R = 8.0;
-layout(constant_id = 1) const float WHITE_POINT_G = 8.0;
-layout(constant_id = 2) const float WHITE_POINT_B = 8.0;
+layout(constant_id = 0) const float WHITE_POINT_R = 1.0;
+layout(constant_id = 1) const float WHITE_POINT_G = 1.0;
+layout(constant_id = 2) const float WHITE_POINT_B = 1.0;
 layout(constant_id = 4) const int HDR_MODE = 0;
 layout(constant_id = 5) const float DARK_SATURATION = 0.75;
 layout(constant_id = 6) const float BRIGHT_SATURATION = 1.1;
@@ -32,12 +32,8 @@ const float ditherAmount = 1.0 / 255.0;
 void main() {
     vec4 luminosity = texture(luminanceTex, vec3(inTexCoord, gl_ViewID_OVR)); // pre-exposed
 
-    vec3 whitePoint = vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B);
-    if (HDR_MODE != 0) {
-        luminosity.rgb *= 2;
-        whitePoint /= 8;
-    }
-    vec3 linearToneMapped = HableTonemap(max(vec3(0), luminosity.rgb)) / HableTonemap(whitePoint);
+    vec3 linearToneMapped = HableTonemap(max(vec3(0), luminosity.rgb)) /
+                            HableTonemap(vec3(WHITE_POINT_R, WHITE_POINT_G, WHITE_POINT_B));
 
     vec3 hsv = RGBtoHSV(linearToneMapped);
     float brightness = clamp(hsv.z, 0, 1);
@@ -51,9 +47,8 @@ void main() {
         const float a = 0.17883277;
         const float b = 1.0 - 4.0 * a;
         const float c = 0.5 - a * log(4.0 * a);
-        const float r = 0.5;
 
-        vec3 toneMappedGamma = r * sqrt(linearToneMapped);
+        vec3 toneMappedGamma = 0.5 * sqrt(linearToneMapped);
         vec3 toneMappedLog = a * log(linearToneMapped - b) + c;
         toneMapped = mix(toneMappedGamma, toneMappedLog, greaterThan(linearToneMapped, vec3(1)));
     } else {
