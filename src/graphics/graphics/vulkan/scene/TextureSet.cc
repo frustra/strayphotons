@@ -12,6 +12,7 @@
 #include "ecs/EcsImpl.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/Async.hh"
@@ -194,7 +195,7 @@ namespace sp::vulkan {
             ImageCreateInfo imageInfo = {};
             imageInfo.imageType = vk::ImageType::e2D;
             imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-            imageInfo.format = vk::Format::eR8G8B8A8Srgb;
+            imageInfo.format = FormatFromTraits(4, 8, srgb);
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
             ImageViewCreateInfo viewInfo = {};

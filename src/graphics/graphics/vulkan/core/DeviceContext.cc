@@ -1532,14 +1532,48 @@ namespace sp::vulkan {
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
-        createInfo.format = FormatFromTraits(image->GetComponents(), 8, srgb);
+        uint32_t srcComponents = image->GetComponents();
+        uint32_t dstComponents;
+        if (srcComponents == 1) {
+            dstComponents = 1;
+        } else {
+            dstComponents = 4;
+        }
+
+        createInfo.format = FormatFromTraits(dstComponents, 8, srgb);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
         createInfo.genMipmap = genMipmap && createInfo.extent.width > 1 && createInfo.extent.height > 1;
         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
-        const uint8_t *data = image->GetImage().get();
-        Assert(data, "missing image data");
+        const uint8_t *dataPtr = image->GetImage().get();
+        Assert(dataPtr, "missing image data");
+
+        InitialData initialData;
+        if (dstComponents != srcComponents) {
+            Assertf(dstComponents > srcComponents,
+                "Unexpected LoadImage component conversion: %u to %u",
+                srcComponents,
+                dstComponents);
+            size_t pixelCount = createInfo.extent.width * createInfo.extent.height * createInfo.extent.depth;
+            size_t dataSize = pixelCount * dstComponents;
+            auto buffer = std::make_shared<uint8_t[]>(dataSize);
+            for (size_t i = 0; i < pixelCount; i++) {
+                uint32_t c = 0;
+                for (; c < srcComponents; c++) {
+                    buffer[i * dstComponents + c] = dataPtr[i * srcComponents + c];
+                }
+                for (; c < dstComponents - 1; c++) {
+                    buffer[i * dstComponents + c] = 0;
+                }
+                if (dstComponents == 4) {
+                    buffer[i * dstComponents + 3] = 0xFF;
+                }
+            }
+            initialData = {buffer.get(), dataSize, buffer};
+        } else {
+            initialData = {dataPtr, image->ByteSize(), image};
+        }
 
         ImageViewCreateInfo viewInfo = {};
         if (genMipmap) {
@@ -1547,7 +1581,7 @@ namespace sp::vulkan {
         } else {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
-        return CreateImageAndView(NewDispatchSource, createInfo, viewInfo, {data, image->ByteSize(), image});
+        return CreateImageAndView(NewDispatchSource, createInfo, viewInfo, initialData);
     }
 
     AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(color_alpha_t color) {
