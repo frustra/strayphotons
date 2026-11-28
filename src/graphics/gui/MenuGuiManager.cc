@@ -331,13 +331,14 @@ namespace sp {
 
             ImGui::PopFont();
             PushFont(GuiFont::Monospace, 25);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 15));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 16));
 
             auto audio = audioPtr.lock();
             auto graphics = graphicsPtr.lock();
 
             bool showFps = CVarShowFPS.Get();
 
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
             if (audio) {
                 ImGui::TextUnformatted("Audio Backend");
                 ImGui::TextUnformatted("Volume");
