@@ -26,17 +26,18 @@
 
 namespace sp::vulkan::renderer {
     Screenshots::Screenshots() {
-        funcs.Register<std::string, std::string>("screenshot",
-            "Save screenshot to <path>, optionally specifying an image <resource>",
-            [&](std::string path, std::string resource) {
+        funcs.Register<std::string, std::string, std::string>("screenshot",
+            "Save screenshot to <path>, optionally specifying an image <resource> + <swizzle>",
+            [&](std::string path, std::string resource, std::string swizzle) {
                 std::lock_guard lock(screenshotMutex);
-                pendingScreenshots.push_back(PendingScreenshot{path, resource, false});
+                pendingScreenshots.push_back(PendingScreenshot{path, resource, to_upper(swizzle), false});
             });
-        funcs.Register<std::string, std::string>("assert_screenshot",
-            "Save screenshot to <path>, optionally specifying an image <resource>, crash if the resource is missing",
-            [&](std::string path, std::string resource) {
+        funcs.Register<std::string, std::string, std::string>("assert_screenshot",
+            "Save screenshot to <path>, optionally specifying an image <resource> + <swizzle>, "
+            "crash if the resource is missing",
+            [&](std::string path, std::string resource, std::string swizzle) {
                 std::lock_guard lock(screenshotMutex);
-                pendingScreenshots.push_back(PendingScreenshot{path, resource, true});
+                pendingScreenshots.push_back(PendingScreenshot{path, resource, to_upper(swizzle), true});
             });
     }
 
@@ -82,7 +83,10 @@ namespace sp::vulkan::renderer {
                     for (uint32_t c = components; c < 4; c++) {
                         bitDepth[c] = bitDepth[0];
                     }
-                    if (glm::u8vec3(bitDepth) == glm::u8vec3(8)) {
+                    if (!pending.swizzle.empty() && pending.swizzle != "RGBA") {
+                        sourceID = VisualizeBuffer(graph, resource.id, ~0u, pending.swizzle);
+                        screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
+                    } else if (glm::u8vec3(bitDepth) == glm::u8vec3(8)) {
                         screenshotDesc.format = FormatFromTraits(components, 8, true);
                         if (screenshotDesc.format == vk::Format::eUndefined) {
                             if (pending.assert) {

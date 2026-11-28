@@ -52,11 +52,12 @@ namespace sp::vulkan {
     static const std::string defaultXrViewTarget = "XrView";
 
     CVar<std::string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
+    CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
+    CVar<std::string> CVarWindowViewChannels("r.WindowViewChannels",
+        "RGBA",
+        "The set of color channel to views. (up to 4 channels mapped to RGBA)");
 
     static CVar<bool> CVarMirrorXR("r.MirrorXR", false, "Mirror XR in primary window");
-
-    static CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
-
     static CVar<std::string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
@@ -236,9 +237,11 @@ namespace sp::vulkan {
                     vk::Format swapchainFormat = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                     auto format = res.ImageFormat();
                     auto layer = CVarWindowViewTargetLayer.Get();
+                    std::string swizzleStr = to_upper_copy(CVarWindowViewChannels.Get());
                     if (FormatComponentCount(format) != 4 ||
-                        FormatBitDepth(format) != FormatBitDepth(swapchainFormat) || layer != 0) {
-                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
+                        FormatBitDepth(format) != FormatBitDepth(swapchainFormat) || layer != 0 ||
+                        swizzleStr != "RGBA") {
+                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer, swizzleStr);
                     }
                     builder.Read(sourceID, Access::FragmentShaderSampleImage);
                 }
@@ -561,8 +564,11 @@ namespace sp::vulkan {
                 if (sourceID != rg::InvalidResource) {
                     auto res = builder.GetResource(sourceID);
                     auto format = res.ImageFormat();
-                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4) {
-                        sourceID = renderer::VisualizeBuffer(graph, res.id);
+                    auto layer = CVarWindowViewTargetLayer.Get();
+                    std::string swizzleStr = to_upper_copy(CVarWindowViewChannels.Get());
+                    if (FormatComponentCount(format) != 4 || FormatBitDepth(format) != glm::u8vec4(8) || layer != 0 ||
+                        swizzleStr != "RGBA") {
+                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer, swizzleStr);
                     }
                     builder.Read(sourceID, Access::TransferRead);
                 }

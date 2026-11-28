@@ -38,6 +38,8 @@ namespace sp::xr {
 
 namespace sp::vulkan {
     extern CVar<std::string> CVarWindowViewTarget;
+    extern CVar<uint32_t> CVarWindowViewTargetLayer;
+    extern CVar<std::string> CVarWindowViewChannels;
 
     class Renderer {
     public:

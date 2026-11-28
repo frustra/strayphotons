@@ -24,7 +24,7 @@ namespace sp::vulkan::renderer {
         CFuncCollection funcs;
         LockFreeMutex screenshotMutex;
         struct PendingScreenshot {
-            std::string path, resource;
+            std::string path, resource, swizzle;
             bool assert = false;
         };
         std::vector<PendingScreenshot> pendingScreenshots;

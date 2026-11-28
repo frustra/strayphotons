@@ -13,13 +13,13 @@
 
 #include <cctype>
 #include <cstdint>
+#include <string_view>
 
 namespace sp::vulkan::renderer {
-    static CVar<std::string> CVarWindowViewChannels("r.WindowViewChannels",
-        "RGB",
-        "The set of color channel to views. (up to 4 channels mapped to RGBA)");
-
-    ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32_t arrayLayer) {
+    ResourceID VisualizeBuffer(RenderGraph &graph,
+        ResourceID sourceID,
+        uint32_t arrayLayer,
+        std::string_view swizzleStr) {
         ResourceID outputID;
         graph.AddPass("VisualizeBuffer")
             .Build([&](PassBuilder &builder) {
@@ -29,7 +29,9 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eR8G8B8A8Srgb;
                 outputID = builder.OutputColorAttachment(0, "", desc, {LoadOp::DontCare, StoreOp::Store}).id;
             })
-            .Execute([sourceID, arrayLayer](Resources &resources, CommandContext &cmd) {
+            .Execute([sourceID, arrayLayer, swizzleStr = std::string(swizzleStr.empty() ? "RGBA" : swizzleStr)](
+                         Resources &resources,
+                         CommandContext &cmd) {
                 auto source = resources.GetImageView(sourceID);
                 if (source->ArrayLayers() > 1 && arrayLayer != ~0u && arrayLayer < source->ArrayLayers()) {
                     source = resources.GetImageLayerView(sourceID, arrayLayer);
@@ -55,7 +57,6 @@ namespace sp::vulkan::renderer {
 
                 auto format = source->Format();
                 uint32_t components = FormatComponentCount(format);
-                std::string swizzleStr = CVarWindowViewChannels.Get();
                 uint32_t swizzleMask = 0;
                 for (uint32_t c = 0; c < 4; c++) {
                     char ch = c < swizzleStr.size() ? std::toupper(swizzleStr[c]) : ' ';
