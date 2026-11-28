@@ -9,6 +9,7 @@
 
 #include "graphics/vulkan/core/UniqueID.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,19 +32,18 @@ namespace sp::vulkan {
     typedef std::shared_ptr<SubBuffer> SubBufferPtr;
     typedef std::shared_ptr<Image> ImagePtr;
     typedef std::shared_ptr<ImageView> ImageViewPtr;
+    typedef std::shared_ptr<vk::UniqueSemaphore> SemaphorePtr;
 
     void AssertVKSuccess(vk::Result result, std::string message);
     void AssertVKSuccess(VkResult result, std::string message);
 
-    enum QueueType { QUEUE_TYPE_GRAPHICS, QUEUE_TYPE_COMPUTE, QUEUE_TYPE_TRANSFER, QUEUE_TYPES_COUNT };
-
-    enum class CommandContextType {
-        General = QUEUE_TYPE_GRAPHICS,
-        ComputeAsync = QUEUE_TYPE_COMPUTE,
-        TransferAsync = QUEUE_TYPE_TRANSFER,
+    enum class QueueID {
+        General = 0,
+        ComputeAsync,
+        TransferAsync,
     };
 
-    enum class CommandContextScope {
+    enum class CommandContextType {
         Frame,
         Fence,
     };

@@ -10,5 +10,8 @@
 #include "Common.hh"
 
 namespace sp::vulkan::renderer {
-    ResourceID VisualizeBuffer(RenderGraph &graph, ResourceID sourceID, uint32_t arrayLayer = ~0u);
+    ResourceID VisualizeBuffer(RenderGraph &graph,
+        ResourceID sourceID,
+        uint32_t arrayLayer = ~0u,
+        std::string_view swizzleStr = "RGBA");
 } // namespace sp::vulkan::renderer

@@ -12,6 +12,7 @@
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/PerfTimer.hh"
+#include "graphics/vulkan/render_passes/Tonemap.hh"
 #include "strayphotons/Utility.hh"
 
 namespace sp::vulkan::renderer {
@@ -65,6 +66,7 @@ namespace sp::vulkan::renderer {
                 }
                 builder.Read("ExposureState", Access::FragmentShaderReadStorage);
                 builder.ReadUniform("ViewState");
+                builder.Read("ErrorColor", Access::FragmentShaderSampleImage);
 
                 builder.SetColorAttachment(0, builder.LastOutputID(), {LoadOp::Load, StoreOp::Store});
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::ReadOnly});
@@ -85,13 +87,13 @@ namespace sp::vulkan::renderer {
                     }
 
                     Screen screen;
-                    screen.texture = scene.textures.GetSinglePixelIndex(ERROR_COLOR);
+                    screen.texture = builder.GetID("ErrorColor");
                     screen.gpuData.luminanceScale = screenComp.luminanceScale;
                     screen.gpuData.quad = ent.Get<ecs::TransformSnapshot>(lock).globalPose.GetMatrix();
 
                     if (!textureName.empty()) {
                         if (!starts_with(textureName, "/")) textureName = "/" + textureName;
-                        auto resourceID = builder.GetID(textureName, false);
+                        ResourceID resourceID = builder.FindResource(textureName);
                         if (resourceID != InvalidResource) {
                             screen.texture = resourceID;
                             builder.Read(resourceID, Access::FragmentShaderSampleImage);
@@ -189,13 +191,20 @@ namespace sp::vulkan::renderer {
                             auto &resourceID = std::get<ResourceID>(screen.texture);
                             auto imageView = resources.GetImageView(resourceID);
                             if (imageView) {
+                                int32_t hdrMode = 0;
+                                auto swapchainImageView = cmd.Device().SwapchainImageView();
+                                if (swapchainImageView && imageView->Format() == swapchainImageView->Format()) {
+                                    hdrMode = (int32_t)CVarHDR.Get();
+                                }
+                                cmd.SetShaderConstant(ShaderStage::Fragment, "HDR_MODE", -hdrMode);
+                                cmd.SetShaderConstant(ShaderStage::Fragment, "WHITE_POINT", 0.5f);
                                 if (imageView->ViewType() == vk::ImageViewType::e2DArray) {
                                     cmd.SetImageView("tex", resources.GetImageLayerView(resourceID, 0));
                                 } else {
                                     cmd.SetImageView("tex", imageView);
                                 }
                             } else {
-                                cmd.SetImageView("tex", scene.textures.GetSinglePixel(ERROR_COLOR));
+                                cmd.SetImageView("tex", "ErrorColor");
                             }
                         } else {
                             cmd.SetImageView("tex", scene.textures.Get(std::get<TextureIndex>(screen.texture)));

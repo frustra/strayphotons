@@ -13,6 +13,7 @@
 #include "graphics/vulkan/core/PerfTimer.hh"
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 
@@ -78,16 +79,14 @@ namespace sp::vulkan::render_graph {
         std::vector<CommandContextPtr> pendingCmds;
         CommandContextPtr cmd;
 
-        auto submitPendingCmds = [&](bool lastSubmit) {
+        auto submitPendingCmds = [&](const DispatchSourceInfo &sourceInfo) {
             if (cmd) {
+                cmd->End();
                 pendingCmds.push_back(cmd);
                 cmd.reset();
             }
 
-            if (!pendingCmds.empty()) {
-                device.Submit({(uint32_t)pendingCmds.size(), pendingCmds.data()}, {}, {}, {}, {}, lastSubmit);
-                pendingCmds.clear();
-            }
+            if (!pendingCmds.empty()) device.Submit(sourceInfo, std::move(pendingCmds));
         };
 
         for (auto &pass : passes) {
@@ -133,8 +132,9 @@ namespace sp::vulkan::render_graph {
             }
             frameScopeStack = pass.scopes;
 
-            AddPreBarriers(cmd, pass); // creates cmd if necessary
-            if (pass.flushCommands) submitPendingCmds(false);
+            rg::ResourceName passName = resources.nameScopes[currScopeStack.back()].name + "/" + pass.name;
+            AddPreBarriers(cmd, pass, passName); // creates cmd if necessary
+            if (pass.flushCommands) submitPendingCmds(NewDispatchSource);
 
             RenderPassInfo renderPassInfo = {};
 
@@ -171,43 +171,48 @@ namespace sp::vulkan::render_graph {
                 strlen(__FILE__),
                 __FUNCTION__,
                 strlen(__FUNCTION__),
-                pass.name.data(),
-                pass.name.size(),
+                passName.data(),
+                passName.size(),
                 true);
 #endif
 
             if (pass.isRenderPass) {
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
-                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                RenderPhase phase(pass.name);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
+                GPUZoneTransient(&device, cmd, traceVkZone, passName.data(), passName.size());
+                RenderPhase phase(passName);
                 phase.StartTimer(*cmd);
                 cmd->BeginRenderPass(renderPassInfo);
                 pass.Execute(resources, *cmd);
                 cmd->EndRenderPass();
             } else if (pass.ExecutesWithDeviceContext()) {
-                RenderPhase phase(pass.name);
+                RenderPhase phase(passName);
                 if (timer) phase.StartTimer(*timer);
                 pass.Execute(resources, device);
             } else if (pass.ExecutesWithCommandContext()) {
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
-                GPUZoneTransient(&device, cmd, traceVkZone, pass.name.data(), pass.name.size());
-                RenderPhase phase(pass.name);
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
+                GPUZoneTransient(&device, cmd, traceVkZone, passName.data(), passName.size());
+                RenderPhase phase(passName);
                 phase.StartTimer(*cmd);
                 pass.Execute(resources, *cmd);
             } else {
-                Abortf("invalid render graph pass: %s", pass.name);
+                Abortf("invalid render graph pass: %s", passName);
             }
 
             if (cmd) {
-                // Preserve external image view resources until the frame is complete
                 for (auto &access : pass.accesses) {
                     auto &res = resources.resources[access.id];
-                    if (res.type == Resource::Type::Image && res.externalResource) {
+                    if (res.type == Resource::Type::Image) {
                         auto view = resources.GetImageView(access.id);
-                        if (!view || view->IsSwapchain()) continue;
-                        device.PushInFlightObject(view, cmd->Fence());
+                        if (!view) continue;
+                        if (view->IsSwapchain()) {
+                            cmd->ImageBarrier(view->Image(),
+                                vk::ImageLayout::ePresentSrcKHR,
+                                vk::PipelineStageFlagBits::eBottomOfPipe,
+                                {});
+                        }
                     }
                 }
+                cmd->End();
                 pendingCmds.push_back(std::move(cmd));
             }
             cmd.reset();
@@ -224,58 +229,40 @@ namespace sp::vulkan::render_graph {
         }
         futureDependencies[resources.frameIndex].clear();
 
-        submitPendingCmds(true);
+        submitPendingCmds(NewDispatchSource);
         AdvanceFrame();
     }
 
-    void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass) {
+    void RenderGraph::AddPreBarriers(CommandContextPtr &cmd, Pass &pass, std::string_view passName) {
         ZoneScoped;
         for (auto &access : pass.accesses) {
             auto nextAccess = access.access;
             if (nextAccess == Access::None || nextAccess >= Access::AccessTypesCount) continue;
-            auto &next = GetAccessInfo(nextAccess);
 
-            auto &res = resources.resources[access.id];
-            Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", access.id);
+            std::vector<Resource> &resList = resources.resources;
+            ResourceID accessId = access.id;
+            while (accessId < resList.size() && resList[accessId].type == Resource::Type::Alias) {
+                accessId = resList[accessId].AliasID();
+            }
+            Assertf(accessId < resList.size(),
+                "Pass %s references missing resource via alias %s",
+                passName,
+                access.id < resources.resourceNames.size() ? resources.resourceNames[access.id] : "<invalid>");
+            Resource &res = resList[accessId];
+            Assertf(res.type != Resource::Type::Undefined, "undefined resource access %d", accessId);
 
             if (res.type == Resource::Type::Image) {
-                auto view = resources.GetImageView(access.id);
-                if (!view || view->IsSwapchain()) continue; // barrier handled by RenderPass implicitly
+                auto view = resources.GetImageView(accessId);
 
-                auto &image = view->Image();
-                auto lastAccess = image->LastAccess();
-                if (next.imageLayout == vk::ImageLayout::eUndefined && lastAccess == Access::None) continue;
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
 
-                auto last = GetAccessInfo(lastAccess);
-                if (last.stageMask == vk::PipelineStageFlags(0)) last.stageMask = vk::PipelineStageFlagBits::eTopOfPipe;
-                if (nextAccess == Access::ColorAttachmentWrite) last.imageLayout = vk::ImageLayout::eUndefined;
-
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
-
-                cmd->ImageBarrier(image,
-                    last.imageLayout,
-                    next.imageLayout,
-                    last.stageMask,
-                    last.accessMask,
-                    next.stageMask,
-                    next.accessMask);
-
-                image->SetAccess(Access::None, nextAccess);
+                cmd->AcquireImage(view->Image(), nextAccess);
             } else if (res.type == Resource::Type::Buffer) {
-                auto buffer = resources.GetBuffer(access.id);
-                auto lastAccess = buffer->LastAccess();
-                buffer->SetAccess(Access::None, nextAccess);
+                auto buffer = resources.GetBuffer(accessId);
 
-                if (nextAccess == Access::HostWrite) continue;
-                if (lastAccess == Access::None) continue;
+                if (!cmd) cmd = device.GetFrameCommandContext(passName, &resources);
 
-                if (!cmd) cmd = device.GetFrameCommandContext(resources);
-
-                auto last = GetAccessInfo(lastAccess);
-                vk::MemoryBarrier barrier;
-                barrier.srcAccessMask = last.accessMask;
-                barrier.dstAccessMask = next.accessMask;
-                cmd->Raw().pipelineBarrier(last.stageMask, next.stageMask, {}, {barrier}, {}, {});
+                cmd->AcquireBuffer(buffer, nextAccess);
             }
         }
     }
@@ -295,6 +282,10 @@ namespace sp::vulkan::render_graph {
 
     ResourceID RenderGraph::AddImageView(std::string_view name, ImageViewPtr view) {
         return resources.AddExternalImageView(name, view);
+    }
+
+    ResourceID RenderGraph::AddBuffer(std::string_view name, BufferPtr buffer) {
+        return resources.AddExternalBuffer(name, buffer);
     }
 
     std::vector<RenderGraph::PooledImageInfo> RenderGraph::AllImages() {

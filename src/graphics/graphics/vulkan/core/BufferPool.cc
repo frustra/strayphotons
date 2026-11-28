@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,8 +7,9 @@
 
 #include "BufferPool.hh"
 
-#include "console/CVar.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+
+#include <thread>
 
 namespace sp::vulkan {
 
@@ -21,6 +22,16 @@ namespace sp::vulkan {
 
             entry.unusedFrames = 0;
             bufferList.pending.push_back(entry);
+            Assertf(entry.ptr->ByteSize() == desc.layout.size,
+                "BufferPool reused buffer size missmatch: %llu != expected %llu",
+                entry.ptr->ByteSize(),
+                desc.layout.size);
+            entry.ptr->arrayStride = desc.layout.arrayStride;
+            entry.ptr->arrayCount = desc.layout.arrayCount;
+            entry.ptr->callThread = std::this_thread::get_id();
+            entry.ptr->lastQueueId.reset();
+            entry.ptr->lastCommand.reset();
+            entry.ptr->SetAccess(Access::None);
             return entry.ptr;
         }
 
@@ -90,8 +101,8 @@ namespace sp::vulkan {
         if (!any) return;
 
         for (auto &[key, ent] : stats) {
-            Logf("%s\n%llu count allocated, %llu count free, %llu count pending free\n%llu bytes allocated, %llu bytes "
-                 "free, %llu bytes pending free",
+            Logf("BufferPool stats: %s\n%llu count allocated, %llu count free, %llu count pending free\n%llu bytes "
+                 "allocated, %llu bytes free, %llu bytes pending free",
                 vk::to_string(vk::MemoryPropertyFlags(key)),
                 ent.allocated.count,
                 ent.free.count,

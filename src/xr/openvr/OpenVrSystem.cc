@@ -68,7 +68,7 @@ namespace sp::xr {
             Tracef("OpenVrSystem initialized");
             vrSystem = std::shared_ptr<vr::IVRSystem>(vrSystemPtr, [this](auto *ptr) {
                 Logf("Shutting down OpenVR");
-                context->WaitIdle();
+                context->WaitIdle(NewDispatchSource);
                 // TODO: FIX SHUTDOWN CRASH!
                 // There is a race-condition here:
                 // - The renderer may begin a new frame before the xr system is fully destroyed
@@ -179,8 +179,8 @@ namespace sp::xr {
         vulkanData.m_pDevice = device->Device();
         vulkanData.m_pPhysicalDevice = device->PhysicalDevice();
         vulkanData.m_pInstance = device->Instance();
-        vulkanData.m_pQueue = device->GetQueue(vulkan::CommandContextType::General);
-        vulkanData.m_nQueueFamilyIndex = device->QueueFamilyIndex(vulkan::CommandContextType::General);
+        vulkanData.m_pQueue = device->GetQueue(vulkan::QueueID::General);
+        vulkanData.m_nQueueFamilyIndex = device->QueueFamilyIndex(vulkan::QueueID::General);
 
         auto image = imageView->Image();
         Assert(image->ArrayLayers() == 2, "image must have 2 array layers");

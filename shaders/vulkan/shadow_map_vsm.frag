@@ -16,11 +16,12 @@ layout(location = 0) out vec4 outLinearDepth;
 
 #include "../lib/types_common.glsl"
 
-INCLUDE_LAYOUT(binding = 0)
-#include "lib/view_states_uniform.glsl"
+layout(binding = 0) uniform LightViews {
+    ViewState lightViews[];
+};
 
 void main() {
-    float depth = LinearDepth(inViewPos, views[0].clip);
+    float depth = LinearDepth(inViewPos, lightViews[0].clip);
 
     float dx = dFdx(depth);
     float dy = dFdy(depth);

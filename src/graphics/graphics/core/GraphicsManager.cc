@@ -7,6 +7,7 @@
 
 #include "GraphicsManager.hh"
 
+#include "common/RegisteredThread.hh"
 #include "common/Tracing.hh"
 #include "console/CVar.hh"
 #include "ecs/EcsImpl.hh"
@@ -15,11 +16,14 @@
 #include "game/CGameContext.hh"
 #include "game/Game.hh"
 #include "game/GameLogic.hh"
+#include "game/SceneManager.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "gui/MenuGuiManager.hh"
 #include "gui/OverlayGuiManager.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 
+#include <cctype>
 #include <cxxopts.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <iostream>
@@ -30,15 +34,17 @@ namespace sp {
         "player:flatview",
         "The entity with a View component to display");
 
-    static CVar<uint32_t> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
+    CVar<uint32_t> CVarMaxFPS("r.MaxFPS", 144, "wait between frames to target this framerate (0 to disable)");
 
     GraphicsManager::GraphicsManager(Game &game)
         : RegisteredThread("RenderThread", CVarMaxFPS.Get(), true), game(game) {
         if (game.options.count("window-size")) {
             std::istringstream ss(game.options["window-size"].as<std::string>());
             glm::ivec2 size = glm::ivec2(0);
-            ss >> size.x >> size.y;
-
+            ss >> size.x;
+            char sep = 'x';
+            if (!std::isspace(ss.peek())) ss >> sep;
+            ss >> size.y;
             if (size.x > 0 && size.y > 0) {
                 CVarWindowSize.Set(size);
             }
@@ -100,7 +106,7 @@ namespace sp {
             windowGuiContext.reset();
             menuGui.reset();
             profilerGui.reset();
-            context->WaitIdle();
+            context->WaitIdle(NewDispatchSource);
             context.reset();
         }
     }
@@ -161,6 +167,10 @@ namespace sp {
         return true;
     }
 
+    bool GraphicsManager::RequiresReset() const {
+        return context && context->RequiresReset();
+    }
+
     GenericCompositor &GraphicsManager::GetCompositor() {
         return context->GetCompositor();
     }
@@ -172,7 +182,13 @@ namespace sp {
     bool GraphicsManager::PreFrame() {
         ZoneScoped;
         if (!HasActiveContext()) return false;
-        if (context->RequiresReset()) return false;
+        if (context->RequiresReset()) {
+            GetSceneManager().PreloadSceneGraphics([&](auto lock, auto scene) {
+                // Prevent SceneManager locking up when graphics has halted.
+                return true;
+            });
+            return false;
+        }
 
         return context->BeginFrame();
     }
@@ -190,22 +206,18 @@ namespace sp {
 
     void GraphicsManager::PostFrame(bool stepMode) {
         auto maxFPS = CVarMaxFPS.Get();
-        if (maxFPS > 0) {
-            interval = std::chrono::nanoseconds((int64_t)(1e9 / maxFPS));
-        } else {
-            interval = std::chrono::nanoseconds(0);
-        }
+        interval = std::chrono::nanoseconds(maxFPS > 0 ? (int64_t)(1e9 / maxFPS) : 0);
 
         if (!HasActiveContext()) return;
 
         context->SwapBuffers();
 
         FrameMark;
-        context->EndFrame();
+        context->EndFrame(stepMode);
 
         if (stepMode) {
             // Wait for graphics queue to complete so GPU readback is deterministic
-            context->WaitIdle();
+            context->WaitIdle(NewDispatchSource);
         }
     }
 } // namespace sp

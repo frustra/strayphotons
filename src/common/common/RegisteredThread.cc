@@ -97,6 +97,7 @@ namespace sp {
                                 if (traceFrames) FrameMarkStart(threadName);
                                 this->Frame();
                                 if (traceFrames) FrameMarkEnd(threadName);
+                                this->PostFrame(true);
                                 stepCount++;
                             }
                             stepCount.notify_all();
@@ -107,7 +108,7 @@ namespace sp {
                             if (traceFrames) FrameMarkEnd(threadName);
                             this->PostFrame(false);
                         }
-                        // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());fpsMeasuredTime
+                        // Logf("[%s] Allocations per frame: %llu", threadName, SampleAllocationCount());
                         fpsCounter++;
                     }
 

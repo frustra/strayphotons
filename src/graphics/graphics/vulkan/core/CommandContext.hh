@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Pipeline.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/Util.hh"
@@ -19,6 +20,7 @@
 #include <memory>
 #include <robin_hood.h>
 #include <string_view>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 
 namespace sp::vulkan::CommandContextFlags {
@@ -69,18 +71,20 @@ namespace sp::vulkan {
     public:
         using DirtyFlags = CommandContextFlags::DirtyFlags;
 
+        CommandContext(DeviceContext &device, vk::CommandPool pool, QueueID queueId, CommandContextType type);
         CommandContext(DeviceContext &device,
             vk::UniqueCommandBuffer cmd,
-            CommandContextType type,
-            CommandContextScope scope) noexcept;
+            QueueID queueId,
+            CommandContextType type) noexcept;
         ~CommandContext();
+
+        QueueID GetQueueID() {
+            return queueId;
+        }
 
         CommandContextType GetType() {
             return type;
         }
-
-        // A CommandContext MUST be submitted to the device or abandoned before destroying the object.
-        void Abandon();
 
         void Reset();
         void BeginRenderPass(const RenderPassInfo &info);
@@ -444,34 +448,7 @@ namespace sp::vulkan {
             vk::DeviceSize offset = 0,
             vk::DeviceSize range = 0);
 
-        // Buffer is stored in a pool for this frame, and reused in later frames.
-        BufferPtr AllocUniformBuffer(uint32_t set, uint32_t binding, vk::DeviceSize size);
-        BufferPtr AllocUniformBuffer(std::string_view bindingName, vk::DeviceSize size);
-
-        // Returns a CPU mapped pointer to the GPU buffer, valid at least until the CommandContext is submitted
-        template<typename T>
-        T *AllocUniformData(uint32_t set, uint32_t binding, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            return static_cast<T *>(buffer->Mapped());
-        }
-
-        template<typename T>
-        void UploadUniformData(uint32_t set, uint32_t binding, const T *data, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(set, binding, sizeof(T) * count);
-            buffer->CopyFrom(data, count);
-        }
-
-        template<typename T>
-        void UploadUniformData(std::string_view bindingName, const T *data, uint32_t count = 1) {
-            auto buffer = AllocUniformBuffer(bindingName, sizeof(T) * count);
-            buffer->CopyFrom(data, count);
-        }
-
         void SetBindlessDescriptors(uint32_t set, vk::DescriptorSet descriptorSet);
-
-        bool WritesToSwapchain() {
-            return writesToSwapchain;
-        }
 
         bool IsCompute() const {
             return pipelineInput.state.shaders[ShaderStage::Compute] > 0;
@@ -490,16 +467,22 @@ namespace sp::vulkan {
             return device;
         }
 
-        vk::Fence Fence();
+        const std::shared_ptr<vk::UniqueFence> &Fence();
+
+        void AcquireImage(const ImagePtr &image, Access nextAccess);
+        void AcquireBuffer(const BufferPtr &buffer, Access nextAccess);
+        void AcquireBuffer(const SubBufferPtr &buffer, Access nextAccess);
+
+        void End();
 
     protected:
-        friend class DeviceContext;
         void Begin(render_graph::Resources *resources = nullptr);
-        void End();
 
         vk::UniqueCommandBuffer &RawRef() {
             return cmd;
         }
+
+        friend class DeviceContext;
 
     private:
         void SetSingleShader(ShaderStage stage, ShaderHandle handle);
@@ -535,14 +518,14 @@ namespace sp::vulkan {
         }
 
         DeviceContext &device;
+        std::weak_ptr<CommandContext> handle;
         vk::UniqueCommandBuffer cmd;
+        QueueID queueId;
         CommandContextType type;
-        CommandContextScope scope;
         render_graph::Resources *resources;
 
-        vk::UniqueFence fence;
-
-        bool recording = false, abandoned = false;
+        std::shared_ptr<vk::UniqueFence> fence;
+        std::atomic_bool recording, submitted;
 
         YDirection viewportYDirection = YDirection::Up;
         std::array<vk::Rect2D, MAX_VIEWPORTS> viewports;
@@ -558,12 +541,19 @@ namespace sp::vulkan {
 
         std::shared_ptr<RenderPass> renderPass;
         std::shared_ptr<Framebuffer> framebuffer;
-        bool writesToSwapchain = false;
 
         DirtyFlags dirty;
         uint32_t dirtyDescriptorSets = 0;
 
         ShaderDataBindings shaderData;
         std::array<vk::DescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> bindlessSets;
+
+        std::vector<ImagePtr> acquiredImages;
+        std::vector<BufferPtr> acquiredBuffers;
+        std::vector<ImageViewPtr> activeImageViews;
+        std::vector<SemaphorePtr> waitSemaphores, signalSemaphores;
+        std::vector<vk::PipelineStageFlags> waitStages;
+
+        friend class UniqueMemory;
     };
 } // namespace sp::vulkan

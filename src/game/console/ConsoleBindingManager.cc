@@ -10,6 +10,7 @@
 #include "console/Console.hh"
 #include "ecs/EcsImpl.hh"
 #include "ecs/ScriptImpl.hh"
+#include "ecs/SignalExpression.hh"
 #include "ecs/components/Events.hh"
 #include "game/Scene.hh"
 #include "game/SceneManager.hh"
@@ -76,6 +77,8 @@ namespace sp {
                 bindings.Unbind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
 
                 auto &binding = bindings.Bind(eventName, consoleInputEntity, ACTION_EVENT_RUN_COMMAND);
+                // TODO: Add syntax for key up/down edges
+                binding.actions.filterExpr = ecs::SignalExpression("event");
                 binding.actions.setValue = command;
             }
         } else {

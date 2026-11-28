@@ -11,14 +11,18 @@ layout(binding = 0) uniform sampler2D tex;
 layout(location = 0) in vec2 inTexCoord;
 layout(location = 0) out vec4 outFragColor;
 
-// 2 bits per channel
+// 2 bits per channel swizzle
 // 0bAABBGGRR
 // RR=0, GG=1, BB=2, AA=3 => rgba = rgba
-layout(constant_id = 0) const uint SWIZZLE = 0xE4;
+// 1 bit per channel mask
+// 0b0000ABGR
+layout(constant_id = 0) const uint SWIZZLE_MASK = 0x0FE4;
 
 void main() {
+    const vec4 clearColor = vec4(0, 0, 0, 1);
     vec4 value = texture(tex, inTexCoord);
-    for (uint i = 0; i < 4; i++) {
-        outFragColor[i] = value[(SWIZZLE & (3 << (2 * i))) >> (2 * i)];
-    }
+    outFragColor = vec4(mix(clearColor[SWIZZLE_MASK & 0x3], value[SWIZZLE_MASK & 0x3], bool(SWIZZLE_MASK & 0x0100)),
+        mix(clearColor[(SWIZZLE_MASK & 0xC) >> 2], value[(SWIZZLE_MASK & 0xC) >> 2], bool(SWIZZLE_MASK & 0x0200)),
+        mix(clearColor[(SWIZZLE_MASK & 0x30) >> 4], value[(SWIZZLE_MASK & 0x30) >> 4], bool(SWIZZLE_MASK & 0x0400)),
+        mix(clearColor[(SWIZZLE_MASK & 0xC0) >> 6], value[(SWIZZLE_MASK & 0xC0) >> 6], bool(SWIZZLE_MASK & 0x0800)));
 }

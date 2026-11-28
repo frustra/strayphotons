@@ -106,7 +106,8 @@ SP_EXPORT bool sp_graphics_handle_input_frame(sp_graphics_ctx_t *graphics) {
 }
 
 SP_EXPORT void sp_graphics_step_thread(sp_graphics_ctx_t *graphics, unsigned int count) {
-    Assertf(graphics != nullptr, "sp_graphics_step_thread called with null graphics");
+    Assert(graphics != nullptr, "sp_graphics_step_thread called with null graphics");
+    Assert(!graphics->RequiresReset(), "sp_graphics_step_thread: Graphics device requires reset");
     graphics->Step(count);
 }
 

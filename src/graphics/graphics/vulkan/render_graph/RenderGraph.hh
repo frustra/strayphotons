@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Pass.hh"
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
@@ -125,6 +126,8 @@ namespace sp::vulkan::render_graph {
         void EndScope();
 
         ResourceID AddImageView(std::string_view name, ImageViewPtr view);
+        ResourceID AddBuffer(std::string_view name, BufferPtr buffer);
+        ResourceID AddBuffer(std::string_view name, SubBufferPtr buffer);
 
         void RequireResource(std::string_view name) {
             ResourceID id = resources.GetID(name);
@@ -140,7 +143,7 @@ namespace sp::vulkan::render_graph {
 
         struct PooledImageInfo {
             ResourceName name;
-            ImageDesc desc;
+            ImageDesc desc = {};
         };
         std::vector<PooledImageInfo> AllImages();
 
@@ -164,7 +167,7 @@ namespace sp::vulkan::render_graph {
 
     private:
         friend class InitialPassState;
-        void AddPreBarriers(CommandContextPtr &cmd, Pass &pass);
+        void AddPreBarriers(CommandContextPtr &cmd, Pass &pass, std::string_view passName);
         void AdvanceFrame();
 
         void UpdateLastOutput(const Pass &pass) {

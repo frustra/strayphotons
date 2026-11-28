@@ -17,24 +17,24 @@ namespace sp::vulkan::renderer {
         if (id == InvalidResource) id = graph.LastOutputID();
         graph.AddPass("Mipmap")
             .Build([&](rg::PassBuilder &builder) {
-                builder.Write(id, Access::TransferWrite);
-                builder.Read(id, Access::TransferRead);
+                builder.Read(id, Access::TransferReadWrite);
             })
             .Execute([id](rg::Resources &resources, CommandContext &cmd) {
                 const auto &image = resources.GetImageView(id)->Image();
+                // Image starts as eTransferDstOptimal
 
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
-                transferMips.baseMipLevel = 1;
+                transferMips.baseMipLevel = 0;
                 transferMips.mipLevelCount = 1;
 
                 cmd.ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
                     vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    {},
+                    vk::ImageLayout::eTransferSrcOptimal,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
                     transferMips);
 
                 vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
@@ -74,7 +74,7 @@ namespace sp::vulkan::renderer {
                 }
 
                 // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
+                image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
             });
     }
 } // namespace sp::vulkan::renderer

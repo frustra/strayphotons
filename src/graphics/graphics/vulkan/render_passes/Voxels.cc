@@ -62,14 +62,18 @@ namespace sp::vulkan::renderer {
         uint16_t _padding1[1];
         float16_t normal[3];
         uint16_t _padding2[1];
+        uint32_t _padding[2];
     };
+    static_assert(sizeof(GPUVoxelFragment) % 16 == 0, "Device minStorageBufferOffsetAlignment == 16");
 
     struct GPUVoxelFragmentList {
         uint32_t count;
         uint32_t capacity;
         uint32_t offset;
         VkDispatchIndirectCommand cmd;
+        uint32_t _padding[2];
     };
+    static_assert(sizeof(GPUVoxelFragmentList) % 16 == 0, "Device minStorageBufferOffsetAlignment == 16");
 
     Voxels::Voxels(GPUScene &scene) : scene(scene) {
         funcs.Register("printgraphics", "Print graphics debug information", [this]() {
@@ -273,6 +277,16 @@ namespace sp::vulkan::renderer {
                 }
             });
 
+        graph.AddPass("UpdateVoxelViews")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("VoxelViewState", {sizeof(GPUViewState), 3});
+            })
+            .Execute([orthoAxes](rg::Resources &resources, DeviceContext &device) {
+                GPUViewState viewStates[] = {{orthoAxes[0]}, {orthoAxes[1]}, {orthoAxes[2]}};
+                auto viewStateBuf = resources.GetBuffer("VoxelViewState");
+                viewStateBuf->CopyFrom(viewStates, 3);
+            });
+
         graph.AddPass("Fill")
             .Build([&](rg::PassBuilder &builder) {
                 builder.Write("FillCounters", Access::FragmentShaderWrite);
@@ -286,16 +300,17 @@ namespace sp::vulkan::renderer {
 
                 builder.ReadUniform("VoxelState");
                 builder.ReadUniform("LightState");
+                builder.Read("VoxelViewState", Access::VertexShaderReadUniform);
                 builder.Read("ShadowMap/Linear", Access::FragmentShaderSampleImage);
 
                 builder.Write("FragmentListMetadata", Access::FragmentShaderWrite);
                 builder.Write("FragmentLists", Access::FragmentShaderWrite);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawID.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawID.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
-
             .Execute([this, drawID, orthoAxes, voxelFillIndex](rg::Resources &resources, CommandContext &cmd) {
                 ImageDesc desc = {};
                 desc.extent = vk::Extent3D(std::max(voxelGridSize.x, voxelGridSize.z),
@@ -319,8 +334,7 @@ namespace sp::vulkan::renderer {
 
                 cmd.SetShaders("voxel_fill.vert", "voxel_fill.frag");
 
-                GPUViewState lightViews[] = {{orthoAxes[0]}, {orthoAxes[1]}, {orthoAxes[2]}};
-                cmd.UploadUniformData("ViewStates", lightViews, 3);
+                cmd.SetUniformBuffer("ViewStates", "VoxelViewState");
 
                 std::array<vk::Rect2D, 3> viewports, scissors;
                 for (size_t i = 0; i < viewports.size(); i++) {
@@ -407,6 +421,7 @@ namespace sp::vulkan::renderer {
                     builder.Write("Radiance", Access::ComputeShaderWrite);
                     builder.Write("Normals", Access::ComputeShaderWrite);
 
+                    builder.Read("VoxelState", Access::ComputeShaderReadUniform);
                     builder.Read("FillCounters", Access::ComputeShaderReadStorage);
                     builder.Read("FragmentListMetadata", Access::IndirectBuffer);
                     builder.Read("FragmentListMetadata", Access::ComputeShaderReadStorage);

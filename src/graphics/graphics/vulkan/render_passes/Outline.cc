@@ -20,13 +20,14 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 builder.ReadUniform("ViewState");
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
             })
             .Execute([drawIDs, scene = &scene](Resources &resources, CommandContext &cmd) {
-                cmd.SetShaders("scene.vert", "solid_color.frag");
+                cmd.SetShaders("scene.vert", "noop.frag");
                 cmd.PushConstants(glm::vec4(1, 1, 0.5, 0.2));
                 cmd.SetUniformBuffer("ViewStates", "ViewState");
                 cmd.SetDepthTest(false, false);
@@ -50,6 +51,7 @@ namespace sp::vulkan::renderer {
             .Build([&](PassBuilder &builder) {
                 builder.ReadUniform("ViewState");
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 

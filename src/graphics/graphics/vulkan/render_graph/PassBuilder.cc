@@ -7,6 +7,8 @@
 
 #include "PassBuilder.hh"
 
+#include "graphics/vulkan/core/Access.hh"
+#include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/Logging.hh"
 
@@ -30,7 +32,7 @@ namespace sp::vulkan::render_graph {
         pass.AddFutureRead(thisFrameID, access, framesAgo);
 
         auto prevFrameID = resources.GetID(name, framesAgo);
-        if (prevFrameID != InvalidResource) pass.AddAccess(prevFrameID, access);
+        if (FindResource(prevFrameID) != InvalidResource) pass.AddAccess(prevFrameID, access);
         return prevFrameID;
     }
 
@@ -71,7 +73,7 @@ namespace sp::vulkan::render_graph {
     void PassBuilder::SetColorAttachment(uint32_t index, ResourceID id, const AttachmentInfo &info) {
         Resource *res = resources.GetResourcePtr(id);
         Assert(res && res->type == Resource::Type::Image, "SetColorAttachment resource must be a render target");
-        Write(id, Access::ColorAttachmentReadWrite);
+        Write(id, info.loadOp == LoadOp::Load ? Access::ColorAttachmentReadWrite : Access::ColorAttachmentWrite);
         SetAttachment(index, id, info);
     }
 
@@ -87,8 +89,10 @@ namespace sp::vulkan::render_graph {
     }
 
     void PassBuilder::SetDepthAttachment(ResourceID id, const AttachmentInfo &info) {
-        if (info.loadOp == LoadOp::Load && (info.storeOp == StoreOp::DontCare || info.storeOp == StoreOp::ReadOnly)) {
+        if (info.loadOp == LoadOp::Load && info.storeOp != StoreOp::Store) {
             Read(id, Access::DepthStencilAttachmentRead);
+        } else if (info.loadOp == LoadOp::Load) {
+            Write(id, Access::DepthStencilAttachmentReadWrite);
         } else {
             Write(id, Access::DepthStencilAttachmentWrite);
         }
@@ -114,7 +118,7 @@ namespace sp::vulkan::render_graph {
         DebugZoneScoped;
         Assert(layout.size > 0, "can't create a buffer of size 0");
 
-        BufferDesc desc;
+        BufferDesc desc = {};
         desc.layout = layout;
         desc.residency = residency;
         Resource resource(desc);

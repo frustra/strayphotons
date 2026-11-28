@@ -53,6 +53,7 @@ struct FragmentListMetadata {
     uint capacity;
     uint offset;
     VkDispatchIndirectCommand cmd;
+    uint _padding[2];
 };
 
 layout(std430, binding = 7) buffer VoxelFragmentListMetadata {

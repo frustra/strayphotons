@@ -22,20 +22,25 @@
 
 #else
 
-    #define GPUZone(device, commandContext, name) \
-        TracyVkZone(device->GetTracyContext((commandContext)->GetType()), (commandContext)->Raw(), name)
+    #define GPUZone(device, commandContext, name)                                   \
+        TracyVkNamedZone((device)->GetTracyContext((commandContext)->GetQueueID()), \
+            ___tracy_gpu_zone,                                                      \
+            (commandContext)->Raw(),                                                \
+            name,                                                                   \
+            (device)->GetTracyContext((commandContext)->GetQueueID()) != nullptr)
 
     // Used when there are multiple GPU zones in the same scope
-    #define GPUZoneNamed(device, commandContext, varname, name)                \
-        TracyVkNamedZone(device->GetTracyContext((commandContext)->GetType()), \
-            varname,                                                           \
-            (commandContext)->Raw(),                                           \
-            name,                                                              \
-            true)
+    #define GPUZoneNamed(device, commandContext, varname, name)                     \
+        TracyVkNamedZone((device)->GetTracyContext((commandContext)->GetQueueID()), \
+            varname,                                                                \
+            (commandContext)->Raw(),                                                \
+            name,                                                                   \
+            (device)->GetTracyContext((commandContext)->GetQueueID()) != nullptr)
 
-    #define GPUZoneInitializer(device, commandContext, name, nameLen)                                               \
-        (device)->GetTracyContext((commandContext)->GetType()), __LINE__, __FILE__, strlen(__FILE__), __FUNCTION__, \
-            strlen(__FUNCTION__), name, nameLen, (commandContext)->Raw(), true
+    #define GPUZoneInitializer(device, commandContext, name, nameLen)                                                  \
+        (device)->GetTracyContext((commandContext)->GetQueueID()), __LINE__, __FILE__, strlen(__FILE__), __FUNCTION__, \
+            strlen(__FUNCTION__), name, nameLen, (commandContext)->Raw(),                                              \
+            (device)->GetTracyContext((commandContext)->GetQueueID()) != nullptr
 
     // Used when the name is a runtime const char *
     #define GPUZoneTransient(device, commandContext, varname, name, nameLen) \

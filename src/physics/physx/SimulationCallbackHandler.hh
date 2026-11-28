@@ -7,12 +7,15 @@
 
 #pragma once
 
+#include "ecs/EventQueue.hh"
+
 #include <PxSimulationEventCallback.h>
+#include <vector>
 
 namespace sp {
     using namespace physx;
 
-    class SimulationCallbackHandler : public PxSimulationEventCallback {
+    class SimulationCallbackHandler final : public PxSimulationEventCallback {
     public:
         SimulationCallbackHandler() {}
 
@@ -30,5 +33,10 @@ namespace sp {
             PxPairFlags &pairFlags,
             const void *constantBlock,
             PxU32 constantBlockSize);
+
+        void SendPendingEvents();
+
+    private:
+        std::vector<std::pair<ecs::EntityRef, ecs::Event>> pendingEvents;
     };
 } // namespace sp

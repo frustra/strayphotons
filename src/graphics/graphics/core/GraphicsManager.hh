@@ -8,6 +8,7 @@
 #pragma once
 
 #include "common/RegisteredThread.hh"
+#include "console/CVar.hh"
 #include "ecs/Ecs.hh"
 #include "ecs/EntityRef.hh"
 #include "graphics/MeshGenerator.hh"
@@ -35,6 +36,8 @@ namespace sp {
     class GuiContext;
     class ProfilerGui;
 
+    extern CVar<uint32_t> CVarMaxFPS;
+
     class GraphicsManager final : public RegisteredThread, public MeshGenerator {
         LogOnExit logOnExit = "Graphics shut down ====================================================";
 
@@ -51,6 +54,7 @@ namespace sp {
         void StopThread();
         bool HasActiveContext();
         bool InputFrame();
+        bool RequiresReset() const;
 
         GenericCompositor &GetCompositor();
 

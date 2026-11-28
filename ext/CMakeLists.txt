@@ -1,12 +1,10 @@
 #
-# Stray Photons - Copyright (C) 2025 Jacob Wirth & Justine Li
+# Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
 #
 # This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 # If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 
-# Downgrade external packages to C++17
-set(CMAKE_CXX_STANDARD 17)
 # Force minimum policy version to 3.10 for compatibility with CMake 4.0+
 set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
 

@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,27 +7,26 @@
 
 #pragma once
 
+#include "common/ObjectPool.hh"
 #include "graphics/core/GraphicsContext.hh"
 #include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/BufferPool.hh"
-#include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/RenderPass.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/RenderGraph.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/EnumTypes.hh"
 #include "strayphotons/Hashing.hh"
-#include "strayphotons/HeapString.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <atomic>
-#include <limits>
 #include <memory>
 #include <robin_hood.h>
 #include <string>
 #include <string_view>
-#include <variant>
 #include <vector>
 
 namespace tracy {
@@ -46,7 +45,7 @@ namespace sp {
 } // namespace sp
 
 namespace sp::vulkan {
-    const uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+    const uint32_t MAX_FRAMES_IN_FLIGHT = 4;
 
     class DescriptorPool;
     class PerfTimer;
@@ -66,6 +65,8 @@ namespace sp::vulkan {
         DeviceContext(Game &game);
         virtual ~DeviceContext();
 
+        void CreateDevice();
+
         // Access the underlying Vulkan device via the arrow operator
         vk::Device *operator->() {
             return &Device();
@@ -83,18 +84,18 @@ namespace sp::vulkan {
             return instance;
         }
 
-        vk::Queue &GetQueue(CommandContextType type) {
-            return queues[QueueType(type)];
+        vk::Queue &GetQueue(QueueID queueId) {
+            Assertf((uint32_t)queueId < queues.size(),
+                "DeviceContext::GetQueue invalid queue id: %u",
+                (uint32_t)queueId);
+            return queues[queueId].queue;
         }
 
         // Potential GraphicsContext function implementations
         bool BeginFrame() override;
         void SwapBuffers() override;
-        void EndFrame() override;
-        void WaitIdle() override {
-            ZoneScoped;
-            if (!deviceResetRequired) device->waitIdle();
-        }
+        void EndFrame(bool stepMode) override;
+        void WaitIdle(const DispatchSourceInfo &sourceInfo) override;
         bool RequiresReset() const override {
             return deviceResetRequired;
         }
@@ -113,26 +114,15 @@ namespace sp::vulkan {
 
         // Returns a CommandContext that can be recorded and submitted within the current frame.
         // The each frame's CommandPool will be reset at the beginning of the frame.
-        CommandContextPtr GetFrameCommandContext(render_graph::Resources &resources,
-            CommandContextType type = CommandContextType::General);
+        CommandContextPtr GetFrameCommandContext(std::string_view passName, render_graph::Resources *resources);
 
         // Returns a CommandContext that can be recorded on any thread, and isn't reset until its fence is signalled.
-        CommandContextPtr GetFencedCommandContext(CommandContextType type = CommandContextType::General);
+        CommandContextPtr GetFencedCommandContext(const DispatchSourceInfo &sourceInfo,
+            QueueID queueId = QueueID::General);
 
         // Releases *cmd back to the DeviceContext and resets cmd
-        void Submit(CommandContextPtr &cmd,
-            vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
-            vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
-            vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
-            vk::Fence fence = {},
-            bool lastSubmit = false);
-
-        void Submit(vk::ArrayProxyNoTemporaries<CommandContextPtr> cmds,
-            vk::ArrayProxy<const vk::Semaphore> signalSemaphores = {},
-            vk::ArrayProxy<const vk::Semaphore> waitSemaphores = {},
-            vk::ArrayProxy<const vk::PipelineStageFlags> waitStages = {},
-            vk::Fence fence = {},
-            bool lastSubmit = false);
+        void Submit(const DispatchSourceInfo &sourceInfo, const CommandContextPtr &cmd);
+        void Submit(const DispatchSourceInfo &sourceInfo, std::vector<CommandContextPtr> &&cmds);
 
         BufferPtr AllocateBuffer(BufferLayout layout, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
         BufferPtr AllocateBuffer(vk::BufferCreateInfo bufferInfo, VmaAllocationCreateInfo allocInfo);
@@ -147,36 +137,35 @@ namespace sp::vulkan {
             return buf;
         }
 
-        AsyncPtr<Buffer> CreateUploadBuffer(const InitialData &data,
+        AsyncPtr<Buffer> CreateUploadBuffer(const DispatchSourceInfo &sourceInfo,
+            const InitialData &data,
             vk::BufferUsageFlags usage = vk::BufferUsageFlagBits::eTransferSrc);
-        AsyncPtr<Buffer> CreateBuffer(const InitialData &data,
+        AsyncPtr<Buffer> CreateBuffer(const DispatchSourceInfo &sourceInfo,
+            const InitialData &data,
             vk::BufferCreateInfo bufferInfo,
             VmaAllocationCreateInfo allocInfo);
-        AsyncPtr<Buffer> CreateBuffer(const InitialData &data, vk::BufferUsageFlags usage, VmaMemoryUsage residency);
+        AsyncPtr<Buffer> CreateBuffer(const DispatchSourceInfo &sourceInfo,
+            const InitialData &data,
+            vk::BufferUsageFlags usage,
+            VmaMemoryUsage residency);
         BufferPtr GetBuffer(const BufferDesc &desc);
-
-        struct BufferTransfer {
-            BufferTransfer() {}
-
-            template<typename Src, typename Dst>
-            BufferTransfer(const Src &src, const Dst &dst) : src(src), dst(dst) {}
-
-            std::variant<BufferPtr, SubBufferPtr> src;
-            std::variant<BufferPtr, SubBufferPtr> dst;
-        };
-        AsyncPtr<void> TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch);
 
         ImagePtr AllocateImage(vk::ImageCreateInfo info,
             VmaMemoryUsage residency,
             vk::ImageUsageFlags declaredUsage = {});
-        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const InitialData &initialData = {});
-        AsyncPtr<Image> CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer);
-        AsyncPtr<Image> UpdateImage(const AsyncPtr<Image> &dstImage,
-            const AsyncPtr<Buffer> &srcData,
-            bool updateMipmap = true);
-        AsyncPtr<Image> UpdateImageMipmap(const AsyncPtr<Image> &image);
+        AsyncPtr<Image> CreateImage(const DispatchSourceInfo &sourceInfo,
+            ImageCreateInfo createInfo,
+            const InitialData &initialData = {});
+        AsyncPtr<Image> CreateImage(const DispatchSourceInfo &sourceInfo,
+            ImageCreateInfo createInfo,
+            const AsyncPtr<Buffer> &uploadBuffer);
+        AsyncPtr<Image> UpdateImage(const DispatchSourceInfo &sourceInfo,
+            const AsyncPtr<Image> &dstImage,
+            const AsyncPtr<Buffer> &srcData);
+        AsyncPtr<Image> UpdateImageMipmap(const DispatchSourceInfo &sourceInfo, const AsyncPtr<Image> &image);
         ImageViewPtr CreateImageView(ImageViewCreateInfo info);
-        AsyncPtr<ImageView> CreateImageAndView(const ImageCreateInfo &imageInfo,
+        AsyncPtr<ImageView> CreateImageAndView(const DispatchSourceInfo &sourceInfo,
+            const ImageCreateInfo &imageInfo,
             const ImageViewCreateInfo &viewInfo, // image field is filled in automatically
             const InitialData &data = {});
         ImageViewPtr SwapchainImageView();
@@ -203,12 +192,6 @@ namespace sp::vulkan {
         // Bindless descriptor sets stay allocated until the DeviceContext shuts down.
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
-        SharedHandle<vk::Fence> GetEmptyFence();
-        std::shared_ptr<vk::UniqueSemaphore> GetEmptySemaphore(vk::Fence inUseUntilFence);
-
-        using TemporaryObject = std::variant<BufferPtr, ImagePtr, ImageViewPtr, std::shared_ptr<vk::UniqueSemaphore>>;
-        void PushInFlightObject(TemporaryObject object, vk::Fence fence);
-
         const vk::PhysicalDeviceLimits &Limits() const {
             return selectedDeviceProperties.properties.limits;
         }
@@ -224,11 +207,14 @@ namespace sp::vulkan {
         }
 
 #ifdef TRACY_ENABLE_GRAPHICS
-        tracy::VkCtx *GetTracyContext(CommandContextType type);
+        tracy::VkCtx *GetTracyContext(QueueID queueId);
 #endif
 
-        uint32_t QueueFamilyIndex(CommandContextType type) const {
-            return queueFamilyIndex[QueueType(type)];
+        uint32_t QueueFamilyIndex(QueueID queueId) const {
+            Assertf((uint32_t)queueId < queues.size(),
+                "DeviceContext::QueueFamilyIndex invalid queue id: %u",
+                (uint32_t)queueId);
+            return queues[queueId].queueFamilyIndex;
         }
 
         void *Win32WindowHandle() override;
@@ -239,12 +225,13 @@ namespace sp::vulkan {
         VkDebugUtilsMessageTypeFlagsEXT disabledDebugMessages = 0;
 #endif
 
-        void FlushMainQueue(bool blockUntilReady = true) {
-            frameEndQueue.Flush(blockUntilReady);
-        }
+        void FlushAllocatorQueue();
 
         template<typename CallbackFn>
-        AsyncPtr<void> ExecuteAfterFence(const DispatchSourceInfo &sourceInfo, vk::Fence fence, CallbackFn &&callback) {
+        AsyncPtr<void> ExecuteAfterFence(const DispatchSourceInfo &sourceInfo,
+            const std::shared_ptr<vk::UniqueFence> &fence,
+            CallbackFn &&callback) {
+            Assertf(fence, "ExecuteAfterFence called with null fence");
             AsyncPtr<void> fenceReady = std::make_shared<Async<void>>();
             pendingFences.emplace_back(fenceReady, fence);
             return frameBeginQueue.Dispatch<void>(sourceInfo,
@@ -256,7 +243,7 @@ namespace sp::vulkan {
 
         template<typename CallbackFn>
         void ExecuteAfterFrameFence(const DispatchSourceInfo &sourceInfo, CallbackFn &&callback) {
-            ExecuteAfterFence(sourceInfo, *Frame().inFlightFence, std::forward<CallbackFn>(callback));
+            ExecuteAfterFence(sourceInfo, Frame().inFlightFence, std::forward<CallbackFn>(callback));
         }
 
         PerfTimer *GetPerfTimer() const {
@@ -269,19 +256,23 @@ namespace sp::vulkan {
 
         void SetOutputExtents(uint32_t width, uint32_t height);
 
+        SemaphorePtr GetEmptySemaphore() {
+            return semaphorePool->Get();
+        }
+
     private:
         void CreateSwapchain();
         void CreateTestPipeline();
         void RecreateSwapchain();
 
         void PrepareResourcesForFrame();
+        void SubmitInternal(std::span<const CommandContextPtr> cmds);
 
         std::shared_ptr<Shader> CreateShader(const std::string &name, Hash64 compareHash);
 
         Game &game;
         GraphicsManager &graphics;
 
-        std::thread::id mainThread;
         std::thread::id renderThread;
 
         vk::Instance instance;
@@ -295,31 +286,33 @@ namespace sp::vulkan {
         std::unique_ptr<PerfTimer> perfTimer;
         std::shared_ptr<ProfilerGui> profilerGui;
 
+        std::unique_ptr<PipelineManager> pipelinePool;
+        std::unique_ptr<RenderPassManager> renderPassPool;
+        std::unique_ptr<FramebufferManager> framebufferPool;
+        std::unique_ptr<ObjectPool<vk::UniqueSemaphore>> semaphorePool;
+
+        std::shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
+
+        struct Queue {
+            vk::Queue queue;
+            uint32_t queueFamilyIndex = ~0u;
+            uint32_t indexInFamily = ~0u;
+            uint32_t lastSubmit = 0;
+        };
+        EnumArray<Queue, QueueID> queues;
+
 #ifdef TRACY_ENABLE_GRAPHICS
         struct {
             std::vector<vk::UniqueCommandPool> cmdPools;
             std::vector<vk::UniqueCommandBuffer> cmdBuffers;
-            std::vector<tracy::VkCtx *> tracyContexts;
+            EnumArray<tracy::VkCtx *, QueueID> tracyContexts;
         } tracing;
 #endif
-
-        std::unique_ptr<HandlePool<vk::Fence>> fencePool;
-        std::unique_ptr<HandlePool<vk::Semaphore>> semaphorePool;
-        std::unique_ptr<PipelineManager> pipelinePool;
-        std::unique_ptr<RenderPassManager> renderPassPool;
-        std::unique_ptr<FramebufferManager> framebufferPool;
-
-        std::shared_ptr<DescriptorPool> bindlessImageSamplerDescriptorPool;
-
-        std::array<vk::Queue, QUEUE_TYPES_COUNT> queues;
-        std::array<uint32_t, QUEUE_TYPES_COUNT> queueFamilyIndex;
-        std::array<uint32_t, QUEUE_TYPES_COUNT> queueLastSubmit;
-        vk::Extent3D imageTransferGranularity;
 
         vk::UniqueSwapchainKHR swapchain;
 
         struct SwapchainImageContext {
-            vk::Fence inFlightFence; // points at a fence owned by FrameContext
+            SemaphorePtr submitCompleteSemaphore;
             ImageViewPtr imageView;
         };
 
@@ -327,48 +320,15 @@ namespace sp::vulkan {
         std::vector<SwapchainImageContext> swapchainImageContexts;
         uint32_t swapchainImageIndex = 0;
 
-        SwapchainImageContext &SwapchainImage() {
-            return swapchainImageContexts[swapchainImageIndex];
-        }
-
-        struct CommandContextPool {
-            vk::UniqueCommandPool commandPool;
-            std::vector<CommandContextPtr> list;
-            size_t nextIndex = 0;
-        };
-
-        struct InFlightObject {
-            TemporaryObject object;
-            vk::Fence fence;
-        };
-
-        struct PooledBuffer {
-            BufferPtr buffer;
-            vk::DeviceSize size;
-            bool used;
-        };
-
-        struct FrameContext {
-            vk::UniqueSemaphore imageAvailableSemaphore, renderCompleteSemaphore;
-            vk::UniqueFence inFlightFence;
-
-            // Stores all command contexts created for this frame, so they can be reused in later frames
-            std::array<CommandContextPool, QUEUE_TYPES_COUNT> commandContexts;
-
-            std::vector<InFlightObject> inFlightObjects;
-        };
-
-        std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
-        uint32_t frameIndex = 0;
-
-        FrameContext &Frame() {
-            return frameContexts[frameIndex];
-        }
+        SwapchainImageContext &SwapchainImage();
 
         struct ThreadContext {
-            std::array<vk::UniqueCommandPool, QUEUE_TYPES_COUNT> commandPools;
-            std::array<std::unique_ptr<HandlePool<CommandContextPtr>>, QUEUE_TYPES_COUNT> commandContexts;
-            std::array<std::vector<SharedHandle<CommandContextPtr>>, QUEUE_TYPES_COUNT> pendingCommandContexts;
+            struct Queue {
+                vk::UniqueCommandPool commandPool;
+                std::unique_ptr<ObjectPool<CommandContext>> commandContexts;
+                std::vector<CommandContextPtr> pendingCommandContexts;
+            };
+            EnumArray<Queue, QueueID> queues;
 
             std::unique_ptr<BufferPool> bufferPool;
             std::atomic_bool printBufferStats;
@@ -380,11 +340,24 @@ namespace sp::vulkan {
 
         std::atomic_uint32_t nextThreadIndex = 0;
 
-        ThreadContext &Thread() {
-            thread_local size_t threadIndex = nextThreadIndex.fetch_add(1);
-            Assert(threadIndex < threadContexts.size(), "ran out of thread contexts");
-            return *threadContexts[threadIndex];
-        }
+        ThreadContext &Thread();
+
+        struct FrameContext {
+            SemaphorePtr imageAvailableSemaphore;
+            std::shared_ptr<vk::UniqueFence> inFlightFence;
+            bool fenceInUse = false;
+
+            // Stores all command contexts created for this frame, so they can be reused in later frames
+            vk::UniqueCommandPool commandPool;
+            std::vector<CommandContextPtr> commandContexts;
+            size_t nextIndex = 0;
+        };
+
+        std::array<FrameContext, MAX_FRAMES_IN_FLIGHT> frameContexts;
+        uint32_t maxFramesInFlight = MAX_FRAMES_IN_FLIGHT;
+        uint32_t frameIndex = 0;
+
+        FrameContext &Frame();
 
         robin_hood::unordered_map<std::string, ShaderHandle, StringHash, StringEqual> shaderHandles;
         std::vector<std::shared_ptr<Shader>> shaders; // indexed by ShaderHandle minus 1
@@ -404,13 +377,15 @@ namespace sp::vulkan {
         uint32_t frameCounter = 0, frameCounterThisSecond = 0;
         std::atomic_uint32_t measuredFrameRate;
 
-        std::vector<std::pair<AsyncPtr<void>, vk::Fence>> pendingFences;
-        DispatchQueue frameBeginQueue, frameEndQueue, allocatorQueue;
+        std::vector<std::pair<AsyncPtr<void>, std::shared_ptr<vk::UniqueFence>>> pendingFences;
+        DispatchQueue frameBeginQueue, allocatorQueue, submitQueue;
 
         std::unique_ptr<CFuncCollection> funcs;
 
         rg::RenderGraph graph;
         std::unique_ptr<vulkan::Compositor> compositor;
         std::shared_ptr<vulkan::Renderer> vkRenderer;
+
+        friend class CommandContext;
     };
 } // namespace sp::vulkan

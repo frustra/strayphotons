@@ -13,12 +13,14 @@
 #include "ecs/components/VoxelData.hh"
 #include "game/Game.hh"
 #include "game/SceneManager.hh"
+#include "graphics/core/GraphicsManager.hh"
 #include "graphics/vulkan/Compositor.hh"
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
@@ -35,11 +37,13 @@
 #include "graphics/vulkan/scene/VertexLayouts.hh"
 #include "gui/GuiContext.hh"
 #include "strayphotons/Async.hh"
+#include "strayphotons/DispatchQueue.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
 #include "xr/XrSystem.hh"
 
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -48,11 +52,12 @@ namespace sp::vulkan {
     static const std::string defaultXrViewTarget = "XrView";
 
     CVar<std::string> CVarWindowViewTarget("r.WindowView", defaultWindowViewTarget, "Primary window's render target");
+    CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
+    CVar<std::string> CVarWindowViewChannels("r.WindowViewChannels",
+        "RGBA",
+        "The set of color channel to views. (up to 4 channels mapped to RGBA)");
 
     static CVar<bool> CVarMirrorXR("r.MirrorXR", false, "Mirror XR in primary window");
-
-    static CVar<uint32_t> CVarWindowViewTargetLayer("r.WindowViewTargetLayer", 0, "Array layer to view");
-
     static CVar<std::string> CVarXrViewTarget("r.XrView", defaultXrViewTarget, "HMD's render target");
 
     static CVar<bool> CVarSMAA("r.SMAA", true, "Enable SMAA");
@@ -72,7 +77,7 @@ namespace sp::vulkan {
     }
 
     Renderer::~Renderer() {
-        if (!device.RequiresReset()) device->waitIdle();
+        if (!device.RequiresReset()) device.WaitIdle(NewDispatchSource);
     }
 
     void Renderer::AttachWindow(const std::shared_ptr<GuiContext> &context) {
@@ -84,6 +89,8 @@ namespace sp::vulkan {
     }
 
     void Renderer::RenderFrame(chrono_clock::duration elapsedTime) {
+        frameStart = chrono_clock::now();
+
         if (CVarMirrorXR.Changed()) {
             bool mirrorXR = CVarMirrorXR.Get(true);
             CVarWindowViewTarget.Set(mirrorXR ? CVarXrViewTarget.Get() : defaultWindowViewTarget);
@@ -181,10 +188,12 @@ namespace sp::vulkan {
 
         if (!logoTex) {
             logoTex = device.LoadAssetImage("logos/splash.png", true);
-            device.FlushMainQueue();
+            device.FlushAllocatorQueue();
+            Assert(logoTex->Ready(), "Splash logo failed to load");
         }
 
         graph.AddImageView("WindowFinalOutput", swapchainImage);
+        graph.AddImageView("SplashLogo", logoTex->Get());
 
         rg::ResourceID guiResourceID = rg::InvalidResource;
         if (activeGuiContext) {
@@ -215,42 +224,43 @@ namespace sp::vulkan {
 
                 rg::ResourceName sourceName = CVarWindowViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
-                sourceID = builder.GetID(sourceName, false);
+                sourceID = builder.FindResource(sourceName);
                 if (sourceID == rg::InvalidResource && sourceName != "/" + defaultWindowViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultWindowViewTarget);
                     CVarWindowViewTarget.Set(defaultWindowViewTarget);
-                    sourceID = builder.GetID("/" + defaultWindowViewTarget, false);
+                    sourceID = builder.FindResource("/" + defaultWindowViewTarget);
                 }
 
-                auto loadOp = LoadOp::DontCare;
-
                 if (sourceID != rg::InvalidResource) {
-                    auto res = builder.GetResource(sourceID);
+                    rg::Resource res = builder.GetResource(sourceID);
+                    ImageViewPtr swapchainView = device.SwapchainImageView();
+                    vk::Format swapchainFormat = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                     auto format = res.ImageFormat();
                     auto layer = CVarWindowViewTargetLayer.Get();
-                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4 || layer != 0) {
-                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
+                    std::string swizzleStr = to_upper_copy(CVarWindowViewChannels.Get());
+                    if (FormatComponentCount(format) != 4 ||
+                        FormatBitDepth(format) != FormatBitDepth(swapchainFormat) || layer != 0 ||
+                        swizzleStr != "RGBA") {
+                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer, swizzleStr);
                     }
                     builder.Read(sourceID, Access::FragmentShaderSampleImage);
-                } else {
-                    loadOp = LoadOp::Clear;
                 }
                 if (guiResourceID != rg::InvalidResource) {
                     builder.Read(guiResourceID, Access::FragmentShaderSampleImage);
                 }
-                builder.SetColorAttachment(0, "WindowFinalOutput", {loadOp, StoreOp::Store});
+                builder.Read("SplashLogo", Access::FragmentShaderSampleImage);
+                builder.SetColorAttachment(0, "WindowFinalOutput", {LoadOp::Clear, StoreOp::Store});
             })
             .Execute([this, sourceID, guiResourceID](rg::Resources &resources, CommandContext &cmd) {
+                cmd.SetBlending(true);
                 if (sourceID != rg::InvalidResource) {
                     auto view = resources.GetImageView(sourceID);
                     cmd.DrawScreenCover(view);
                     if (view) device.SetOutputExtents(view->GetWidth(), view->GetHeight());
-                } else if (logoTex->Ready()) {
-                    cmd.SetBlending(true);
-                    cmd.DrawScreenCover(logoTex->Get());
+                } else {
+                    cmd.DrawScreenCover(resources.GetImageView("SplashLogo"));
                 }
                 if (guiResourceID != rg::InvalidResource) {
-                    cmd.SetBlending(true);
                     // GUI outputs premultiplied alpha
                     cmd.SetBlendFunc(vk::BlendFactor::eOne,
                         vk::BlendFactor::eOneMinusSrcAlpha,
@@ -279,6 +289,12 @@ namespace sp::vulkan {
                 AddDeferredPasses(lock, view, elapsedTime);
                 renderer::AddCrosshair(graph); // TODO: Move to HUD gui effects
             }
+            graph.AddPass("ImageBarrier")
+                .Build([&](rg::PassBuilder &builder) {
+                    builder.Read(builder.LastOutputID(), Access::FragmentShaderSampleImage);
+                    builder.RequirePass();
+                })
+                .Execute([](rg::Resources &resources, DeviceContext &device) {});
         }
 
         if (game.xr) {
@@ -307,7 +323,7 @@ namespace sp::vulkan {
         }
         graph.AddPass("UpdateView")
             .Build([&](rg::PassBuilder &builder) {
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * 2);
+                builder.CreateUniform("ViewState", {sizeof(GPUViewState), 2});
             })
             .Execute([view](rg::Resources &resources, DeviceContext &device) {
                 GPUViewState viewState[] = {{view}, {}};
@@ -341,6 +357,7 @@ namespace sp::vulkan {
                 builder.ReadPreviousFrame("/MarchingCubes/IndexBuffer", Access::IndirectBuffer);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
@@ -359,9 +376,12 @@ namespace sp::vulkan {
                 auto vertexBuffer = resources.GetBuffer(vertexID);
                 auto indexBuffer = resources.GetBuffer(indexID);
                 if (vertexBuffer && indexBuffer) {
+                    Assert(indexBuffer->IsAcquired(cmd), "bindIndexBuffer called without acquiring index buffer first");
                     cmd.Raw().bindIndexBuffer(*indexBuffer,
                         sizeof(VkDrawIndexedIndirectCommand),
                         vk::IndexType::eUint32);
+                    Assert(vertexBuffer->IsAcquired(cmd),
+                        "bindVertexBuffers called without acquiring vertex buffer first");
                     cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                     cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
                 }
@@ -460,6 +480,26 @@ namespace sp::vulkan {
         auto drawIDs = scene.GenerateSortedDrawsForView(graph, viewPos, viewsByEye[ecs::XrEye::Left].visibilityMask);
         if (!drawIDs) return {};
 
+        graph.AddPass("UpdateView")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("ViewState", {sizeof(GPUViewState), viewsByEye.size()});
+            })
+            .Execute([this, viewsByEye](rg::Resources &resources, DeviceContext &device) {
+                EnumArray<GPUViewState, ecs::XrEye> gpuViews;
+                for (auto &eye : magic_enum::enum_values<ecs::XrEye>()) {
+                    auto view = viewsByEye[eye];
+                    auto i = (size_t)eye;
+
+                    if (this->game.xr && this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
+                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
+                    }
+
+                    gpuViews[eye] = GPUViewState(view);
+                }
+                auto viewStateBuf = resources.GetBuffer("ViewState");
+                viewStateBuf->CopyFrom(gpuViews.data(), gpuViews.size());
+            });
+
         graph.AddPass("ForwardPass")
             .Build([&](rg::PassBuilder &builder) {
                 rg::ImageDesc desc = {};
@@ -478,13 +518,14 @@ namespace sp::vulkan {
 
                 builder.SetDepthAttachment("GBufferDepthStencil", {LoadOp::Load, StoreOp::Store});
 
-                builder.CreateUniform("ViewState", sizeof(GPUViewState) * viewsByEye.size());
+                builder.Read("ViewState", Access::VertexShaderReadUniform);
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
-            .Execute([this, viewsByEye, drawIDs](rg::Resources &resources, CommandContext &cmd) {
+            .Execute([this, drawIDs](rg::Resources &resources, CommandContext &cmd) {
                 cmd.SetShaders("scene.vert", "generate_gbuffer.frag");
 
                 cmd.SetStencilTest(true);
@@ -492,28 +533,12 @@ namespace sp::vulkan {
                 cmd.SetStencilCompareMask(vk::StencilFaceFlagBits::eFrontAndBack, 1);
                 cmd.SetStencilReference(vk::StencilFaceFlagBits::eFrontAndBack, 1);
 
-                auto viewStateBuf = resources.GetBuffer("ViewState");
-                cmd.SetUniformBuffer("ViewStates", viewStateBuf);
+                cmd.SetUniformBuffer("ViewStates", "ViewState");
 
                 scene.DrawSceneIndirect(cmd,
                     resources.GetBuffer("WarpedVertexBuffer"),
                     resources.GetBuffer(drawIDs.drawCommandsBuffer),
                     resources.GetBuffer(drawIDs.drawParamsBuffer));
-
-                GPUViewState *viewState;
-                viewStateBuf->Map((void **)&viewState);
-                for (auto &eye : magic_enum::enum_values<ecs::XrEye>()) {
-                    auto view = viewsByEye[eye];
-                    auto i = (size_t)eye;
-
-                    if (this->game.xr && this->game.xr->GetPredictedViewPose(eye, this->xrRenderPoses[i])) {
-                        view.SetInvViewMat(view.invViewMat * this->xrRenderPoses[i]);
-                    }
-
-                    viewState[i] = GPUViewState(view);
-                }
-                viewStateBuf->Unmap();
-                viewStateBuf->Flush();
             });
         return viewsByEye[ecs::XrEye::Left];
     }
@@ -529,18 +554,21 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 rg::ResourceName sourceName = CVarXrViewTarget.Get();
                 if (!sourceName.empty() && !starts_with(sourceName, "/")) sourceName = "/" + sourceName;
-                sourceID = builder.GetID(sourceName, false);
+                sourceID = builder.FindResource(sourceName);
                 if (sourceID == rg::InvalidResource && sourceName != "/" + defaultXrViewTarget) {
                     Errorf("image %s does not exist, defaulting to %s", sourceName, defaultXrViewTarget);
                     CVarXrViewTarget.Set(defaultXrViewTarget);
-                    sourceID = builder.GetID("/" + defaultXrViewTarget, false);
+                    sourceID = builder.FindResource("/" + defaultXrViewTarget);
                 }
 
                 if (sourceID != rg::InvalidResource) {
                     auto res = builder.GetResource(sourceID);
                     auto format = res.ImageFormat();
-                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4) {
-                        sourceID = renderer::VisualizeBuffer(graph, res.id);
+                    auto layer = CVarWindowViewTargetLayer.Get();
+                    std::string swizzleStr = to_upper_copy(CVarWindowViewChannels.Get());
+                    if (FormatComponentCount(format) != 4 || FormatBitDepth(format) != glm::u8vec4(8) || layer != 0 ||
+                        swizzleStr != "RGBA") {
+                        sourceID = renderer::VisualizeBuffer(graph, res.id, layer, swizzleStr);
                     }
                     builder.Read(sourceID, Access::TransferRead);
                 }
@@ -603,6 +631,12 @@ namespace sp::vulkan {
             return complete;
         });
 
-        scene.Flush();
+        auto targetTime = game.graphics->interval;
+        auto lastFrameTime = chrono_clock::now() - frameStart;
+        auto timeLimit = std::clamp<chrono_clock::duration>(targetTime - std::min(targetTime, lastFrameTime),
+            std::chrono::microseconds(500),
+            std::chrono::milliseconds(5));
+        scene.Flush(timeLimit);
+        frameStart = chrono_clock::now();
     }
 } // namespace sp::vulkan

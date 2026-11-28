@@ -39,6 +39,7 @@ namespace sp::vulkan::renderer {
                 builder.ReadUniform("VoxelState");
 
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
 

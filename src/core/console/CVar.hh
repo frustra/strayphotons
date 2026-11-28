@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,11 +7,14 @@
 
 #pragma once
 
+#include "magic_enum.hpp"
 #include "strayphotons/StreamOverloads.hh"
+#include "strayphotons/Utility.hh"
 
 #include <atomic>
 #include <mutex>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 namespace sp {
@@ -86,9 +89,29 @@ namespace sp {
 
     template<typename VarType>
     class CVar : public CVarBase {
+    private:
+        static inline std::string appendEnumDescription(const std::string &description) {
+            if constexpr (std::is_enum<VarType>()) {
+                std::stringstream ss;
+                bool first = true;
+                ss << " (";
+                for (const VarType &v : magic_enum::enum_values<VarType>()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        ss << ", ";
+                    }
+                    ss << magic_enum::enum_underlying(v) << ": " << magic_enum::enum_name(v);
+                }
+                ss << ")";
+                return description + ss.str();
+            }
+            return description;
+        }
+
     public:
         CVar(const std::string &name, const VarType &initial, const std::string &description)
-            : CVarBase(name, description), value(initial) {
+            : CVarBase(name, appendEnumDescription(description)), value(initial) {
             this->Register();
         }
 
@@ -113,15 +136,41 @@ namespace sp {
 
         std::string StringValue() {
             std::stringstream out;
-            out << value;
+            if constexpr (std::is_enum<VarType>()) {
+                out << static_cast<std::underlying_type_t<VarType>>(value);
+                out << " (" << magic_enum::enum_name(value) << ")";
+            } else {
+                out << value;
+            }
             return out.str();
+        }
+
+        static inline VarType FromString(const std::string &strValue) {
+            if constexpr (std::is_enum<VarType>()) {
+                std::string lowerInput = to_lower_copy(strValue);
+                for (const auto &[enumValue, enumName] : magic_enum::enum_entries<VarType>()) {
+                    if (lowerInput == to_lower_copy(enumName)) {
+                        return enumValue;
+                    }
+                }
+                std::underlying_type_t<VarType> v;
+                std::stringstream in(strValue);
+                in >> v;
+                auto optValue = magic_enum::enum_cast<VarType>(v);
+                if (optValue) return *optValue;
+                return {};
+            } else {
+                VarType v;
+                std::stringstream in(strValue);
+                in >> v;
+                return v;
+            }
         }
 
         void SetFromString(const std::string &newValue) {
             if (newValue.size() == 0) return;
 
-            std::stringstream in(newValue);
-            in >> value;
+            value = FromString(newValue);
             dirty = true;
         }
 
@@ -156,9 +205,7 @@ namespace sp {
                 var = VarType();
             }
         } else if (count == 1) {
-            std::stringstream in(str_values[0]);
-            VarType v;
-            in >> v;
+            VarType v = CVar<VarType>::FromString(str_values[0]);
             if (var == v) {
                 var = VarType();
             } else {
@@ -168,10 +215,7 @@ namespace sp {
             std::vector<VarType> values(count);
             size_t target = count - 1;
             for (size_t i = 0; i < count && i <= target; i++) {
-                std::stringstream in(str_values[i]);
-                VarType v;
-                in >> v;
-                values[i] = v;
+                values[i] = CVar<VarType>::FromString(str_values[i]);
                 if (var == values[i]) {
                     target = (i + 1) % count;
                 }

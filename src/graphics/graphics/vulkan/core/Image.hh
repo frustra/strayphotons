@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -9,9 +9,11 @@
 
 #include "graphics/core/Texture.hh"
 #include "graphics/vulkan/core/Access.hh"
-#include "graphics/vulkan/core/HandlePool.hh"
 #include "graphics/vulkan/core/Memory.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
+#include "vulkan/vulkan.hpp"
+
+#include <memory>
 
 namespace sp::vulkan {
     enum class LoadOp {
@@ -64,24 +66,32 @@ namespace sp::vulkan {
         }
     };
 
-    class Image : public UniqueMemory {
+    class Image final : public UniqueMemory {
     public:
         Image();
         ~Image();
 
         // Allocates storage for the image, destructor destroys image
-        Image(vk::ImageCreateInfo imageInfo,
+        static ImagePtr New(vk::ImageCreateInfo imageInfo,
             VmaAllocationCreateInfo allocInfo,
             VmaAllocator allocator,
             vk::ImageUsageFlags declaredUsage);
 
         // Creates an image reference, destructor does not destroy the image
-        Image(vk::Image image, vk::Format format, vk::Extent3D extent, uint32_t mipLevels = 1, uint32_t arrayLayers = 1)
-            : UniqueMemory(VK_NULL_HANDLE), image(image), format(format), extent(extent), mipLevels(mipLevels),
-              arrayLayers(arrayLayers) {}
+        static ImagePtr New(vk::Image image,
+            vk::Format format,
+            vk::Extent3D extent,
+            uint32_t mipLevels = 1,
+            uint32_t arrayLayers = 1);
 
-        Image(vk::Image image, vk::Format format, vk::Extent2D extent, uint32_t mipLevels = 1, uint32_t arrayLayers = 1)
-            : Image(image, format, vk::Extent3D(extent, 1)) {}
+        // Creates an image reference, destructor does not destroy the image
+        static ImagePtr New(vk::Image image,
+            vk::Format format,
+            vk::Extent2D extent,
+            uint32_t mipLevels = 1,
+            uint32_t arrayLayers = 1) {
+            return New(image, format, vk::Extent3D(extent, 1), mipLevels, arrayLayers);
+        }
 
         vk::Image operator*() const {
             return image;
@@ -107,14 +117,6 @@ namespace sp::vulkan {
             return arrayLayers;
         }
 
-        vk::ImageLayout LastLayout() const {
-            return lastLayout;
-        }
-
-        Access LastAccess() const {
-            return lastAccess;
-        }
-
         vk::ImageUsageFlags Usage() const {
             return usage;
         }
@@ -125,38 +127,20 @@ namespace sp::vulkan {
             return declaredUsage;
         }
 
-        uint32_t LastQueueFamily() const {
-            return lastQueueFamilyIndex;
-        }
-
-        const vk::Semaphore &SetPendingCommand(std::shared_ptr<vk::UniqueSemaphore> pendingCmd,
-            uint32_t queueFamilyIndex) {
-            static const vk::Semaphore emptySemaphore = {};
-            pendingCommand = pendingCmd;
-            if (queueFamilyIndex != VK_QUEUE_FAMILY_IGNORED) lastQueueFamilyIndex = queueFamilyIndex;
-            return pendingCommand ? pendingCommand->get() : emptySemaphore;
-        }
-
-        const vk::Semaphore &GetWaitSemaphore(uint32_t queueFamilyIndex = ~0u) {
-            static const vk::Semaphore emptySemaphore = {};
-            if (lastQueueFamilyIndex == queueFamilyIndex && queueFamilyIndex != ~0u) return emptySemaphore;
-            return pendingCommand ? pendingCommand->get() : emptySemaphore;
-        }
-
-        void SetLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
-        void SetAccess(Access oldAccess, Access newAccess);
+        vk::ImageLayout LastLayout() const;
+        void SetLayout(vk::ImageLayout newLayout);
 
     private:
+        std::weak_ptr<Image> handle;
         vk::Image image;
         vk::Format format;
         vk::Extent3D extent;
         uint32_t mipLevels = 0, arrayLayers = 0;
         vk::ImageLayout lastLayout = vk::ImageLayout::eUndefined;
-        Access lastAccess = Access::None;
         vk::ImageUsageFlags usage = {}, declaredUsage = {};
 
-        uint32_t lastQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        std::shared_ptr<vk::UniqueSemaphore> pendingCommand;
+        friend class DeviceContext;
+        friend class CommandContext;
     };
 
     struct ImageViewCreateInfo {
@@ -254,6 +238,7 @@ namespace sp::vulkan {
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32_t FormatComponentCount(vk::Format format);
     uint32_t FormatByteSize(vk::Format format);
+    glm::u8vec4 FormatBitDepth(vk::Format format);
     bool FormatIsSRGB(vk::Format format);
     vk::Format FormatSRGBToUnorm(vk::Format format);
     uint32_t CalculateMipmapLevels(vk::Extent3D extent);

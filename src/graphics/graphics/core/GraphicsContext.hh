@@ -27,6 +27,23 @@ namespace sp {
     extern CVar<glm::vec2> CVarWindowScale;
     extern CVar<bool> CVarWindowFullscreen;
 
+    enum class SwapchainColorSpace : uint32_t {
+        SDR = 0,
+        sRGB,
+        esRGB,
+        DisplayP3,
+        DCIP3,
+        BT709,
+        ST2084,
+        HLG,
+        AdobeRGB,
+        Passthrough,
+        DisplayNativeAMD,
+    };
+    extern CVar<SwapchainColorSpace> CVarHDR;
+    extern CVar<float> CVarHDRExposreScale;
+    extern CVar<glm::vec3> CVarWhitePoint;
+
     class GraphicsContext {
     public:
         GraphicsContext() {}
@@ -35,8 +52,8 @@ namespace sp {
         // Skips frame if false is returned
         virtual bool BeginFrame() = 0;
         virtual void SwapBuffers() = 0;
-        virtual void EndFrame() = 0;
-        virtual void WaitIdle() {}
+        virtual void EndFrame(bool stepMode) = 0;
+        virtual void WaitIdle(const DispatchSourceInfo &sourceInfo) {}
         virtual bool RequiresReset() const {
             return false;
         }

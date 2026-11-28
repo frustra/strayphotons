@@ -28,6 +28,14 @@ namespace sp::vulkan::render_graph {
         Resource GetResource(std::string_view name) const {
             return resources.GetResource(GetID(name), true);
         }
+        ResourceID FindResource(ResourceID id) const {
+            Resource *res = resources.GetResourcePtr(id, true);
+            if (!res) return InvalidResource;
+            return res->id;
+        }
+        ResourceID FindResource(std::string_view name) const {
+            return FindResource(GetID(name, false));
+        }
 
         void Read(ResourceID id, Access access);
         ResourceID Read(std::string_view name, Access access);
@@ -64,8 +72,8 @@ namespace sp::vulkan::render_graph {
         Resource CreateBuffer(BufferLayout layout, Residency residency, Access access);
         Resource CreateBuffer(std::string_view name, BufferLayout layout, Residency residency, Access access);
 
-        Resource CreateUniform(std::string_view name, size_t size) {
-            return CreateBuffer(name, size, Residency::CPU_TO_GPU, Access::HostWrite);
+        Resource CreateUniform(std::string_view name, BufferLayout layout) {
+            return CreateBuffer(name, layout, Residency::CPU_TO_GPU, Access::HostWrite);
         }
 
         const ResourceName &GetName(ResourceID id) const {

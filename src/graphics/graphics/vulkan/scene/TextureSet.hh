@@ -90,6 +90,8 @@ namespace sp::vulkan {
         void AddGraphTextures(rg::RenderGraph &graph);
         void Flush();
 
+        bool Ready();
+
     private:
         void ReleaseTexture(TextureIndex i);
         TextureIndex AllocateTextureIndex();
@@ -99,6 +101,7 @@ namespace sp::vulkan {
         HeapVector<ImageViewPtr> texturesPendingDelete;
 
         HeapVector<TextureIndex> freeTextureIndexes;
+        HeapVector<TextureIndex> texturesPendingLoad;
         HeapVector<TextureIndex> texturesToFlush;
         vk::DescriptorSet textureDescriptorSet;
 

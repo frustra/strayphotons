@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -24,11 +24,11 @@ namespace sp::vulkan::renderer {
         CFuncCollection funcs;
         LockFreeMutex screenshotMutex;
         struct PendingScreenshot {
-            std::string path, resource;
+            std::string path, resource, swizzle;
             bool assert = false;
         };
         std::vector<PendingScreenshot> pendingScreenshots;
     };
 
-    void WriteScreenshot(DeviceContext &device, const std::string &path, const ImageViewPtr &view);
+    bool WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer);
 } // namespace sp::vulkan::renderer

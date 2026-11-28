@@ -10,13 +10,16 @@
 #include "assets/AssetManager.hh"
 #include "assets/GltfImpl.hh"
 #include "ecs/EcsImpl.hh"
+#include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
+#include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
 #include "strayphotons/Async.hh"
 #include "strayphotons/HeapString.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
+#include "vulkan/vulkan.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -31,7 +34,7 @@ namespace sp::vulkan {
         AllocateTextureIndex(); // reserve first index for blank pixel / error texture
 
         auto fut = device.CreateSinglePixel(ERROR_COLOR);
-        device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         textures[0] = fut->Get();
         texturesToFlush.push_back(0);
     }
@@ -39,7 +42,7 @@ namespace sp::vulkan {
     TextureHandle TextureSet::Add(const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
         const InitialData &data) {
-        return Add(device.CreateImageAndView(imageInfo, viewInfo, data));
+        return Add(device.CreateImageAndView(NewDispatchSource, imageInfo, viewInfo, data));
     }
 
     TextureHandle TextureSet::Add(const ImageViewPtr &ptr) {
@@ -73,6 +76,7 @@ namespace sp::vulkan {
             i = textures.size();
             textures.emplace_back();
         }
+        texturesPendingLoad.emplace_back(i);
         return i;
     }
 
@@ -89,8 +93,7 @@ namespace sp::vulkan {
 
         if (resourceName.length() > 6 && starts_with(resourceName, "asset:")) {
             auto path = resourceName.substr(6);
-            auto imageView = device.LoadAssetImage(path);
-            device.FlushMainQueue();
+            auto imageView = device.LoadAssetImage(path, true);
             auto pending = Add(imageView);
             textureCache[resourceName] = pending;
             return pending;
@@ -116,7 +119,6 @@ namespace sp::vulkan {
         if (it != textureCache.end()) return it->second;
 
         auto imageView = device.LoadAssetImage(path, genMipmap, srgb);
-        device.FlushMainQueue();
         auto pending = Add(imageView);
         textureCache[key] = pending;
         return pending;
@@ -190,10 +192,10 @@ namespace sp::vulkan {
             }
 
             // Create a single pixel texture based on the factor data provided
-            ImageCreateInfo imageInfo;
+            ImageCreateInfo imageInfo = {};
             imageInfo.imageType = vk::ImageType::e2D;
             imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-            imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+            imageInfo.format = FormatFromTraits(4, 8, srgb);
             imageInfo.extent = vk::Extent3D(1, 1, 1);
 
             ImageViewCreateInfo viewInfo = {};
@@ -210,7 +212,7 @@ namespace sp::vulkan {
         }
         auto &img = gltfModel.images[texture.source];
 
-        ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo = {};
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
         imageInfo.format = FormatFromTraits(img.component, img.bits, srgb);
@@ -265,7 +267,7 @@ namespace sp::vulkan {
             .Build([&](rg::PassBuilder &builder) {
                 for (auto &tex : renderGraphTextures) {
                     DebugAssertf(starts_with(tex.first, "/"), "Graph resource references must start with /");
-                    rg::ResourceID id = builder.GetID(tex.first, false);
+                    rg::ResourceID id = builder.FindResource(tex.first);
                     if (id == rg::InvalidResource) {
                         id = builder.ReadPreviousFrame(tex.first, Access::FragmentShaderSampleImage);
                     } else {
@@ -285,7 +287,7 @@ namespace sp::vulkan {
                         imageView = GetSinglePixel(ERROR_COLOR);
                     }
                     textures[tex.second.index] = imageView;
-                    texturesToFlush.push_back(tex.second.index);
+                    texturesToFlush.emplace_back(tex.second.index);
                     if (tex.second.ref && !tex.second.Ready()) tex.second.ref->Set(nullptr);
                 }
                 Flush();
@@ -329,7 +331,11 @@ namespace sp::vulkan {
                 // Texture has been released, change the descriptor to a blank pixel
                 tex = textures[0];
             }
-            descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, tex->Image()->LastLayout());
+            auto &image = tex->Image();
+            DebugAssertf(image->LastLayout() == vk::ImageLayout::eShaderReadOnlyOptimal,
+                "Unexpected TextureSet image layout: %s",
+                image->LastLayout());
+            descriptorImageInfos.emplace_back(tex->DefaultSampler(), *tex, image->LastLayout());
         }
 
         for (size_t queueIndex = 0; queueIndex < texturesToFlush.size();) {
@@ -349,7 +355,15 @@ namespace sp::vulkan {
         }
 
         device->updateDescriptorSets(descriptorWrites, {});
+        for (auto descriptorIndex : texturesToFlush) {
+            auto it = std::find(texturesPendingLoad.begin(), texturesPendingLoad.end(), descriptorIndex);
+            if (it != texturesPendingLoad.end()) texturesPendingLoad.erase(it);
+        }
         texturesToFlush.clear();
+    }
+
+    bool TextureSet::Ready() {
+        return texturesPendingLoad.empty();
     }
 
     TextureIndex TextureSet::GetSinglePixelIndex(color_alpha_t color) {
@@ -361,7 +375,7 @@ namespace sp::vulkan {
 
         auto i = AllocateTextureIndex();
         auto fut = device.CreateSinglePixel(color);
-        device.FlushMainQueue();
+        device.FlushAllocatorQueue();
         textures[i] = fut->Get();
         texturesToFlush.push_back(i);
         singlePixelMap.emplace(byteValue, i);

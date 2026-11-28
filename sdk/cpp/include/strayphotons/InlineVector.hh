@@ -81,6 +81,10 @@ namespace sp {
             return at(offset - 1);
         }
 
+        const T &back() const {
+            return at(offset - 1);
+        }
+
         void push_back(const T &value) {
             Assert(offset < MaxSize, "InlineVector overflow");
             at(offset++) = value;

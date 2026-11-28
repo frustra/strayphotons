@@ -11,6 +11,7 @@
 #include "ecs/EcsImpl.hh"
 #include "ecs/EntityRef.hh"
 #include "game/Scene.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/CommandContext.hh"
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
@@ -300,7 +301,8 @@ namespace sp::vulkan::renderer {
                 builder.CreateUniform("LightState", sizeof(gpuData));
             })
             .Execute([this](rg::Resources &resources, DeviceContext &device) {
-                resources.GetBuffer("LightState")->CopyFrom(&gpuData);
+                auto stateBuf = resources.GetBuffer("LightState");
+                stateBuf->CopyFrom(&gpuData);
             });
     }
 
@@ -398,6 +400,9 @@ namespace sp::vulkan::renderer {
                 if (trackedLightCount > 0) cmd.Raw().fillBuffer(*indexBuffer, sizeof(uint32_t), vk::WholeSize, 0);
             });
 
+        auto defaultShadowView = scene.textures.GetSinglePixel(glm::vec4(1));
+        graph.AddImageView("DefaultShadowDepth", defaultShadowView);
+
         graph.AddPass("RenderMask")
             .Build([&](rg::PassBuilder &builder) {
                 ImageDesc desc = {};
@@ -412,6 +417,7 @@ namespace sp::vulkan::renderer {
                 desc.format = vk::Format::eD16Unorm;
                 builder.OutputDepthAttachment("Depth", desc, {LoadOp::Clear, StoreOp::Store});
 
+                builder.Read("DefaultShadowDepth", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("Linear", Access::FragmentShaderSampleImage);
                 builder.ReadPreviousFrame("LightState", Access::FragmentShaderReadUniform);
                 builder.ReadUniform("LightState");
@@ -426,7 +432,7 @@ namespace sp::vulkan::renderer {
                 if (lastFrameID != InvalidResource) {
                     cmd.SetImageView("shadowMap", lastFrameID);
                 } else {
-                    cmd.SetImageView("shadowMap", scene.textures.GetSinglePixel(glm::vec4(1)));
+                    cmd.SetImageView("shadowMap", "DefaultShadowDepth");
                 }
 
                 auto lastStateID = resources.GetID("LightState", 1);
@@ -456,6 +462,21 @@ namespace sp::vulkan::renderer {
                 }
             });
 
+        graph.AddPass("UpdateLightViews")
+            .Build([&](rg::PassBuilder &builder) {
+                builder.CreateUniform("LightViews", {sizeof(GPUViewState), lights.size()});
+            })
+            .Execute([this](rg::Resources &resources, DeviceContext &device) {
+                auto viewStateBuf = resources.GetBuffer("LightViews");
+                GPUViewState *viewStates;
+                viewStateBuf->Map((void **)&viewStates);
+                for (uint32_t i = 0; i < lights.size(); i++) {
+                    viewStates[i] = views[i];
+                }
+                viewStateBuf->Unmap();
+                viewStateBuf->Flush();
+            });
+
         graph.AddPass("RenderDepth")
             .Build([&](rg::PassBuilder &builder) {
                 builder.SetColorAttachment(0, "Linear", {LoadOp::Load, StoreOp::Store});
@@ -469,7 +490,10 @@ namespace sp::vulkan::renderer {
                 builder.Read("RenderableVisibility", Access::FragmentShaderReadStorage);
                 builder.Write("RenderableVisibility", Access::FragmentShaderWrite);
 
+                builder.Read("LightViews", Access::AnyShaderReadUniform);
+
                 builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                 builder.Read(drawAllIDs.drawCommandsBuffer, Access::IndirectBuffer);
                 builder.Read(drawAllIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
             })
@@ -482,8 +506,8 @@ namespace sp::vulkan::renderer {
                 for (uint32_t i = 0; i < lights.size(); i++) {
                     cmd.SetShaderConstant(ShaderStage::Fragment, "TRACKED_LIGHT_INDEX", ~0u);
 
-                    GPUViewState lightViews[] = {{views[i]}, {}};
-                    cmd.UploadUniformData("ViewStates", lightViews, 2);
+                    // TODO: Change this to render using multiview
+                    cmd.SetUniformBuffer("LightViews", "LightViews", sizeof(GPUViewState) * i, sizeof(GPUViewState));
 
                     vk::Rect2D viewport;
                     viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);
@@ -502,9 +526,13 @@ namespace sp::vulkan::renderer {
                     auto vertexBuffer = resources.GetBuffer(vertexID);
                     auto indexBuffer = resources.GetBuffer(indexID);
                     if (vertexBuffer && indexBuffer) {
+                        Assert(indexBuffer->IsAcquired(cmd),
+                            "bindIndexBuffer called without acquiring index buffer first");
                         cmd.Raw().bindIndexBuffer(*indexBuffer,
                             sizeof(VkDrawIndexedIndirectCommand),
                             vk::IndexType::eUint32);
+                        Assert(vertexBuffer->IsAcquired(cmd),
+                            "bindVertexBuffers called without acquiring vertex buffer first");
                         cmd.Raw().bindVertexBuffers(0, {*vertexBuffer}, {0});
                         cmd.DrawIndexedIndirect(indexBuffer, 0u, 1u);
                     }
@@ -525,9 +553,11 @@ namespace sp::vulkan::renderer {
                 .Build([&](rg::PassBuilder &builder) {
                     builder.SetDepthAttachment("Depth", {LoadOp::Load, StoreOp::ReadOnly});
 
+                    builder.Read("LightViews", Access::VertexShaderReadUniform);
                     builder.Write("OpticVisibility", Access::FragmentShaderWrite);
-                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
 
+                    builder.Read("WarpedVertexBuffer", Access::VertexBuffer);
+                    builder.Read("SceneIndexBuffer", Access::IndexBuffer);
                     builder.Read(drawOpticIDs.drawCommandsBuffer, Access::IndirectBuffer);
                     builder.Read(drawOpticIDs.drawParamsBuffer, Access::VertexShaderReadStorage);
                 })
@@ -538,12 +568,14 @@ namespace sp::vulkan::renderer {
                         uint32_t lightIndex;
                     } constants;
 
-                    auto visBuffer = resources.GetBuffer("OpticVisibility");
+                    cmd.SetStorageBuffer("OpticVisibility", "OpticVisibility");
 
                     for (uint32_t i = 0; i < lights.size(); i++) {
-                        GPUViewState lightViews[] = {{views[i]}, {}};
-                        cmd.UploadUniformData("ViewStates", lightViews, 2);
-                        cmd.SetStorageBuffer("OpticVisibility", visBuffer);
+                        // TODO: Change this to render using multiview
+                        cmd.SetUniformBuffer("LightViews",
+                            "LightViews",
+                            sizeof(GPUViewState) * i,
+                            sizeof(GPUViewState));
 
                         vk::Rect2D viewport;
                         viewport.extent = vk::Extent2D(views[i].extents.x, views[i].extents.y);

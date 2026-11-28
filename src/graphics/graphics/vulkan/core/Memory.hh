@@ -1,5 +1,5 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,7 +11,7 @@
 #include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/VkCommon.hh"
 #include "strayphotons/Hashing.hh"
-#include "strayphotons/HeapVector.hh"
+#include "strayphotons/LockFreeMutex.hh"
 #include "strayphotons/Utility.hh"
 
 #include <cstdint>
@@ -58,7 +58,9 @@ namespace sp::vulkan {
         vk::BufferUsageFlags usage;
         Residency residency = Residency::UNKNOWN;
 
-        bool operator==(const BufferDesc &) const = default;
+        bool operator==(const BufferDesc &other) const {
+            return layout.size == other.layout.size && usage == other.usage && residency == other.residency;
+        }
     };
 
     struct InitialData {
@@ -84,6 +86,7 @@ namespace sp::vulkan {
         UniqueMemory(VmaAllocator allocator) : allocator(allocator), allocation(nullptr) {}
         virtual ~UniqueMemory() = default;
 
+        // TODO: Persistent map has no good way of flushing, should switch to explicit upload passes
         void *Mapped() {
             void *data;
             AssertVKSuccess(MapPersistent(&data), "MapPersistent failed");
@@ -133,25 +136,34 @@ namespace sp::vulkan {
         }
 
         void Flush();
+        void SetAccess(Access nextAccess);
+
+        bool IsAcquired(const std::weak_ptr<CommandContext> &cmd) const;
+        bool IsAcquired(const std::shared_ptr<CommandContext> &cmd) const;
+        bool IsAcquired(const CommandContext &cmd) const;
 
     protected:
         VmaAllocator allocator;
         VmaAllocation allocation;
         void *persistentMap = nullptr;
+
+        Access lastAccess = Access::None;
+        std::optional<QueueID> lastQueueId;
+        std::weak_ptr<CommandContext> lastCommand;
+        mutable std::thread::id callThread;
+
+        friend class BufferPool;
+        friend class CommandContext;
     };
 
-    class SubBuffer : public NonMoveable, public HasUniqueID {
+    class SubBuffer final : public NonMoveable, public HasUniqueID {
     public:
-        SubBuffer(BufferPtr buffer,
-            VmaVirtualBlock subAllocationBlock,
-            vk::DeviceSize offsetBytes,
-            vk::DeviceSize size,
-            size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
-            size_t arrayCount = 0);
+        SubBuffer();
         ~SubBuffer();
 
         static SubBufferPtr New(BufferPtr buffer,
             VmaVirtualBlock subAllocationBlock,
+            VmaVirtualAllocation subAllocation,
             vk::DeviceSize offsetBytes,
             vk::DeviceSize size,
             size_t arrayOffset = std::numeric_limits<vk::DeviceSize>::max(),
@@ -181,17 +193,16 @@ namespace sp::vulkan {
         std::weak_ptr<SubBuffer> handle;
         BufferPtr parentBuffer;
         VmaVirtualBlock subAllocationBlock;
+        VmaVirtualAllocation allocation = VK_NULL_HANDLE;
         vk::DeviceSize offsetBytes, size;
         size_t arrayOffset, arrayCount;
+
+        friend class CommandContext;
     };
 
-    class Buffer : public UniqueMemory {
+    class Buffer final : public UniqueMemory {
     public:
-        Buffer(vk::BufferCreateInfo bufferInfo,
-            VmaAllocationCreateInfo allocInfo,
-            VmaAllocator allocator,
-            size_t arrayStride = 0,
-            size_t arrayCount = 0);
+        Buffer();
         ~Buffer();
 
         static BufferPtr New(vk::BufferCreateInfo bufferInfo,
@@ -240,14 +251,8 @@ namespace sp::vulkan {
          */
         SubBufferPtr SubAllocate(vk::DeviceSize size, vk::DeviceSize alignment = 4);
 
-        Access LastAccess() const {
-            return lastAccess;
-        }
-
-        void SetAccess(Access oldAccess, Access newAccess);
-
     private:
-        vk::DeviceSize SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
+        std::pair<VmaVirtualAllocation, vk::DeviceSize> SubAllocateRaw(vk::DeviceSize size, vk::DeviceSize alignment);
 
         std::weak_ptr<Buffer> handle;
         vk::BufferCreateInfo bufferInfo;
@@ -256,7 +261,7 @@ namespace sp::vulkan {
         size_t arrayStride = 0, arrayCount = 0;
         VmaVirtualBlock subAllocationBlock = VK_NULL_HANDLE;
 
-        Access lastAccess = Access::None;
+        friend class BufferPool;
     };
 } // namespace sp::vulkan
 
@@ -269,8 +274,6 @@ namespace std {
         result_type operator()(argument_type const &s) const {
             result_type h = 0;
             sp::hash_combine(h, s.layout.size);
-            sp::hash_combine(h, s.layout.arrayStride);
-            sp::hash_combine(h, s.layout.arrayCount);
             sp::hash_combine(h, VkBufferUsageFlags(s.usage));
             sp::hash_combine(h, s.residency);
             return h;

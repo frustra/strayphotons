@@ -1,14 +1,25 @@
 /*
- * Stray Photons - Copyright (C) 2023 Jacob Wirth & Justine Li
+ * Stray Photons - Copyright (C) 2026 Jacob Wirth & Justine Li
  *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
  * If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
+#include "common/ObjectPool.hh"
+#include "common/Tracing.hh"
+#include "graphics/vulkan/core/Access.hh"
 #include "graphics/vulkan/core/Memory.hh"
+#include "magic_enum.hpp"
+#include "strayphotons/DispatchQueue.hh"
+#include "strayphotons/EnumTypes.hh"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
-#include <variant>
+#include <cstdint>
+#include <sstream>
+#include <thread>
+#include <tracy/Tracy.hpp>
+#include <vulkan/vulkan_core.h>
 #define VULKAN_HPP_USE_REFLECT
 
 #include "DeviceContext.hh"
@@ -32,7 +43,6 @@
 #include "graphics/vulkan/core/VkTracing.hh"
 #include "gui/MenuGuiManager.hh"
 #include "strayphotons/Async.hh"
-#include "strayphotons/InlineVector.hh"
 #include "strayphotons/Logging.hh"
 #include "strayphotons/Utility.hh"
 #include "vulkan/vulkan.hpp"
@@ -55,6 +65,10 @@ void WriteReflection(const spv_reflect::ShaderModule &obj, bool flatten_cbuffers
 namespace sp::vulkan {
     const uint64_t FENCE_WAIT_TIME = 1e10; // nanoseconds, assume deadlock after this time
     const uint32_t VULKAN_API_VERSION = VK_API_VERSION_1_2;
+
+    static CVar<uint32_t> CVarMaxFramesInFlight("r.MaxFramesInFlight",
+        3,
+        "The number of overlapping framebuffers allowed in flight per frame");
 
 #if VK_HEADER_VERSION >= 304
     static VkBool32 VulkanDebugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -126,26 +140,39 @@ namespace sp::vulkan {
 #endif
 
     DeviceContext::DeviceContext(Game &game)
-        : game(game), graphics(*game.graphics), mainThread(std::this_thread::get_id()), allocator(nullptr, nullptr),
-          threadContexts(32), frameBeginQueue("BeginFrame", 0, {}), frameEndQueue("EndFrame", 0, {}),
-          allocatorQueue("GPUAllocator", 1, {}), graph(*this) {
+        : game(game), graphics(*game.graphics), allocator(nullptr, nullptr), threadContexts(32),
+          frameBeginQueue("BeginFrame", 0, {}), allocatorQueue("GPUAllocator", 0, {}), submitQueue("GPUSubmit", 0, {}),
+          graph(*this) {}
+
+    DeviceContext::~DeviceContext() {
+        if (vkRenderer) vkRenderer.reset();
+        if (device && !deviceResetRequired) WaitIdle(NewDispatchSource);
+#ifdef TRACY_ENABLE_GRAPHICS
+        for (auto ctx : tracing.tracyContexts)
+            if (ctx) TracyVkDestroy(ctx);
+#endif
+        Debugf("Destroying DeviceContext");
+        swapchain.reset();
+        graphics.glfwWindow.reset();
+    }
+
+    void DeviceContext::CreateDevice() {
         ZoneScoped;
+        Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
+
+        bool enableSwapchain = true;
+        if (graphics.glfwWindow) {
+            Logf("Graphics starting up (Vulkan GLFW)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+        } else if (graphics.winitContext) {
+            Logf("Graphics starting up (Vulkan Winit)");
+            Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
+        } else {
+            Logf("Graphics starting up (Vulkan Headless)");
+            enableSwapchain = false;
+        }
 
         try {
-            Assertf(graphics.vkInstance, "GraphicsManager has no Vulkan instance set.");
-
-            bool enableSwapchain = true;
-            if (graphics.glfwWindow) {
-                Logf("Graphics starting up (Vulkan GLFW)");
-                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-            } else if (graphics.winitContext) {
-                Logf("Graphics starting up (Vulkan Winit)");
-                Assertf(graphics.vkSurface, "GraphicsManager has no Vulkan surface set.");
-            } else {
-                Logf("Graphics starting up (Vulkan Headless)");
-                enableSwapchain = false;
-            }
-
             VULKAN_HPP_DEFAULT_DISPATCHER.init(&vkGetInstanceProcAddr);
 
             instance = graphics.vkInstance.get();
@@ -167,11 +194,6 @@ namespace sp::vulkan {
             debugInfo.pUserData = this;
 
             debugMessenger = instance.createDebugUtilsMessengerEXTUnique(debugInfo);
-
-            std::vector<const char *> layers;
-            if (game.options.count("with-validation-layers")) {
-                layers.emplace_back("VK_LAYER_KHRONOS_validation");
-            }
 
             bool hasMemoryRequirements2Ext = false, hasDedicatedAllocationExt = false;
             auto availableExtensions = vk::enumerateInstanceExtensionProperties();
@@ -262,65 +284,65 @@ namespace sp::vulkan {
                 selectedDeviceProperties.properties.deviceID,
                 selectedDeviceProperties.properties.deviceName.data());
 
-            std::array<uint32_t, QUEUE_TYPES_COUNT> queueIndex;
             auto queueFamilies = selectedDevice.getQueueFamilyProperties();
-            std::vector<uint32_t> queuesUsedCount(queueFamilies.size());
-            std::vector<std::vector<float>> queuePriority(queueFamilies.size());
+            std::vector<std::vector<float>> allocatedQueuePriorities(queueFamilies.size());
 
-            const auto findQueue = [&](QueueType queueType,
+            const auto findQueue = [&](QueueID queueId,
                                        vk::QueueFlags require,
                                        vk::QueueFlags deny,
                                        float priority,
                                        bool surfaceSupport = false) {
+                Queue &queue = queues[queueId];
                 for (uint32_t i = 0; i < queueFamilies.size(); i++) {
                     auto &props = queueFamilies[i];
                     if (!(props.queueFlags & require)) continue;
                     if (props.queueFlags & deny) continue;
                     if (surfaceSupport && !selectedDevice.getSurfaceSupportKHR(i, surface)) continue;
-                    if (queuesUsedCount[i] >= props.queueCount) continue;
+                    if (allocatedQueuePriorities[i].size() >= props.queueCount) continue;
 
-                    queueFamilyIndex[queueType] = i;
-                    queueIndex[queueType] = queuesUsedCount[i]++;
-                    queuePriority[i].push_back(priority);
+                    queue.queueFamilyIndex = i;
+                    queue.indexInFamily = allocatedQueuePriorities[i].size();
+                    allocatedQueuePriorities[i].emplace_back(priority);
+                    Logf("Queue %s: family %u, index %u", queueId, i, queue.indexInFamily);
                     return true;
                 }
                 return false;
             };
 
-            if (!findQueue(QUEUE_TYPE_GRAPHICS,
+            if (!findQueue(QueueID::General,
                     vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
                     {},
                     1.0f,
                     enableSwapchain))
                 Abortf("could not find a supported graphics queue family");
 
-            if (!findQueue(QUEUE_TYPE_COMPUTE, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
+            if (!findQueue(QueueID::ComputeAsync, vk::QueueFlagBits::eCompute, {}, 0.5f)) {
                 // must be only one queue that supports compute, fall back to it
-                queueFamilyIndex[QUEUE_TYPE_COMPUTE] = queueFamilyIndex[QUEUE_TYPE_GRAPHICS];
-                queueIndex[QUEUE_TYPE_COMPUTE] = queueIndex[QUEUE_TYPE_GRAPHICS];
+                queues[QueueID::ComputeAsync] = queues[QueueID::General];
             }
 
-            if (!findQueue(QUEUE_TYPE_TRANSFER,
+            if (!findQueue(QueueID::TransferAsync,
                     vk::QueueFlagBits::eTransfer,
                     vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute,
                     0.3f)) {
                 // no queues support only transfer, fall back to a compute queue that also supports transfer
-                if (!findQueue(QUEUE_TYPE_TRANSFER, vk::QueueFlagBits::eTransfer, vk::QueueFlagBits::eGraphics, 0.3f)) {
+                if (!findQueue(QueueID::TransferAsync,
+                        vk::QueueFlagBits::eTransfer,
+                        vk::QueueFlagBits::eGraphics,
+                        0.3f)) {
                     // fall back to the main compute queue
-                    queueFamilyIndex[QUEUE_TYPE_TRANSFER] = queueFamilyIndex[QUEUE_TYPE_COMPUTE];
-                    queueIndex[QUEUE_TYPE_TRANSFER] = queueIndex[QUEUE_TYPE_COMPUTE];
+                    queues[QueueID::TransferAsync] = queues[QueueID::ComputeAsync];
                 }
             }
 
             std::vector<vk::DeviceQueueCreateInfo> queueInfos;
             for (uint32_t i = 0; i < queueFamilies.size(); i++) {
-                if (queuesUsedCount[i] == 0) continue;
+                if (allocatedQueuePriorities[i].empty()) continue;
 
-                vk::DeviceQueueCreateInfo queueInfo;
+                vk::DeviceQueueCreateInfo &queueInfo = queueInfos.emplace_back();
                 queueInfo.queueFamilyIndex = i;
-                queueInfo.queueCount = queuesUsedCount[i];
-                queueInfo.pQueuePriorities = queuePriority[i].data();
-                queueInfos.push_back(queueInfo);
+                queueInfo.queueCount = allocatedQueuePriorities[i].size();
+                queueInfo.pQueuePriorities = allocatedQueuePriorities[i].data();
             }
 
             std::vector<const char *> enabledDeviceExtensions = {
@@ -403,6 +425,8 @@ namespace sp::vulkan {
             REQUIRE_DEVICE_FEATURE(1, 0, drawIndirectFirstInstance);
             REQUIRE_DEVICE_FEATURE(1, 0, multiViewport);
             REQUIRE_DEVICE_FEATURE(1, 0, shaderInt16);
+            // TODO: Change geometry_warp.vert to a compute shader
+            REQUIRE_DEVICE_FEATURE(1, 0, vertexPipelineStoresAndAtomics);
             REQUIRE_DEVICE_FEATURE(1, 0, fragmentStoresAndAtomics);
             REQUIRE_DEVICE_FEATURE(1, 0, wideLines);
 
@@ -412,39 +436,20 @@ namespace sp::vulkan {
             deviceInfo.pNext = &enabledDeviceFeatures2;
             deviceInfo.enabledExtensionCount = enabledDeviceExtensions.size();
             deviceInfo.ppEnabledExtensionNames = enabledDeviceExtensions.data();
-#ifdef __clang__
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__)
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-            deviceInfo.enabledLayerCount = layers.size();
-            deviceInfo.ppEnabledLayerNames = layers.data();
-#ifdef __clang__
-    #pragma clang diagnostic pop
-#elif defined(__GNUC__)
-    #pragma GCC diagnostic pop
-#endif
 
             device = selectedDevice.createDeviceUnique(deviceInfo, nullptr);
             VULKAN_HPP_DEFAULT_DISPATCHER.init(*device);
 
-#ifdef TRACY_ENABLE_GRAPHICS
-            tracing.tracyContexts.resize(QUEUE_TYPES_COUNT);
-#endif
-
-            for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-                auto familyIndex = queueFamilyIndex[queueType];
-                auto queue = device->getQueue(familyIndex, queueIndex[queueType]);
-                queues[queueType] = queue;
-                queueLastSubmit[queueType] = 0;
+            for (const QueueID &queueId : magic_enum::enum_values<QueueID>()) {
+                Queue &queue = queues[queueId];
+                queue.queue = device->getQueue(queue.queueFamilyIndex, queue.indexInFamily);
+                queue.lastSubmit = 0;
 
 #ifdef TRACY_ENABLE_GRAPHICS
-                if (queueType != QUEUE_TYPE_COMPUTE && queueType != QUEUE_TYPE_GRAPHICS) continue;
+                if (queueId == QueueID::TransferAsync) continue;
 
                 vk::CommandPoolCreateInfo cmdPoolInfo;
-                cmdPoolInfo.queueFamilyIndex = familyIndex;
+                cmdPoolInfo.queueFamilyIndex = queue.queueFamilyIndex;
                 cmdPoolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
                 tracing.cmdPools.push_back(device->createCommandPoolUnique(cmdPoolInfo));
 
@@ -457,9 +462,9 @@ namespace sp::vulkan {
                     std::make_move_iterator(cmdBufs.begin()),
                     std::make_move_iterator(cmdBufs.end()));
 
-                tracing.tracyContexts[queueType] = tracy::CreateVkContext(selectedDevice,
+                tracing.tracyContexts[queueId] = tracy::CreateVkContext(selectedDevice,
                     *device,
-                    queue,
+                    queue.queue,
                     *tracing.cmdBuffers.back(),
                     VULKAN_HPP_DEFAULT_DISPATCHER.vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
                     VULKAN_HPP_DEFAULT_DISPATCHER.vkGetCalibratedTimestampsEXT);
@@ -468,19 +473,17 @@ namespace sp::vulkan {
 
             vk::SemaphoreCreateInfo semaphoreInfo = {};
             vk::FenceCreateInfo fenceInfo = {};
-            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 
             for (auto &frame : frameContexts) {
-                frame.imageAvailableSemaphore = device->createSemaphoreUnique(semaphoreInfo);
-                frame.renderCompleteSemaphore = device->createSemaphoreUnique(semaphoreInfo);
-                frame.inFlightFence = device->createFenceUnique(fenceInfo);
+                frame.imageAvailableSemaphore = std::make_shared<vk::UniqueSemaphore>(
+                    device->createSemaphoreUnique(semaphoreInfo));
+                frame.inFlightFence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
 
-                for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-                    vk::CommandPoolCreateInfo poolInfo;
-                    poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
-                    poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient;
-                    frame.commandContexts[queueType].commandPool = device->createCommandPoolUnique(poolInfo);
-                }
+                vk::CommandPoolCreateInfo poolInfo;
+                poolInfo.queueFamilyIndex = queues[QueueID::General].queueFamilyIndex;
+                poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
+                                 vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+                frame.commandPool = device->createCommandPoolUnique(poolInfo);
             }
 
             VmaAllocatorCreateInfo allocatorInfo = {};
@@ -488,7 +491,6 @@ namespace sp::vulkan {
             allocatorInfo.physicalDevice = selectedDevice;
             allocatorInfo.device = *device;
             allocatorInfo.instance = instance;
-            allocatorInfo.frameInUseCount = MAX_FRAMES_IN_FLIGHT;
             allocatorInfo.preferredLargeHeapBlockSize = 1024ull * 1024 * 1024;
             allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
@@ -502,28 +504,14 @@ namespace sp::vulkan {
                 if (alloc) vmaDestroyAllocator(alloc);
             });
 
-            semaphorePool = std::make_unique<HandlePool<vk::Semaphore>>(
-                [&]() {
-                    return device->createSemaphore({});
-                },
-                [&](vk::Semaphore sem) {
-                    device->destroySemaphore(sem);
-                });
-
-            fencePool = std::make_unique<HandlePool<vk::Fence>>(
-                [&]() {
-                    return device->createFence({});
-                },
-                [&](vk::Fence fence) {
-                    device->destroyFence(fence);
-                },
-                [&](vk::Fence fence) {
-                    device->resetFences({fence});
-                });
-
             pipelinePool = std::make_unique<PipelineManager>(*this);
             renderPassPool = std::make_unique<RenderPassManager>(*this);
             framebufferPool = std::make_unique<FramebufferManager>(*this);
+            semaphorePool = std::make_unique<ObjectPool<vk::UniqueSemaphore>>([this](vk::UniqueSemaphore *semaphore) {
+                vk::SemaphoreCreateInfo createInfo = {};
+                new (semaphore) vk::UniqueSemaphore(device->createSemaphoreUnique(createInfo));
+            });
+            semaphorePool->Reserve(512);
 
             for (auto &threadContextUnique : threadContexts) {
                 threadContextUnique = std::make_unique<ThreadContext>();
@@ -531,40 +519,60 @@ namespace sp::vulkan {
 
                 threadContext->bufferPool = std::make_unique<BufferPool>(*this);
 
-                for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
+                for (const QueueID &queueId : magic_enum::enum_values<QueueID>()) {
+                    Queue &queue = queues[queueId];
+                    ThreadContext::Queue &threadQueue = threadContext->queues[queueId];
                     vk::CommandPoolCreateInfo poolInfo;
-                    poolInfo.queueFamilyIndex = queueFamilyIndex[queueType];
+                    poolInfo.queueFamilyIndex = queue.queueFamilyIndex;
                     poolInfo.flags = vk::CommandPoolCreateFlagBits::eTransient |
                                      vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-                    threadContext->commandPools[queueType] = device->createCommandPoolUnique(poolInfo);
+                    threadQueue.commandPool = device->createCommandPoolUnique(poolInfo);
 
-                    threadContext->commandContexts[queueType] = std::make_unique<HandlePool<CommandContextPtr>>(
-                        [this, threadContext, queueType]() {
-                            vk::CommandBufferAllocateInfo allocInfo;
-                            allocInfo.commandPool = *threadContext->commandPools[queueType];
-                            allocInfo.level = vk::CommandBufferLevel::ePrimary;
-                            allocInfo.commandBufferCount = 1;
-                            auto buffers = device->allocateCommandBuffersUnique(allocInfo);
-
-                            return std::make_shared<CommandContext>(*this,
-                                std::move(buffers[0]),
-                                CommandContextType(queueType),
-                                CommandContextScope::Fence);
+                    threadQueue.commandContexts = std::make_unique<ObjectPool<CommandContext>>(
+                        [this, threadContext, queueId](CommandContext *cmd) {
+                            new (cmd) CommandContext(*this,
+                                *threadContext->queues[queueId].commandPool,
+                                queueId,
+                                CommandContextType::Fence);
+                            vk::FenceCreateInfo fenceInfo = {};
+                            fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+                            cmd->fence = std::make_shared<vk::UniqueFence>(device->createFenceUnique(fenceInfo));
                         },
-                        [](CommandContextPtr) {
-                            // destroy happens via ~CommandContext
-                        },
-                        [this](CommandContextPtr cmd) {
-                            auto type = cmd->GetType();
-                            auto buffer = std::move(cmd->RawRef());
-                            auto fence = std::move(cmd->fence);
+                        [this](CommandContext &cmd) {
+                            auto queueId = cmd.GetQueueID();
+                            auto buffer = std::move(cmd.RawRef());
+                            auto fence = std::move(cmd.fence);
+                            if (fence) {
+                                Assertf(fence.use_count() == 1,
+                                    "CommandContext Fence still in use on reset: %ld",
+                                    fence.use_count());
+                                Assertf(device->getFenceStatus(fence->get()) == vk::Result::eSuccess,
+                                    "CommandContext destroyed before fence completed");
+                            }
+                            auto acquiredImages = std::move(cmd.acquiredImages);
+                            auto acquiredBuffers = std::move(cmd.acquiredBuffers);
+                            auto activeImageViews = std::move(cmd.activeImageViews);
+                            auto waitSemaphores = std::move(cmd.waitSemaphores);
+                            auto signalSemaphores = std::move(cmd.signalSemaphores);
+                            auto waitStages = std::move(cmd.waitStages);
+                            acquiredImages.clear();
+                            acquiredBuffers.clear();
+                            activeImageViews.clear();
+                            waitSemaphores.clear();
+                            signalSemaphores.clear();
+                            waitStages.clear();
 
-                            cmd->~CommandContext();
-                            new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Fence);
-                            cmd->fence = std::move(fence);
+                            cmd.~CommandContext();
+                            new (&cmd) CommandContext(*this, std::move(buffer), queueId, CommandContextType::Fence);
+                            cmd.fence = std::move(fence);
+                            cmd.acquiredImages = std::move(acquiredImages);
+                            cmd.acquiredBuffers = std::move(acquiredBuffers);
+                            cmd.activeImageViews = std::move(activeImageViews);
+                            cmd.waitSemaphores = std::move(waitSemaphores);
+                            cmd.signalSemaphores = std::move(signalSemaphores);
+                            cmd.waitStages = std::move(waitStages);
 
-                            cmd->Raw().reset();
-                            if (cmd->fence) device->resetFences({cmd->Fence()});
+                            cmd.Raw().reset();
                         });
                 }
             }
@@ -617,19 +625,6 @@ namespace sp::vulkan {
         }
     }
 
-    DeviceContext::~DeviceContext() {
-        if (vkRenderer) vkRenderer.reset();
-        if (device && !deviceResetRequired) device->waitIdle();
-        Debugf("Destroying DeviceContext");
-        swapchain.reset();
-        graphics.glfwWindow.reset();
-
-#ifdef TRACY_ENABLE_GRAPHICS
-        for (auto ctx : tracing.tracyContexts)
-            if (ctx) TracyVkDestroy(ctx);
-#endif
-    }
-
     // Releases old swapchain after creating a new one
     void DeviceContext::CreateSwapchain() {
         ZoneScoped;
@@ -657,20 +652,57 @@ namespace sp::vulkan {
             }
         }
 
+        static const EnumArray<vk::ColorSpaceKHR, SwapchainColorSpace> colorSpaceLookup = {
+            vk::ColorSpaceKHR::eSrgbNonlinear, // SDR
+            vk::ColorSpaceKHR::eSrgbNonlinear, // sRGB
+            vk::ColorSpaceKHR::eExtendedSrgbNonlinearEXT, // esRGB
+            vk::ColorSpaceKHR::eDisplayP3NonlinearEXT, // DisplayP3
+            vk::ColorSpaceKHR::eDciP3NonlinearEXT, // DCIP3
+            vk::ColorSpaceKHR::eBt709NonlinearEXT, // BT709
+            vk::ColorSpaceKHR::eHdr10St2084EXT, // ST2084
+            vk::ColorSpaceKHR::eHdr10HlgEXT, // HLG
+            vk::ColorSpaceKHR::eAdobergbNonlinearEXT, // AdobeRGB
+            vk::ColorSpaceKHR::ePassThroughEXT, // Passthrough
+            vk::ColorSpaceKHR::eDisplayNativeAMD, // DisplayNativeAMD
+        };
+
+        InlineVector<vk::Format, 3> preferredFormats;
+        SwapchainColorSpace colorSpace = CVarHDR.Get(true);
+        vk::ColorSpaceKHR preferredColorSpace = colorSpaceLookup[colorSpace];
+        if (colorSpace != SwapchainColorSpace::SDR) {
+            preferredFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat);
+            preferredFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32);
+        }
+        preferredFormats.emplace_back(vk::Format::eB8G8R8A8Srgb);
         vk::SurfaceFormatKHR surfaceFormat = surfaceFormats[0];
+        int foundFormat = preferredFormats.size();
         for (auto &format : surfaceFormats) {
-            if (format.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear) {
-                if (format.format == vk::Format::eB8G8R8A8Srgb) {
-                    surfaceFormat = format;
-                    break;
+            if (format.colorSpace == preferredColorSpace) {
+                for (int i = 0; i < foundFormat; i++) {
+                    if (format.format == preferredFormats[i]) {
+                        foundFormat = i;
+                        surfaceFormat = format;
+                    }
                 }
+                if (foundFormat == 0) break;
             }
         }
-        Assert(surfaceFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear, "surface must support sRGB");
+        if (surfaceFormat.colorSpace != preferredColorSpace &&
+            preferredColorSpace != vk::ColorSpaceKHR::eSrgbNonlinear) {
+            Logf("surface color space not supported: %s", colorSpace);
+            CVarHDR.Set(SwapchainColorSpace::SDR);
+            CreateSwapchain();
+            return;
+        }
+        Debugf("Created swapchain with format: %s", surfaceFormat.format);
+        Assertf(surfaceFormat.colorSpace == preferredColorSpace,
+            "surface color space not supported: %s",
+            preferredColorSpace);
 
+        maxFramesInFlight = std::clamp(CVarMaxFramesInFlight.Get(true), 1u, MAX_FRAMES_IN_FLIGHT);
         vk::SwapchainCreateInfoKHR swapchainInfo;
         swapchainInfo.surface = surface;
-        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, MAX_FRAMES_IN_FLIGHT);
+        swapchainInfo.minImageCount = std::max(surfaceCapabilities.minImageCount, maxFramesInFlight);
         swapchainInfo.imageFormat = surfaceFormat.format;
         swapchainInfo.imageColorSpace = surfaceFormat.colorSpace;
         swapchainInfo.imageExtent.width = glm::clamp(surfaceCapabilities.currentExtent.width,
@@ -700,11 +732,12 @@ namespace sp::vulkan {
 
         for (size_t i = 0; i < swapchainImages.size(); i++) {
             ImageViewCreateInfo imageViewInfo = {};
-            imageViewInfo.image = std::make_shared<Image>(swapchainImages[i],
-                swapchainInfo.imageFormat,
-                swapchainInfo.imageExtent);
+            imageViewInfo.image = Image::New(swapchainImages[i], swapchainInfo.imageFormat, swapchainInfo.imageExtent);
             imageViewInfo.swapchainLayout = vk::ImageLayout::ePresentSrcKHR;
             swapchainImageContexts[i].imageView = CreateImageView(imageViewInfo);
+            vk::SemaphoreCreateInfo semaphoreInfo = {};
+            swapchainImageContexts[i].submitCompleteSemaphore = std::make_shared<vk::UniqueSemaphore>(
+                device->createSemaphoreUnique(semaphoreInfo));
         }
     }
 
@@ -715,11 +748,13 @@ namespace sp::vulkan {
     void DeviceContext::RecreateSwapchain() {
         ZoneScoped;
         Assertf(swapchain, "DeviceContext::RecreateSwapchain called without existing swapchain");
-        device->waitIdle();
+        WaitIdle(NewDispatchSource);
         CreateSwapchain();
     }
 
     void DeviceContext::InitRenderer(Game &game) {
+        renderThread = std::this_thread::get_id();
+        CreateDevice();
         vkRenderer = std::make_shared<vulkan::Renderer>(game, *this, graph, *compositor);
     }
 
@@ -760,6 +795,8 @@ namespace sp::vulkan {
 
     bool DeviceContext::BeginFrame() {
         ZoneScoped;
+        Assert(std::this_thread::get_id() == renderThread, "BeginFrame must be called from render thread");
+
         try {
             if (perfTimer) perfTimer->StartFrame();
 
@@ -773,10 +810,12 @@ namespace sp::vulkan {
                 }
             }
 
-            {
+            auto &fence = Frame().inFlightFence;
+            if (Frame().fenceInUse) {
                 ZoneScopedN("WaitForFrameFence");
-                auto result = device->waitForFences({*Frame().inFlightFence}, true, FENCE_WAIT_TIME);
+                auto result = device->waitForFences({fence->get()}, true, FENCE_WAIT_TIME);
                 AssertVKSuccess(result, "timed out waiting for fence");
+                Frame().fenceInUse = false;
             }
 
             if (swapchain) {
@@ -784,7 +823,7 @@ namespace sp::vulkan {
                     ZoneScopedN("AcquireNextImage");
                     auto acquireResult = device->acquireNextImageKHR(*swapchain,
                         FENCE_WAIT_TIME,
-                        *Frame().imageAvailableSemaphore,
+                        Frame().imageAvailableSemaphore->get(),
                         nullptr);
                     if (acquireResult.result == vk::Result::eTimeout) {
                         Warnf("vkAcquireNextImageKHR timeout");
@@ -803,38 +842,32 @@ namespace sp::vulkan {
                 } catch (const std::system_error &err) {
                     Abortf("Exception: %s", err.what());
                 }
-
-                if (SwapchainImage().inFlightFence) {
-                    ZoneScopedN("WaitForImageFence");
-                    auto result = device->waitForFences({SwapchainImage().inFlightFence}, true, FENCE_WAIT_TIME);
-                    AssertVKSuccess(result, "timed out waiting for fence");
-                }
-                SwapchainImage().inFlightFence = *Frame().inFlightFence;
             }
 
             vmaSetCurrentFrameIndex(allocator.get(), frameCounter);
             PrepareResourcesForFrame();
 
 #ifdef TRACY_ENABLE_GRAPHICS
-            for (size_t i = 0; i < tracing.tracyContexts.size(); i++) {
-                auto prevQueueSubmitFrame = queueLastSubmit[i];
+            for (const QueueID &queueId : magic_enum::enum_values<QueueID>()) {
+                if (queueId == QueueID::TransferAsync) continue;
+                auto prevQueueSubmitFrame = queues[queueId].lastSubmit;
                 if (prevQueueSubmitFrame < frameCounter - 1) continue;
 
-                auto trctx = tracing.tracyContexts[i];
+                auto trctx = tracing.tracyContexts[queueId];
                 if (!trctx) continue;
 
-                auto ctx = GetFencedCommandContext(CommandContextType(i));
+                auto ctx = GetFencedCommandContext(NewDispatchSource, queueId);
                 TracyVkCollect(trctx, ctx->Raw());
-                Submit(ctx);
+                Submit(NewDispatchSource, ctx);
 
-                queueLastSubmit[i] = prevQueueSubmitFrame;
+                queues[queueId].lastSubmit = prevQueueSubmitFrame;
             }
 #endif
 
             erase_if(pendingFences, [this](auto &pair) {
                 if (!pair.first || pair.first->Ready()) {
                     return true;
-                } else if (device->getFenceStatus(pair.second) == vk::Result::eSuccess) {
+                } else if (device->getFenceStatus(pair.second->get()) == vk::Result::eSuccess) {
                     pair.first->Set(nullptr);
                     return true;
                 } else {
@@ -842,9 +875,12 @@ namespace sp::vulkan {
                 }
             });
             frameBeginQueue.Flush();
+
+            Assertf(fence.use_count() == 1, "Frame Fence still in use on reset: %ld", fence.use_count());
+            device->resetFences({fence->get()});
         } catch (const vk::DeviceLostError &err) {
-            Errorf("Device lost! BeginFrame() %s", err.what());
             deviceResetRequired = true;
+            Abortf("Device lost! BeginFrame() %s", err.what());
             return false;
         }
         return true;
@@ -852,18 +888,12 @@ namespace sp::vulkan {
 
     void DeviceContext::PrepareResourcesForFrame() {
         ZoneScoped;
-        for (auto &pool : Frame().commandContexts) {
-            // Resets all command buffers in the pool, so they can be recorded and used again.
-            if (pool.nextIndex > 0) {
-                ZoneScopedN("ResetCommandPool");
-                device->resetCommandPool(*pool.commandPool);
-            }
-            pool.nextIndex = 0;
+        // Resets all command buffers in the pool, so they can be recorded and used again.
+        if (Frame().nextIndex > 0) {
+            ZoneScopedN("ResetCommandPool");
+            device->resetCommandPool(*Frame().commandPool);
+            Frame().nextIndex = 0;
         }
-
-        erase_if(Frame().inFlightObjects, [&](auto &entry) {
-            return device->getFenceStatus(entry.fence) == vk::Result::eSuccess;
-        });
 
         Thread().ReleaseAvailableResources();
     }
@@ -872,37 +902,53 @@ namespace sp::vulkan {
         if (!swapchain) return;
         ZoneScoped;
 
-        vk::Semaphore renderCompleteSem = *Frame().renderCompleteSemaphore;
         vk::PresentInfoKHR presentInfo = {};
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = &renderCompleteSem;
+        presentInfo.pWaitSemaphores = &SwapchainImage().submitCompleteSemaphore->get();
 
         vk::SwapchainKHR swapchains[] = {*swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapchains;
         presentInfo.pImageIndices = &swapchainImageIndex;
 
-        try {
-            auto presentResult = queues[QUEUE_TYPE_GRAPHICS].presentKHR(presentInfo);
-            auto swapchainView = SwapchainImageView();
-            vk::Extent3D swapchainExtent = swapchainView ? swapchainView->Extent() : vk::Extent3D();
-            bool extentsMatch = swapchainExtent.width == outputExtents.x && swapchainExtent.height == outputExtents.y;
-            if (presentResult == vk::Result::eSuboptimalKHR || !extentsMatch) RecreateSwapchain();
-        } catch (const vk::OutOfDateKHRError &) {
-            RecreateSwapchain();
-        }
+        auto swapchainView = SwapchainImageView();
+        bool requiresNewSwapchain = false;
+        AsyncPtr<void> presentComplete = submitQueue.Dispatch<void>(NewDispatchSource,
+            [this, presentInfo, swapchainView, &requiresNewSwapchain] {
+                ZoneScopedN("PresentKHR");
+                try {
+                    auto presentResult = queues[QueueID::General].queue.presentKHR(presentInfo);
+                    vk::Extent3D swapchainExtent = swapchainView ? swapchainView->Extent() : vk::Extent3D();
+                    bool extentsMatch = swapchainExtent.width == outputExtents.x &&
+                                        swapchainExtent.height == outputExtents.y;
+                    if (presentResult == vk::Result::eSuboptimalKHR || !extentsMatch) requiresNewSwapchain = true;
+                } catch (const vk::OutOfDateKHRError &) {
+                    requiresNewSwapchain = true;
+                }
+            });
+        submitQueue.Flush(true);
+        presentComplete->Get();
+        if (requiresNewSwapchain || CVarMaxFramesInFlight.Changed() || CVarHDR.Changed()) RecreateSwapchain();
     }
 
-    void DeviceContext::EndFrame() {
+    void DeviceContext::EndFrame(bool stepMode) {
         if (vkRenderer) vkRenderer->EndFrame();
 
         allocatorQueue.Dispatch<void>(NewDispatchSource, [this]() {
             Thread().ReleaseAvailableResources();
         });
 
-        frameEndQueue.Flush(false, std::chrono::milliseconds(5));
+        {
+            ZoneScopedN("EndFrameFlush");
+            if (stepMode) {
+                FlushAllocatorQueue();
+            } else {
+                allocatorQueue.Flush(false, std::chrono::milliseconds(5));
+                submitQueue.Flush(true);
+            }
+        }
 
-        frameIndex = (frameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        frameIndex = (frameIndex + 1) % maxFramesInFlight;
 
         frameCounter++;
         if (frameCounter == UINT32_MAX) frameCounter = 0;
@@ -919,114 +965,140 @@ namespace sp::vulkan {
 
         lastFrameEnd = frameEnd;
         if (perfTimer) perfTimer->EndFrame();
+    };
+
+    void DeviceContext::WaitIdle(const DispatchSourceInfo &sourceInfo) {
+        ZoneScoped;
+        if (!deviceResetRequired) {
+            auto waitComplete = submitQueue.Dispatch<void>(sourceInfo, [this] {
+                try {
+                    device->waitIdle();
+                } catch (const vk::DeviceLostError &err) {
+                    deviceResetRequired = true;
+                    Abortf("Device lost! device.waitIdle() %s", err.what());
+                }
+            });
+            FlushAllocatorQueue();
+            waitComplete->Get();
+        }
     }
 
-    CommandContextPtr DeviceContext::GetFrameCommandContext(render_graph::Resources &resources,
-        CommandContextType type) {
-        if (renderThread == std::thread::id()) {
-            renderThread = std::this_thread::get_id();
-        } else {
-            Assert(std::this_thread::get_id() == renderThread, "must use a fenced command context in a single thread");
+    void DeviceContext::FlushAllocatorQueue() {
+        ZoneScoped;
+        bool allFlushed = false;
+        while (!allFlushed) {
+            allFlushed = true;
+            if (!allocatorQueue.Flush(false)) allFlushed = false;
+            if (!submitQueue.Flush(true)) allFlushed = false;
         }
+    }
+
+    CommandContextPtr DeviceContext::GetFrameCommandContext(std::string_view passName,
+        render_graph::Resources *resources) {
+        Assert(std::this_thread::get_id() == renderThread, "GetFrameCommandContext must be called from render thread");
+
+        auto &fence = Frame().inFlightFence;
+        Assertf(device->getFenceStatus(fence->get()) == vk::Result::eNotReady,
+            "CommandContext created with invalid frame fence");
+        Frame().fenceInUse = true;
 
         CommandContextPtr cmd;
-        auto &pool = Frame().commandContexts[QueueType(type)];
-        if (pool.nextIndex < pool.list.size()) {
-            cmd = pool.list[pool.nextIndex++];
+        if (Frame().nextIndex < Frame().commandContexts.size()) {
+            cmd = Frame().commandContexts[Frame().nextIndex++];
 
             // Reset cmd to default state
             auto buffer = std::move(cmd->RawRef());
+            auto acquiredImages = std::move(cmd->acquiredImages);
+            auto acquiredBuffers = std::move(cmd->acquiredBuffers);
+            auto activeImageViews = std::move(cmd->activeImageViews);
+            auto waitSemaphores = std::move(cmd->waitSemaphores);
+            auto signalSemaphores = std::move(cmd->signalSemaphores);
+            auto waitStages = std::move(cmd->waitStages);
+            acquiredImages.clear();
+            acquiredBuffers.clear();
+            activeImageViews.clear();
+            waitSemaphores.clear();
+            signalSemaphores.clear();
+            waitStages.clear();
             cmd->~CommandContext();
-            new (cmd.get()) CommandContext(*this, std::move(buffer), type, CommandContextScope::Frame);
+            new (cmd.get()) CommandContext(*this, std::move(buffer), QueueID::General, CommandContextType::Frame);
+            cmd->acquiredImages = std::move(acquiredImages);
+            cmd->acquiredBuffers = std::move(acquiredBuffers);
+            cmd->activeImageViews = std::move(activeImageViews);
+            cmd->waitSemaphores = std::move(waitSemaphores);
+            cmd->signalSemaphores = std::move(signalSemaphores);
+            cmd->waitStages = std::move(waitStages);
         } else {
             vk::CommandBufferAllocateInfo allocInfo;
-            allocInfo.commandPool = *pool.commandPool;
+            allocInfo.commandPool = *Frame().commandPool;
             allocInfo.level = vk::CommandBufferLevel::ePrimary;
             allocInfo.commandBufferCount = 1;
             auto buffers = device->allocateCommandBuffersUnique(allocInfo);
 
-            cmd = std::make_shared<CommandContext>(*this, std::move(buffers[0]), type, CommandContextScope::Frame);
-            pool.list.push_back(cmd);
-            pool.nextIndex++;
+            cmd = std::make_shared<CommandContext>(*this,
+                std::move(buffers[0]),
+                QueueID::General,
+                CommandContextType::Frame);
+            Frame().commandContexts.push_back(cmd);
+            Frame().nextIndex++;
         }
-        cmd->Begin(&resources);
+        cmd->handle = cmd;
+        cmd->fence = Frame().inFlightFence;
+        cmd->Begin(resources);
         return cmd;
     }
 
-    CommandContextPtr DeviceContext::GetFencedCommandContext(CommandContextType type) {
+    CommandContextPtr DeviceContext::GetFencedCommandContext(const DispatchSourceInfo &sourceInfo, QueueID queueId) {
+        Assert(std::this_thread::get_id() == renderThread, "GetFencedCommandContext must be called from render thread");
         auto &thr = Thread();
-        auto cmdHandle = thr.commandContexts[QueueType(type)]->Get();
-        thr.pendingCommandContexts[QueueType(type)].push_back(cmdHandle);
-        cmdHandle.Get()->Begin();
-        return cmdHandle;
+        auto cmd = thr.queues[queueId].commandContexts->Get();
+
+        thr.queues[queueId].pendingCommandContexts.push_back(cmd);
+        cmd->handle = cmd;
+        cmd->Begin();
+        return cmd;
     }
 
-    void DeviceContext::Submit(CommandContextPtr &cmd,
-        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
-        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence,
-        bool lastSubmit) {
-        Submit({1, &cmd}, signalSemaphores, waitSemaphores, waitStages, fence, lastSubmit);
-    }
-
-    void DeviceContext::Submit(vk::ArrayProxyNoTemporaries<CommandContextPtr> cmds,
-        vk::ArrayProxy<const vk::Semaphore> signalSemaphores,
-        vk::ArrayProxy<const vk::Semaphore> waitSemaphores,
-        vk::ArrayProxy<const vk::PipelineStageFlags> waitStages,
-        vk::Fence fence,
-        bool lastSubmit) {
+    void DeviceContext::SubmitInternal(std::span<const CommandContextPtr> cmds) {
         ZoneScoped;
-        if (renderThread == std::thread::id()) {
-            renderThread = std::this_thread::get_id();
-        } else {
-            Assert(std::this_thread::get_id() == renderThread, "must call Submit from a single thread");
-        }
-        Assert(waitSemaphores.size() == waitStages.size(), "must have exactly one wait stage per wait semaphore");
+        Assert(std::this_thread::get_id() == renderThread, "Submit must be called from a single thread");
+        Assert(!cmds.empty(), "DeviceContext::SubmitInternal called with empty command list");
 
-        InlineVector<vk::Semaphore, 8> signalSemArray;
-        signalSemArray.insert(signalSemArray.end(), signalSemaphores.begin(), signalSemaphores.end());
-
-        InlineVector<vk::Semaphore, 8> waitSemArray;
-        waitSemArray.insert(waitSemArray.end(), waitSemaphores.begin(), waitSemaphores.end());
-
-        InlineVector<vk::PipelineStageFlags, 8> waitStageArray;
-        waitStageArray.insert(waitStageArray.end(), waitStages.begin(), waitStages.end());
-
-        QueueType queue = QUEUE_TYPES_COUNT;
-
-        if (lastSubmit) {
-            Assert(!fence, "can't use custom fence on frame's last submit call");
-            fence = *Frame().inFlightFence;
-            device->resetFences({fence});
-        }
-
+        std::optional<QueueID> queueId;
+        std::shared_ptr<vk::UniqueFence> fence;
+        static thread_local std::vector<vk::Semaphore> signalSemArray;
+        static thread_local std::vector<vk::Semaphore> waitSemArray;
+        static thread_local std::vector<vk::PipelineStageFlags> waitStageArray;
         for (auto &cmd : cmds) {
             auto cmdFence = cmd->Fence();
-            auto cmdQueue = QueueType(cmd->GetType());
+            auto cmdQueueId = cmd->GetQueueID();
 
-            if (cmd->WritesToSwapchain()) {
-                waitStageArray.push_back(vk::PipelineStageFlagBits::eColorAttachmentOutput);
-                waitSemArray.push_back(*Frame().imageAvailableSemaphore);
-                signalSemArray.push_back(*Frame().renderCompleteSemaphore);
-                Assert(lastSubmit, "swapchain write must be in the last submit batch of the frame");
+            signalSemArray.reserve(signalSemArray.size() + cmd->signalSemaphores.size());
+            for (SemaphorePtr &sem : cmd->signalSemaphores) {
+                signalSemArray.emplace_back(sem->get());
             }
+            waitSemArray.reserve(waitSemArray.size() + cmd->waitSemaphores.size());
+            for (SemaphorePtr &sem : cmd->waitSemaphores) {
+                waitSemArray.emplace_back(sem->get());
+            }
+            waitStageArray.insert(waitStageArray.end(), cmd->waitStages.begin(), cmd->waitStages.end());
 
             if (cmdFence) {
-                Assert(!fence, "can't submit with multiple fences");
+                Assert(!fence || fence == cmdFence, "can't submit with multiple fences");
                 fence = cmdFence;
             }
 
-            Assert(queue == QUEUE_TYPES_COUNT || cmdQueue == queue, "can't submit with multiple queues");
-            queue = cmdQueue;
+            Assert(!queueId || cmdQueueId == queueId.value(), "can't submit with multiple queues");
+            queueId = cmdQueueId;
         }
 
-        std::vector<vk::CommandBuffer> cmdBufs;
+        static thread_local std::vector<vk::CommandBuffer> cmdBufs;
         cmdBufs.reserve(cmds.size());
         for (auto &cmd : cmds) {
-            if (cmd->recording) cmd->End();
-            cmdBufs.push_back(cmd->Raw());
+            cmdBufs.emplace_back(cmd->Raw());
         }
+        DebugAssert(waitSemArray.size() == waitStageArray.size(),
+            "must have exactly one wait stage per wait semaphore");
 
         vk::SubmitInfo submitInfo = {};
         submitInfo.waitSemaphoreCount = waitSemArray.size();
@@ -1037,17 +1109,56 @@ namespace sp::vulkan {
         submitInfo.commandBufferCount = cmdBufs.size();
         submitInfo.pCommandBuffers = cmdBufs.data();
 
-        queueLastSubmit[queue] = frameCounter;
+        queues[*queueId].lastSubmit = frameCounter;
         try {
             ZoneScopedN("VkQueueSubmit");
-            queues[queue].submit({submitInfo}, fence);
+            Assertf(fence, "SubmitInternal null fence");
+            if (cmds.front()->type == CommandContextType::Fence) {
+                Assertf(device->getFenceStatus(fence->get()) == vk::Result::eSuccess,
+                    "VkQueueSubmit previous frame did not complete");
+                device->resetFences({fence->get()});
+            }
+            Assertf(device->getFenceStatus(fence->get()) == vk::Result::eNotReady,
+                "VkQueueSubmit previous fence is already used");
+            queues[*queueId].queue.submit({submitInfo}, fence->get());
         } catch (const vk::DeviceLostError &err) {
-            Errorf("Device lost! queue.submit() %s", err.what());
             deviceResetRequired = true;
+            Abortf("Device lost! queue.submit() %s", err.what());
+        }
+        for (auto &cmd : cmds) {
+            if (cmd->type == CommandContextType::Frame) cmd->fence.reset();
+            Assert(!cmd->submitted.exchange(true), "CommandContext submitted twice");
+            cmd->submitted.notify_all();
         }
 
-        for (auto cmdPtr = cmds.data(); cmdPtr != cmds.end(); cmdPtr++) {
-            cmdPtr->reset();
+        signalSemArray.clear();
+        waitSemArray.clear();
+        waitStageArray.clear();
+        cmdBufs.clear();
+    }
+
+    void DeviceContext::Submit(const DispatchSourceInfo &sourceInfo, const CommandContextPtr &cmd) {
+        if (cmd->recording) cmd->End();
+        if (std::this_thread::get_id() == renderThread) {
+            SubmitInternal({&cmd, 1});
+        } else {
+            submitQueue.Dispatch<void>(sourceInfo, [this, cmd = cmd] {
+                SubmitInternal({&cmd, 1});
+            });
+        }
+    }
+
+    void DeviceContext::Submit(const DispatchSourceInfo &sourceInfo, std::vector<CommandContextPtr> &&cmds) {
+        for (auto &cmd : cmds) {
+            if (cmd->recording) cmd->End();
+        }
+        if (std::this_thread::get_id() == renderThread) {
+            SubmitInternal(cmds);
+            cmds.clear();
+        } else {
+            submitQueue.Dispatch<void>(sourceInfo, [this, cmds = std::move(cmds)] {
+                SubmitInternal(cmds);
+            });
         }
     }
 
@@ -1069,14 +1180,17 @@ namespace sp::vulkan {
         return Thread().bufferPool->Get(desc);
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const InitialData &data, vk::BufferUsageFlags usage) {
+    AsyncPtr<Buffer> DeviceContext::CreateUploadBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
+        vk::BufferUsageFlags usage) {
         if (!data.data) return nullptr;
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [data, usage, this] {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [data, usage, this] {
             vk::BufferCreateInfo bufferInfo = {};
             bufferInfo.size = data.dataSize;
             bufferInfo.usage = usage;
             VmaAllocationCreateInfo allocInfo = {};
             allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
             allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
 
             Assertf(data.data, "DeviceContext::CreateBuffer null initial buffer data");
@@ -1086,71 +1200,25 @@ namespace sp::vulkan {
         });
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
         vk::BufferCreateInfo bufferInfo,
         VmaAllocationCreateInfo allocInfo) {
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(bufferInfo, allocInfo);
             buf->CopyFrom(data.data, data.dataSize);
             return buf;
         });
     }
 
-    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const InitialData &data,
+    AsyncPtr<Buffer> DeviceContext::CreateBuffer(const DispatchSourceInfo &sourceInfo,
+        const InitialData &data,
         vk::BufferUsageFlags usage,
         VmaMemoryUsage residency) {
-        return allocatorQueue.Dispatch<Buffer>(NewDispatchSource, [=, this]() {
+        return allocatorQueue.Dispatch<Buffer>(sourceInfo, [=, this]() {
             auto buf = AllocateBuffer(data.dataSize, usage, residency);
             buf->CopyFrom(data.data, data.dataSize);
             return buf;
-        });
-    }
-
-    AsyncPtr<void> DeviceContext::TransferBuffers(vk::ArrayProxy<const BufferTransfer> batch) {
-        auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
-
-        for (auto &transfer : batch) {
-            vk::BufferCopy region;
-            region.srcOffset = 0;
-            region.dstOffset = 0;
-
-            vk::Buffer srcBuf, dstBuf;
-
-            if (std::holds_alternative<SubBufferPtr>(transfer.src)) {
-                auto &subBuf = std::get<SubBufferPtr>(transfer.src);
-                region.srcOffset = subBuf->ByteOffset();
-                region.size = subBuf->ByteSize();
-                srcBuf = (vk::Buffer)*subBuf;
-            } else {
-                auto &buf = std::get<BufferPtr>(transfer.src);
-                region.size = buf->ByteSize();
-                srcBuf = (vk::Buffer)*buf;
-            }
-
-            vk::DeviceSize dstSize;
-            if (std::holds_alternative<SubBufferPtr>(transfer.dst)) {
-                auto &subBuf = std::get<SubBufferPtr>(transfer.dst);
-                region.dstOffset = subBuf->ByteOffset();
-                dstSize = subBuf->ByteSize();
-                dstBuf = (vk::Buffer)*subBuf;
-            } else {
-                auto &buf = std::get<BufferPtr>(transfer.dst);
-                dstSize = buf->ByteSize();
-                dstBuf = (vk::Buffer)*buf;
-            }
-            Assertf(dstSize == region.size,
-                "must transfer between buffers of the same size, src: %llu, dst: %llu",
-                region.size,
-                dstSize);
-
-            transferCmd->Raw().copyBuffer(srcBuf, dstBuf, {region});
-        }
-
-        transferCmd->End();
-
-        return frameEndQueue.Dispatch<void>(NewDispatchSource, [this, transferCmd]() {
-            auto cmd = transferCmd;
-            Submit(cmd);
         });
     }
 
@@ -1161,57 +1229,34 @@ namespace sp::vulkan {
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = residency;
         if (!declaredUsage) declaredUsage = info.usage;
-        return std::make_shared<Image>(info, allocInfo, allocator.get(), declaredUsage);
+        return Image::New(info, allocInfo, allocator.get(), declaredUsage);
     }
 
-    void transferImageQueueType(DeviceContext &device,
-        const std::shared_ptr<Image> &image,
-        CommandContextType type = CommandContextType::General,
-        Access access = Access::FragmentShaderSampleImage) {
-        ImageBarrierInfo transferToQueue = {};
-        transferToQueue.srcQueueFamilyIndex = image->LastQueueFamily();
-        transferToQueue.dstQueueFamilyIndex = device.QueueFamilyIndex(type);
-        auto waitSemaphore = image->GetWaitSemaphore(transferToQueue.dstQueueFamilyIndex);
-        if (transferToQueue.srcQueueFamilyIndex == transferToQueue.dstQueueFamilyIndex ||
-            transferToQueue.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-            transferToQueue.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            transferToQueue.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        }
-
-        auto cmd = device.GetFencedCommandContext(type);
-        auto info = GetAccessInfo(access);
-        cmd->ImageBarrier(image, info.imageLayout, info.stageMask, info.accessMask, transferToQueue);
-        auto fence = cmd->Fence();
-        device.PushInFlightObject(image, fence);
-        auto transferComplete = image->SetPendingCommand(device.GetEmptySemaphore(fence),
-            transferToQueue.dstQueueFamilyIndex);
-        if (waitSemaphore) {
-            device.Submit(cmd, {transferComplete}, {waitSemaphore}, {info.stageMask});
-        } else {
-            device.Submit(cmd, {transferComplete}, {}, {});
-        }
-        image->SetLayout(vk::ImageLayout::eUndefined, info.imageLayout);
-    }
-
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const InitialData &initialData) {
+    AsyncPtr<Image> DeviceContext::CreateImage(const DispatchSourceInfo &sourceInfo,
+        ImageCreateInfo createInfo,
+        const InitialData &initialData) {
         if (!initialData.data) {
             Assert(!createInfo.genMipmap, "DeviceContext::CreateImage must pass initial data to generate a mipmap");
-            return CreateImage(createInfo, AsyncPtr<Buffer>());
+            return CreateImage(sourceInfo, createInfo, AsyncPtr<Buffer>());
         } else {
-            return CreateImage(createInfo, CreateUploadBuffer(initialData));
+            return CreateImage(sourceInfo, createInfo, CreateUploadBuffer(sourceInfo, initialData));
         }
     }
 
-    AsyncPtr<Image> DeviceContext::CreateImage(ImageCreateInfo createInfo, const AsyncPtr<Buffer> &uploadBuffer) {
+    AsyncPtr<Image> DeviceContext::CreateImage(const DispatchSourceInfo &sourceInfo,
+        ImageCreateInfo createInfo,
+        const AsyncPtr<Buffer> &uploadBuffer) {
         ZoneScoped;
 
-        bool genMipmap = createInfo.genMipmap;
         bool genFactor = !createInfo.factor.empty();
         vk::ImageUsageFlags declaredUsage = createInfo.usage;
         vk::Format factorFormat = createInfo.format;
 
-        if (!createInfo.mipLevels) createInfo.mipLevels = genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
+        if (!createInfo.mipLevels) {
+            createInfo.mipLevels = createInfo.genMipmap ? CalculateMipmapLevels(createInfo.extent) : 1;
+        }
         if (!createInfo.arrayLayers) createInfo.arrayLayers = 1;
+        bool genMipmap = createInfo.genMipmap && createInfo.mipLevels > 1;
 
         if (!uploadBuffer) {
             Assert(!genMipmap, "DeviceContext::CreateImage must pass upload buffer to generate a mipmap");
@@ -1233,7 +1278,7 @@ namespace sp::vulkan {
             }
         }
 
-        auto futImage = allocatorQueue.Dispatch<Image>(NewDispatchSource, [this, createInfo, declaredUsage]() {
+        auto futImage = allocatorQueue.Dispatch<Image>(sourceInfo, [this, createInfo, declaredUsage]() {
             auto actualCreateInfo = createInfo.GetVkCreateInfo();
             auto formatInfo = createInfo.GetVkFormatList();
             if (formatInfo.viewFormatCount > 0) actualCreateInfo.pNext = &formatInfo;
@@ -1242,182 +1287,123 @@ namespace sp::vulkan {
         });
 
         if (uploadBuffer) {
-            futImage = UpdateImage(futImage, uploadBuffer, genMipmap && !genFactor);
+            futImage = UpdateImage(sourceInfo, futImage, uploadBuffer);
 
             if (genFactor) {
-                futImage = frameEndQueue.Dispatch<Image>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
-                    if (!image) return std::shared_ptr<Image>();
+                futImage = allocatorQueue.Dispatch<Image>(sourceInfo,
+                    futImage,
+                    [this, factorFormat, createInfo](ImagePtr image) {
+                        if (!image) return std::shared_ptr<Image>();
 
-                    ZoneScopedN("ApplyFactor");
-                    auto factorCmd = GetFencedCommandContext(CommandContextType::ComputeAsync);
+                        ZoneScopedN("ApplyFactor");
+                        auto factorCmd = GetFencedCommandContext(NewDispatchSource, QueueID::ComputeAsync);
+                        factorCmd->AcquireImage(image, Access::ComputeShaderReadWrite);
 
-                    ImageBarrierInfo transferToCompute = {};
-                    transferToCompute.srcQueueFamilyIndex = image->LastQueueFamily();
-                    transferToCompute.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::ComputeAsync);
-                    auto waitSemaphore = image->GetWaitSemaphore(transferToCompute.dstQueueFamilyIndex);
-                    if (transferToCompute.srcQueueFamilyIndex == transferToCompute.dstQueueFamilyIndex ||
-                        transferToCompute.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                        transferToCompute.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        transferToCompute.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    }
+                        ImageViewPtr factorView;
+                        {
+                            GPUZone(this, factorCmd, "ApplyFactor");
 
-                    ImageViewPtr factorView;
-                    {
-                        GPUZone(this, factorCmd, "ApplyFactor");
+                            ImageViewCreateInfo factorViewInfo = {};
+                            factorViewInfo.image = image;
+                            factorViewInfo.format = factorFormat;
+                            factorViewInfo.mipLevelCount = 1;
+                            factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
+                            factorView = CreateImageView(factorViewInfo);
 
-                        factorCmd->ImageBarrier(image,
-                            vk::ImageLayout::eGeneral,
-                            vk::PipelineStageFlagBits::eComputeShader,
-                            vk::AccessFlagBits::eShaderRead,
-                            transferToCompute);
-                        image->SetAccess(Access::None, Access::ComputeShaderReadStorage);
+                            factorCmd->SetComputeShader("texture_factor.comp");
+                            factorCmd->SetImageView("texture", factorView);
 
-                        ImageViewCreateInfo factorViewInfo = {};
-                        factorViewInfo.image = image;
-                        factorViewInfo.format = factorFormat;
-                        factorViewInfo.mipLevelCount = 1;
-                        factorViewInfo.usage = vk::ImageUsageFlagBits::eStorage;
-                        factorView = CreateImageView(factorViewInfo);
+                            struct {
+                                glm::vec4 factor;
+                                int components;
+                                bool srgb;
+                            } factorPushConstants;
 
-                        factorCmd->SetComputeShader("texture_factor.comp");
-                        factorCmd->SetImageView("texture", factorView);
+                            for (size_t i = 0; i < createInfo.factor.size(); i++) {
+                                factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                            }
+                            factorPushConstants.components = createInfo.factor.size();
+                            factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
+                            factorCmd->PushConstants(factorPushConstants);
 
-                        struct {
-                            glm::vec4 factor;
-                            int components;
-                            bool srgb;
-                        } factorPushConstants;
-
-                        for (size_t i = 0; i < createInfo.factor.size(); i++) {
-                            factorPushConstants.factor[i] = (float)createInfo.factor[i];
+                            factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
+                                (createInfo.extent.height + 15) / 16,
+                                1);
                         }
-                        factorPushConstants.components = createInfo.factor.size();
-                        factorPushConstants.srgb = FormatIsSRGB(createInfo.format);
-                        factorCmd->PushConstants(factorPushConstants);
-
-                        factorCmd->Dispatch((createInfo.extent.width + 15) / 16,
-                            (createInfo.extent.height + 15) / 16,
-                            1);
-                    }
-                    auto fence = factorCmd->Fence();
-                    PushInFlightObject(factorView, fence);
-                    auto factorComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                        transferToCompute.dstQueueFamilyIndex);
-                    if (waitSemaphore) {
-                        Submit(factorCmd,
-                            {factorComplete},
-                            {waitSemaphore},
-                            {vk::PipelineStageFlagBits::eComputeShader});
-                    } else {
-                        Submit(factorCmd, {factorComplete}, {}, {});
-                    }
-                    if (!genMipmap) {
-                        transferImageQueueType(*this, image);
-                    }
-                    return image;
-                });
+                        Submit(NewDispatchSource, factorCmd);
+                        return image;
+                    });
             }
-            if (genMipmap) futImage = UpdateImageMipmap(futImage);
+            if (genMipmap) futImage = UpdateImageMipmap(sourceInfo, futImage);
         }
         return futImage;
     }
 
-    AsyncPtr<Image> DeviceContext::UpdateImage(const AsyncPtr<Image> &dstImage,
-        const AsyncPtr<Buffer> &srcBuffer,
-        bool updateMipmap) {
-        auto futImage = frameEndQueue.Dispatch<
-            Image>(NewDispatchSource, dstImage, srcBuffer, [updateMipmap, this](ImagePtr image, BufferPtr stagingBuf) {
-            if (!image) return std::shared_ptr<Image>();
+    AsyncPtr<Image> DeviceContext::UpdateImage(const DispatchSourceInfo &sourceInfo,
+        const AsyncPtr<Image> &dstImage,
+        const AsyncPtr<Buffer> &srcBuffer) {
+        auto futImage = allocatorQueue.Dispatch<Image>(sourceInfo,
+            dstImage,
+            srcBuffer,
+            [this](ImagePtr image, BufferPtr stagingBuf) {
+                if (!image) return std::shared_ptr<Image>();
 
-            ZoneScopedN("PrepareImage");
-            auto transferCmd = GetFencedCommandContext(CommandContextType::TransferAsync);
+                ZoneScopedN("PrepareImage");
+                auto transferCmd = GetFencedCommandContext(NewDispatchSource, QueueID::TransferAsync);
+                transferCmd->AcquireBuffer(stagingBuf, Access::TransferRead);
+                transferCmd->AcquireImage(image, Access::TransferWrite);
 
-            ImageBarrierInfo transferToTransferAsync = {};
-            transferToTransferAsync.srcQueueFamilyIndex = image->LastQueueFamily();
-            transferToTransferAsync.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::TransferAsync);
-            auto waitSemaphore = image->GetWaitSemaphore(transferToTransferAsync.dstQueueFamilyIndex);
-            if (transferToTransferAsync.srcQueueFamilyIndex == transferToTransferAsync.dstQueueFamilyIndex ||
-                transferToTransferAsync.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                transferToTransferAsync.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                transferToTransferAsync.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            }
+                vk::BufferImageCopy region;
+                region.bufferOffset = 0;
+                region.bufferRowLength = 0;
+                region.bufferImageHeight = 0;
+                region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
+                region.imageSubresource.mipLevel = 0;
+                region.imageSubresource.baseArrayLayer = 0;
+                region.imageSubresource.layerCount = 1;
+                region.imageOffset = vk::Offset3D{0, 0, 0};
+                region.imageExtent = image->Extent();
 
-            transferCmd->ImageBarrier(image,
-                vk::ImageLayout::eTransferDstOptimal,
-                vk::PipelineStageFlagBits::eTransfer,
-                vk::AccessFlagBits::eTransferWrite,
-                transferToTransferAsync);
+                transferCmd->Raw().copyBufferToImage(*stagingBuf,
+                    *image,
+                    vk::ImageLayout::eTransferDstOptimal,
+                    {region});
 
-            vk::BufferImageCopy region;
-            region.bufferOffset = 0;
-            region.bufferRowLength = 0;
-            region.bufferImageHeight = 0;
-            region.imageSubresource.aspectMask = FormatToAspectFlags(image->Format());
-            region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
-            region.imageSubresource.layerCount = 1;
-            region.imageOffset = vk::Offset3D{0, 0, 0};
-            region.imageExtent = image->Extent();
-
-            transferCmd->Raw().copyBufferToImage(*stagingBuf, *image, vk::ImageLayout::eTransferDstOptimal, {region});
-
-            auto fence = transferCmd->Fence();
-            PushInFlightObject(stagingBuf, fence);
-            auto transferComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                transferToTransferAsync.dstQueueFamilyIndex);
-            {
-                ZoneScopedN("CopyBufferToImage");
-                if (waitSemaphore) {
-                    Submit(transferCmd, {transferComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
-                } else {
-                    Submit(transferCmd, {transferComplete}, {}, {});
+                {
+                    ZoneScopedN("CopyBufferToImage");
+                    Submit(NewDispatchSource, transferCmd);
                 }
-            }
 
-            if (!updateMipmap) transferImageQueueType(*this, image);
-            return image;
-        });
-        if (updateMipmap) futImage = UpdateImageMipmap(futImage);
+                return image;
+            });
         return futImage;
     }
 
-    AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const AsyncPtr<Image> &image) {
+    AsyncPtr<Image> DeviceContext::UpdateImageMipmap(const DispatchSourceInfo &sourceInfo,
+        const AsyncPtr<Image> &image) {
         ZoneScoped;
-        return frameEndQueue.Dispatch<Image>(NewDispatchSource, image, [this](ImagePtr image) {
+        return allocatorQueue.Dispatch<Image>(sourceInfo, image, [this](ImagePtr image) {
             if (!image) return std::shared_ptr<Image>();
-            auto graphicsCmd = GetFencedCommandContext(CommandContextType::General); // TODO: Add GraphicsAsync
-
-            ImageBarrierInfo transferToGeneral = {};
-            transferToGeneral.srcQueueFamilyIndex = image->LastQueueFamily();
-            transferToGeneral.dstQueueFamilyIndex = QueueFamilyIndex(CommandContextType::General);
-            auto waitSemaphore = image->GetWaitSemaphore(transferToGeneral.dstQueueFamilyIndex);
-            if (transferToGeneral.srcQueueFamilyIndex == transferToGeneral.dstQueueFamilyIndex ||
-                transferToGeneral.srcQueueFamilyIndex == VK_QUEUE_FAMILY_IGNORED) {
-                transferToGeneral.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                transferToGeneral.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            }
+            // TODO: Add GraphicsAsync
+            auto graphicsCmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
+            graphicsCmd->AcquireImage(image, Access::TransferReadWrite);
+            // Image starts as eTransferDstOptimal
 
             {
                 GPUZone(this, graphicsCmd, "Mipmap");
 
-                graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eTransferSrcOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::AccessFlagBits::eTransferRead,
-                    transferToGeneral);
-
                 ImageBarrierInfo transferMips = {};
                 transferMips.trackImageLayout = false;
-                transferMips.baseMipLevel = 1;
+                transferMips.baseMipLevel = 0;
                 transferMips.mipLevelCount = 1;
 
                 graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eUndefined,
                     vk::ImageLayout::eTransferDstOptimal,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    {},
+                    vk::ImageLayout::eTransferSrcOptimal,
                     vk::PipelineStageFlagBits::eTransfer,
                     vk::AccessFlagBits::eTransferWrite,
+                    vk::PipelineStageFlagBits::eTransfer,
+                    vk::AccessFlagBits::eTransferRead,
                     transferMips);
 
                 vk::Offset3D currentExtent = {(int32_t)image->Extent().width,
@@ -1457,22 +1443,9 @@ namespace sp::vulkan {
                 }
 
                 // Each mip has now been transitioned to TransferSrc.
-                image->SetLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferSrcOptimal);
-
-                graphicsCmd->ImageBarrier(image,
-                    vk::ImageLayout::eShaderReadOnlyOptimal,
-                    vk::PipelineStageFlagBits::eFragmentShader,
-                    vk::AccessFlagBits::eShaderRead);
+                image->SetLayout(vk::ImageLayout::eTransferSrcOptimal);
             }
-            auto fence = graphicsCmd->Fence();
-            PushInFlightObject(image, fence);
-            auto mipmapComplete = image->SetPendingCommand(GetEmptySemaphore(fence),
-                transferToGeneral.dstQueueFamilyIndex);
-            if (waitSemaphore) {
-                Submit(graphicsCmd, {mipmapComplete}, {waitSemaphore}, {vk::PipelineStageFlagBits::eTransfer});
-            } else {
-                Submit(graphicsCmd, {mipmapComplete}, {}, {});
-            }
+            Submit(NewDispatchSource, graphicsCmd);
             return image;
         });
     }
@@ -1515,16 +1488,27 @@ namespace sp::vulkan {
         return std::make_shared<ImageView>(device->createImageViewUnique(createInfo), info);
     }
 
-    AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const ImageCreateInfo &imageInfo,
+    AsyncPtr<ImageView> DeviceContext::CreateImageAndView(const DispatchSourceInfo &sourceInfo,
+        const ImageCreateInfo &imageInfo,
         const ImageViewCreateInfo &viewInfo,
         const InitialData &data) {
         ZoneScoped;
-        auto futImage = CreateImage(imageInfo, data);
+        auto futImage = CreateImage(sourceInfo, imageInfo, data);
 
-        return allocatorQueue.Dispatch<ImageView>(NewDispatchSource, futImage, [=, this](ImagePtr image) {
+        auto futView = allocatorQueue.Dispatch<ImageView>(sourceInfo, futImage, [=, this](ImagePtr image) {
             auto viewI = viewInfo;
             viewI.image = image;
             return CreateImageView(viewI);
+        });
+        return allocatorQueue.Dispatch<ImageView>(sourceInfo, futView, [this](ImageViewPtr imageView) {
+            auto &image = imageView->Image();
+            if ((image->Usage() & vk::ImageUsageFlagBits::eSampled) &&
+                image->lastAccess != Access::FragmentShaderSampleImage) {
+                auto cmd = GetFencedCommandContext(NewDispatchSource, QueueID::General);
+                cmd->AcquireImage(image, Access::FragmentShaderSampleImage);
+                Submit(NewDispatchSource, cmd);
+            }
+            return imageView;
         });
     }
 
@@ -1544,18 +1528,52 @@ namespace sp::vulkan {
     AsyncPtr<ImageView> DeviceContext::LoadImage(std::shared_ptr<const sp::Image> image, bool genMipmap, bool srgb) {
         ZoneScoped;
         Assertf(image, "DeviceContext::LoadImage called with null image");
-        ImageCreateInfo createInfo;
+        ImageCreateInfo createInfo = {};
         createInfo.extent = vk::Extent3D(image->GetWidth(), image->GetHeight(), 1);
         Assert(createInfo.extent.width > 0 && createInfo.extent.height > 0, "image has zero size");
 
-        createInfo.format = FormatFromTraits(image->GetComponents(), 8, srgb);
+        uint32_t srcComponents = image->GetComponents();
+        uint32_t dstComponents;
+        if (srcComponents == 1) {
+            dstComponents = 1;
+        } else {
+            dstComponents = 4;
+        }
+
+        createInfo.format = FormatFromTraits(dstComponents, 8, srgb);
         Assert(createInfo.format != vk::Format::eUndefined, "invalid image format");
 
         createInfo.genMipmap = genMipmap && createInfo.extent.width > 1 && createInfo.extent.height > 1;
         createInfo.usage = vk::ImageUsageFlagBits::eSampled;
 
-        const uint8_t *data = image->GetImage().get();
-        Assert(data, "missing image data");
+        const uint8_t *dataPtr = image->GetImage().get();
+        Assert(dataPtr, "missing image data");
+
+        InitialData initialData;
+        if (dstComponents != srcComponents) {
+            Assertf(dstComponents > srcComponents,
+                "Unexpected LoadImage component conversion: %u to %u",
+                srcComponents,
+                dstComponents);
+            size_t pixelCount = createInfo.extent.width * createInfo.extent.height * createInfo.extent.depth;
+            size_t dataSize = pixelCount * dstComponents;
+            auto buffer = std::make_shared<uint8_t[]>(dataSize);
+            for (size_t i = 0; i < pixelCount; i++) {
+                uint32_t c = 0;
+                for (; c < srcComponents; c++) {
+                    buffer[i * dstComponents + c] = dataPtr[i * srcComponents + c];
+                }
+                for (; c < dstComponents - 1; c++) {
+                    buffer[i * dstComponents + c] = 0;
+                }
+                if (dstComponents == 4) {
+                    buffer[i * dstComponents + 3] = 0xFF;
+                }
+            }
+            initialData = {buffer.get(), dataSize, buffer};
+        } else {
+            initialData = {dataPtr, image->ByteSize(), image};
+        }
 
         ImageViewCreateInfo viewInfo = {};
         if (genMipmap) {
@@ -1563,21 +1581,21 @@ namespace sp::vulkan {
         } else {
             viewInfo.defaultSampler = GetSampler(SamplerType::BilinearClampEdge);
         }
-        return CreateImageAndView(createInfo, viewInfo, {data, image->ByteSize(), image});
+        return CreateImageAndView(NewDispatchSource, createInfo, viewInfo, initialData);
     }
 
     AsyncPtr<ImageView> DeviceContext::CreateSinglePixel(color_alpha_t color) {
         glm::u8vec4 value(color);
 
-        ImageCreateInfo imageInfo;
+        ImageCreateInfo imageInfo = {};
         imageInfo.imageType = vk::ImageType::e2D;
         imageInfo.usage = vk::ImageUsageFlagBits::eSampled;
-        imageInfo.format = vk::Format::eR8G8B8A8Unorm;
+        imageInfo.format = vk::Format::eR8G8B8A8Srgb;
         imageInfo.extent = vk::Extent3D(1, 1, 1);
 
         ImageViewCreateInfo viewInfo = {};
         viewInfo.defaultSampler = GetSampler(SamplerType::NearestTiled);
-        return CreateImageAndView(imageInfo, viewInfo, {&value[0], sizeof(value)});
+        return CreateImageAndView(NewDispatchSource, imageInfo, viewInfo, {&value[0], sizeof(value)});
     }
 
     vk::Sampler DeviceContext::GetSampler(SamplerType type) {
@@ -1700,6 +1718,7 @@ namespace sp::vulkan {
     }
 
     ImageViewPtr DeviceContext::SwapchainImageView() {
+        Assert(std::this_thread::get_id() == renderThread, "SwapchainImageView() must be called from render thread");
         return swapchain ? SwapchainImage().imageView : nullptr;
     }
 
@@ -1723,35 +1742,49 @@ namespace sp::vulkan {
         return bindlessImageSamplerDescriptorPool->CreateBindlessDescriptorSet();
     }
 
-    SharedHandle<vk::Fence> DeviceContext::GetEmptyFence() {
-        return fencePool->Get();
-    }
-
-    std::shared_ptr<vk::UniqueSemaphore> DeviceContext::GetEmptySemaphore(vk::Fence inUseUntilFence) {
-        // auto sem = semaphorePool->Get();
-        vk::SemaphoreCreateInfo semaphoreInfo = {};
-        auto sem = std::make_shared<vk::UniqueSemaphore>(device->createSemaphoreUnique(semaphoreInfo));
-        PushInFlightObject(sem, inUseUntilFence);
-        return sem;
-    }
-
-    void DeviceContext::PushInFlightObject(TemporaryObject object, vk::Fence fence) {
-        if (!fence) fence = *Frame().inFlightFence;
-        Frame().inFlightObjects.emplace_back(InFlightObject{object, fence});
+    DeviceContext::ThreadContext &DeviceContext::Thread() {
+        thread_local size_t threadIndex = nextThreadIndex.fetch_add(1);
+        thread_local bool firstInit = true;
+        Assert(threadIndex < threadContexts.size(), "ran out of thread contexts");
+        auto &threadContext = *threadContexts[threadIndex];
+        if (firstInit) {
+            firstInit = false; // Set first because Reserve() recursively calls Thread()
+            for (const QueueID &queueId : magic_enum::enum_values<QueueID>()) {
+                threadContext.queues[queueId].commandContexts->Reserve(64);
+            }
+        }
+        return threadContext;
     }
 
     void DeviceContext::ThreadContext::ReleaseAvailableResources() {
         ZoneScoped;
-        for (uint32_t queueType = 0; queueType < QUEUE_TYPES_COUNT; queueType++) {
-            erase_if(pendingCommandContexts[queueType], [](auto &cmdHandle) {
-                auto &cmd = cmdHandle.Get();
-                auto fence = cmd->Fence();
-                return !fence || cmd->Device()->getFenceStatus(fence) == vk::Result::eSuccess;
-            });
+        size_t erased = 1;
+        while (erased > 0) {
+            erased = 0;
+            for (const QueueID &queueId : magic_enum::enum_values<QueueID>()) {
+                erased += erase_if(queues[queueId].pendingCommandContexts, [](CommandContextPtr &cmd) {
+                    if (!cmd->submitted) return false;
+                    auto &fence = cmd->Fence();
+                    Assertf(fence, "Pending CommandContext is missing a fence");
+                    if (fence.use_count() == 1 && cmd->Device()->getFenceStatus(fence->get()) == vk::Result::eSuccess) {
+                        return true;
+                    }
+                    return false;
+                });
+            }
         }
 
         bufferPool->Tick();
         if (printBufferStats.exchange(false)) bufferPool->LogStats();
+    }
+    DeviceContext::SwapchainImageContext &DeviceContext::SwapchainImage() {
+        Assert(std::this_thread::get_id() == renderThread, "SwapchainImage() must be called from render thread");
+        return swapchainImageContexts[swapchainImageIndex];
+    }
+
+    DeviceContext::FrameContext &DeviceContext::Frame() {
+        Assert(std::this_thread::get_id() == renderThread, "DeviceContext::Frame() must be called from render thread");
+        return frameContexts[frameIndex];
     }
 
     vk::FormatProperties DeviceContext::FormatProperties(vk::Format format) const {
@@ -1784,8 +1817,8 @@ namespace sp::vulkan {
     }
 
 #ifdef TRACY_ENABLE_GRAPHICS
-    tracy::VkCtx *DeviceContext::GetTracyContext(CommandContextType type) {
-        return tracing.tracyContexts[(size_t)type];
+    tracy::VkCtx *DeviceContext::GetTracyContext(QueueID queueId) {
+        return tracing.tracyContexts[queueId];
     }
 #endif
 

@@ -494,6 +494,7 @@ namespace sp {
                 scratchBlock.data(),
                 scratchBlock.size());
             scene->fetchResults(true);
+            simulationCallback.SendPendingEvents();
         }
 
         activeConvexHulls.Tick(interval);
