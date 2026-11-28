@@ -30,5 +30,5 @@ namespace sp::vulkan::renderer {
         std::vector<PendingScreenshot> pendingScreenshots;
     };
 
-    void WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer);
+    bool WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer);
 } // namespace sp::vulkan::renderer

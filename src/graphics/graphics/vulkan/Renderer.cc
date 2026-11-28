@@ -20,6 +20,7 @@
 #include "graphics/vulkan/core/DeviceContext.hh"
 #include "graphics/vulkan/core/Image.hh"
 #include "graphics/vulkan/core/Util.hh"
+#include "graphics/vulkan/core/VkCommon.hh"
 #include "graphics/vulkan/render_graph/PassBuilder.hh"
 #include "graphics/vulkan/render_graph/PooledImage.hh"
 #include "graphics/vulkan/render_graph/Resources.hh"
@@ -230,10 +231,13 @@ namespace sp::vulkan {
                 }
 
                 if (sourceID != rg::InvalidResource) {
-                    auto res = builder.GetResource(sourceID);
+                    rg::Resource res = builder.GetResource(sourceID);
+                    ImageViewPtr swapchainView = device.SwapchainImageView();
+                    vk::Format swapchainFormat = swapchainView ? swapchainView->Format() : vk::Format::eR8G8B8A8Srgb;
                     auto format = res.ImageFormat();
                     auto layer = CVarWindowViewTargetLayer.Get();
-                    if (FormatComponentCount(format) != 4 || FormatByteSize(format) != 4 || layer != 0) {
+                    if (FormatComponentCount(format) != 4 ||
+                        FormatBitDepth(format) != FormatBitDepth(swapchainFormat) || layer != 0) {
                         sourceID = renderer::VisualizeBuffer(graph, res.id, layer);
                     }
                     builder.Read(sourceID, Access::FragmentShaderSampleImage);
@@ -254,7 +258,6 @@ namespace sp::vulkan {
                     cmd.DrawScreenCover(resources.GetImageView("SplashLogo"));
                 }
                 if (guiResourceID != rg::InvalidResource) {
-                    cmd.SetBlending(true);
                     // GUI outputs premultiplied alpha
                     cmd.SetBlendFunc(vk::BlendFactor::eOne,
                         vk::BlendFactor::eOneMinusSrcAlpha,

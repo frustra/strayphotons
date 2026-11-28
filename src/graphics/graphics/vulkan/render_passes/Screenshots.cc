@@ -77,22 +77,25 @@ namespace sp::vulkan::renderer {
                     screenshotDesc.extent.depth = 1;
                     screenshotDesc.mipLevels = 1;
                     screenshotDesc.arrayLayers = 1;
-                    if (FormatByteSize(screenshotDesc.format) == FormatComponentCount(screenshotDesc.format)) {
-                        sourceID = resource.id;
-                        uint32_t components = FormatComponentCount(screenshotDesc.format);
-                        if (components == 1) {
-                            screenshotDesc.format = vk::Format::eR8Srgb;
-                        } else if (components == 2) {
-                            screenshotDesc.format = vk::Format::eR8G8Srgb;
-                        } else if (components == 3) {
-                            screenshotDesc.format = vk::Format::eR8G8B8Srgb;
-                        } else if (components == 4) {
-                            screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
-                        } else {
-                            Abortf("format has unsupported component count: %u", components);
+                    uint32_t components = FormatComponentCount(screenshotDesc.format);
+                    glm::u8vec4 bitDepth = FormatBitDepth(screenshotDesc.format);
+                    for (uint32_t c = components; c < 4; c++) {
+                        bitDepth[c] = bitDepth[0];
+                    }
+                    if (glm::u8vec3(bitDepth) == glm::u8vec3(8)) {
+                        screenshotDesc.format = FormatFromTraits(components, 8, true);
+                        if (screenshotDesc.format == vk::Format::eUndefined) {
+                            if (pending.assert) {
+                                Abortf("format has unsupported component count: %u", components);
+                            } else {
+                                Errorf("format has unsupported component count: %u", components);
+                            }
+                            return;
                         }
 
+                        sourceID = resource.id;
                     } else {
+                        // TODO: Handle HDR to SDR translation here
                         sourceID = VisualizeBuffer(graph, resource.id);
                         screenshotDesc.format = vk::Format::eR8G8B8A8Srgb;
                     }
@@ -131,19 +134,21 @@ namespace sp::vulkan::renderer {
                 subresource,
                 {},
                 screenshotDesc.extent,
-                [screenshotPath, screenshotDesc](BufferPtr buffer) {
-                    renderer::WriteScreenshot(screenshotPath, screenshotDesc, buffer);
+                [screenshotPath, screenshotDesc, assert = pending.assert](BufferPtr buffer) {
+                    if (!renderer::WriteScreenshot(screenshotPath, screenshotDesc, buffer) && assert) {
+                        Abortf("Failed to write screenshot file: %s", screenshotPath);
+                    }
                 });
         }
         pendingScreenshots.clear();
     }
 
-    void WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer) {
+    bool WriteScreenshot(const std::string &path, ImageDesc imageDesc, const BufferPtr &buffer) {
         auto base = std::filesystem::absolute("screenshots");
         if (!std::filesystem::is_directory(base)) {
             if (!std::filesystem::create_directory(base)) {
                 Errorf("Couldn't save screenshot, couldn't create output directory: %s", base.c_str());
-                return;
+                return false;
             }
         }
         imageDesc.extent.depth = 1;
@@ -152,7 +157,13 @@ namespace sp::vulkan::renderer {
         Logf("Saving %ux%u screenshot to: %s", imageDesc.extent.width, imageDesc.extent.height, fullPath.string());
 
         uint32_t components = FormatComponentCount(imageDesc.format);
-        Assert(FormatByteSize(imageDesc.format) == components, "format must have 1 byte per component");
+        glm::u8vec4 bitDepth = FormatBitDepth(imageDesc.format);
+        for (uint32_t c = 0; c < components; c++) {
+            if (bitDepth[c] != 8) {
+                Errorf("Unable to save screenshot, unsupported bit depth: %u", bitDepth[c]);
+                return false;
+            }
+        }
 
         static bool fpng_init = false;
         if (!fpng_init) {
@@ -170,5 +181,6 @@ namespace sp::vulkan::renderer {
             components,
             fpng::FPNG_ENCODE_SLOWER); // FPNG_ENCODE_SLOWER = 2-pass compression for smaller files
         buffer->Unmap();
+        return true;
     }
 } // namespace sp::vulkan::renderer

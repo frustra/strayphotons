@@ -61,7 +61,7 @@ namespace sp::vulkan::renderer {
                 BufferPtr stateBuffer = resources.GetBuffer("ExposureState");
 
                 ExposureState state = {};
-                state.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : 4.0f;
+                state.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : CVarHDRExposreScale.Get();
                 float manualExposure = CVarExposure.Get() * state.hdrScale;
                 if (manualExposure > 0) state.exposure = manualExposure;
 
@@ -142,7 +142,7 @@ namespace sp::vulkan::renderer {
                 constants.eyeAdaptationUpRate = CVarEyeAdaptationUpRate.Get();
                 constants.eyeAdaptationDownRate = CVarEyeAdaptationDownRate.Get();
                 constants.eyeAdaptationKeyComp = CVarEyeAdaptationKeyComp.Get();
-                constants.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : 4.0f;
+                constants.hdrScale = CVarHDR.Get() == SwapchainColorSpace::SDR ? 1.0f : CVarHDRExposreScale.Get();
 
                 cmd.SetComputeShader("exposure_update.comp");
                 cmd.SetImageView("histogram", "LuminanceHistogram");

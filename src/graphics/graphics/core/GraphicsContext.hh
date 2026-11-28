@@ -41,6 +41,7 @@ namespace sp {
         DisplayNativeAMD,
     };
     extern CVar<SwapchainColorSpace> CVarHDR;
+    extern CVar<float> CVarHDRExposreScale;
     extern CVar<glm::vec3> CVarWhitePoint;
 
     class GraphicsContext {

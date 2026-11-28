@@ -192,9 +192,6 @@ namespace sp::vulkan {
         // Bindless descriptor sets stay allocated until the DeviceContext shuts down.
         vk::DescriptorSet CreateBindlessDescriptorSet();
 
-        // using TemporaryObject = std::variant<BufferPtr, ImagePtr, ImageViewPtr, SemaphorePtr>;
-        // void PushInFlightObject(TemporaryObject object, const std::shared_ptr<vk::UniqueFence> &fence);
-
         const vk::PhysicalDeviceLimits &Limits() const {
             return selectedDeviceProperties.properties.limits;
         }

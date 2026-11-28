@@ -238,6 +238,7 @@ namespace sp::vulkan {
     vk::ImageAspectFlags FormatToAspectFlags(vk::Format format);
     uint32_t FormatComponentCount(vk::Format format);
     uint32_t FormatByteSize(vk::Format format);
+    glm::u8vec4 FormatBitDepth(vk::Format format);
     bool FormatIsSRGB(vk::Format format);
     vk::Format FormatSRGBToUnorm(vk::Format format);
     uint32_t CalculateMipmapLevels(vk::Extent3D extent);
